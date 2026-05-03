@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "meta_extend_token",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Extiende un token corto de Meta usando grant_type=fb_exchange_token.",
+  "vertical": "vertical_meta",
+  "requires_env": []
+}
