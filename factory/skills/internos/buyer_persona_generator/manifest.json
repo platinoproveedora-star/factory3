@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "buyer_persona_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea buyer personas detalladas con demograficos, metas, dolores, objeciones y canales.",
+  "vertical": "marketing",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}
