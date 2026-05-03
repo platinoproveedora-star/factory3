@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "ig_get_post_insights",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Obtiene metricas de alcance y engagement de un post de Instagram via Graph API.",
+  "vertical": "vertical_instagram",
+  "requires_env": ["IG_ACCESS_TOKEN"]
+}
