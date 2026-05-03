@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "list_skills_by_vertical",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Agrupa los skills registrados por vertical.",
+  "requires_env": []
+}
