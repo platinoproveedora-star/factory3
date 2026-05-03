@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "ig_reply_dm",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Envia un mensaje directo a un usuario de Instagram via Instagram Messaging API.",
+  "vertical": "vertical_instagram",
+  "requires_env": ["IG_ACCESS_TOKEN", "IG_PAGE_ID"]
+}
