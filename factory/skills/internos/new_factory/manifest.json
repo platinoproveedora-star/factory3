@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "new_factory",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea una fabrica completa en modo local (carpetas) o cloud (GitHub + Render + Telegram webhook)",
+  "vertical": "factory",
+  "permissions": [],
+  "requires_env": ["GITHUB_TOKEN", "RENDER_API_KEY"]
+}
