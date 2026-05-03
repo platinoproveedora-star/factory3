@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "json_formatter",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida y formatea JSON.",
+  "requires_env": []
+}
