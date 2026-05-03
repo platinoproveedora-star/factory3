@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "csv_parser",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Convierte texto CSV a filas o JSON.",
+  "requires_env": []
+}
