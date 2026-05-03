@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "snake_case_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera identificadores snake_case validos.",
+  "requires_env": []
+}
