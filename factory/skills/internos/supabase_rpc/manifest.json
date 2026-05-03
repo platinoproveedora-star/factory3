@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "supabase_rpc",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Llama funciones Postgres expuestas como RPC en Supabase.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
