@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "verify_factory",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Verifica localmente la salud de Factory y sus unidades portables.",
+  "vertical": "factory",
+  "permissions": [],
+  "requires_env": []
+}
