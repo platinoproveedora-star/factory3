@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "hashtag_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera hashtags estrategicos agrupados por alcance para Instagram, LinkedIn, Twitter y TikTok.",
+  "vertical": "marketing",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}
