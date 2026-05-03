@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "ig_content_brief",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera brief de contenido para Instagram por objetivo de campana.",
+  "vertical": "vertical_instagram",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}
