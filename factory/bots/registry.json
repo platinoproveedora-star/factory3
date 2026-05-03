@@ -1,0 +1,15 @@
+{
+  "factory3_admin": {
+    "nombre": "factory3_admin",
+    "bot_type": "admin",
+    "path": "bots/factory3_admin",
+    "entrypoint": "bot.py",
+    "token_env": "TELEGRAM_TOKEN",
+    "commands": [
+      "start",
+      "ayuda",
+      "estado"
+    ],
+    "version": "0.1.0"
+  }
+}
