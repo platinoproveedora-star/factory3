@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "render_deploy_status",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Espera y verifica el estado de un deploy en Render hasta que este live o falle",
+  "vertical": "factory_render",
+  "permissions": [],
+  "requires_env": ["RENDER_API_KEY"]
+}
