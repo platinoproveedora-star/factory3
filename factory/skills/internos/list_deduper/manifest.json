@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "list_deduper",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Quita duplicados preservando orden.",
+  "requires_env": []
+}
