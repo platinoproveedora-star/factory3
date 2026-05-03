@@ -1,0 +1,10 @@
+{
+  "bot_name": "factory3_admin",
+  "bot_type": "admin",
+  "token_env": "TELEGRAM_TOKEN",
+  "commands": [
+    "start",
+    "ayuda",
+    "estado"
+  ]
+}
