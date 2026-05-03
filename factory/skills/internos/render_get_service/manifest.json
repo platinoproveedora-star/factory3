@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "render_get_service",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Obtiene informacion y URL de un servicio de Render por ID o nombre",
+  "vertical": "factory_render",
+  "permissions": [],
+  "requires_env": ["RENDER_API_KEY"]
+}
