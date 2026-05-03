@@ -1,0 +1,24 @@
+{
+  "factory": {
+    "agent_id": "3b5a3835-becf-4912-9509-32bfc8b3b7d2",
+    "nombre": "factory",
+    "descripcion": "Guarda todos los factory que mande el usuario en una tabla con fecha y concepto y luego le da al usuario lo q necesite d esa tabla",
+    "vertical": "Gastos",
+    "mcps": [],
+    "skills": [],
+    "path": "agents/factory",
+    "entrypoint": "agent.py",
+    "version": "0.1.0"
+  },
+  "cardex": {
+    "agent_id": "578b6ebb-d33a-413e-914c-c69466506f49",
+    "nombre": "cardex",
+    "descripcion": "Eres el Cardex de  las empresas almacenas entradas y salidas de productos en una tabla. Si es entrada positivo si es salida negativo . Agrupas por  mismo producto y das información sobre esta tabla .",
+    "vertical": "ERP",
+    "mcps": [],
+    "skills": [],
+    "path": "agents/cardex",
+    "entrypoint": "agent.py",
+    "version": "0.1.0"
+  }
+}
