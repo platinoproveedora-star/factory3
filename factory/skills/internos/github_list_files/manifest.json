@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "github_list_files",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista archivos y carpetas en un directorio de un repositorio de GitHub",
+  "vertical": "factory_github",
+  "permissions": [],
+  "requires_env": ["GITHUB_TOKEN"]
+}
