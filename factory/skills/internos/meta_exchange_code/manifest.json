@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "meta_exchange_code",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Intercambia un code OAuth de Meta por access_token en /oauth/access_token.",
+  "vertical": "vertical_meta",
+  "requires_env": []
+}
