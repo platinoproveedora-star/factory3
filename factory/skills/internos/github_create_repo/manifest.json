@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "github_create_repo",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un repositorio en GitHub para usuario u organizacion",
+  "vertical": "factory_github",
+  "permissions": [],
+  "requires_env": ["GITHUB_TOKEN"]
+}
