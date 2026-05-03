@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "ig_post_reel",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Publica un Reel en Instagram via Meta Graph API con polling de procesamiento de video.",
+  "vertical": "vertical_instagram",
+  "requires_env": ["IG_ACCESS_TOKEN"]
+}
