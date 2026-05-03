@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "verify_skill_pack",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Verifica la estructura de un skill pack exportado.",
+  "requires_env": []
+}
