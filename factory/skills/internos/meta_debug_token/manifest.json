@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "meta_debug_token",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Inspecciona un access token de Meta Graph API con /debug_token.",
+  "vertical": "vertical_meta",
+  "permissions": [],
+  "requires_env": []
+}
