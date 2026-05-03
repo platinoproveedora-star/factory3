@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "supabase_query_table",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Consulta filas de una tabla Supabase via REST.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
