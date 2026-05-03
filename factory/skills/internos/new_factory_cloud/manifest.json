@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "new_factory_cloud",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Publica una fabrica local limpia en GitHub, Render y Telegram.",
+  "vertical": "factory",
+  "requires_env": ["GITHUB_TOKEN", "RENDER_API_KEY"]
+}
