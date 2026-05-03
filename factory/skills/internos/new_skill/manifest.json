@@ -1,0 +1,13 @@
+{
+  "type": "skill",
+  "name": "new_skill",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea la estructura base de un skill portable compatible con Factory.",
+  "vertical": "factory",
+  "permissions": [
+    "filesystem:workspace-write"
+  ],
+  "requires_env": []
+}
