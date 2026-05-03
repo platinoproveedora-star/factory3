@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "ig_reply_comment",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Responde un comentario de Instagram con un mensaje especifico via Graph API.",
+  "vertical": "vertical_instagram",
+  "requires_env": ["IG_ACCESS_TOKEN"]
+}
