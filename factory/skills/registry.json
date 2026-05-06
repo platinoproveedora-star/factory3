@@ -1,1127 +1,1157 @@
-﻿{
-    "new_skill":  {
-                      "tipo":  "interno",
-                      "nombre":  "new_skill",
-                      "vertical":  "factory_skills",
-                      "descripcion":  "Crea skills portables compatibles con Factory",
-                      "path":  "skills/internos/new_skill",
-                      "entrypoint":  "skill.py",
-                      "version":  "0.1.0"
-                  },
-    "new_agent":  {
-                      "tipo":  "interno",
-                      "nombre":  "new_agent",
-                      "vertical":  "factory",
-                      "descripcion":  "Crea agentes portables compatibles con Factory",
-                      "path":  "skills/internos/new_agent",
-                      "entrypoint":  "skill.py",
-                      "version":  "0.1.0"
-                  },
-    "add_skill":  {
-                      "tipo":  "interno",
-                      "nombre":  "add_skill",
-                      "vertical":  "factory_skills",
-                      "descripcion":  "Importa skills externos portables a Factory",
-                      "path":  "skills/internos/add_skill",
-                      "entrypoint":  "skill.py",
-                      "version":  "0.1.0"
-                  },
-    "security_gate":  {
-                          "tipo":  "interno",
-                          "nombre":  "security_gate",
-                          "vertical":  "security",
-                          "descripcion":  "Gate de seguridad basico para revisar skills externos antes de instalarlos",
-                          "path":  "skills/internos/security_gate",
-                          "entrypoint":  "skill.py",
-                          "version":  "0.1.0"
-                      },
-    "add_bot":  {
-                    "tipo":  "interno",
-                    "nombre":  "add_bot",
-                    "vertical":  "factory",
-                    "descripcion":  "Crea bots Telegram configurables para Factory",
-                    "path":  "skills/internos/add_bot",
-                    "entrypoint":  "skill.py",
-                    "version":  "0.1.0"
-                },
-    "verify_factory":  {
-                           "tipo":  "interno",
-                           "nombre":  "verify_factory",
-                           "vertical":  "factory",
-                           "descripcion":  "Verifica localmente la salud de Factory",
-                           "path":  "skills/internos/verify_factory",
-                           "entrypoint":  "skill.py",
-                           "version":  "0.1.0"
-                       },
-    "connect_bot_agent":  {
-                              "tipo":  "interno",
-                              "nombre":  "connect_bot_agent",
-                              "vertical":  "factory",
-                              "descripcion":  "Conecta un bot Factory con un agente por defecto",
-                              "path":  "skills/internos/connect_bot_agent",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "add_agent_brain":  {
-                            "tipo":  "interno",
-                            "nombre":  "add_agent_brain",
-                            "vertical":  "factory",
-                            "descripcion":  "Agrega un brain Anthropic a un agente portable",
-                            "path":  "skills/internos/add_agent_brain",
-                            "entrypoint":  "skill.py",
-                            "version":  "0.1.0"
-                        },
-    "wizard":  {
-                   "tipo":  "interno",
-                   "nombre":  "wizard",
-                   "vertical":  "factory",
-                   "descripcion":  "Maneja flujos conversacionales para bots de Factory",
-                   "path":  "skills/internos/wizard",
-                   "entrypoint":  "skill.py",
-                   "version":  "0.1.0"
-               },
-    "github_push":  {
-                        "tipo":  "interno",
-                        "nombre":  "github_push",
-                        "vertical":  "factory",
-                        "descripcion":  "Commitea archivos al repo de GitHub via API",
-                        "path":  "skills/internos/github_push",
-                        "entrypoint":  "skill.py",
-                        "version":  "0.1.0"
-                    },
-    "new_supabase_table":  {
-                               "tipo":  "interno",
-                               "nombre":  "new_supabase_table",
-                               "vertical":  "factory_supabase",
-                               "descripcion":  "Crea una tabla en Supabase via Management API",
-                               "path":  "skills/internos/new_supabase_table",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "supabase_sql_execute":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "supabase_sql_execute",
-                                 "vertical":  "factory_supabase",
-                                 "descripcion":  "Ejecuta SQL arbitrario en Supabase via Management API (CREATE, ALTER, INDEX, etc.)",
-                                 "path":  "skills/internos/supabase_sql_execute",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "bot_inbox_router":  {
-                             "tipo":  "interno",
-                             "nombre":  "bot_inbox_router",
-                             "vertical":  "vertical_bot",
-                             "descripcion":  "Router de entrada multicanal — identifica candidato, crea o recupera conversacion y deriva al flujo correcto",
-                             "path":  "skills/internos/bot_inbox_router",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "bot_form_capture":  {
-                             "tipo":  "interno",
-                             "nombre":  "bot_form_capture",
-                             "vertical":  "vertical_bot",
-                             "descripcion":  "Ejecuta cuestionario paso a paso — guarda respuestas en Supabase y devuelve la siguiente pregunta",
-                             "path":  "skills/internos/bot_form_capture",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "rh_vacante_store":  {
-                             "tipo":  "interno",
-                             "nombre":  "rh_vacante_store",
-                             "vertical":  "vertical_rh",
-                             "descripcion":  "Crea, lee, lista y actualiza vacantes en Supabase",
-                             "path":  "skills/internos/rh_vacante_store",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "rh_candidate_profile_builder":  {
-                                          "tipo":  "interno",
-                                          "nombre":  "rh_candidate_profile_builder",
-                                          "vertical":  "vertical_rh",
-                                          "descripcion":  "Construye perfil estructurado del candidato desde sus respuestas al cuestionario",
-                                          "path":  "skills/internos/rh_candidate_profile_builder",
-                                          "entrypoint":  "skill.py",
-                                          "version":  "0.1.0"
-                                      },
-    "rh_basic_validation":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "rh_basic_validation",
-                                 "vertical":  "vertical_rh",
-                                 "descripcion":  "Valida datos minimos del candidato: nombre, contacto y disponibilidad",
-                                 "path":  "skills/internos/rh_basic_validation",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "rh_duplicate_detector":  {
-                                   "tipo":  "interno",
-                                   "nombre":  "rh_duplicate_detector",
-                                   "vertical":  "vertical_rh",
-                                   "descripcion":  "Detecta candidatos duplicados por telefono, email o canal_user_id",
-                                   "path":  "skills/internos/rh_duplicate_detector",
-                                   "entrypoint":  "skill.py",
-                                   "version":  "0.1.0"
-                               },
-    "rh_knockout_filter":  {
-                               "tipo":  "interno",
-                               "nombre":  "rh_knockout_filter",
-                               "vertical":  "vertical_rh",
-                               "descripcion":  "Aplica filtros obligatorios al perfil del candidato — pasa o no pasa",
-                               "path":  "skills/internos/rh_knockout_filter",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "rh_candidate_scoring":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "rh_candidate_scoring",
-                                 "vertical":  "vertical_rh",
-                                 "descripcion":  "Puntua al candidato (0-100) con IA segun requisitos, experiencia, ubicacion y disponibilidad",
-                                 "path":  "skills/internos/rh_candidate_scoring",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "rh_pipeline_manager":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "rh_pipeline_manager",
-                                 "vertical":  "vertical_rh",
-                                 "descripcion":  "Maneja etapas y estatus del candidato en pipeline. Registra historial.",
-                                 "path":  "skills/internos/rh_pipeline_manager",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "rh_candidate_ranking":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "rh_candidate_ranking",
-                                 "vertical":  "vertical_rh",
-                                 "descripcion":  "Ordena candidatos de una vacante por score descendente",
-                                 "path":  "skills/internos/rh_candidate_ranking",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "rh_candidate_search":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "rh_candidate_search",
-                                 "vertical":  "vertical_rh",
-                                 "descripcion":  "Busca candidatos por filtros: vacante, estado, canal, empresa, nombre",
-                                 "path":  "skills/internos/rh_candidate_search",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "rh_candidate_history":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "rh_candidate_history",
-                                 "vertical":  "vertical_rh",
-                                 "descripcion":  "Historial completo de un candidato: perfil, respuestas, scores, pipeline y eventos",
-                                 "path":  "skills/internos/rh_candidate_history",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "rh_conversation_manager":  {
-                                     "tipo":  "interno",
-                                     "nombre":  "rh_conversation_manager",
-                                     "vertical":  "vertical_rh",
-                                     "descripcion":  "Gestiona estado de conversacion activa: obtener, actualizar o reiniciar",
-                                     "path":  "skills/internos/rh_conversation_manager",
-                                     "entrypoint":  "skill.py",
-                                     "version":  "0.1.0"
-                                 },
-    "rh_report_generator":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "rh_report_generator",
-                                 "vertical":  "vertical_rh",
-                                 "descripcion":  "Genera reportes de pipeline, scores y conversion por vacante o empresa",
-                                 "path":  "skills/internos/rh_report_generator",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "rh_job_post_generator":  {
-                                  "tipo":  "interno",
-                                  "nombre":  "rh_job_post_generator",
-                                  "vertical":  "vertical_rh",
-                                  "descripcion":  "Genera texto de vacante listo para publicar usando IA",
-                                  "path":  "skills/internos/rh_job_post_generator",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "rh_questionnaire_generator":  {
-                                       "tipo":  "interno",
-                                       "nombre":  "rh_questionnaire_generator",
-                                       "vertical":  "vertical_rh",
-                                       "descripcion":  "Genera cuestionario de candidato segun profundidad, canal y vacante usando IA",
-                                       "path":  "skills/internos/rh_questionnaire_generator",
-                                       "entrypoint":  "skill.py",
-                                       "version":  "0.1.0"
-                                   },
-    "rh_seed_generator":  {
-                              "tipo":  "interno",
-                              "nombre":  "rh_seed_generator",
-                              "vertical":  "vertical_rh",
-                              "descripcion":  "Genera datos de prueba RH en batch usando IA. Registra IDs en test_seeds.",
-                              "path":  "skills/internos/rh_seed_generator",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "rh_seed_cleaner":  {
-                            "tipo":  "interno",
-                            "nombre":  "rh_seed_cleaner",
-                            "vertical":  "vertical_rh",
-                            "descripcion":  "Borra todos los registros de prueba de un seed_label en orden FK.",
-                            "path":  "skills/internos/rh_seed_cleaner",
-                            "entrypoint":  "skill.py",
-                            "version":  "0.1.0"
-                        },
-    "rh_1_run":  {
-                     "tipo":  "interno",
-                     "nombre":  "rh_1_run",
-                     "vertical":  "vertical_rh",
-                     "descripcion":  "Orquestador master del modo RH-1: comandos de manager y flujo completo de candidatos.",
-                     "path":  "skills/internos/rh_1_run",
-                     "entrypoint":  "skill.py",
-                     "version":  "0.1.0"
-                 },
-    "connect_supabase":  {
-                             "tipo":  "interno",
-                             "nombre":  "connect_supabase",
-                             "vertical":  "factory_supabase",
-                             "descripcion":  "Valida credenciales y conectividad basica de Supabase",
-                             "path":  "skills/internos/connect_supabase",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "supabase_insert_row":  {
-                                "tipo":  "interno",
-                                "nombre":  "supabase_insert_row",
-                                "vertical":  "factory_supabase",
-                                "descripcion":  "Inserta filas en Supabase via REST",
-                                "path":  "skills/internos/supabase_insert_row",
-                                "entrypoint":  "skill.py",
-                                "version":  "0.1.0"
-                            },
-    "supabase_query_table":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "supabase_query_table",
-                                 "vertical":  "factory_supabase",
-                                 "descripcion":  "Consulta filas en Supabase via REST",
-                                 "path":  "skills/internos/supabase_query_table",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "supabase_update_row":  {
-                                "tipo":  "interno",
-                                "nombre":  "supabase_update_row",
-                                "vertical":  "factory_supabase",
-                                "descripcion":  "Actualiza filas en Supabase via REST",
-                                "path":  "skills/internos/supabase_update_row",
-                                "entrypoint":  "skill.py",
-                                "version":  "0.1.0"
-                            },
-    "supabase_delete_row":  {
-                                "tipo":  "interno",
-                                "nombre":  "supabase_delete_row",
-                                "vertical":  "factory_supabase",
-                                "descripcion":  "Elimina filas en Supabase via REST",
-                                "path":  "skills/internos/supabase_delete_row",
-                                "entrypoint":  "skill.py",
-                                "version":  "0.1.0"
-                            },
-    "add_agent_memory_supabase":  {
-                                      "tipo":  "interno",
-                                      "nombre":  "add_agent_memory_supabase",
-                                      "vertical":  "factory_supabase",
-                                      "descripcion":  "Agrega memoria persistente Supabase a un agente",
-                                      "path":  "skills/internos/add_agent_memory_supabase",
-                                      "entrypoint":  "skill.py",
-                                      "version":  "0.1.0"
-                                  },
-    "supabase_schema_inspect":  {
-                                    "tipo":  "interno",
-                                    "nombre":  "supabase_schema_inspect",
-                                    "vertical":  "factory_supabase",
-                                    "descripcion":  "Inspecciona tablas y columnas de Supabase",
-                                    "path":  "skills/internos/supabase_schema_inspect",
-                                    "entrypoint":  "skill.py",
-                                    "version":  "0.1.0"
-                                },
-    "supabase_rpc":  {
-                         "tipo":  "interno",
-                         "nombre":  "supabase_rpc",
-                         "vertical":  "factory_supabase",
-                         "descripcion":  "Llama funciones RPC de Supabase",
-                         "path":  "skills/internos/supabase_rpc",
-                         "entrypoint":  "skill.py",
-                         "version":  "0.1.0"
-                     },
-    "text_cleaner":  {
-                         "tipo":  "interno",
-                         "nombre":  "text_cleaner",
-                         "vertical":  "utils",
-                         "descripcion":  "Limpia y normaliza texto",
-                         "path":  "skills/internos/text_cleaner",
-                         "entrypoint":  "skill.py",
-                         "version":  "0.1.0"
-                     },
-    "json_formatter":  {
-                           "tipo":  "interno",
-                           "nombre":  "json_formatter",
-                           "vertical":  "utils",
-                           "descripcion":  "Valida y formatea JSON",
-                           "path":  "skills/internos/json_formatter",
-                           "entrypoint":  "skill.py",
-                           "version":  "0.1.0"
-                       },
-    "csv_parser":  {
-                       "tipo":  "interno",
-                       "nombre":  "csv_parser",
-                       "vertical":  "utils",
-                       "descripcion":  "Convierte CSV a filas o JSON",
-                       "path":  "skills/internos/csv_parser",
-                       "entrypoint":  "skill.py",
-                       "version":  "0.1.0"
-                   },
-    "markdown_table":  {
-                           "tipo":  "interno",
-                           "nombre":  "markdown_table",
-                           "vertical":  "utils",
-                           "descripcion":  "Convierte filas a tabla Markdown",
-                           "path":  "skills/internos/markdown_table",
-                           "entrypoint":  "skill.py",
-                           "version":  "0.1.0"
-                       },
-    "date_parser":  {
-                        "tipo":  "interno",
-                        "nombre":  "date_parser",
-                        "vertical":  "utils",
-                        "descripcion":  "Interpreta fechas simples",
-                        "path":  "skills/internos/date_parser",
-                        "entrypoint":  "skill.py",
-                        "version":  "0.1.0"
-                    },
-    "money_parser":  {
-                         "tipo":  "interno",
-                         "nombre":  "money_parser",
-                         "vertical":  "utils",
-                         "descripcion":  "Extrae montos de texto",
-                         "path":  "skills/internos/money_parser",
-                         "entrypoint":  "skill.py",
-                         "version":  "0.1.0"
-                     },
-    "snake_case_generator":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "snake_case_generator",
-                                 "vertical":  "utils",
-                                 "descripcion":  "Genera identificadores snake_case",
-                                 "path":  "skills/internos/snake_case_generator",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "list_deduper":  {
-                         "tipo":  "interno",
-                         "nombre":  "list_deduper",
-                         "vertical":  "utils",
-                         "descripcion":  "Quita duplicados preservando orden",
-                         "path":  "skills/internos/list_deduper",
-                         "entrypoint":  "skill.py",
-                         "version":  "0.1.0"
-                     },
-    "simple_calculator":  {
-                              "tipo":  "interno",
-                              "nombre":  "simple_calculator",
-                              "vertical":  "utils",
-                              "descripcion":  "Calculadora segura de operaciones basicas",
-                              "path":  "skills/internos/simple_calculator",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "memory_summarizer":  {
-                              "tipo":  "interno",
-                              "nombre":  "memory_summarizer",
-                              "vertical":  "utils",
-                              "descripcion":  "Resume memorias en bullets por reglas simples",
-                              "path":  "skills/internos/memory_summarizer",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "list_skills_by_vertical":  {
-                                    "tipo":  "interno",
-                                    "nombre":  "list_skills_by_vertical",
-                                    "vertical":  "factory_skills",
-                                    "descripcion":  "Agrupa los skills registrados por vertical",
-                                    "path":  "skills/internos/list_skills_by_vertical",
-                                    "entrypoint":  "skill.py",
-                                    "version":  "0.1.0"
-                                },
-    "export_skill_pack":  {
-                              "tipo":  "interno",
-                              "nombre":  "export_skill_pack",
-                              "vertical":  "factory_skills",
-                              "descripcion":  "Exporta un paquete de skills por vertical",
-                              "path":  "skills/internos/export_skill_pack",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "verify_skill_pack":  {
-                              "tipo":  "interno",
-                              "nombre":  "verify_skill_pack",
-                              "vertical":  "factory_skills",
-                              "descripcion":  "Verifica la estructura de un skill pack exportado",
-                              "path":  "skills/internos/verify_skill_pack",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "carousel_generator":  {
-                               "tipo":  "interno",
-                               "nombre":  "carousel_generator",
-                               "vertical":  "marketing_ai",
-                               "descripcion":  "Genera contenido de carrusel para Instagram y LinkedIn",
-                               "path":  "skills/internos/carousel_generator",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "campaign_planner":  {
-                             "tipo":  "interno",
-                             "nombre":  "campaign_planner",
-                             "vertical":  "marketing_ai",
-                             "descripcion":  "Planea campanas de marketing completas con fases, canales y KPIs",
-                             "path":  "skills/internos/campaign_planner",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "copy_generator":  {
-                           "tipo":  "interno",
-                           "nombre":  "copy_generator",
-                           "vertical":  "marketing_ai",
-                           "descripcion":  "Genera 3 variantes de copy para ads, posts, emails y landing pages",
-                           "path":  "skills/internos/copy_generator",
-                           "entrypoint":  "skill.py",
-                           "version":  "0.1.0"
-                       },
-    "content_calendar_generator":  {
-                                       "tipo":  "interno",
-                                       "nombre":  "content_calendar_generator",
-                                       "vertical":  "marketing_ai",
-                                       "descripcion":  "Genera calendario de contenido mensual por red social",
-                                       "path":  "skills/internos/content_calendar_generator",
-                                       "entrypoint":  "skill.py",
-                                       "version":  "0.1.0"
-                                   },
-    "ad_creator":  {
-                       "tipo":  "interno",
-                       "nombre":  "ad_creator",
-                       "vertical":  "marketing_ai",
-                       "descripcion":  "Crea anuncios para Facebook, Instagram, Google y LinkedIn",
-                       "path":  "skills/internos/ad_creator",
-                       "entrypoint":  "skill.py",
-                       "version":  "0.1.0"
-                   },
-    "email_campaign_generator":  {
-                                     "tipo":  "interno",
-                                     "nombre":  "email_campaign_generator",
-                                     "vertical":  "marketing_ai",
-                                     "descripcion":  "Genera secuencias de emails para nurture, onboarding, reactivacion y venta",
-                                     "path":  "skills/internos/email_campaign_generator",
-                                     "entrypoint":  "skill.py",
-                                     "version":  "0.1.0"
-                                 },
-    "hashtag_generator":  {
-                              "tipo":  "interno",
-                              "nombre":  "hashtag_generator",
-                              "vertical":  "marketing_ai",
-                              "descripcion":  "Genera hashtags estrategicos agrupados por alcance",
-                              "path":  "skills/internos/hashtag_generator",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "buyer_persona_generator":  {
-                                    "tipo":  "interno",
-                                    "nombre":  "buyer_persona_generator",
-                                    "vertical":  "marketing_ai",
-                                    "descripcion":  "Crea buyer personas detalladas con demograficos, metas y objeciones",
-                                    "path":  "skills/internos/buyer_persona_generator",
-                                    "entrypoint":  "skill.py",
-                                    "version":  "0.1.0"
-                                },
-    "brand_voice_analyzer":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "brand_voice_analyzer",
-                                 "vertical":  "marketing_ai",
-                                 "descripcion":  "Analiza y define la voz de marca: tono, personalidad y vocabulario",
-                                 "path":  "skills/internos/brand_voice_analyzer",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "hook_generator":  {
-                           "tipo":  "interno",
-                           "nombre":  "hook_generator",
-                           "vertical":  "marketing_ai",
-                           "descripcion":  "Genera hooks virales para video, post, reel y email",
-                           "path":  "skills/internos/hook_generator",
-                           "entrypoint":  "skill.py",
-                           "version":  "0.1.0"
-                       },
-    "github_create_repo":  {
-                               "tipo":  "interno",
-                               "nombre":  "github_create_repo",
-                               "vertical":  "factory_github",
-                               "descripcion":  "Crea un repositorio en GitHub para usuario u organizacion",
-                               "path":  "skills/internos/github_create_repo",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "github_get_file":  {
-                            "tipo":  "interno",
-                            "nombre":  "github_get_file",
-                            "vertical":  "factory_github",
-                            "descripcion":  "Obtiene el contenido de un archivo en un repositorio de GitHub",
-                            "path":  "skills/internos/github_get_file",
-                            "entrypoint":  "skill.py",
-                            "version":  "0.1.0"
-                        },
-    "github_list_files":  {
-                              "tipo":  "interno",
-                              "nombre":  "github_list_files",
-                              "vertical":  "factory_github",
-                              "descripcion":  "Lista archivos y carpetas en un directorio de un repositorio de GitHub",
-                              "path":  "skills/internos/github_list_files",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "github_delete_file":  {
-                               "tipo":  "interno",
-                               "nombre":  "github_delete_file",
-                               "vertical":  "factory_github",
-                               "descripcion":  "Elimina un archivo de un repositorio de GitHub",
-                               "path":  "skills/internos/github_delete_file",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "github_create_branch":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "github_create_branch",
-                                 "vertical":  "factory_github",
-                                 "descripcion":  "Crea una rama en un repositorio de GitHub a partir de una rama base",
-                                 "path":  "skills/internos/github_create_branch",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "github_repo_info":  {
-                             "tipo":  "interno",
-                             "nombre":  "github_repo_info",
-                             "vertical":  "factory_github",
-                             "descripcion":  "Obtiene informacion de un repositorio de GitHub, incluye exists:false si no existe",
-                             "path":  "skills/internos/github_repo_info",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "github_create_pr":  {
-                             "tipo":  "interno",
-                             "nombre":  "github_create_pr",
-                             "vertical":  "factory_github",
-                             "descripcion":  "Crea un pull request en un repositorio de GitHub",
-                             "path":  "skills/internos/github_create_pr",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "github_merge_branch":  {
-                                "tipo":  "interno",
-                                "nombre":  "github_merge_branch",
-                                "vertical":  "factory_github",
-                                "descripcion":  "Mergea una rama en otra dentro de un repositorio de GitHub",
-                                "path":  "skills/internos/github_merge_branch",
-                                "entrypoint":  "skill.py",
-                                "version":  "0.1.0"
-                            },
-    "github_list_repos":  {
-                              "tipo":  "interno",
-                              "nombre":  "github_list_repos",
-                              "vertical":  "factory_github",
-                              "descripcion":  "Lista repositorios de GitHub para un usuario u organizacion",
-                              "path":  "skills/internos/github_list_repos",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "github_delete_repo":  {
-                               "tipo":  "interno",
-                               "nombre":  "github_delete_repo",
-                               "vertical":  "factory_github",
-                               "descripcion":  "Elimina un repositorio de GitHub, requiere confirm:true",
-                               "path":  "skills/internos/github_delete_repo",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "github_add_secret":  {
-                              "tipo":  "interno",
-                              "nombre":  "github_add_secret",
-                              "vertical":  "factory_github",
-                              "descripcion":  "Agrega o actualiza un secret de Actions en un repositorio de GitHub",
-                              "path":  "skills/internos/github_add_secret",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "github_copy_folder":  {
-                               "tipo":  "interno",
-                               "nombre":  "github_copy_folder",
-                               "vertical":  "factory_github",
-                               "descripcion":  "Copia una carpeta completa de un repositorio a otro en GitHub",
-                               "path":  "skills/internos/github_copy_folder",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "render_create_service":  {
-                                  "tipo":  "interno",
-                                  "nombre":  "render_create_service",
-                                  "vertical":  "factory_render",
-                                  "descripcion":  "Crea un web service en Render conectado a un repositorio de GitHub",
-                                  "path":  "skills/internos/render_create_service",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "render_set_env_vars":  {
-                                "tipo":  "interno",
-                                "nombre":  "render_set_env_vars",
-                                "vertical":  "factory_render",
-                                "descripcion":  "Configura variables de entorno en un servicio de Render, con merge opcional",
-                                "path":  "skills/internos/render_set_env_vars",
-                                "entrypoint":  "skill.py",
-                                "version":  "0.1.0"
-                            },
-    "render_get_service":  {
-                               "tipo":  "interno",
-                               "nombre":  "render_get_service",
-                               "vertical":  "factory_render",
-                               "descripcion":  "Obtiene informacion y URL de un servicio de Render por ID o nombre",
-                               "path":  "skills/internos/render_get_service",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "render_trigger_deploy":  {
-                                  "tipo":  "interno",
-                                  "nombre":  "render_trigger_deploy",
-                                  "vertical":  "factory_render",
-                                  "descripcion":  "Dispara un deploy manual en un servicio de Render",
-                                  "path":  "skills/internos/render_trigger_deploy",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "render_list_services":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "render_list_services",
-                                 "vertical":  "factory_render",
-                                 "descripcion":  "Lista todos los servicios de Render con ID, nombre, URL y estado",
-                                 "path":  "skills/internos/render_list_services",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "render_delete_service":  {
-                                  "tipo":  "interno",
-                                  "nombre":  "render_delete_service",
-                                  "vertical":  "factory_render",
-                                  "descripcion":  "Elimina un servicio de Render, requiere confirm:true",
-                                  "path":  "skills/internos/render_delete_service",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "telegram_get_bot_info":  {
-                                  "tipo":  "interno",
-                                  "nombre":  "telegram_get_bot_info",
-                                  "vertical":  "factory_telegram",
-                                  "descripcion":  "Valida un token de bot Telegram y devuelve id, username y nombre",
-                                  "path":  "skills/internos/telegram_get_bot_info",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "telegram_set_webhook":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "telegram_set_webhook",
-                                 "vertical":  "factory_telegram",
-                                 "descripcion":  "Configura el webhook de un bot Telegram apuntando a una URL publica",
-                                 "path":  "skills/internos/telegram_set_webhook",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "telegram_get_webhook_info":  {
-                                      "tipo":  "interno",
-                                      "nombre":  "telegram_get_webhook_info",
-                                      "vertical":  "factory_telegram",
-                                      "descripcion":  "Verifica la configuracion actual del webhook de un bot Telegram",
-                                      "path":  "skills/internos/telegram_get_webhook_info",
-                                      "entrypoint":  "skill.py",
-                                      "version":  "0.1.0"
-                                  },
-    "telegram_send_message":  {
-                                  "tipo":  "interno",
-                                  "nombre":  "telegram_send_message",
-                                  "vertical":  "factory_telegram",
-                                  "descripcion":  "Envia un mensaje via bot Telegram a un chat_id especifico",
-                                  "path":  "skills/internos/telegram_send_message",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "render_deploy_status":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "render_deploy_status",
-                                 "vertical":  "factory_render",
-                                 "descripcion":  "Espera y verifica el estado de un deploy en Render hasta que este live o falle",
-                                 "path":  "skills/internos/render_deploy_status",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "github_update_file":  {
-                               "tipo":  "interno",
-                               "nombre":  "github_update_file",
-                               "vertical":  "factory_github",
-                               "descripcion":  "Actualiza el contenido de un archivo existente en un repositorio de GitHub",
-                               "path":  "skills/internos/github_update_file",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "github_list_branches":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "github_list_branches",
-                                 "vertical":  "factory_github",
-                                 "descripcion":  "Lista las ramas de un repositorio de GitHub con su SHA y estado de proteccion",
-                                 "path":  "skills/internos/github_list_branches",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "new_factory":  {
-                        "tipo":  "interno",
-                        "nombre":  "new_factory",
-                        "vertical":  "factory",
-                        "descripcion":  "Crea una fabrica completa en modo local (carpetas) o cloud (GitHub + Render + Telegram webhook)",
-                        "path":  "skills/internos/new_factory",
-                        "entrypoint":  "skill.py",
-                        "version":  "0.1.0"
-                    },
-    "verify_new_factory":  {
-                               "tipo":  "interno",
-                               "nombre":  "verify_new_factory",
-                               "vertical":  "factory",
-                               "descripcion":  "Verifica la estructura de una fabrica generada por new_factory",
-                               "path":  "skills/internos/verify_new_factory",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "new_factory_cloud":  {
-                              "tipo":  "interno",
-                              "nombre":  "new_factory_cloud",
-                              "vertical":  "factory",
-                              "descripcion":  "Publica una fabrica local limpia en GitHub, Render y Telegram",
-                              "path":  "skills/internos/new_factory_cloud",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "new_factory_github":  {
-                               "tipo":  "interno",
-                               "nombre":  "new_factory_github",
-                               "vertical":  "factory",
-                               "descripcion":  "Crea repo GitHub y sube todos los archivos de una fabrica local",
-                               "path":  "skills/internos/new_factory_github",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "new_factory_render":  {
-                               "tipo":  "interno",
-                               "nombre":  "new_factory_render",
-                               "vertical":  "factory",
-                               "descripcion":  "Crea servicio Render desde un repo GitHub y espera que quede live",
-                               "path":  "skills/internos/new_factory_render",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "new_factory_telegram":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "new_factory_telegram",
-                                 "vertical":  "factory",
-                                 "descripcion":  "Registra bot admin, sube archivos al repo y configura webhook Telegram",
-                                 "path":  "skills/internos/new_factory_telegram",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "new_factory_supabase":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "new_factory_supabase",
-                                 "vertical":  "factory",
-                                 "descripcion":  "Crea tablas base de Supabase para una nueva fabrica",
-                                 "path":  "skills/internos/new_factory_supabase",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "new_factory_cloud_v2":  {
-                                 "tipo":  "interno",
-                                 "nombre":  "new_factory_cloud_v2",
-                                 "vertical":  "factory",
-                                 "descripcion":  "Orquestador: crea fabrica completa en cloud (GitHub + Render + Telegram + Supabase)",
-                                 "path":  "skills/internos/new_factory_cloud_v2",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "meta_refresh_connection":  {
-                                    "vertical":  "vertical_meta",
-                                    "tipo":  "interno",
-                                    "nombre":  "meta_refresh_connection",
-                                    "descripcion":  "Refresca metadata de pagina, cuenta Instagram y token debug",
-                                    "path":  "skills/internos/meta_refresh_connection",
-                                    "entrypoint":  "skill.py",
-                                    "version":  "0.1.0"
-                                },
-    "ig_reel_script":  {
-                           "vertical":  "vertical_instagram",
-                           "tipo":  "interno",
-                           "nombre":  "ig_reel_script",
-                           "descripcion":  "Genera guion completo para Reel con hook optimizado para watch time",
-                           "path":  "skills/internos/ig_reel_script",
-                           "entrypoint":  "skill.py",
-                           "version":  "0.1.0"
-                       },
-    "ig_calendar_generator":  {
-                                  "vertical":  "vertical_instagram",
-                                  "tipo":  "interno",
-                                  "nombre":  "ig_calendar_generator",
-                                  "descripcion":  "Genera calendario editorial mensual de Instagram por semana con formatos y objetivos",
-                                  "path":  "skills/internos/ig_calendar_generator",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "ig_reply_comment":  {
-                             "vertical":  "vertical_instagram",
-                             "tipo":  "interno",
-                             "nombre":  "ig_reply_comment",
-                             "descripcion":  "Responde un comentario de Instagram con un mensaje especifico via Graph API",
-                             "path":  "skills/internos/ig_reply_comment",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "meta_get_permissions":  {
-                                 "vertical":  "vertical_meta",
-                                 "tipo":  "interno",
-                                 "nombre":  "meta_get_permissions",
-                                 "descripcion":  "Lista permisos asociados al access token actual",
-                                 "path":  "skills/internos/meta_get_permissions",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "ig_caption_generator":  {
-                                 "vertical":  "vertical_instagram",
-                                 "tipo":  "interno",
-                                 "nombre":  "ig_caption_generator",
-                                 "descripcion":  "Genera un caption completo para Instagram con hook, cuerpo, emojis y CTA",
-                                 "path":  "skills/internos/ig_caption_generator",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "meta_debug_token":  {
-                             "vertical":  "vertical_meta",
-                             "tipo":  "interno",
-                             "nombre":  "meta_debug_token",
-                             "descripcion":  "Inspecciona un access token de Meta Graph API con debug_token",
-                             "path":  "skills/internos/meta_debug_token",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "ig_reply_dm":  {
-                        "vertical":  "vertical_instagram",
-                        "tipo":  "interno",
-                        "nombre":  "ig_reply_dm",
-                        "descripcion":  "Envia un mensaje directo a un usuario de Instagram via Instagram Messaging API",
-                        "path":  "skills/internos/ig_reply_dm",
-                        "entrypoint":  "skill.py",
-                        "version":  "0.1.0"
-                    },
-    "ig_post_carousel":  {
-                             "vertical":  "vertical_instagram",
-                             "tipo":  "interno",
-                             "nombre":  "ig_post_carousel",
-                             "descripcion":  "Publica un carrusel de hasta 10 imagenes en Instagram via Meta Graph API",
-                             "path":  "skills/internos/ig_post_carousel",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "meta_connection_check":  {
-                                  "vertical":  "vertical_meta",
-                                  "tipo":  "interno",
-                                  "nombre":  "meta_connection_check",
-                                  "descripcion":  "Valida una conexion Meta y calcula readiness para Instagram",
-                                  "path":  "skills/internos/meta_connection_check",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "ig_get_post_insights":  {
-                                 "vertical":  "vertical_instagram",
-                                 "tipo":  "interno",
-                                 "nombre":  "ig_get_post_insights",
-                                 "descripcion":  "Obtiene metricas de alcance y engagement de un post de Instagram via Graph API",
-                                 "path":  "skills/internos/ig_get_post_insights",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "ig_top_posts_analyzer":  {
-                                  "vertical":  "vertical_instagram",
-                                  "tipo":  "interno",
-                                  "nombre":  "ig_top_posts_analyzer",
-                                  "descripcion":  "Identifica los posts con mejor rendimiento de una cuenta de Instagram segun una metrica",
-                                  "path":  "skills/internos/ig_top_posts_analyzer",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "ig_carousel_builder":  {
-                                "vertical":  "vertical_instagram",
-                                "tipo":  "interno",
-                                "nombre":  "ig_carousel_builder",
-                                "descripcion":  "Genera estructura de copy slide por slide para carruseles de Instagram",
-                                "path":  "skills/internos/ig_carousel_builder",
-                                "entrypoint":  "skill.py",
-                                "version":  "0.1.0"
-                            },
-    "ig_content_brief":  {
-                             "vertical":  "vertical_instagram",
-                             "tipo":  "interno",
-                             "nombre":  "ig_content_brief",
-                             "descripcion":  "Genera brief de contenido para Instagram por objetivo de campana",
-                             "path":  "skills/internos/ig_content_brief",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "meta_get_auth_url":  {
-                              "vertical":  "vertical_meta",
-                              "tipo":  "interno",
-                              "nombre":  "meta_get_auth_url",
-                              "descripcion":  "Construye una URL OAuth de Meta para autorizar permisos de Instagram",
-                              "path":  "skills/internos/meta_get_auth_url",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "meta_list_pages":  {
-                            "vertical":  "vertical_meta",
-                            "tipo":  "interno",
-                            "nombre":  "meta_list_pages",
-                            "descripcion":  "Lista paginas Meta accesibles por el token",
-                            "path":  "skills/internos/meta_list_pages",
-                            "entrypoint":  "skill.py",
-                            "version":  "0.1.0"
-                        },
-    "meta_get_instagram_account":  {
-                                       "vertical":  "vertical_meta",
-                                       "tipo":  "interno",
-                                       "nombre":  "meta_get_instagram_account",
-                                       "descripcion":  "Obtiene la cuenta Instagram Business conectada a una pagina Meta",
-                                       "path":  "skills/internos/meta_get_instagram_account",
-                                       "entrypoint":  "skill.py",
-                                       "version":  "0.1.0"
-                                   },
-    "ig_schedule_post":  {
-                             "vertical":  "vertical_instagram",
-                             "tipo":  "interno",
-                             "nombre":  "ig_schedule_post",
-                             "descripcion":  "Programa una publicacion de Instagram para una fecha y hora futura via Meta Graph API",
-                             "path":  "skills/internos/ig_schedule_post",
-                             "entrypoint":  "skill.py",
-                             "version":  "0.1.0"
-                         },
-    "ig_story_script":  {
-                            "vertical":  "vertical_instagram",
-                            "tipo":  "interno",
-                            "nombre":  "ig_story_script",
-                            "descripcion":  "Genera guion de historia de Instagram con frames, stickers interactivos y CTA",
-                            "path":  "skills/internos/ig_story_script",
-                            "entrypoint":  "skill.py",
-                            "version":  "0.1.0"
-                        },
-    "ig_alt_text_generator":  {
-                                  "vertical":  "vertical_instagram",
-                                  "tipo":  "interno",
-                                  "nombre":  "ig_alt_text_generator",
-                                  "descripcion":  "Genera alt text descriptivo para imagenes de Instagram para accesibilidad y SEO",
-                                  "path":  "skills/internos/ig_alt_text_generator",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "ig_best_time_selector":  {
-                                  "vertical":  "vertical_instagram",
-                                  "tipo":  "interno",
-                                  "nombre":  "ig_best_time_selector",
-                                  "descripcion":  "Calcula los mejores horarios de publicacion en Instagram segun formato y region de audiencia",
-                                  "path":  "skills/internos/ig_best_time_selector",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              },
-    "ig_hashtag_generator":  {
-                                 "vertical":  "vertical_instagram",
-                                 "tipo":  "interno",
-                                 "nombre":  "ig_hashtag_generator",
-                                 "descripcion":  "Genera sets de hashtags estrategicos para Instagram agrupados por alcance",
-                                 "path":  "skills/internos/ig_hashtag_generator",
-                                 "entrypoint":  "skill.py",
-                                 "version":  "0.1.0"
-                             },
-    "ig_post_image":  {
-                          "vertical":  "vertical_instagram",
-                          "tipo":  "interno",
-                          "nombre":  "ig_post_image",
-                          "descripcion":  "Publica una imagen en Instagram via Meta Graph API con caption y alt text opcional",
-                          "path":  "skills/internos/ig_post_image",
-                          "entrypoint":  "skill.py",
-                          "version":  "0.1.0"
-                      },
-    "meta_revoke_connection":  {
-                                   "vertical":  "vertical_meta",
-                                   "tipo":  "interno",
-                                   "nombre":  "meta_revoke_connection",
-                                   "descripcion":  "Revoca permisos Meta del token conectado",
-                                   "path":  "skills/internos/meta_revoke_connection",
-                                   "entrypoint":  "skill.py",
-                                   "version":  "0.1.0"
-                               },
-    "meta_extend_token":  {
-                              "vertical":  "vertical_meta",
-                              "tipo":  "interno",
-                              "nombre":  "meta_extend_token",
-                              "descripcion":  "Extiende un token corto de Meta usando fb_exchange_token",
-                              "path":  "skills/internos/meta_extend_token",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "ig_get_auth_token":  {
-                              "vertical":  "vertical_instagram",
-                              "tipo":  "interno",
-                              "nombre":  "ig_get_auth_token",
-                              "descripcion":  "Intercambia un token de corta duracion por un token de larga duracion de Meta",
-                              "path":  "skills/internos/ig_get_auth_token",
-                              "entrypoint":  "skill.py",
-                              "version":  "0.1.0"
-                          },
-    "meta_exchange_code":  {
-                               "vertical":  "vertical_meta",
-                               "tipo":  "interno",
-                               "nombre":  "meta_exchange_code",
-                               "descripcion":  "Intercambia un code OAuth de Meta por access_token",
-                               "path":  "skills/internos/meta_exchange_code",
-                               "entrypoint":  "skill.py",
-                               "version":  "0.1.0"
-                           },
-    "ig_get_account_insights":  {
-                                    "vertical":  "vertical_instagram",
-                                    "tipo":  "interno",
-                                    "nombre":  "ig_get_account_insights",
-                                    "descripcion":  "Obtiene metricas de cuenta de Instagram via Graph API",
-                                    "path":  "skills/internos/ig_get_account_insights",
-                                    "entrypoint":  "skill.py",
-                                    "version":  "0.1.0"
-                                },
-    "ig_post_reel":  {
-                         "vertical":  "vertical_instagram",
-                         "tipo":  "interno",
-                         "nombre":  "ig_post_reel",
-                         "descripcion":  "Publica un Reel en Instagram via Meta Graph API con polling de procesamiento",
-                         "path":  "skills/internos/ig_post_reel",
-                         "entrypoint":  "skill.py",
-                         "version":  "0.1.0"
-                     },
-    "meta_store_connection":  {
-                                  "vertical":  "vertical_meta",
-                                  "tipo":  "interno",
-                                  "nombre":  "meta_store_connection",
-                                  "descripcion":  "Valida y normaliza un payload portable de conexion Meta",
-                                  "path":  "skills/internos/meta_store_connection",
-                                  "entrypoint":  "skill.py",
-                                  "version":  "0.1.0"
-                              }
+{
+  "new_skill": {
+    "tipo": "interno",
+    "nombre": "new_skill",
+    "vertical": "factory_skills",
+    "descripcion": "Crea skills portables compatibles con Factory",
+    "path": "skills/internos/new_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_agent": {
+    "tipo": "interno",
+    "nombre": "new_agent",
+    "vertical": "factory",
+    "descripcion": "Crea agentes portables compatibles con Factory",
+    "path": "skills/internos/new_agent",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "add_skill": {
+    "tipo": "interno",
+    "nombre": "add_skill",
+    "vertical": "factory_skills",
+    "descripcion": "Importa skills externos portables a Factory",
+    "path": "skills/internos/add_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "security_gate": {
+    "tipo": "interno",
+    "nombre": "security_gate",
+    "vertical": "security",
+    "descripcion": "Gate de seguridad basico para revisar skills externos antes de instalarlos",
+    "path": "skills/internos/security_gate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "add_bot": {
+    "tipo": "interno",
+    "nombre": "add_bot",
+    "vertical": "factory",
+    "descripcion": "Crea bots Telegram configurables para Factory",
+    "path": "skills/internos/add_bot",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "verify_factory": {
+    "tipo": "interno",
+    "nombre": "verify_factory",
+    "vertical": "factory",
+    "descripcion": "Verifica localmente la salud de Factory",
+    "path": "skills/internos/verify_factory",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "connect_bot_agent": {
+    "tipo": "interno",
+    "nombre": "connect_bot_agent",
+    "vertical": "factory",
+    "descripcion": "Conecta un bot Factory con un agente por defecto",
+    "path": "skills/internos/connect_bot_agent",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "add_agent_brain": {
+    "tipo": "interno",
+    "nombre": "add_agent_brain",
+    "vertical": "factory",
+    "descripcion": "Agrega un brain Anthropic a un agente portable",
+    "path": "skills/internos/add_agent_brain",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "wizard": {
+    "tipo": "interno",
+    "nombre": "wizard",
+    "vertical": "factory",
+    "descripcion": "Maneja flujos conversacionales para bots de Factory",
+    "path": "skills/internos/wizard",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_push": {
+    "tipo": "interno",
+    "nombre": "github_push",
+    "vertical": "factory",
+    "descripcion": "Commitea archivos al repo de GitHub via API",
+    "path": "skills/internos/github_push",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_supabase_table": {
+    "tipo": "interno",
+    "nombre": "new_supabase_table",
+    "vertical": "factory_supabase",
+    "descripcion": "Crea una tabla en Supabase via Management API",
+    "path": "skills/internos/new_supabase_table",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "supabase_sql_execute": {
+    "tipo": "interno",
+    "nombre": "supabase_sql_execute",
+    "vertical": "factory_supabase",
+    "descripcion": "Ejecuta SQL arbitrario en Supabase via Management API (CREATE, ALTER, INDEX, etc.)",
+    "path": "skills/internos/supabase_sql_execute",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "bot_inbox_router": {
+    "tipo": "interno",
+    "nombre": "bot_inbox_router",
+    "vertical": "vertical_bot",
+    "descripcion": "Router de entrada multicanal — identifica candidato, crea o recupera conversacion y deriva al flujo correcto",
+    "path": "skills/internos/bot_inbox_router",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "bot_form_capture": {
+    "tipo": "interno",
+    "nombre": "bot_form_capture",
+    "vertical": "vertical_bot",
+    "descripcion": "Ejecuta cuestionario paso a paso — guarda respuestas en Supabase y devuelve la siguiente pregunta",
+    "path": "skills/internos/bot_form_capture",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_vacante_store": {
+    "tipo": "interno",
+    "nombre": "rh_vacante_store",
+    "vertical": "vertical_rh",
+    "descripcion": "Crea, lee, lista y actualiza vacantes en Supabase",
+    "path": "skills/internos/rh_vacante_store",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_candidate_profile_builder": {
+    "tipo": "interno",
+    "nombre": "rh_candidate_profile_builder",
+    "vertical": "vertical_rh",
+    "descripcion": "Construye perfil estructurado del candidato desde sus respuestas al cuestionario",
+    "path": "skills/internos/rh_candidate_profile_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_basic_validation": {
+    "tipo": "interno",
+    "nombre": "rh_basic_validation",
+    "vertical": "vertical_rh",
+    "descripcion": "Valida datos minimos del candidato: nombre, contacto y disponibilidad",
+    "path": "skills/internos/rh_basic_validation",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_duplicate_detector": {
+    "tipo": "interno",
+    "nombre": "rh_duplicate_detector",
+    "vertical": "vertical_rh",
+    "descripcion": "Detecta candidatos duplicados por telefono, email o canal_user_id",
+    "path": "skills/internos/rh_duplicate_detector",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_knockout_filter": {
+    "tipo": "interno",
+    "nombre": "rh_knockout_filter",
+    "vertical": "vertical_rh",
+    "descripcion": "Aplica filtros obligatorios al perfil del candidato — pasa o no pasa",
+    "path": "skills/internos/rh_knockout_filter",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_candidate_scoring": {
+    "tipo": "interno",
+    "nombre": "rh_candidate_scoring",
+    "vertical": "vertical_rh",
+    "descripcion": "Puntua al candidato (0-100) con IA segun requisitos, experiencia, ubicacion y disponibilidad",
+    "path": "skills/internos/rh_candidate_scoring",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_pipeline_manager": {
+    "tipo": "interno",
+    "nombre": "rh_pipeline_manager",
+    "vertical": "vertical_rh",
+    "descripcion": "Maneja etapas y estatus del candidato en pipeline. Registra historial.",
+    "path": "skills/internos/rh_pipeline_manager",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_candidate_ranking": {
+    "tipo": "interno",
+    "nombre": "rh_candidate_ranking",
+    "vertical": "vertical_rh",
+    "descripcion": "Ordena candidatos de una vacante por score descendente",
+    "path": "skills/internos/rh_candidate_ranking",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_candidate_search": {
+    "tipo": "interno",
+    "nombre": "rh_candidate_search",
+    "vertical": "vertical_rh",
+    "descripcion": "Busca candidatos por filtros: vacante, estado, canal, empresa, nombre",
+    "path": "skills/internos/rh_candidate_search",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_candidate_history": {
+    "tipo": "interno",
+    "nombre": "rh_candidate_history",
+    "vertical": "vertical_rh",
+    "descripcion": "Historial completo de un candidato: perfil, respuestas, scores, pipeline y eventos",
+    "path": "skills/internos/rh_candidate_history",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_conversation_manager": {
+    "tipo": "interno",
+    "nombre": "rh_conversation_manager",
+    "vertical": "vertical_rh",
+    "descripcion": "Gestiona estado de conversacion activa: obtener, actualizar o reiniciar",
+    "path": "skills/internos/rh_conversation_manager",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_report_generator": {
+    "tipo": "interno",
+    "nombre": "rh_report_generator",
+    "vertical": "vertical_rh",
+    "descripcion": "Genera reportes de pipeline, scores y conversion por vacante o empresa",
+    "path": "skills/internos/rh_report_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_job_post_generator": {
+    "tipo": "interno",
+    "nombre": "rh_job_post_generator",
+    "vertical": "vertical_rh",
+    "descripcion": "Genera texto de vacante listo para publicar usando IA",
+    "path": "skills/internos/rh_job_post_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_questionnaire_generator": {
+    "tipo": "interno",
+    "nombre": "rh_questionnaire_generator",
+    "vertical": "vertical_rh",
+    "descripcion": "Genera cuestionario de candidato segun profundidad, canal y vacante usando IA",
+    "path": "skills/internos/rh_questionnaire_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_seed_generator": {
+    "tipo": "interno",
+    "nombre": "rh_seed_generator",
+    "vertical": "vertical_rh",
+    "descripcion": "Genera datos de prueba RH en batch usando IA. Registra IDs en test_seeds.",
+    "path": "skills/internos/rh_seed_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_seed_cleaner": {
+    "tipo": "interno",
+    "nombre": "rh_seed_cleaner",
+    "vertical": "vertical_rh",
+    "descripcion": "Borra todos los registros de prueba de un seed_label en orden FK.",
+    "path": "skills/internos/rh_seed_cleaner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_1_run": {
+    "tipo": "interno",
+    "nombre": "rh_1_run",
+    "vertical": "vertical_rh",
+    "descripcion": "Orquestador master del modo RH-1: comandos de manager y flujo completo de candidatos.",
+    "path": "skills/internos/rh_1_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "connect_supabase": {
+    "tipo": "interno",
+    "nombre": "connect_supabase",
+    "vertical": "factory_supabase",
+    "descripcion": "Valida credenciales y conectividad basica de Supabase",
+    "path": "skills/internos/connect_supabase",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "supabase_insert_row": {
+    "tipo": "interno",
+    "nombre": "supabase_insert_row",
+    "vertical": "factory_supabase",
+    "descripcion": "Inserta filas en Supabase via REST",
+    "path": "skills/internos/supabase_insert_row",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "supabase_query_table": {
+    "tipo": "interno",
+    "nombre": "supabase_query_table",
+    "vertical": "factory_supabase",
+    "descripcion": "Consulta filas en Supabase via REST",
+    "path": "skills/internos/supabase_query_table",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "supabase_update_row": {
+    "tipo": "interno",
+    "nombre": "supabase_update_row",
+    "vertical": "factory_supabase",
+    "descripcion": "Actualiza filas en Supabase via REST",
+    "path": "skills/internos/supabase_update_row",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "supabase_delete_row": {
+    "tipo": "interno",
+    "nombre": "supabase_delete_row",
+    "vertical": "factory_supabase",
+    "descripcion": "Elimina filas en Supabase via REST",
+    "path": "skills/internos/supabase_delete_row",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "add_agent_memory_supabase": {
+    "tipo": "interno",
+    "nombre": "add_agent_memory_supabase",
+    "vertical": "factory_supabase",
+    "descripcion": "Agrega memoria persistente Supabase a un agente",
+    "path": "skills/internos/add_agent_memory_supabase",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "supabase_schema_inspect": {
+    "tipo": "interno",
+    "nombre": "supabase_schema_inspect",
+    "vertical": "factory_supabase",
+    "descripcion": "Inspecciona tablas y columnas de Supabase",
+    "path": "skills/internos/supabase_schema_inspect",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "supabase_rpc": {
+    "tipo": "interno",
+    "nombre": "supabase_rpc",
+    "vertical": "factory_supabase",
+    "descripcion": "Llama funciones RPC de Supabase",
+    "path": "skills/internos/supabase_rpc",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "text_cleaner": {
+    "tipo": "interno",
+    "nombre": "text_cleaner",
+    "vertical": "utils",
+    "descripcion": "Limpia y normaliza texto",
+    "path": "skills/internos/text_cleaner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "json_formatter": {
+    "tipo": "interno",
+    "nombre": "json_formatter",
+    "vertical": "utils",
+    "descripcion": "Valida y formatea JSON",
+    "path": "skills/internos/json_formatter",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "csv_parser": {
+    "tipo": "interno",
+    "nombre": "csv_parser",
+    "vertical": "utils",
+    "descripcion": "Convierte CSV a filas o JSON",
+    "path": "skills/internos/csv_parser",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "markdown_table": {
+    "tipo": "interno",
+    "nombre": "markdown_table",
+    "vertical": "utils",
+    "descripcion": "Convierte filas a tabla Markdown",
+    "path": "skills/internos/markdown_table",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "date_parser": {
+    "tipo": "interno",
+    "nombre": "date_parser",
+    "vertical": "utils",
+    "descripcion": "Interpreta fechas simples",
+    "path": "skills/internos/date_parser",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "money_parser": {
+    "tipo": "interno",
+    "nombre": "money_parser",
+    "vertical": "utils",
+    "descripcion": "Extrae montos de texto",
+    "path": "skills/internos/money_parser",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "snake_case_generator": {
+    "tipo": "interno",
+    "nombre": "snake_case_generator",
+    "vertical": "utils",
+    "descripcion": "Genera identificadores snake_case",
+    "path": "skills/internos/snake_case_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "list_deduper": {
+    "tipo": "interno",
+    "nombre": "list_deduper",
+    "vertical": "utils",
+    "descripcion": "Quita duplicados preservando orden",
+    "path": "skills/internos/list_deduper",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "simple_calculator": {
+    "tipo": "interno",
+    "nombre": "simple_calculator",
+    "vertical": "utils",
+    "descripcion": "Calculadora segura de operaciones basicas",
+    "path": "skills/internos/simple_calculator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "memory_summarizer": {
+    "tipo": "interno",
+    "nombre": "memory_summarizer",
+    "vertical": "utils",
+    "descripcion": "Resume memorias en bullets por reglas simples",
+    "path": "skills/internos/memory_summarizer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "list_skills_by_vertical": {
+    "tipo": "interno",
+    "nombre": "list_skills_by_vertical",
+    "vertical": "factory_skills",
+    "descripcion": "Agrupa los skills registrados por vertical",
+    "path": "skills/internos/list_skills_by_vertical",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "export_skill_pack": {
+    "tipo": "interno",
+    "nombre": "export_skill_pack",
+    "vertical": "factory_skills",
+    "descripcion": "Exporta un paquete de skills por vertical",
+    "path": "skills/internos/export_skill_pack",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "verify_skill_pack": {
+    "tipo": "interno",
+    "nombre": "verify_skill_pack",
+    "vertical": "factory_skills",
+    "descripcion": "Verifica la estructura de un skill pack exportado",
+    "path": "skills/internos/verify_skill_pack",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "carousel_generator": {
+    "tipo": "interno",
+    "nombre": "carousel_generator",
+    "vertical": "marketing_ai",
+    "descripcion": "Genera contenido de carrusel para Instagram y LinkedIn",
+    "path": "skills/internos/carousel_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "campaign_planner": {
+    "tipo": "interno",
+    "nombre": "campaign_planner",
+    "vertical": "marketing_ai",
+    "descripcion": "Planea campanas de marketing completas con fases, canales y KPIs",
+    "path": "skills/internos/campaign_planner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "copy_generator": {
+    "tipo": "interno",
+    "nombre": "copy_generator",
+    "vertical": "marketing_ai",
+    "descripcion": "Genera 3 variantes de copy para ads, posts, emails y landing pages",
+    "path": "skills/internos/copy_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "content_calendar_generator": {
+    "tipo": "interno",
+    "nombre": "content_calendar_generator",
+    "vertical": "marketing_ai",
+    "descripcion": "Genera calendario de contenido mensual por red social",
+    "path": "skills/internos/content_calendar_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ad_creator": {
+    "tipo": "interno",
+    "nombre": "ad_creator",
+    "vertical": "marketing_ai",
+    "descripcion": "Crea anuncios para Facebook, Instagram, Google y LinkedIn",
+    "path": "skills/internos/ad_creator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "email_campaign_generator": {
+    "tipo": "interno",
+    "nombre": "email_campaign_generator",
+    "vertical": "marketing_ai",
+    "descripcion": "Genera secuencias de emails para nurture, onboarding, reactivacion y venta",
+    "path": "skills/internos/email_campaign_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "hashtag_generator": {
+    "tipo": "interno",
+    "nombre": "hashtag_generator",
+    "vertical": "marketing_ai",
+    "descripcion": "Genera hashtags estrategicos agrupados por alcance",
+    "path": "skills/internos/hashtag_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "buyer_persona_generator": {
+    "tipo": "interno",
+    "nombre": "buyer_persona_generator",
+    "vertical": "marketing_ai",
+    "descripcion": "Crea buyer personas detalladas con demograficos, metas y objeciones",
+    "path": "skills/internos/buyer_persona_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "brand_voice_analyzer": {
+    "tipo": "interno",
+    "nombre": "brand_voice_analyzer",
+    "vertical": "marketing_ai",
+    "descripcion": "Analiza y define la voz de marca: tono, personalidad y vocabulario",
+    "path": "skills/internos/brand_voice_analyzer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "hook_generator": {
+    "tipo": "interno",
+    "nombre": "hook_generator",
+    "vertical": "marketing_ai",
+    "descripcion": "Genera hooks virales para video, post, reel y email",
+    "path": "skills/internos/hook_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_create_repo": {
+    "tipo": "interno",
+    "nombre": "github_create_repo",
+    "vertical": "factory_github",
+    "descripcion": "Crea un repositorio en GitHub para usuario u organizacion",
+    "path": "skills/internos/github_create_repo",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_get_file": {
+    "tipo": "interno",
+    "nombre": "github_get_file",
+    "vertical": "factory_github",
+    "descripcion": "Obtiene el contenido de un archivo en un repositorio de GitHub",
+    "path": "skills/internos/github_get_file",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_list_files": {
+    "tipo": "interno",
+    "nombre": "github_list_files",
+    "vertical": "factory_github",
+    "descripcion": "Lista archivos y carpetas en un directorio de un repositorio de GitHub",
+    "path": "skills/internos/github_list_files",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_delete_file": {
+    "tipo": "interno",
+    "nombre": "github_delete_file",
+    "vertical": "factory_github",
+    "descripcion": "Elimina un archivo de un repositorio de GitHub",
+    "path": "skills/internos/github_delete_file",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_create_branch": {
+    "tipo": "interno",
+    "nombre": "github_create_branch",
+    "vertical": "factory_github",
+    "descripcion": "Crea una rama en un repositorio de GitHub a partir de una rama base",
+    "path": "skills/internos/github_create_branch",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_repo_info": {
+    "tipo": "interno",
+    "nombre": "github_repo_info",
+    "vertical": "factory_github",
+    "descripcion": "Obtiene informacion de un repositorio de GitHub, incluye exists:false si no existe",
+    "path": "skills/internos/github_repo_info",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_create_pr": {
+    "tipo": "interno",
+    "nombre": "github_create_pr",
+    "vertical": "factory_github",
+    "descripcion": "Crea un pull request en un repositorio de GitHub",
+    "path": "skills/internos/github_create_pr",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_merge_branch": {
+    "tipo": "interno",
+    "nombre": "github_merge_branch",
+    "vertical": "factory_github",
+    "descripcion": "Mergea una rama en otra dentro de un repositorio de GitHub",
+    "path": "skills/internos/github_merge_branch",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_list_repos": {
+    "tipo": "interno",
+    "nombre": "github_list_repos",
+    "vertical": "factory_github",
+    "descripcion": "Lista repositorios de GitHub para un usuario u organizacion",
+    "path": "skills/internos/github_list_repos",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_delete_repo": {
+    "tipo": "interno",
+    "nombre": "github_delete_repo",
+    "vertical": "factory_github",
+    "descripcion": "Elimina un repositorio de GitHub, requiere confirm:true",
+    "path": "skills/internos/github_delete_repo",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_add_secret": {
+    "tipo": "interno",
+    "nombre": "github_add_secret",
+    "vertical": "factory_github",
+    "descripcion": "Agrega o actualiza un secret de Actions en un repositorio de GitHub",
+    "path": "skills/internos/github_add_secret",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_copy_folder": {
+    "tipo": "interno",
+    "nombre": "github_copy_folder",
+    "vertical": "factory_github",
+    "descripcion": "Copia una carpeta completa de un repositorio a otro en GitHub",
+    "path": "skills/internos/github_copy_folder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "render_create_service": {
+    "tipo": "interno",
+    "nombre": "render_create_service",
+    "vertical": "factory_render",
+    "descripcion": "Crea un web service en Render conectado a un repositorio de GitHub",
+    "path": "skills/internos/render_create_service",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "render_set_env_vars": {
+    "tipo": "interno",
+    "nombre": "render_set_env_vars",
+    "vertical": "factory_render",
+    "descripcion": "Configura variables de entorno en un servicio de Render, con merge opcional",
+    "path": "skills/internos/render_set_env_vars",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "render_get_service": {
+    "tipo": "interno",
+    "nombre": "render_get_service",
+    "vertical": "factory_render",
+    "descripcion": "Obtiene informacion y URL de un servicio de Render por ID o nombre",
+    "path": "skills/internos/render_get_service",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "render_trigger_deploy": {
+    "tipo": "interno",
+    "nombre": "render_trigger_deploy",
+    "vertical": "factory_render",
+    "descripcion": "Dispara un deploy manual en un servicio de Render",
+    "path": "skills/internos/render_trigger_deploy",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "render_list_services": {
+    "tipo": "interno",
+    "nombre": "render_list_services",
+    "vertical": "factory_render",
+    "descripcion": "Lista todos los servicios de Render con ID, nombre, URL y estado",
+    "path": "skills/internos/render_list_services",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "render_delete_service": {
+    "tipo": "interno",
+    "nombre": "render_delete_service",
+    "vertical": "factory_render",
+    "descripcion": "Elimina un servicio de Render, requiere confirm:true",
+    "path": "skills/internos/render_delete_service",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "telegram_get_bot_info": {
+    "tipo": "interno",
+    "nombre": "telegram_get_bot_info",
+    "vertical": "factory_telegram",
+    "descripcion": "Valida un token de bot Telegram y devuelve id, username y nombre",
+    "path": "skills/internos/telegram_get_bot_info",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "telegram_set_webhook": {
+    "tipo": "interno",
+    "nombre": "telegram_set_webhook",
+    "vertical": "factory_telegram",
+    "descripcion": "Configura el webhook de un bot Telegram apuntando a una URL publica",
+    "path": "skills/internos/telegram_set_webhook",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "telegram_get_webhook_info": {
+    "tipo": "interno",
+    "nombre": "telegram_get_webhook_info",
+    "vertical": "factory_telegram",
+    "descripcion": "Verifica la configuracion actual del webhook de un bot Telegram",
+    "path": "skills/internos/telegram_get_webhook_info",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "telegram_send_message": {
+    "tipo": "interno",
+    "nombre": "telegram_send_message",
+    "vertical": "factory_telegram",
+    "descripcion": "Envia un mensaje via bot Telegram a un chat_id especifico",
+    "path": "skills/internos/telegram_send_message",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "render_deploy_status": {
+    "tipo": "interno",
+    "nombre": "render_deploy_status",
+    "vertical": "factory_render",
+    "descripcion": "Espera y verifica el estado de un deploy en Render hasta que este live o falle",
+    "path": "skills/internos/render_deploy_status",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_update_file": {
+    "tipo": "interno",
+    "nombre": "github_update_file",
+    "vertical": "factory_github",
+    "descripcion": "Actualiza el contenido de un archivo existente en un repositorio de GitHub",
+    "path": "skills/internos/github_update_file",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_list_branches": {
+    "tipo": "interno",
+    "nombre": "github_list_branches",
+    "vertical": "factory_github",
+    "descripcion": "Lista las ramas de un repositorio de GitHub con su SHA y estado de proteccion",
+    "path": "skills/internos/github_list_branches",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_factory": {
+    "tipo": "interno",
+    "nombre": "new_factory",
+    "vertical": "factory",
+    "descripcion": "Crea una fabrica completa en modo local (carpetas) o cloud (GitHub + Render + Telegram webhook)",
+    "path": "skills/internos/new_factory",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "verify_new_factory": {
+    "tipo": "interno",
+    "nombre": "verify_new_factory",
+    "vertical": "factory",
+    "descripcion": "Verifica la estructura de una fabrica generada por new_factory",
+    "path": "skills/internos/verify_new_factory",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_factory_cloud": {
+    "tipo": "interno",
+    "nombre": "new_factory_cloud",
+    "vertical": "factory",
+    "descripcion": "Publica una fabrica local limpia en GitHub, Render y Telegram",
+    "path": "skills/internos/new_factory_cloud",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_factory_github": {
+    "tipo": "interno",
+    "nombre": "new_factory_github",
+    "vertical": "factory",
+    "descripcion": "Crea repo GitHub y sube todos los archivos de una fabrica local",
+    "path": "skills/internos/new_factory_github",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_factory_render": {
+    "tipo": "interno",
+    "nombre": "new_factory_render",
+    "vertical": "factory",
+    "descripcion": "Crea servicio Render desde un repo GitHub y espera que quede live",
+    "path": "skills/internos/new_factory_render",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_factory_telegram": {
+    "tipo": "interno",
+    "nombre": "new_factory_telegram",
+    "vertical": "factory",
+    "descripcion": "Registra bot admin, sube archivos al repo y configura webhook Telegram",
+    "path": "skills/internos/new_factory_telegram",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_factory_supabase": {
+    "tipo": "interno",
+    "nombre": "new_factory_supabase",
+    "vertical": "factory",
+    "descripcion": "Crea tablas base de Supabase para una nueva fabrica",
+    "path": "skills/internos/new_factory_supabase",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_factory_cloud_v2": {
+    "tipo": "interno",
+    "nombre": "new_factory_cloud_v2",
+    "vertical": "factory",
+    "descripcion": "Orquestador: crea fabrica completa en cloud (GitHub + Render + Telegram + Supabase)",
+    "path": "skills/internos/new_factory_cloud_v2",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_refresh_connection": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_refresh_connection",
+    "descripcion": "Refresca metadata de pagina, cuenta Instagram y token debug",
+    "path": "skills/internos/meta_refresh_connection",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_reel_script": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_reel_script",
+    "descripcion": "Genera guion completo para Reel con hook optimizado para watch time",
+    "path": "skills/internos/ig_reel_script",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_calendar_generator": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_calendar_generator",
+    "descripcion": "Genera calendario editorial mensual de Instagram por semana con formatos y objetivos",
+    "path": "skills/internos/ig_calendar_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_reply_comment": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_reply_comment",
+    "descripcion": "Responde un comentario de Instagram con un mensaje especifico via Graph API",
+    "path": "skills/internos/ig_reply_comment",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_get_permissions": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_get_permissions",
+    "descripcion": "Lista permisos asociados al access token actual",
+    "path": "skills/internos/meta_get_permissions",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_caption_generator": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_caption_generator",
+    "descripcion": "Genera un caption completo para Instagram con hook, cuerpo, emojis y CTA",
+    "path": "skills/internos/ig_caption_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_debug_token": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_debug_token",
+    "descripcion": "Inspecciona un access token de Meta Graph API con debug_token",
+    "path": "skills/internos/meta_debug_token",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_reply_dm": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_reply_dm",
+    "descripcion": "Envia un mensaje directo a un usuario de Instagram via Instagram Messaging API",
+    "path": "skills/internos/ig_reply_dm",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_post_carousel": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_post_carousel",
+    "descripcion": "Publica un carrusel de hasta 10 imagenes en Instagram via Meta Graph API",
+    "path": "skills/internos/ig_post_carousel",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_connection_check": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_connection_check",
+    "descripcion": "Valida una conexion Meta y calcula readiness para Instagram",
+    "path": "skills/internos/meta_connection_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_get_post_insights": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_get_post_insights",
+    "descripcion": "Obtiene metricas de alcance y engagement de un post de Instagram via Graph API",
+    "path": "skills/internos/ig_get_post_insights",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_top_posts_analyzer": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_top_posts_analyzer",
+    "descripcion": "Identifica los posts con mejor rendimiento de una cuenta de Instagram segun una metrica",
+    "path": "skills/internos/ig_top_posts_analyzer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_carousel_builder": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_carousel_builder",
+    "descripcion": "Genera estructura de copy slide por slide para carruseles de Instagram",
+    "path": "skills/internos/ig_carousel_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_content_brief": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_content_brief",
+    "descripcion": "Genera brief de contenido para Instagram por objetivo de campana",
+    "path": "skills/internos/ig_content_brief",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_get_auth_url": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_get_auth_url",
+    "descripcion": "Construye una URL OAuth de Meta para autorizar permisos de Instagram",
+    "path": "skills/internos/meta_get_auth_url",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_list_pages": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_list_pages",
+    "descripcion": "Lista paginas Meta accesibles por el token",
+    "path": "skills/internos/meta_list_pages",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_get_instagram_account": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_get_instagram_account",
+    "descripcion": "Obtiene la cuenta Instagram Business conectada a una pagina Meta",
+    "path": "skills/internos/meta_get_instagram_account",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_schedule_post": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_schedule_post",
+    "descripcion": "Programa una publicacion de Instagram para una fecha y hora futura via Meta Graph API",
+    "path": "skills/internos/ig_schedule_post",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_story_script": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_story_script",
+    "descripcion": "Genera guion de historia de Instagram con frames, stickers interactivos y CTA",
+    "path": "skills/internos/ig_story_script",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_alt_text_generator": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_alt_text_generator",
+    "descripcion": "Genera alt text descriptivo para imagenes de Instagram para accesibilidad y SEO",
+    "path": "skills/internos/ig_alt_text_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_best_time_selector": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_best_time_selector",
+    "descripcion": "Calcula los mejores horarios de publicacion en Instagram segun formato y region de audiencia",
+    "path": "skills/internos/ig_best_time_selector",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_hashtag_generator": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_hashtag_generator",
+    "descripcion": "Genera sets de hashtags estrategicos para Instagram agrupados por alcance",
+    "path": "skills/internos/ig_hashtag_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_post_image": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_post_image",
+    "descripcion": "Publica una imagen en Instagram via Meta Graph API con caption y alt text opcional",
+    "path": "skills/internos/ig_post_image",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_revoke_connection": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_revoke_connection",
+    "descripcion": "Revoca permisos Meta del token conectado",
+    "path": "skills/internos/meta_revoke_connection",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_extend_token": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_extend_token",
+    "descripcion": "Extiende un token corto de Meta usando fb_exchange_token",
+    "path": "skills/internos/meta_extend_token",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_get_auth_token": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_get_auth_token",
+    "descripcion": "Intercambia un token de corta duracion por un token de larga duracion de Meta",
+    "path": "skills/internos/ig_get_auth_token",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_exchange_code": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_exchange_code",
+    "descripcion": "Intercambia un code OAuth de Meta por access_token",
+    "path": "skills/internos/meta_exchange_code",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_get_account_insights": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_get_account_insights",
+    "descripcion": "Obtiene metricas de cuenta de Instagram via Graph API",
+    "path": "skills/internos/ig_get_account_insights",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ig_post_reel": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "ig_post_reel",
+    "descripcion": "Publica un Reel en Instagram via Meta Graph API con polling de procesamiento",
+    "path": "skills/internos/ig_post_reel",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_store_connection": {
+    "vertical": "vertical_meta",
+    "tipo": "interno",
+    "nombre": "meta_store_connection",
+    "descripcion": "Valida y normaliza un payload portable de conexion Meta",
+    "path": "skills/internos/meta_store_connection",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_stats": {
+    "tipo": "interno",
+    "nombre": "rh_stats",
+    "vertical": "vertical_rh",
+    "kind": "data",
+    "descripcion": "KPIs generales del sistema RH: vacantes, candidatos, scores, seeds.",
+    "path": "skills/internos/rh_stats",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_list_vacantes": {
+    "tipo": "interno",
+    "nombre": "rh_list_vacantes",
+    "vertical": "vertical_rh",
+    "kind": "data",
+    "descripcion": "Lista filtrable de vacantes (empresa_id, estado, tipo, buscar, limit).",
+    "path": "skills/internos/rh_list_vacantes",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_pipeline_view": {
+    "tipo": "interno",
+    "nombre": "rh_pipeline_view",
+    "vertical": "vertical_rh",
+    "kind": "data",
+    "descripcion": "Pipeline RH agrupado por etapa. Acepta empresa_id y vacante_id opcional.",
+    "path": "skills/internos/rh_pipeline_view",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  }
 }

@@ -235,6 +235,18 @@ def process_bot_update(bot_name: str, update: dict, background_tasks: Background
 load_env_file()
 app = FastAPI(title="Factory API", version="0.1.0")
 
+_data_runner = None
+
+def _get_data_runner():
+    global _data_runner
+    if _data_runner is None:
+        from factory.engine import SkillLoader, SkillRunner
+        ext = FACTORY_DIR / "skills" / "externos"
+        ext.mkdir(parents=True, exist_ok=True)
+        loader = SkillLoader(internal_root=FACTORY_DIR / "skills" / "internos", external_root=ext)
+        _data_runner = SkillRunner(loader)
+    return _data_runner
+
 
 @app.get("/")
 def root():
@@ -253,6 +265,18 @@ def health():
         "skills": len(skills),
         "agents": len(agents),
     }
+
+
+@app.get("/data/{skill_name}")
+def data(skill_name: str, request: Request):
+    params = dict(request.query_params)
+    try:
+        result = _get_data_runner().run(skill_name, params, source="internos")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error", "error"))
+    return result.get("data", {})
 
 
 @app.post("/webhook/{bot_name}")

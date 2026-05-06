@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_stats",
+  "version": "0.1.0",
+  "kind": "data",
+  "vertical": "vertical_rh",
+  "entrypoint": "skill.py",
+  "description": "KPIs generales del sistema RH: vacantes, candidatos, scores, seeds.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

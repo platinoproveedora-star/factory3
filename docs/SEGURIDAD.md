@@ -84,6 +84,37 @@ Después de rotar: actualizar `.env` local y variables en Render.
 
 ---
 
+## Regla: todo lo nuevo sigue el patrón genérico
+
+Cualquier cosa que se agregue a la fábrica debe seguir estas reglas:
+
+1. **Skills** — toda lógica va en un skill (`skill.py` + `service.py`). Nunca lógica inline en bot.py o factory_api.py.
+2. **Bot genérico** — `bot.py` ya es genérico: lee modos desde `_MODES` dict y delega a skills. Al agregar una vertical nueva, solo se agrega una entrada al dict.
+3. **Datos como skills** — toda consulta a Supabase que use el bot O el dashboard va como skill de datos (`rh_stats`, `rh_list_vacantes`, etc.) expuesto vía `GET /data/{skill_name}` en `factory_api.py`.
+4. **Dashboard genérico** — `dashboard/app.py` ya tiene estructura base genérica. Al agregar una vertical, se agrega una página que consume `/data/{skill}`.
+5. **Doble ID** — toda tabla nueva tiene `id` UUID (interno) + `folio` visible (VAC-001, CAND-001).
+
+### Pendiente: skills de datos + endpoint genérico
+
+Lo siguiente en construir (vertical_rh en curso):
+
+- [ ] Skill `rh_stats` — KPIs: total vacantes, candidatos, score promedio, seeds
+- [ ] Skill `rh_list_vacantes` — lista filtrable de vacantes con folio
+- [ ] Skill `rh_pipeline_view` — candidatos agrupados por etapa
+- [ ] `GET /data/{skill_name}` en `factory_api.py` — endpoint genérico que invoca cualquier skill de datos
+
+Una vez listos, el dashboard y el bot consumen los mismos skills. Sin lógica de DB duplicada.
+
+### Pendiente (después de vertical_rh estable): mejoras en `new_factory`
+
+- [ ] Crear servicio Render del dashboard además del API
+- [ ] Copiar carpeta `dashboard/` al crear fábrica nueva
+- [ ] Agregar `"vertical_rh": ["RH_EMPRESA_ID", "DASHBOARD_URL"]` a `VERTICAL_ENV_VARS`
+- [ ] Correr migrations SQL de verticales al crear fábrica
+- [ ] Crear `factory/skills/externos/.gitkeep` automáticamente
+
+---
+
 ## Skills para crear una nueva fábrica
 
 Este es el flujo completo para crear factory4 (o cualquier nueva fábrica) usando factory3 como base.
