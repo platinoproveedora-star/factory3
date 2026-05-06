@@ -68,9 +68,11 @@ def _run_mode_skill(mode: str, update: dict, state: dict) -> dict:
     from factory.engine import SkillLoader, SkillRunner
 
     base = Path(__file__).parent.parent.parent.parent  # factory3 root
+    ext  = base / "factory" / "skills" / "externos"
+    ext.mkdir(parents=True, exist_ok=True)
     loader = SkillLoader(
         internal_root=base / "factory" / "skills" / "internos",
-        external_root=base / "factory" / "skills" / "externos",
+        external_root=ext,
     )
     runner = SkillRunner(loader)
     result = runner.run(f"{mode}_run", {"update": update, "state": state}, source="internos")

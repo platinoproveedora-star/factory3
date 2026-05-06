@@ -26,11 +26,16 @@ _AYUDA = (
 class Rh1RunService:
 
     def __init__(self):
-        loader = SkillLoader(
-            internal_root=_BASE / "factory" / "skills" / "internos",
-            external_root=_BASE / "factory" / "skills" / "externos",
-        )
-        self._runner = SkillRunner(loader)
+        self._runner = None
+
+    def _get_runner(self):
+        if self._runner is None:
+            loader = SkillLoader(
+                internal_root=_BASE / "factory" / "skills" / "internos",
+                external_root=_BASE / "factory" / "skills" / "externos",
+            )
+            self._runner = SkillRunner(loader)
+        return self._runner
 
     def ejecutar(self, context: dict) -> dict:
         update    = context.get("update", {})
@@ -121,7 +126,7 @@ class Rh1RunService:
         return self._ok(f"Vacante activa: {titulo}\n\nEscribe cualquier texto para simular un candidato.", new_state)
 
     def _cmd_ranking(self, vacante_id: str, state: dict) -> dict:
-        r = self._runner.run(
+        r = self._get_runner().run(
             "rh_candidate_ranking",
             {"vacante_id": vacante_id, "limite": 10},
             source="internos",
@@ -143,7 +148,7 @@ class Rh1RunService:
         return self._ok("\n".join(lines), state)
 
     def _cmd_reporte(self, empresa_id: str, vacante_id: str, state: dict) -> dict:
-        r = self._runner.run(
+        r = self._get_runner().run(
             "rh_report_generator",
             {"tipo": "pipeline", "vacante_id": vacante_id, "empresa_id": empresa_id},
             source="internos",
@@ -166,7 +171,7 @@ class Rh1RunService:
 
     def _cmd_seed(self, empresa_id: str, n: int, state: dict) -> dict:
         raw_id = empresa_id.removeprefix("seed_")
-        r = self._runner.run(
+        r = self._get_runner().run(
             "rh_seed_generator",
             {
                 "empresa_id":                  raw_id,
@@ -198,7 +203,7 @@ class Rh1RunService:
         if not label:
             return self._ok("Uso: /limpiar <seed_label>  (ej: /limpiar seed_20250504_120000)", state)
         raw_id = empresa_id.removeprefix("seed_")
-        r = self._runner.run(
+        r = self._get_runner().run(
             "rh_seed_cleaner",
             {"seed_label": label, "empresa_id": raw_id, "dry_run": False},
             source="internos",
@@ -219,7 +224,7 @@ class Rh1RunService:
         user_id       = str((message.get("from") or {}).get("id", ""))
 
         # 1. Route
-        route_r = self._runner.run(
+        route_r = self._get_runner().run(
             "bot_inbox_router",
             {
                 "canal":       "telegram",
@@ -254,7 +259,7 @@ class Rh1RunService:
             )
 
         # 3. Form capture
-        form_r = self._runner.run(
+        form_r = self._get_runner().run(
             "bot_form_capture",
             {
                 "conversation_id": conversation_id,
