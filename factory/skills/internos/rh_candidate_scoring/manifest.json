@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_candidate_scoring",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Puntua al candidato (0-100) usando IA segun requisitos, experiencia, ubicacion y disponibilidad. Guarda en Supabase.",
+  "requires_env": ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

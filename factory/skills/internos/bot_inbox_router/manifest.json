@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "bot_inbox_router",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Router de entrada multicanal — identifica candidato, crea o recupera conversacion y deriva al flujo correcto.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

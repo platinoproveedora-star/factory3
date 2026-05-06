@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_questionnaire_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera cuestionario de candidato segun profundidad (simple/medio/robusto/custom), canal y vacante usando IA.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

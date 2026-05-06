@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_seed_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera datos de prueba RH (vacantes, candidatos, scores, pipeline) usando IA en batch. Registra IDs en test_seeds.",
+  "requires_env": ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

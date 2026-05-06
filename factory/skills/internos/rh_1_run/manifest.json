@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_1_run",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquestador master del modo RH-1: maneja comandos y flujo completo de candidatos en el bot de Telegram.",
+  "requires_env": ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

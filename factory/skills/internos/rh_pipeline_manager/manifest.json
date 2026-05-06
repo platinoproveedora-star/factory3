@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_pipeline_manager",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Maneja etapas y estatus del candidato en pipeline. Registra historial de cambios.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

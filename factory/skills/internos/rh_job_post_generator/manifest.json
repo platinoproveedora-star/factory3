@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_job_post_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera texto de vacante listo para publicar usando IA: titulo, descripcion, requisitos y CTA.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

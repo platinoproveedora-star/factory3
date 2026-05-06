@@ -98,6 +98,186 @@
                                "entrypoint":  "skill.py",
                                "version":  "0.1.0"
                            },
+    "supabase_sql_execute":  {
+                                 "tipo":  "interno",
+                                 "nombre":  "supabase_sql_execute",
+                                 "vertical":  "factory_supabase",
+                                 "descripcion":  "Ejecuta SQL arbitrario en Supabase via Management API (CREATE, ALTER, INDEX, etc.)",
+                                 "path":  "skills/internos/supabase_sql_execute",
+                                 "entrypoint":  "skill.py",
+                                 "version":  "0.1.0"
+                             },
+    "bot_inbox_router":  {
+                             "tipo":  "interno",
+                             "nombre":  "bot_inbox_router",
+                             "vertical":  "vertical_bot",
+                             "descripcion":  "Router de entrada multicanal — identifica candidato, crea o recupera conversacion y deriva al flujo correcto",
+                             "path":  "skills/internos/bot_inbox_router",
+                             "entrypoint":  "skill.py",
+                             "version":  "0.1.0"
+                         },
+    "bot_form_capture":  {
+                             "tipo":  "interno",
+                             "nombre":  "bot_form_capture",
+                             "vertical":  "vertical_bot",
+                             "descripcion":  "Ejecuta cuestionario paso a paso — guarda respuestas en Supabase y devuelve la siguiente pregunta",
+                             "path":  "skills/internos/bot_form_capture",
+                             "entrypoint":  "skill.py",
+                             "version":  "0.1.0"
+                         },
+    "rh_vacante_store":  {
+                             "tipo":  "interno",
+                             "nombre":  "rh_vacante_store",
+                             "vertical":  "vertical_rh",
+                             "descripcion":  "Crea, lee, lista y actualiza vacantes en Supabase",
+                             "path":  "skills/internos/rh_vacante_store",
+                             "entrypoint":  "skill.py",
+                             "version":  "0.1.0"
+                         },
+    "rh_candidate_profile_builder":  {
+                                          "tipo":  "interno",
+                                          "nombre":  "rh_candidate_profile_builder",
+                                          "vertical":  "vertical_rh",
+                                          "descripcion":  "Construye perfil estructurado del candidato desde sus respuestas al cuestionario",
+                                          "path":  "skills/internos/rh_candidate_profile_builder",
+                                          "entrypoint":  "skill.py",
+                                          "version":  "0.1.0"
+                                      },
+    "rh_basic_validation":  {
+                                 "tipo":  "interno",
+                                 "nombre":  "rh_basic_validation",
+                                 "vertical":  "vertical_rh",
+                                 "descripcion":  "Valida datos minimos del candidato: nombre, contacto y disponibilidad",
+                                 "path":  "skills/internos/rh_basic_validation",
+                                 "entrypoint":  "skill.py",
+                                 "version":  "0.1.0"
+                             },
+    "rh_duplicate_detector":  {
+                                   "tipo":  "interno",
+                                   "nombre":  "rh_duplicate_detector",
+                                   "vertical":  "vertical_rh",
+                                   "descripcion":  "Detecta candidatos duplicados por telefono, email o canal_user_id",
+                                   "path":  "skills/internos/rh_duplicate_detector",
+                                   "entrypoint":  "skill.py",
+                                   "version":  "0.1.0"
+                               },
+    "rh_knockout_filter":  {
+                               "tipo":  "interno",
+                               "nombre":  "rh_knockout_filter",
+                               "vertical":  "vertical_rh",
+                               "descripcion":  "Aplica filtros obligatorios al perfil del candidato — pasa o no pasa",
+                               "path":  "skills/internos/rh_knockout_filter",
+                               "entrypoint":  "skill.py",
+                               "version":  "0.1.0"
+                           },
+    "rh_candidate_scoring":  {
+                                 "tipo":  "interno",
+                                 "nombre":  "rh_candidate_scoring",
+                                 "vertical":  "vertical_rh",
+                                 "descripcion":  "Puntua al candidato (0-100) con IA segun requisitos, experiencia, ubicacion y disponibilidad",
+                                 "path":  "skills/internos/rh_candidate_scoring",
+                                 "entrypoint":  "skill.py",
+                                 "version":  "0.1.0"
+                             },
+    "rh_pipeline_manager":  {
+                                 "tipo":  "interno",
+                                 "nombre":  "rh_pipeline_manager",
+                                 "vertical":  "vertical_rh",
+                                 "descripcion":  "Maneja etapas y estatus del candidato en pipeline. Registra historial.",
+                                 "path":  "skills/internos/rh_pipeline_manager",
+                                 "entrypoint":  "skill.py",
+                                 "version":  "0.1.0"
+                             },
+    "rh_candidate_ranking":  {
+                                 "tipo":  "interno",
+                                 "nombre":  "rh_candidate_ranking",
+                                 "vertical":  "vertical_rh",
+                                 "descripcion":  "Ordena candidatos de una vacante por score descendente",
+                                 "path":  "skills/internos/rh_candidate_ranking",
+                                 "entrypoint":  "skill.py",
+                                 "version":  "0.1.0"
+                             },
+    "rh_candidate_search":  {
+                                 "tipo":  "interno",
+                                 "nombre":  "rh_candidate_search",
+                                 "vertical":  "vertical_rh",
+                                 "descripcion":  "Busca candidatos por filtros: vacante, estado, canal, empresa, nombre",
+                                 "path":  "skills/internos/rh_candidate_search",
+                                 "entrypoint":  "skill.py",
+                                 "version":  "0.1.0"
+                             },
+    "rh_candidate_history":  {
+                                 "tipo":  "interno",
+                                 "nombre":  "rh_candidate_history",
+                                 "vertical":  "vertical_rh",
+                                 "descripcion":  "Historial completo de un candidato: perfil, respuestas, scores, pipeline y eventos",
+                                 "path":  "skills/internos/rh_candidate_history",
+                                 "entrypoint":  "skill.py",
+                                 "version":  "0.1.0"
+                             },
+    "rh_conversation_manager":  {
+                                     "tipo":  "interno",
+                                     "nombre":  "rh_conversation_manager",
+                                     "vertical":  "vertical_rh",
+                                     "descripcion":  "Gestiona estado de conversacion activa: obtener, actualizar o reiniciar",
+                                     "path":  "skills/internos/rh_conversation_manager",
+                                     "entrypoint":  "skill.py",
+                                     "version":  "0.1.0"
+                                 },
+    "rh_report_generator":  {
+                                 "tipo":  "interno",
+                                 "nombre":  "rh_report_generator",
+                                 "vertical":  "vertical_rh",
+                                 "descripcion":  "Genera reportes de pipeline, scores y conversion por vacante o empresa",
+                                 "path":  "skills/internos/rh_report_generator",
+                                 "entrypoint":  "skill.py",
+                                 "version":  "0.1.0"
+                             },
+    "rh_job_post_generator":  {
+                                  "tipo":  "interno",
+                                  "nombre":  "rh_job_post_generator",
+                                  "vertical":  "vertical_rh",
+                                  "descripcion":  "Genera texto de vacante listo para publicar usando IA",
+                                  "path":  "skills/internos/rh_job_post_generator",
+                                  "entrypoint":  "skill.py",
+                                  "version":  "0.1.0"
+                              },
+    "rh_questionnaire_generator":  {
+                                       "tipo":  "interno",
+                                       "nombre":  "rh_questionnaire_generator",
+                                       "vertical":  "vertical_rh",
+                                       "descripcion":  "Genera cuestionario de candidato segun profundidad, canal y vacante usando IA",
+                                       "path":  "skills/internos/rh_questionnaire_generator",
+                                       "entrypoint":  "skill.py",
+                                       "version":  "0.1.0"
+                                   },
+    "rh_seed_generator":  {
+                              "tipo":  "interno",
+                              "nombre":  "rh_seed_generator",
+                              "vertical":  "vertical_rh",
+                              "descripcion":  "Genera datos de prueba RH en batch usando IA. Registra IDs en test_seeds.",
+                              "path":  "skills/internos/rh_seed_generator",
+                              "entrypoint":  "skill.py",
+                              "version":  "0.1.0"
+                          },
+    "rh_seed_cleaner":  {
+                            "tipo":  "interno",
+                            "nombre":  "rh_seed_cleaner",
+                            "vertical":  "vertical_rh",
+                            "descripcion":  "Borra todos los registros de prueba de un seed_label en orden FK.",
+                            "path":  "skills/internos/rh_seed_cleaner",
+                            "entrypoint":  "skill.py",
+                            "version":  "0.1.0"
+                        },
+    "rh_1_run":  {
+                     "tipo":  "interno",
+                     "nombre":  "rh_1_run",
+                     "vertical":  "vertical_rh",
+                     "descripcion":  "Orquestador master del modo RH-1: comandos de manager y flujo completo de candidatos.",
+                     "path":  "skills/internos/rh_1_run",
+                     "entrypoint":  "skill.py",
+                     "version":  "0.1.0"
+                 },
     "connect_supabase":  {
                              "tipo":  "interno",
                              "nombre":  "connect_supabase",

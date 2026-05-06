@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_duplicate_detector",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Detecta candidatos duplicados por telefono, email o canal_user_id.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

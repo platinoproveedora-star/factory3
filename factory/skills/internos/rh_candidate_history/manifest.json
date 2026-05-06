@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_candidate_history",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Historial completo de un candidato: perfil, respuestas, scores, pipeline y eventos.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_candidate_ranking",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Ordena candidatos de una vacante por score descendente, excluyendo rechazados y duplicados.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

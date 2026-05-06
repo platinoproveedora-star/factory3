@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_seed_cleaner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Borra todos los registros de prueba de un seed_label en orden FK. Solo toca registros en test_seeds.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

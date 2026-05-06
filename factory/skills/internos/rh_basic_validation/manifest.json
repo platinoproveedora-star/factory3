@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_basic_validation",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida datos minimos del candidato: nombre, contacto y disponibilidad.",
+  "requires_env": []
+}

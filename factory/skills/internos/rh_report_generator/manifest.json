@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_report_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera reportes de pipeline, scores y conversion por vacante o empresa.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

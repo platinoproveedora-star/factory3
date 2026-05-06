@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_knockout_filter",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Aplica filtros obligatorios al perfil del candidato — pasa o no pasa, sin puntos medios.",
+  "requires_env": []
+}
