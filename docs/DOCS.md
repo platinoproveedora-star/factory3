@@ -13,3 +13,10 @@
 - [VERTICAL_IG.md](VERTICAL_IG.md) — Instagram: publicación, insights, comentarios
 - [VERTICAL_META.md](VERTICAL_META.md) — Autenticación y conexión con Meta / Facebook
 - [VERTICAL_BOT.md](VERTICAL_BOT.md) — Bot multicanal: enrutamiento, cuestionarios, captura de candidatos
+
+## Dashboard
+
+- `dashboard/app.py` — Streamlit: 5 páginas (Overview, Vacantes, Candidatos, Pipeline, Seeds)
+- `dashboard/db.py` — conexión Supabase REST sin dependencias extra
+- `dashboard/requirements.txt` — streamlit + pandas
+- `dashboard/render.yaml` — config deploy Render como servicio separado

@@ -65,6 +65,7 @@ Estas van solo en `.env` local y en las variables de entorno de Render. Nunca ha
 | Variable | Descripción |
 |---|---|
 | `RH_EMPRESA_ID` | ID de empresa activa para vertical RH |
+| `DASHBOARD_URL` | URL del dashboard Streamlit (ej: https://factory3-dashboard.onrender.com) |
 | `META_APP_ID` / `META_APP_SECRET` | Credenciales de Meta para vertical Instagram |
 
 ---
@@ -136,6 +137,39 @@ Configurar todas las variables de la sección anterior usando `render_set_env_va
 
 ---
 
+## Estándar doble ID (obligatorio en todas las tablas)
+
+A partir de esta versión, **toda tabla nueva debe tener**:
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | UUID DEFAULT gen_random_uuid() | Interno — usado en JOINs, nunca se muestra al usuario |
+| `folio` | TEXT UNIQUE | Visible al usuario — usado en comandos (VAC-001, CAND-001) |
+
+El `folio` se genera automáticamente con una PostgreSQL sequence y un BEFORE INSERT trigger.
+
+Ejemplo de migración:
+```sql
+CREATE SEQUENCE IF NOT EXISTS mi_tabla_folio_seq START 1;
+ALTER TABLE mi_tabla ADD COLUMN IF NOT EXISTS folio TEXT;
+CREATE OR REPLACE FUNCTION set_mi_tabla_folio() RETURNS TRIGGER AS $$
+BEGIN
+  NEW.folio := 'PRE-' || LPAD(nextval('mi_tabla_folio_seq')::TEXT, 3, '0');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE TRIGGER trg_mi_tabla_folio
+  BEFORE INSERT ON mi_tabla FOR EACH ROW
+  WHEN (NEW.folio IS NULL)
+  EXECUTE FUNCTION set_mi_tabla_folio();
+```
+
+Prefijos en uso:
+- `VAC-` → vacantes
+- `CAND-` → candidatos
+
+---
+
 ## Checklist antes de primer deploy
 
 - [ ] `.gitignore` en el repo cubre `.env`
@@ -144,4 +178,5 @@ Configurar todas las variables de la sección anterior usando `render_set_env_va
 - [ ] Webhook de Telegram apuntando a `https://<servicio>.onrender.com/webhook/factory3_admin`
 - [ ] `MANAGER_CHAT_ID` configurado para recibir alertas
 - [ ] `RH_EMPRESA_ID` configurado si se usa vertical RH
+- [ ] `DASHBOARD_URL` configurado una vez creado el servicio del dashboard en Render
 - [ ] Primer deploy manual disparado y verificado con `/health`

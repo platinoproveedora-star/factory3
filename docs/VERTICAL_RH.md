@@ -107,34 +107,91 @@ Mas las 2 base del engine: `sessions`, `agent_memory`
 
 ## Variables de entorno
 
-No requiere variables propias.
-Usa: ANTHROPIC_API_KEY (scoring con IA), SUPABASE_*, TELEGRAM_TOKEN.
+```
+ANTHROPIC_API_KEY   # scoring IA y generacion de seeds
+SUPABASE_URL        # conexion a Supabase
+SUPABASE_KEY        # service role key (nunca anon)
+TELEGRAM_TOKEN_ADMIN_BOT   # token del bot admin
+RH_EMPRESA_ID       # ID de empresa por defecto (ej: rh_empresa_1)
+DASHBOARD_URL       # URL del dashboard Streamlit en Render
+```
 
-## Etapas
+## Esquema de tablas (doble ID)
 
-### Etapa 1 — MVP funcional (actual)
-Los 14 skills de arriba + bot RH basico con Telegram.
-Resultado: recibe candidatos, filtra, organiza pipeline, notifica, guarda todo.
+Toda tabla tiene:
+- `id` UUID — interno, nunca se muestra al usuario, se usa en JOINs
+- `folio` TEXT — visible al usuario, usado en comandos (VAC-001, CAND-001)
 
-### Etapa 2 — Comunidad y enriquecimiento (siguiente)
+```sql
+vacantes       (id, folio, empresa_id, titulo, descripcion, requisitos, canal, estado, tipo)
+candidatos     (id, folio, vacante_id, nombre, telefono, email, canal, canal_user_id, estado)
+conversaciones (id, candidato_id, vacante_id, canal, estado, cuestionario_paso)
+respuestas     (id, candidato_id, vacante_id, pregunta, respuesta, orden)
+scores         (id, candidato_id, vacante_id, score_total, pasa_knockout, detalle)
+pipeline       (id, candidato_id, vacante_id, etapa, notas)
+eventos_historial (id, candidato_id, tipo_evento, datos)
+cuestionarios  (id, empresa_id, vacante_id, puesto, profundidad, canal, preguntas)
+test_seeds     (id, seed_label, empresa_id, tabla, registro_id)
+bot_states     (id, chat_id, state, updated_at)
+```
+
+## Bot admin — modo RH (/rh1)
+
+Comandos disponibles en modo RH:
+
+```
+/vacantes              — listar vacantes con folio
+/ranking N             — top candidatos de vacante (por folio o numero)
+/reporte N             — resumen pipeline de vacante
+/candidatos N          — candidatos de una vacante
+/candidato FOLIO       — detalle de un candidato (CAND-001)
+/mover FOLIO etapa     — mover candidato en pipeline
+/seed N                — crear N vacantes con candidatos (background)
+/seedc N FOLIO         — agregar N candidatos a vacante existente (background)
+/seeds                 — listar seeds generados
+/limpiar LABEL         — borrar seed completo
+/status                — resumen general del sistema
+/dashboard             — link al dashboard Streamlit
+/ayuda                 — lista de comandos
+```
+
+## Dashboard (Streamlit)
+
+5 páginas:
+- **Overview** — KPIs: vacantes activas, candidatos, score promedio, seeds
+- **Vacantes** — tabla filtrable por estado/tipo/titulo
+- **Candidatos** — tabla con scores y KO flag
+- **Pipeline** — vista kanban por etapa
+- **Seeds** — lista de seeds con conteos por tabla
+
+Servicio separado en Render: `factory3-dashboard`
+Archivos: `dashboard/app.py`, `dashboard/db.py`, `dashboard/requirements.txt`
+
+## Tipo de vacante
+
+```
+tipo = "real"   # vacante de produccion
+tipo = "seed"   # vacante de prueba (creada por /seed)
+```
+Permite filtrar datos de prueba sin borrarlos.
+
+## Etapas del proyecto
+
+### Etapa 1 — MVP (completo)
+- Bot admin con modo /rh1
+- Comandos: vacantes, candidatos, ranking, reporte, mover, seed, seedc, seeds, limpiar, status, dashboard
+- Sistema de folios (VAC-001, CAND-001)
+- Dashboard Streamlit
+- Seeds con IA (Anthropic Haiku)
+- Background tasks para operaciones largas
+
+### Etapa 2 — Enriquecimiento
 - CV parser
-- Enrichment de perfil
-- Analitica avanzada
-- Automatizacion completa de campanas
+- Bot de captura para candidatos reales
+- Analitica avanzada en dashboard
+- Alertas a manager via Telegram
 
 ### Etapa 3 — Optimizacion
-- Optimizacion de campanas
 - Integraciones ATS externas
-- Reportes avanzados
-
-## Bot RH
-
-Un bot dedicado conectado a esta vertical.
-Usa `bot_inbox_router` + `bot_form_capture` para el flujo conversacional.
-Modo admin para testing sin afectar produccion.
-
-## Tiempo estimado MVP
-
-Skills: 3-5 dias
-Bot + tablas Supabase: 1-2 dias adicionales
-Total operativo real: 1-2 semanas
+- Reportes PDF
+- Automatizacion de campanas
