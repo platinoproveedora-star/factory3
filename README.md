@@ -83,6 +83,17 @@ Telegram → /webhook/factory3_admin
 | Instagram / Meta | — | [docs/VERTICAL_IG.md](docs/VERTICAL_IG.md) |
 | Bot multicanal | — | [docs/VERTICAL_BOT.md](docs/VERTICAL_BOT.md) |
 
+## Verificar estructura antes de push
+
+Después de cambios grandes, corre el verificador de salud local:
+
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+.\venv\Scripts\python.exe main.py run-skill verify_factory --context-file ctx.json
+```
+
+Checa 8 puntos: compilación de skills, registry, carga de skills ejecutables, generadores, agente brain, bot routing. Si sale `ok: true` con 0 failures, la estructura está bien y es seguro hacer push.
+
 ## Deploy
 
 Render auto-deploy en push a `main`. Servicio: `https://factory3.onrender.com`
