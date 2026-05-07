@@ -3,10 +3,17 @@ from __future__ import annotations
 import json, os, urllib.request
 
 
+def _key() -> str:
+    return (os.environ.get("SUPABASE_KEY")
+            or os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+            or os.environ.get("SUPABASE_ANON_KEY", ""))
+
+
 def _headers() -> dict:
+    key = _key()
     return {
-        "apikey":        os.environ["SUPABASE_KEY"],
-        "Authorization": f"Bearer {os.environ['SUPABASE_KEY']}",
+        "apikey":        key,
+        "Authorization": f"Bearer {key}",
         "Content-Type":  "application/json",
     }
 
