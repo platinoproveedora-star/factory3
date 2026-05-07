@@ -3,3 +3,8 @@
 __pycache__/
 .venv/
 venv/
+tmp/
+ctx*.json
+run_dashboard.py
+SESION_ACTUAL.md
+ULTIMO_CHAT.md
