@@ -18,7 +18,7 @@ _COMMANDS_DEFAULT = {
 }
 
 _MODES = {
-    "/rh1": "rh1",
+    "/rh1": "rh_1",
 }
 
 
