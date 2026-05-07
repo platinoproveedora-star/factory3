@@ -5,6 +5,8 @@
   "commands": [
     "start",
     "ayuda",
-    "estado"
+    "estado",
+    "rh1",
+    "salir"
   ]
 }
