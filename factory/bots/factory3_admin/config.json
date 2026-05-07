@@ -1,7 +1,7 @@
 {
   "bot_name": "factory3_admin",
   "bot_type": "admin",
-  "token_env": "TELEGRAM_TOKEN",
+  "token_env": "FACTORY3_ADMIN_BOT_TOKEN",
   "commands": [
     "start",
     "ayuda",
