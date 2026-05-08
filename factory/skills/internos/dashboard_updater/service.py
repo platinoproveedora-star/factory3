@@ -59,7 +59,7 @@ class DashboardUpdaterService:
 
     def ejecutar(self, context: dict) -> dict:
         instruccion      = context.get("instruccion", "")
-        app_path         = Path(context.get("app_path", "dashboard/app.py"))
+        app_path         = Path(context.get("app_path", "EMP_RH1/dashboard/app.py"))
         dry_run          = context.get("dry_run", False)
         incluir_registry = context.get("incluir_registry", True)
         incluir_tablas   = context.get("incluir_tablas", True)

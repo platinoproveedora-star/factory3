@@ -14,9 +14,9 @@
 - [VERTICAL_META.md](VERTICAL_META.md) — Autenticación y conexión con Meta / Facebook
 - [VERTICAL_BOT.md](VERTICAL_BOT.md) — Bot multicanal: enrutamiento, cuestionarios, captura de candidatos
 
-## Dashboard
+## Dashboard (EMP_RH1)
 
-- `dashboard/app.py` — Streamlit: 5 páginas (Overview, Vacantes, Candidatos, Pipeline, Seeds)
-- `dashboard/db.py` — conexión Supabase REST sin dependencias extra
-- `dashboard/requirements.txt` — streamlit + pandas
-- `dashboard/render.yaml` — config deploy Render como servicio separado
+- `EMP_RH1/dashboard/app.py` — Streamlit: 5 páginas (Overview, Vacantes, Candidatos, Pipeline, Seeds)
+- `EMP_RH1/dashboard/db.py` — conexión Supabase REST sin dependencias extra
+- `EMP_RH1/dashboard/requirements.txt` — streamlit + pandas
+- `EMP_RH1/dashboard/render.yaml` — config deploy Render como servicio separado

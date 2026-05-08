@@ -91,7 +91,7 @@ Cualquier cosa que se agregue a la fábrica debe seguir estas reglas:
 1. **Skills** — toda lógica va en un skill (`skill.py` + `service.py`). Nunca lógica inline en bot.py o factory_api.py.
 2. **Bot genérico** — `bot.py` ya es genérico: lee modos desde `_MODES` dict y delega a skills. Al agregar una vertical nueva, solo se agrega una entrada al dict.
 3. **Datos como skills** — toda consulta a Supabase que use el bot O el dashboard va como skill de datos (`rh_stats`, `rh_list_vacantes`, etc.) expuesto vía `GET /data/{skill_name}` en `factory_api.py`.
-4. **Dashboard genérico** — `dashboard/app.py` ya tiene estructura base genérica. Al agregar una vertical, se agrega una página que consume `/data/{skill}`.
+4. **Dashboard por empresa** — `EMP_RH1/dashboard/app.py` es el dashboard de RH1. Al crear una empresa nueva, se crea su propia carpeta `EMP_*/dashboard/` con su propio `app.py` que consume `/data/{skill}`.
 5. **Doble ID** — toda tabla nueva tiene `id` UUID (interno) + `folio` visible (VAC-001, CAND-001).
 
 ### Pendiente: skills de datos + endpoint genérico
@@ -108,7 +108,7 @@ Una vez listos, el dashboard y el bot consumen los mismos skills. Sin lógica de
 ### Pendiente (después de vertical_rh estable): mejoras en `new_factory`
 
 - [ ] Crear servicio Render del dashboard además del API
-- [ ] Copiar carpeta `dashboard/` al crear fábrica nueva
+- [ ] Copiar carpeta `EMP_*/dashboard/` de la empresa correspondiente al crear fábrica nueva
 - [ ] Agregar `"vertical_rh": ["RH_EMPRESA_ID", "DASHBOARD_URL"]` a `VERTICAL_ENV_VARS`
 - [ ] Correr migrations SQL de verticales al crear fábrica
 - [ ] Crear `factory/skills/externos/.gitkeep` automáticamente

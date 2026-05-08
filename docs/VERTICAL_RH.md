@@ -165,7 +165,7 @@ Comandos disponibles en modo RH:
 - **Seeds** — lista de seeds con conteos por tabla
 
 Servicio separado en Render: `factory3-dashboard`
-Archivos: `dashboard/app.py`, `dashboard/db.py`, `dashboard/requirements.txt`
+Archivos: `EMP_RH1/dashboard/app.py`, `EMP_RH1/dashboard/db.py`, `EMP_RH1/dashboard/requirements.txt`
 
 ## Tipo de vacante
 

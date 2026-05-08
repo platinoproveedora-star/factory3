@@ -7,7 +7,7 @@ Actualiza un dashboard Streamlit existente usando IA. Lee el `app.py` actual, el
 ```json
 {
   "instruccion": "Agrega secciones para Entrevistas y Reclutadores. En Overview agrega métrica de entrevistas agendadas y tasa de aptos vs candidatos totales.",
-  "app_path": "dashboard/app.py",
+  "app_path": "EMP_RH1/dashboard/app.py",
   "incluir_registry": true,
   "incluir_tablas": true,
   "dry_run": false
@@ -15,7 +15,7 @@ Actualiza un dashboard Streamlit existente usando IA. Lee el `app.py` actual, el
 ```
 
 - `instruccion` — requerido, qué cambios hacer (puede ser largo y detallado)
-- `app_path` — ruta al app.py a actualizar (default: `dashboard/app.py`)
+- `app_path` — ruta al app.py a actualizar (default: `EMP_RH1/dashboard/app.py`)
 - `incluir_registry` — si incluye el registry de skills como contexto para la IA (default: `true`)
 - `incluir_tablas` — si incluye el índice de TABLES.md como contexto (default: `true`)
 - `dry_run` — si `true`, devuelve el código generado pero no escribe el archivo
@@ -26,7 +26,7 @@ Actualiza un dashboard Streamlit existente usando IA. Lee el `app.py` actual, el
 {
   "ok": true,
   "data": {
-    "app_path": "dashboard/app.py",
+    "app_path": "EMP_RH1/dashboard/app.py",
     "cambios": [
       "Agregada sección Entrevistas con filtros por estado y reclutador",
       "Agregada sección Reclutadores con tabla de activos",
