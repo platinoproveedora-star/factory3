@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_offer_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Arma la oferta laboral completa: puesto, salario, ruta, condiciones y beneficios.",
+  "vertical": "mass_digital_hiring",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

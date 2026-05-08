@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_interview_scheduler",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Agenda entrevistas automáticamente: asigna slot, notifica candidato y reclutador por Telegram.",
+  "vertical": "ai_hiring_assessment",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_KEY"]
+}

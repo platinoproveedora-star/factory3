@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "tractohub_driver_onboarding",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Flow de recopilacion de documentos de operador via Telegram. Solicita y registra: INE, licencia federal, IMSS, comprobante domicilio, antecedentes no penales, foto perfil.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "FACTORY3_ADMIN_BOT_TOKEN"]
+}

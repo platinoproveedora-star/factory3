@@ -1,0 +1,10 @@
+{
+  "nombre": "rh_shift_zone_validator",
+  "version": "0.1.0",
+  "descripcion": "Valida turno, zona de trabajo y dependencia de transporte de un candidato contra los requisitos de la vacante",
+  "entrypoint": "skill.py",
+  "tipo": "interno",
+  "vertical": "ai_hiring_assessment",
+  "inputs": ["candidato_id", "respuestas", "turno_requerido", "zona_trabajo", "municipio_trabajo"],
+  "outputs": ["ok", "data.apto", "data.turno", "data.zona", "data.transporte", "data.recomendacion", "data.señales"]
+}

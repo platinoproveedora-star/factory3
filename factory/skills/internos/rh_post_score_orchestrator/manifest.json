@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "rh_post_score_orchestrator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquesta el pipeline de evaluacion automatica post-captura: profile_builder, validation, duplicate, knockout, scoring, pipeline_manager y notificacion al manager.",
+  "requires_env": ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

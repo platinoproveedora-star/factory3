@@ -2,7 +2,7 @@
   "type": "skill",
   "name": "rh_stats",
   "version": "0.1.0",
-  "kind": "data",
+  "kind": "executable",
   "vertical": "vertical_rh",
   "entrypoint": "skill.py",
   "description": "KPIs generales del sistema RH: vacantes, candidatos, scores, seeds.",

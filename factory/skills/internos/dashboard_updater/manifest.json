@@ -1,0 +1,10 @@
+{
+  "nombre": "dashboard_updater",
+  "version": "0.1.0",
+  "descripcion": "Lee el dashboard Streamlit actual y lo actualiza con IA agregando secciones, métricas y tablas nuevas",
+  "entrypoint": "skill.py",
+  "tipo": "interno",
+  "vertical": "factory",
+  "inputs": ["instruccion", "app_path", "dry_run", "incluir_registry", "incluir_tablas"],
+  "outputs": ["ok", "data.app_path", "data.cambios", "data.codigo"]
+}

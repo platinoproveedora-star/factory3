@@ -102,6 +102,16 @@ class SupabaseClient:
         endpoint = self._rest_url(table, self._filter_params(filters))
         return self._request("DELETE", endpoint, None, self._rest_headers(return_representation=True))
 
+    def rest_upsert(self, table: str, rows: list[dict[str, Any]] | dict[str, Any], on_conflict: str = "") -> dict[str, Any]:
+        check = self.check_config(require_rest=True)
+        if not check.get("ok"):
+            return check
+        params = {"on_conflict": on_conflict} if on_conflict else {}
+        endpoint = self._rest_url(table, params)
+        headers = self._rest_headers(return_representation=True)
+        headers["Prefer"] = "resolution=merge-duplicates,return=representation"
+        return self._request("POST", endpoint, rows, headers)
+
     def rpc(self, function_name: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         check = self.check_config(require_rest=True)
         if not check.get("ok"):

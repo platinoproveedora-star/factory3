@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_contractor_splitter",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Divide candidatos calificados entre empresas contratantes según cupo y criterios.",
+  "vertical": "mass_digital_hiring",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_KEY"]
+}

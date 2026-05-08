@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_dimension_analyzer",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Analiza respuestas del candidato en una dimensión configurable: conducta, físico, compromiso, maquinaria, rutas.",
+  "vertical": "ai_hiring_assessment",
+  "requires_env": ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_KEY"]
+}

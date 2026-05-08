@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_ad_copy_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera copy de anuncio de reclutamiento con tono operativo/industrial para redes sociales.",
+  "vertical": "mass_digital_hiring",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

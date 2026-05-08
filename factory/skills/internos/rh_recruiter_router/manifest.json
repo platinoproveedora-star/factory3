@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_recruiter_router",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Asigna candidato calificado al reclutador correspondiente y le notifica por Telegram.",
+  "vertical": "mass_digital_hiring",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_KEY"]
+}

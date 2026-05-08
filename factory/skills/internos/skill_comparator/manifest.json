@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "skill_comparator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Compara una caja de skills contra el registry existente para detectar duplicados y solapamientos.",
+  "vertical": "factory_skills",
+  "requires_env": []
+}

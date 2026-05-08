@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "context_loader",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Carga registries y docs del proyecto para iniciar un nuevo chat con contexto completo.",
+  "vertical": "factory",
+  "requires_env": []
+}

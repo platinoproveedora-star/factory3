@@ -1,0 +1,10 @@
+{
+  "nombre": "new_dashboard",
+  "version": "0.1.0",
+  "descripcion": "Genera un dashboard Streamlit completo para cualquier vertical de Factory3, con secciones por tabla, métricas y sidebar",
+  "entrypoint": "skill.py",
+  "tipo": "interno",
+  "vertical": "factory",
+  "inputs": ["titulo", "vertical", "tablas", "empresa_env_var", "output_dir", "dry_run"],
+  "outputs": ["ok", "data.archivos_creados", "data.output_dir"]
+}

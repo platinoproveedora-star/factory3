@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_channel_publisher",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquesta publicación de vacante en múltiples canales digitales: Facebook, WhatsApp y Telegram.",
+  "vertical": "mass_digital_hiring",
+  "requires_env": []
+}

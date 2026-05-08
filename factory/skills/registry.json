@@ -1,4 +1,94 @@
 {
+  "mass_digital_hiring_run": {
+    "tipo": "interno",
+    "nombre": "mass_digital_hiring_run",
+    "vertical": "mass_digital_hiring",
+    "descripcion": "Orquestador master de contratación masiva digital: campaña, captura, evaluación y distribución",
+    "path": "skills/internos/mass_digital_hiring_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_demand_planner": {
+    "tipo": "interno",
+    "nombre": "rh_demand_planner",
+    "vertical": "mass_digital_hiring",
+    "descripcion": "Calcula cuántos operadores contratar por puesto, zona y fecha objetivo",
+    "path": "skills/internos/rh_demand_planner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_qr_entry": {
+    "tipo": "interno",
+    "nombre": "rh_qr_entry",
+    "vertical": "mass_digital_hiring",
+    "descripcion": "Genera QR con link directo al bot de captura para una vacante específica",
+    "path": "skills/internos/rh_qr_entry",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_offer_builder": {
+    "tipo": "interno",
+    "nombre": "rh_offer_builder",
+    "vertical": "mass_digital_hiring",
+    "descripcion": "Arma la oferta laboral completa: puesto, salario, ruta, condiciones y beneficios",
+    "path": "skills/internos/rh_offer_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_contractor_splitter": {
+    "tipo": "interno",
+    "nombre": "rh_contractor_splitter",
+    "vertical": "mass_digital_hiring",
+    "descripcion": "Divide candidatos calificados entre empresas contratantes según cupo y criterios",
+    "path": "skills/internos/rh_contractor_splitter",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_channel_publisher": {
+    "tipo": "interno",
+    "nombre": "rh_channel_publisher",
+    "vertical": "mass_digital_hiring",
+    "descripcion": "Orquesta publicación de vacante en múltiples canales: Facebook, WhatsApp y Telegram",
+    "path": "skills/internos/rh_channel_publisher",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_ad_copy_generator": {
+    "tipo": "interno",
+    "nombre": "rh_ad_copy_generator",
+    "vertical": "mass_digital_hiring",
+    "descripcion": "Genera copy de anuncio de reclutamiento con tono operativo/industrial para redes sociales",
+    "path": "skills/internos/rh_ad_copy_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_recruiter_router": {
+    "tipo": "interno",
+    "nombre": "rh_recruiter_router",
+    "vertical": "mass_digital_hiring",
+    "descripcion": "Asigna candidato calificado al reclutador correspondiente y notifica por Telegram",
+    "path": "skills/internos/rh_recruiter_router",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "context_loader": {
+    "tipo": "interno",
+    "nombre": "context_loader",
+    "vertical": "factory",
+    "descripcion": "Carga registries y docs del proyecto para iniciar un nuevo chat con contexto completo",
+    "path": "skills/internos/context_loader",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_comparator": {
+    "tipo": "interno",
+    "nombre": "skill_comparator",
+    "vertical": "factory_skills",
+    "descripcion": "Compara una caja de skills contra el registry para detectar duplicados y solapamientos",
+    "path": "skills/internos/skill_comparator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "new_skill": {
     "tipo": "interno",
     "nombre": "new_skill",
@@ -1124,6 +1214,33 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "facebook_marketplace_poster": {
+    "tipo": "interno",
+    "nombre": "facebook_marketplace_poster",
+    "vertical": "vertical_facebook",
+    "descripcion": "Publica oferta de trabajo en Facebook Marketplace seccion Empleos via Playwright. Soporta dry_run.",
+    "path": "skills/internos/facebook_marketplace_poster",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "whatsapp_group_broadcaster": {
+    "tipo": "interno",
+    "nombre": "whatsapp_group_broadcaster",
+    "vertical": "vertical_whatsapp",
+    "descripcion": "Envia mensajes a grupos o contactos de WhatsApp. Backends: twilio, meta, playwright, dry_run.",
+    "path": "skills/internos/whatsapp_group_broadcaster",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "tractohub_driver_onboarding": {
+    "tipo": "interno",
+    "nombre": "tractohub_driver_onboarding",
+    "vertical": "vertical_tractohub",
+    "descripcion": "Flow de recopilacion de documentos de operador via Telegram: INE, licencia, IMSS, domicilio, antecedentes, foto.",
+    "path": "skills/internos/tractohub_driver_onboarding",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "rh_stats": {
     "tipo": "interno",
     "nombre": "rh_stats",
@@ -1144,6 +1261,60 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "facebook_group_finder": {
+    "tipo": "interno",
+    "nombre": "facebook_group_finder",
+    "vertical": "vertical_facebook",
+    "descripcion": "Busca grupos de Facebook via Google scraping por keywords y region. Guarda en tabla fb_grupos.",
+    "path": "skills/internos/facebook_group_finder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "facebook_post_generator": {
+    "tipo": "interno",
+    "nombre": "facebook_post_generator",
+    "vertical": "vertical_facebook",
+    "descripcion": "Genera variantes de post para Facebook adaptadas al grupo y vacante usando IA.",
+    "path": "skills/internos/facebook_post_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "facebook_post_publisher": {
+    "tipo": "interno",
+    "nombre": "facebook_post_publisher",
+    "vertical": "vertical_facebook",
+    "descripcion": "Publica un post en un grupo de Facebook via Playwright. Un grupo por llamada. Soporta dry_run.",
+    "path": "skills/internos/facebook_post_publisher",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "facebook_post_tracker": {
+    "tipo": "interno",
+    "nombre": "facebook_post_tracker",
+    "vertical": "vertical_facebook",
+    "descripcion": "Registra publicaciones FB en Supabase y controla cooldowns por grupo.",
+    "path": "skills/internos/facebook_post_tracker",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_post_score_orchestrator": {
+    "tipo": "interno",
+    "nombre": "rh_post_score_orchestrator",
+    "vertical": "vertical_rh",
+    "descripcion": "Pipeline automatico post-captura: profile_builder, validation, duplicate, knockout, scoring, pipeline_manager y notificacion Telegram.",
+    "path": "skills/internos/rh_post_score_orchestrator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "tractohub_rh_1": {
+    "tipo": "interno",
+    "nombre": "tractohub_rh_1",
+    "vertical": "vertical_tractohub",
+    "descripcion": "Orquestador master TractHub RH: Facebook posting, captura candidatos Telegram y evaluacion automatica.",
+    "path": "skills/internos/tractohub_rh_1",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "rh_pipeline_view": {
     "tipo": "interno",
     "nombre": "rh_pipeline_view",
@@ -1151,6 +1322,78 @@
     "kind": "data",
     "descripcion": "Pipeline RH agrupado por etapa. Acepta empresa_id y vacante_id opcional.",
     "path": "skills/internos/rh_pipeline_view",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_dimension_analyzer": {
+    "tipo": "interno",
+    "nombre": "rh_dimension_analyzer",
+    "vertical": "ai_hiring_assessment",
+    "descripcion": "Analiza una dimensi�n del candidato (conducta, fisico, compromiso, maquinaria, rutas, tecnico) usando IA y devuelve score 1-10, se�ales y recomendaci�n",
+    "path": "skills/internos/rh_dimension_analyzer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_contractor_interview": {
+    "tipo": "interno",
+    "nombre": "rh_contractor_interview",
+    "vertical": "ai_hiring_assessment",
+    "descripcion": "Genera cuestionario de entrevista personalizado por contratista, puesto y canal (Telegram, WhatsApp, presencial)",
+    "path": "skills/internos/rh_contractor_interview",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_interview_scheduler": {
+    "tipo": "interno",
+    "nombre": "rh_interview_scheduler",
+    "vertical": "ai_hiring_assessment",
+    "descripcion": "Agenda, cancela y lista entrevistas; notifica candidato y reclutador por Telegram; auto-calcula el pr�ximo slot h�bil si no se provee fecha",
+    "path": "skills/internos/rh_interview_scheduler",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_shift_zone_validator": {
+    "tipo": "interno",
+    "nombre": "rh_shift_zone_validator",
+    "vertical": "ai_hiring_assessment",
+    "descripcion": "Valida turno requerido, zona de trabajo y dependencia de transporte del candidato en un solo an�lisis con IA",
+    "path": "skills/internos/rh_shift_zone_validator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "new_dashboard": {
+    "tipo": "interno",
+    "nombre": "new_dashboard",
+    "vertical": "factory",
+    "descripcion": "Genera un dashboard Streamlit completo con IA: app.py, db.py, requirements, render.yaml para cualquier vertical",
+    "path": "skills/internos/new_dashboard",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "dashboard_updater": {
+    "tipo": "interno",
+    "nombre": "dashboard_updater",
+    "vertical": "factory",
+    "descripcion": "Actualiza un dashboard Streamlit existente con IA: agrega secciones, m�tricas y tablas nuevas sin romper lo existente",
+    "path": "skills/internos/dashboard_updater",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_retention_predictor": {
+    "tipo": "interno",
+    "nombre": "rh_retention_predictor",
+    "vertical": "vertical_retention",
+    "descripcion": "Predice riesgo de desercion temprana del candidato: score 1-10, meses estimados, se�ales y recomendacion",
+    "path": "skills/internos/rh_retention_predictor",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "rh_offer_sender": {
+    "tipo": "interno",
+    "nombre": "rh_offer_sender",
+    "vertical": "vertical_retention",
+    "descripcion": "Genera y envia carta oferta laboral al candidato por Telegram. Registra estado en alertas.",
+    "path": "skills/internos/rh_offer_sender",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   }

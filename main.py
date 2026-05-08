@@ -170,6 +170,58 @@ def run_skill_cmd(nombre, context_json, context_file, source):
 # run-bot
 # =============================================================================
 
+def _tg_send(token: str, chat_id: int | str, text: str, reply_markup: dict | None = None) -> None:
+    params: dict = {
+        "chat_id":    str(chat_id),
+        "text":       text[:4096],
+        "parse_mode": "HTML",
+    }
+    if reply_markup:
+        params["reply_markup"] = json.dumps(reply_markup)
+    try:
+        telegram_request(token, "sendMessage", params)
+    except Exception as exc:
+        click.echo(f"   [WARN] sendMessage: {exc}")
+
+
+def _tg_answer_callback(token: str, callback_query_id: str) -> None:
+    try:
+        telegram_request(token, "answerCallbackQuery", {"callback_query_id": callback_query_id})
+    except Exception:
+        pass
+
+
+def _extract_chat_and_text(update: dict) -> tuple[int | None, str, str]:
+    """Returns (chat_id, text, callback_query_id)."""
+    if "callback_query" in update:
+        cq      = update["callback_query"]
+        chat_id = (cq.get("message") or {}).get("chat", {}).get("id")
+        text    = (cq.get("data") or "").strip()
+        return chat_id, text, cq.get("id", "")
+    msg     = update.get("message") or {}
+    chat_id = msg.get("chat", {}).get("id")
+    text    = (msg.get("text") or "").strip()
+    return chat_id, text, ""
+
+
+def _run_background_task(task: dict) -> None:
+    import threading
+    skill_name = task.get("skill", "")
+    ctx        = task.get("context", {})
+    if not skill_name:
+        return
+    def _run():
+        try:
+            loader = SkillLoader(
+                FACTORY_DIR / "skills" / "internos",
+                FACTORY_DIR / "skills" / "externos",
+            )
+            SkillRunner(loader).run(skill_name, ctx, source="internos")
+        except Exception as exc:
+            click.echo(f"   [WARN] background_task {skill_name}: {exc}")
+    threading.Thread(target=_run, daemon=True).start()
+
+
 @cli.command("run-bot")
 @click.argument("bot_name")
 @click.option("--interval", default=2, type=int, help="Segundos entre polling")
@@ -194,21 +246,60 @@ def run_bot_cmd(bot_name, interval, once):
     username = (me.get("result") or {}).get("username", "")
     click.echo(f"[OK] Polling activo: {bot_name} @{username}  (Ctrl+C para detener)")
 
+    # Per-chat state persisted in memory for the session
+    chat_states: dict[int, dict] = {}
+
     offset = None
     while True:
         try:
-            params: dict = {"timeout": 20}
+            params: dict = {"timeout": 20, "allowed_updates": '["message","callback_query"]'}
             if offset is not None:
                 params["offset"] = offset
             updates = telegram_request(token, "getUpdates", params)
             for update in updates.get("result", []):
                 offset = update["update_id"] + 1
-                result = handle_update(update, {})
-                chat_id = (update.get("message") or {}).get("chat", {}).get("id")
-                response = result.get("response") if isinstance(result, dict) else None
-                if chat_id and response:
-                    telegram_request(token, "sendMessage", {"chat_id": chat_id, "text": response})
-                    click.echo(f"   respondido update {update['update_id']}")
+
+                chat_id, text, cq_id = _extract_chat_and_text(update)
+                if not chat_id:
+                    continue
+
+                # Rebuild update with normalised text so handle_update always sees message
+                if cq_id:
+                    _tg_answer_callback(token, cq_id)
+                    update = {
+                        **update,
+                        "message": {
+                            **(update.get("callback_query", {}).get("message") or {}),
+                            "text": text,
+                            "from": (update.get("callback_query") or {}).get("from"),
+                            "chat": {"id": chat_id},
+                        },
+                    }
+
+                state  = chat_states.get(chat_id, {})
+                result = handle_update(update, state)
+
+                if not isinstance(result, dict):
+                    continue
+
+                # Unwrap ok/data envelope if present
+                data = result.get("data", result) if result.get("ok") is not None else result
+
+                response     = data.get("response")
+                new_state    = data.get("state")
+                reply_markup = data.get("reply_markup")
+                bg_task      = data.get("background_task")
+
+                if new_state is not None:
+                    chat_states[chat_id] = new_state
+
+                if response:
+                    _tg_send(token, chat_id, response, reply_markup)
+                    click.echo(f"   [{chat_id}] update {update['update_id']}: {response[:60]!r}")
+
+                if bg_task:
+                    _run_background_task(bg_task)
+
             if once:
                 break
             time.sleep(max(interval, 1))

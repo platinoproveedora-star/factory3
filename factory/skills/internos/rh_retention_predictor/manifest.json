@@ -1,0 +1,10 @@
+{
+  "nombre": "rh_retention_predictor",
+  "version": "0.1.0",
+  "descripcion": "Predice el riesgo de deserción temprana del candidato basado en su historial, zona, transporte y perfil conductual",
+  "entrypoint": "skill.py",
+  "tipo": "interno",
+  "vertical": "vertical_retention",
+  "inputs": ["candidato_id", "respuestas", "puesto", "guardar"],
+  "outputs": ["ok", "data.riesgo", "data.meses_estimados", "data.score_retencion", "data.señales", "data.recomendacion"]
+}

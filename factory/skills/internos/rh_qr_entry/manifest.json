@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_qr_entry",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera un QR con link directo al bot de captura para una vacante específica.",
+  "vertical": "mass_digital_hiring",
+  "requires_env": []
+}

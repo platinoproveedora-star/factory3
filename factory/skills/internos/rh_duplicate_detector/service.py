@@ -18,10 +18,17 @@ class RhDuplicateDetectorService:
             return {"ok": False, "error": "candidato_id es requerido"}
         if not vacante_id:
             return {"ok": False, "error": "vacante_id es requerido"}
-        if not any([telefono, email, canal_user_id]):
-            return {"ok": False, "error": "se requiere al menos uno: telefono, email o canal_user_id"}
 
         db = SupabaseClient(context)
+
+        if not any([telefono, email, canal_user_id]):
+            datos = self._cargar_contacto(db, candidato_id)
+            telefono      = telefono      or datos.get("telefono", "")
+            email         = email         or datos.get("email", "")
+            canal_user_id = canal_user_id or datos.get("canal_user_id", "")
+
+        if not any([telefono, email, canal_user_id]):
+            return {"ok": True, "data": {"es_duplicado": False, "candidato_existente_id": None, "campo_coincidencia": None, "valor_coincidencia": None}}
 
         checks = []
         if telefono:
@@ -32,7 +39,7 @@ class RhDuplicateDetectorService:
             checks.append(("canal_user_id", canal_user_id))
 
         for campo, valor in checks:
-            resultado = self._buscar(db, campo, valor, candidato_id, vacante_id)
+            resultado = self._buscar(db, campo, str(valor), candidato_id, vacante_id)
             if not resultado.get("ok"):
                 return resultado
             existente = resultado.get("data")
@@ -56,6 +63,11 @@ class RhDuplicateDetectorService:
                 "valor_coincidencia": None,
             },
         }
+
+    def _cargar_contacto(self, db: SupabaseClient, candidato_id: str) -> dict:
+        result = db.rest_select("candidatos", {"id": candidato_id}, select="telefono,email,canal_user_id", limit=1)
+        rows = result.get("data") or []
+        return rows[0] if rows else {}
 
     def _buscar(self, db: SupabaseClient, campo: str, valor: str, excluir_id: str, vacante_id: str) -> dict:
         result = db.rest_select(

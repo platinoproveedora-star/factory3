@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_demand_planner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Calcula cuántos operadores contratar por puesto, zona y fecha objetivo.",
+  "vertical": "mass_digital_hiring",
+  "requires_env": []
+}

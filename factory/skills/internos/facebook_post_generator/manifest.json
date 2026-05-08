@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "facebook_post_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera variantes de post para Facebook adaptadas al grupo y la vacante usando IA. Incluye CTA con link de contacto.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "facebook_group_finder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Busca grupos de Facebook relevantes via Google scraping por keywords y region. Guarda resultados en tabla fb_grupos de Supabase.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

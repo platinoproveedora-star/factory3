@@ -8,3 +8,4 @@ ctx*.json
 run_dashboard.py
 SESION_ACTUAL.md
 ULTIMO_CHAT.md
+.claude/settings.local.json

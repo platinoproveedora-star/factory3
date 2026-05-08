@@ -1,0 +1,37 @@
+{
+  "bundle": "mass_digital_hiring",
+  "version": "0.1.0",
+  "descripcion": "Contratación masiva digital de trabajadores operativos e industriales",
+  "skills_propios": [
+    "mass_digital_hiring_run",
+    "rh_demand_planner",
+    "rh_qr_entry",
+    "rh_offer_builder",
+    "rh_contractor_splitter",
+    "rh_channel_publisher",
+    "rh_ad_copy_generator",
+    "rh_recruiter_router"
+  ],
+  "skills_prestados": [
+    "rh_job_post_generator",
+    "rh_basic_validation",
+    "rh_knockout_filter",
+    "rh_duplicate_detector",
+    "rh_candidate_profile_builder",
+    "rh_candidate_scoring",
+    "rh_pipeline_manager",
+    "rh_stats",
+    "rh_report_generator",
+    "bot_form_capture",
+    "bot_inbox_router",
+    "facebook_group_finder",
+    "facebook_post_generator",
+    "facebook_post_publisher",
+    "facebook_marketplace_poster",
+    "facebook_post_tracker",
+    "whatsapp_group_broadcaster",
+    "telegram_send_message",
+    "tractohub_driver_onboarding",
+    "ad_creator"
+  ]
+}

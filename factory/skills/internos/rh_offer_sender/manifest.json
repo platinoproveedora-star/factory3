@@ -1,0 +1,10 @@
+{
+  "nombre": "rh_offer_sender",
+  "version": "0.1.0",
+  "descripcion": "Genera y envía carta oferta laboral al candidato por Telegram. Registra estado de aceptación.",
+  "entrypoint": "skill.py",
+  "tipo": "interno",
+  "vertical": "vertical_retention",
+  "inputs": ["candidato_id", "vacante_id", "oferta", "canal_user_id", "dry_run"],
+  "outputs": ["ok", "data.enviado", "data.mensaje", "data.oferta_id"]
+}

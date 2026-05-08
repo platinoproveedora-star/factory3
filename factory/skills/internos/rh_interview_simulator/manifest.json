@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_interview_simulator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "vertical": "vertical_rh",
+  "entrypoint": "skill.py",
+  "description": "Simula un candidato real respondiendo una entrevista via webhook. Genera respuestas con IA.",
+  "requires_env": ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

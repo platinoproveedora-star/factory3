@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "whatsapp_group_broadcaster",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Envía mensajes a grupos o contactos de WhatsApp. Soporta dry_run. Backends: Twilio, Meta Cloud API o Playwright (segun config).",
+  "requires_env": []
+}

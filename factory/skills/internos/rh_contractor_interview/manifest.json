@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "rh_contractor_interview",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera cuestionario de entrevista ajustado a los requisitos específicos de un contratista.",
+  "vertical": "ai_hiring_assessment",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}
