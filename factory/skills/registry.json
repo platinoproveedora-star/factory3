@@ -1407,12 +1407,12 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ai_image_extractor": {
+  "ai_interpreter": {
     "tipo": "interno",
-    "nombre": "ai_image_extractor",
+    "nombre": "ai_interpreter",
     "vertical": "factory_ai",
-    "descripcion": "Extrae datos estructurados de imagen, PDF o texto usando Claude Haiku. Devuelve JSON segun schema.",
-    "path": "skills/internos/ai_image_extractor",
+    "descripcion": "Interpreta texto, imagen o PDF con Claude Haiku. mode=extract: extrae campos segun schema. mode=classify: detecta accion y extrae campos segun actions dict.",
+    "path": "skills/internos/ai_interpreter",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "ai_interpreter",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Interpreta texto, imagen o PDF con Claude Haiku. mode=extract: extrae campos segun schema. mode=classify: detecta accion y extrae campos segun actions dict.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

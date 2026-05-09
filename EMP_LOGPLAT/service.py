@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-import base64
 import json
 import os
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import date, datetime
+from pathlib import Path
+
+_AI_DIR = Path(__file__).parent.parent / "factory" / "skills" / "internos" / "ai_interpreter"
+if str(_AI_DIR) not in sys.path:
+    sys.path.insert(0, str(_AI_DIR))
+import service as _ai  # noqa: E402
 
 _URL       = os.getenv("SUPABASE_URL", "").rstrip("/")
 _KEY       = (
@@ -195,59 +201,59 @@ def _actualizar_cxc(numero_viaje: str, monto_pago: float) -> None:
          params={"folio": f"eq.{numero_viaje}"}, write=True)
 
 
-# ─── IA / EXTRACCIÓN ─────────────────────────────────────────────────────────
+# ─── IA — wrappers sobre ai_interpreter ──────────────────────────────────────
 
-def extraer_documento(content_b64: str, media_type: str, schema: dict, context: str = "") -> dict:
-    api_key = os.getenv("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        return {"ok": False, "error": "ANTHROPIC_API_KEY no configurada"}
+_ACTIONS = {
+    "viaje": {"cliente": None, "origen": None, "destino": None, "fecha_salida": None,
+               "fecha_llegada": None, "chofer": None, "costo_viaje": None,
+               "precio_venta_viaje": None, "estatus_pago": "por_cobrar"},
+    "gasto": {"concepto": None, "monto_gasto": None, "fecha_gasto": None,
+               "chofer": None, "numero_viaje": None, "tipo_gasto": None},
+    "pago":  {"monto_pago": None, "fecha_pago": None, "metodo_pago": None,
+               "numero_viaje": None, "cliente": None},
+}
 
-    schema_str  = json.dumps(schema, ensure_ascii=False, indent=2)
-    instruction = (
-        (f"{context}\n\n" if context else "") +
-        f"Extrae los datos del documento y devuelve SOLO un JSON con exactamente estos campos:\n{schema_str}\n"
-        "Si un campo no se puede determinar usa null. No incluyas texto fuera del JSON."
-    )
 
-    if media_type == "text/plain":
-        text     = base64.b64decode(content_b64).decode("utf-8", errors="replace")
-        messages = [{"role": "user", "content": f"{instruction}\n\nTexto:\n{text}"}]
-    elif media_type == "application/pdf":
-        messages = [{"role": "user", "content": [
-            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": content_b64}},
-            {"type": "text", "text": instruction},
-        ]}]
-    else:
-        messages = [{"role": "user", "content": [
-            {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": content_b64}},
-            {"type": "text", "text": instruction},
-        ]}]
+def interpretar_libre(texto: str, content_b64: str | None, media_type: str | None, hint: str = "") -> dict:
+    r = _ai.run({
+        "mode":        "classify",
+        "actions":     _ACTIONS,
+        "text":        texto or "",
+        "content_b64": content_b64 or "",
+        "media_type":  media_type or "text/plain",
+        "hint":        hint,
+        "context":     "Eres un asistente de captura logística para Platino Logística.",
+    })
+    if not r.get("ok"):
+        return r
+    d = r.get("data", {})
+    return {"ok": True, "action": d.get("action", "desconocido"), "data": d.get("fields", {})}
 
-    payload = {"model": "claude-haiku-4-5-20251001", "max_tokens": 1024, "messages": messages}
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=json.dumps(payload).encode(),
-        headers={
-            "content-type":      "application/json",
-            "x-api-key":         api_key,
-            "anthropic-version": "2023-06-01",
-            "anthropic-beta":    "pdfs-2024-09-25",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            result = json.loads(resp.read().decode())
-        text  = "".join(
-            item.get("text", "") for item in result.get("content", []) if item.get("type") == "text"
-        ).strip()
-        start = text.find("{")
-        end   = text.rfind("}") + 1
-        if start >= 0 and end > start:
-            return {"ok": True, "extracted": json.loads(text[start:end])}
-        return {"ok": False, "error": "Sin JSON en respuesta", "raw": text}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+
+# ─── REPORTES ─────────────────────────────────────────────────────────────────
+
+def reporte_viajes(limit: int = 10) -> list[dict]:
+    r = _req("GET", "viajes", params={
+        "select": "folio,cliente,origen,destino,fecha_salida,precio_venta_viaje,utilidad_viaje,estatus_pago",
+        "order": "created_at.desc", "limit": str(limit),
+    })
+    return r.get("data", []) if r.get("ok") else []
+
+
+def reporte_gastos(limit: int = 10) -> list[dict]:
+    r = _req("GET", "gastos", params={
+        "select": "folio,fecha_gasto,concepto,monto_gasto,chofer,numero_viaje",
+        "order": "created_at.desc", "limit": str(limit),
+    })
+    return r.get("data", []) if r.get("ok") else []
+
+
+def lista_pagos(limit: int = 10) -> list[dict]:
+    r = _req("GET", "pagos", params={
+        "select": "folio,cliente,numero_viaje,fecha_pago,monto_pago,metodo_pago",
+        "order": "created_at.desc", "limit": str(limit),
+    })
+    return r.get("data", []) if r.get("ok") else []
 
 
 # ─── TELEGRAM FILE DOWNLOAD ──────────────────────────────────────────────────

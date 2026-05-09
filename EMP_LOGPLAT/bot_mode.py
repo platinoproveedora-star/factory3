@@ -1,4 +1,4 @@
-"""Handler for /logplat mode — viajes, gastos, pagos."""
+"""Handler for /logplat mode — modo libre, Haiku interpreta todo."""
 
 from __future__ import annotations
 
@@ -14,52 +14,16 @@ import service as svc  # noqa: E402
 
 _AYUDA = (
     "<b>Modo LOGPLAT activo</b> — Logística Platino\n\n"
-    "/+viaje — registrar viaje\n"
-    "/+gasto — registrar gasto\n"
-    "/+pago  — registrar pago\n"
-    "/ayuda  — esta ayuda\n"
-    "/salir  — salir del modo"
+    "Envía texto, foto o PDF y capturo automáticamente.\n\n"
+    "/+viaje        — registrar viaje\n"
+    "/+gasto        — registrar gasto\n"
+    "/+pago         — registrar pago\n"
+    "/reporteviajes — últimos 10 viajes\n"
+    "/reportegastos — últimos 10 gastos\n"
+    "/pagos         — últimos 10 pagos\n"
+    "/ayuda         — esta ayuda\n"
+    "/salir         — salir del modo"
 )
-
-_VIAJE_SCHEMA = {
-    "cliente": None, "origen": None, "destino": None,
-    "fecha_salida": None, "fecha_llegada": None,
-    "chofer": None, "costo_viaje": None,
-    "precio_venta_viaje": None, "estatus_pago": "por_cobrar",
-}
-_GASTO_SCHEMA = {
-    "concepto": None, "monto_gasto": None, "fecha_gasto": None,
-    "chofer": None, "numero_viaje": None, "tipo_gasto": None,
-}
-_PAGO_SCHEMA = {
-    "monto_pago": None, "fecha_pago": None,
-    "metodo_pago": None, "numero_viaje": None, "cliente": None,
-}
-
-_VIAJE_STEPS = [
-    ("cliente",            "¿Cliente?"),
-    ("origen",             "¿Origen?"),
-    ("destino",            "¿Destino?"),
-    ("fecha_salida",       "¿Fecha salida? (YYYY-MM-DD)"),
-    ("fecha_llegada",      "¿Fecha llegada? (YYYY-MM-DD)"),
-    ("costo_viaje",        "¿Costo del viaje? (MXN)"),
-    ("precio_venta_viaje", "¿Precio de venta? (MXN)"),
-    ("chofer",             "¿Chofer?"),
-    ("estatus_pago",       "¿Estatus pago?\npor_cobrar / pagado / parcial"),
-]
-_GASTO_STEPS = [
-    ("numero_viaje", "¿Número de viaje? (VIA-001 o escribe 'ninguno')"),
-    ("concepto",     "¿Concepto? (diesel / casetas / comida / reparación / maniobra / otro)"),
-    ("monto_gasto",  "¿Monto? (MXN)"),
-    ("chofer",       "¿Chofer?"),
-    ("fecha_gasto",  "¿Fecha? (YYYY-MM-DD o 'hoy')"),
-]
-_PAGO_STEPS = [
-    ("numero_viaje", "¿Número de viaje? (VIA-001)"),
-    ("monto_pago",   "¿Monto del pago? (MXN)"),
-    ("metodo_pago",  "¿Método?\ntransferencia / efectivo / cheque"),
-    ("fecha_pago",   "¿Fecha del pago? (YYYY-MM-DD o 'hoy')"),
-]
 
 
 def ejecutar(update: dict, state: dict) -> dict:
@@ -68,135 +32,48 @@ def ejecutar(update: dict, state: dict) -> dict:
     text     = raw_text.lower()
     photo    = message.get("photo")
     document = message.get("document")
-    wizard   = state.get("wizard", {})
 
     if text in ("/ayuda", "/help"):
         return _ok(_AYUDA, state)
 
-    if raw_text == "/+viaje":
-        return _ok("¿Captura manual o tienes imagen/PDF del documento?",
-                   {**state, "wizard": {"action": "viaje", "step": "tipo", "data": {}}},
-                   _tipo_markup())
+    if text == "/reporteviajes":
+        return _reporte_viajes(state)
 
-    if raw_text == "/+gasto":
-        return _ok("¿Captura manual o tienes imagen/PDF del ticket?",
-                   {**state, "wizard": {"action": "gasto", "step": "tipo", "data": {}}},
-                   _tipo_markup())
+    if text == "/reportegastos":
+        return _reporte_gastos(state)
 
-    if raw_text == "/+pago":
-        return _ok("¿Captura manual o tienes comprobante de pago?",
-                   {**state, "wizard": {"action": "pago", "step": "tipo", "data": {}}},
-                   _tipo_markup())
+    if text == "/pagos":
+        return _lista_pagos(state)
 
-    if wizard:
-        return _wizard(text, photo, document, wizard, state)
+    if raw_text in ("/+viaje", "/+gasto", "/+pago"):
+        hint = raw_text[2:]
+        return _ok(
+            f"Listo, envía los datos del {hint} (texto, foto o PDF).",
+            {**state, "hint": hint},
+        )
 
-    return _ok("Escribe /ayuda para ver los comandos.", state)
+    hint      = state.get("hint", "")
+    new_state = {k: v for k, v in state.items() if k != "hint"}
 
+    if photo or document:
+        return _capture_doc(photo, document, hint, new_state)
 
-# ─── WIZARD ──────────────────────────────────────────────────────────────────
+    if raw_text:
+        return _capture_text(raw_text, hint, new_state)
 
-def _wizard(text: str, photo, document, wizard: dict, state: dict) -> dict:
-    action = wizard.get("action")
-    step   = wizard.get("step")
-
-    if step == "tipo":
-        if photo or document or text == "imagen":
-            if photo or document:
-                return _handle_doc(photo, document, wizard, state)
-            return _ok("Envía la foto o PDF ahora.",
-                       {**state, "wizard": {**wizard, "step": "esperando_doc"}})
-        if text in ("manual", "/manual"):
-            steps = {"viaje": _VIAJE_STEPS, "gasto": _GASTO_STEPS, "pago": _PAGO_STEPS}[action]
-            return _ok(steps[0][1], {**state, "wizard": {**wizard, "step": steps[0][0]}})
-        return _ok("Elige Manual o Imagen/PDF.", state, _tipo_markup())
-
-    if step == "esperando_doc":
-        if photo or document:
-            return _handle_doc(photo, document, wizard, state)
-        return _ok("Envía la foto o PDF.", {**state, "wizard": wizard})
-
-    if action == "viaje":
-        return _advance(_VIAJE_STEPS, text, wizard, state, _save_viaje)
-    if action == "gasto":
-        return _advance(_GASTO_STEPS, text, wizard, state, _save_gasto)
-    if action == "pago":
-        return _advance(_PAGO_STEPS, text, wizard, state, _save_pago)
-
-    return _ok("No entendí. Escribe /ayuda.", {**state, "wizard": {}})
+    return _ok("Envía texto, foto o PDF para capturar. Escribe /ayuda para ver comandos.", state)
 
 
-# ─── STEP ADVANCER ───────────────────────────────────────────────────────────
+# ─── CAPTURE ─────────────────────────────────────────────────────────────────
 
-def _advance(steps: list, text: str, wizard: dict, state: dict, save_fn) -> dict:
-    step = wizard.get("step")
-    data = dict(wizard.get("data", {}))
-    keys = [s[0] for s in steps]
-    idx  = keys.index(step) if step in keys else -1
-
-    if idx < 0:
-        return _ok("Algo salió mal. Empieza de nuevo con /+viaje, /+gasto o /+pago.",
-                   {**state, "wizard": {}})
-
-    val = "" if text in ("ninguno",) else text
-    if step in ("fecha_salida", "fecha_llegada", "fecha_gasto", "fecha_pago") and text == "hoy":
-        from datetime import date as _d
-        val = _d.today().isoformat()
-    data[step] = val
-
-    if idx + 1 < len(steps):
-        nk, np = steps[idx + 1]
-        return _ok(np, {**state, "wizard": {**wizard, "step": nk, "data": data}})
-
-    return save_fn(data, state)
-
-
-# ─── SAVERS ──────────────────────────────────────────────────────────────────
-
-def _save_viaje(data: dict, state: dict) -> dict:
-    r = svc.crear_viaje(data)
+def _capture_text(text: str, hint: str, state: dict) -> dict:
+    r = svc.interpretar_libre(text, None, None, hint)
     if not r.get("ok"):
-        return _ok(f"Error guardando viaje: {r.get('error')}", {**state, "wizard": {}})
-    v    = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
-    util = float(data.get("precio_venta_viaje") or 0) - float(data.get("costo_viaje") or 0)
-    msg  = (f"✅ Viaje <b>{v.get('folio','?')}</b> registrado.\n"
-            f"Ruta: {data.get('origen')} → {data.get('destino')}\n"
-            f"Cliente: {data.get('cliente')}\n"
-            f"Utilidad: ${util:,.0f}")
-    if data.get("estatus_pago") == "por_cobrar":
-        msg += "\n📋 CXC generada automáticamente."
-    return _ok(msg, {**state, "wizard": {}})
+        return _ok(f"No pude interpretar: {r.get('error')}", state)
+    return _dispatch(r.get("action", "desconocido"), r.get("data", {}), state)
 
 
-def _save_gasto(data: dict, state: dict) -> dict:
-    r = svc.crear_gasto(data)
-    if not r.get("ok"):
-        return _ok(f"Error guardando gasto: {r.get('error')}", {**state, "wizard": {}})
-    g   = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
-    msg = (f"✅ Gasto <b>{g.get('folio','?')}</b> registrado.\n"
-           f"Concepto: {data.get('concepto')}\n"
-           f"Monto: ${float(data.get('monto_gasto') or 0):,.0f}\n"
-           f"Viaje: {data.get('numero_viaje') or 'sin viaje'}")
-    return _ok(msg, {**state, "wizard": {}})
-
-
-def _save_pago(data: dict, state: dict) -> dict:
-    r = svc.crear_pago(data)
-    if not r.get("ok"):
-        return _ok(f"Error guardando pago: {r.get('error')}", {**state, "wizard": {}})
-    p   = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
-    msg = (f"✅ Pago <b>{p.get('folio','?')}</b> registrado.\n"
-           f"Viaje: {data.get('numero_viaje')}\n"
-           f"Monto: ${float(data.get('monto_pago') or 0):,.0f}\n"
-           f"Método: {data.get('metodo_pago')}")
-    return _ok(msg, {**state, "wizard": {}})
-
-
-# ─── DOCUMENT EXTRACTION ─────────────────────────────────────────────────────
-
-def _handle_doc(photo, document, wizard: dict, state: dict) -> dict:
-    action = wizard.get("action", "viaje")
-
+def _capture_doc(photo, document, hint: str, state: dict) -> dict:
     if photo:
         file_id    = photo[-1]["file_id"]
         media_type = "image/jpeg"
@@ -206,34 +83,115 @@ def _handle_doc(photo, document, wizard: dict, state: dict) -> dict:
 
     file_bytes, err = svc.descargar_telegram(file_id)
     if err:
-        return _ok(f"Error descargando archivo: {err}", {**state, "wizard": {}})
+        return _ok(f"Error descargando archivo: {err}", state)
 
-    schemas = {"viaje": _VIAJE_SCHEMA, "gasto": _GASTO_SCHEMA, "pago": _PAGO_SCHEMA}
-    hints   = {
-        "viaje": "Documento de viaje de transporte de carga (carta porte, remisión, manifiesto).",
-        "gasto": "Ticket o comprobante de gasto operativo (gasolina, caseta, comida, reparación).",
-        "pago":  "Comprobante de pago o transferencia bancaria.",
-    }
-
-    r = svc.extraer_documento(
-        base64.b64encode(file_bytes).decode(),
-        media_type,
-        schemas.get(action, {}),
-        hints.get(action, ""),
-    )
+    r = svc.interpretar_libre("", base64.b64encode(file_bytes).decode(), media_type, hint)
     if not r.get("ok"):
-        return _ok(f"No pude leer el documento: {r.get('error')}", {**state, "wizard": {}})
+        return _ok(f"No pude leer el documento: {r.get('error')}", state)
+    return _dispatch(r.get("action", "desconocido"), r.get("data", {}), state)
 
-    extracted = r.get("extracted", {})
-    savers    = {"viaje": _save_viaje, "gasto": _save_gasto, "pago": _save_pago}
-    result    = savers.get(action, _save_viaje)(extracted, state)
 
-    # Append extracted fields to confirmation message
-    fields = "\n".join(f"  {k}: {v}" for k, v in extracted.items() if v is not None)
-    result["response"] = result["response"].replace(
-        "✅", f"✅ (desde documento)\n\n{fields}\n\n✅"
+# ─── DISPATCH ────────────────────────────────────────────────────────────────
+
+def _dispatch(action: str, data: dict, state: dict) -> dict:
+    if action == "viaje":
+        return _save_viaje(data, state)
+    if action == "gasto":
+        return _save_gasto(data, state)
+    if action == "pago":
+        return _save_pago(data, state)
+    return _ok(
+        "No pude determinar si es viaje, gasto o pago.\n"
+        "Escribe /+viaje, /+gasto o /+pago para dar una pista y vuelve a enviar.",
+        state,
     )
-    return result
+
+
+# ─── SAVERS ──────────────────────────────────────────────────────────────────
+
+def _save_viaje(data: dict, state: dict) -> dict:
+    r = svc.crear_viaje(data)
+    if not r.get("ok"):
+        return _ok(f"Error guardando viaje: {r.get('error')}", state)
+    v    = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
+    util = float(data.get("precio_venta_viaje") or 0) - float(data.get("costo_viaje") or 0)
+    msg  = (f"✅ Viaje <b>{v.get('folio','?')}</b> registrado.\n"
+            f"Ruta: {data.get('origen')} → {data.get('destino')}\n"
+            f"Cliente: {data.get('cliente')}\n"
+            f"Utilidad: ${util:,.0f}")
+    if data.get("estatus_pago") == "por_cobrar":
+        msg += "\n📋 CXC generada automáticamente."
+    return _ok(msg, state)
+
+
+def _save_gasto(data: dict, state: dict) -> dict:
+    r = svc.crear_gasto(data)
+    if not r.get("ok"):
+        return _ok(f"Error guardando gasto: {r.get('error')}", state)
+    g   = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
+    msg = (f"✅ Gasto <b>{g.get('folio','?')}</b> registrado.\n"
+           f"Concepto: {data.get('concepto')}\n"
+           f"Monto: ${float(data.get('monto_gasto') or 0):,.0f}\n"
+           f"Viaje: {data.get('numero_viaje') or 'sin viaje'}")
+    return _ok(msg, state)
+
+
+def _save_pago(data: dict, state: dict) -> dict:
+    r = svc.crear_pago(data)
+    if not r.get("ok"):
+        return _ok(f"Error guardando pago: {r.get('error')}", state)
+    p   = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
+    msg = (f"✅ Pago <b>{p.get('folio','?')}</b> registrado.\n"
+           f"Viaje: {data.get('numero_viaje')}\n"
+           f"Monto: ${float(data.get('monto_pago') or 0):,.0f}\n"
+           f"Método: {data.get('metodo_pago')}")
+    return _ok(msg, state)
+
+
+# ─── REPORTES ────────────────────────────────────────────────────────────────
+
+def _reporte_viajes(state: dict) -> dict:
+    viajes = svc.reporte_viajes(10)
+    if not viajes:
+        return _ok("Sin viajes registrados.", state)
+    lines = ["<b>Últimos viajes:</b>"]
+    for v in viajes:
+        lines.append(
+            f"\n<b>{v.get('folio')}</b> — {v.get('cliente')}\n"
+            f"  {v.get('origen')} → {v.get('destino')}\n"
+            f"  Venta: ${float(v.get('precio_venta_viaje') or 0):,.0f} | "
+            f"Utilidad: ${float(v.get('utilidad_viaje') or 0):,.0f} | "
+            f"{v.get('estatus_pago')}"
+        )
+    return _ok("\n".join(lines), state)
+
+
+def _reporte_gastos(state: dict) -> dict:
+    gastos = svc.reporte_gastos(10)
+    if not gastos:
+        return _ok("Sin gastos registrados.", state)
+    lines = ["<b>Últimos gastos:</b>"]
+    for g in gastos:
+        lines.append(
+            f"\n<b>{g.get('folio')}</b> — {g.get('concepto')}\n"
+            f"  ${float(g.get('monto_gasto') or 0):,.0f} | {g.get('fecha_gasto')} | "
+            f"Viaje: {g.get('numero_viaje') or 'ninguno'}"
+        )
+    return _ok("\n".join(lines), state)
+
+
+def _lista_pagos(state: dict) -> dict:
+    pagos = svc.lista_pagos(10)
+    if not pagos:
+        return _ok("Sin pagos registrados.", state)
+    lines = ["<b>Últimos pagos:</b>"]
+    for p in pagos:
+        lines.append(
+            f"\n<b>{p.get('folio')}</b> — {p.get('cliente')}\n"
+            f"  ${float(p.get('monto_pago') or 0):,.0f} | {p.get('fecha_pago')} | "
+            f"{p.get('metodo_pago')} | Viaje: {p.get('numero_viaje') or 'ninguno'}"
+        )
+    return _ok("\n".join(lines), state)
 
 
 # ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -243,10 +201,3 @@ def _ok(response: str, state: dict, markup: dict | None = None) -> dict:
     if markup:
         r["reply_markup"] = markup
     return r
-
-
-def _tipo_markup() -> dict:
-    return {"inline_keyboard": [[
-        {"text": "✍️ Manual",     "callback_data": "manual"},
-        {"text": "📷 Imagen/PDF", "callback_data": "imagen"},
-    ]]}
