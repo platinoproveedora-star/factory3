@@ -133,8 +133,8 @@ class RhQuestionnaireGeneratorService:
             f"{f'Requisitos clave:{chr(10)}{req_txt}' if req_txt else ''}\n"
             f"Profundidad: {profundidad}\n"
             f"{canal_note}{custom_note}\n\n"
-            "Las preguntas deben cubrir: datos de contacto, disponibilidad, experiencia, "
-            "ubicacion y requisitos tecnicos del puesto.\n\n"
+            "Las preguntas deben cubrir: nombre completo, telefono, turno disponible (matutino/vespertino/nocturno), "
+            "zona o colonia de residencia, experiencia previa, motivacion para el puesto y requisitos tecnicos.\n\n"
             "Devuelve unicamente este JSON:\n"
             '{"preguntas": ["pregunta 1", "pregunta 2", ...]}'
         )

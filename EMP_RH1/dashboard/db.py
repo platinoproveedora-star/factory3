@@ -1,6 +1,22 @@
 """Supabase connection for dashboard."""
 from __future__ import annotations
 import json, os, urllib.request
+from pathlib import Path
+
+def _load_env() -> None:
+    env = Path(__file__).parent.parent.parent / ".env"
+    if not env.exists():
+        return
+    for line in env.read_text(encoding="utf-8", errors="replace").splitlines():
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            continue
+        k, v = raw.split("=", 1)
+        k = k.strip(); v = v.strip().strip('"').strip("'")
+        if k and k not in os.environ:
+            os.environ[k] = v
+
+_load_env()
 
 
 def _key() -> str:

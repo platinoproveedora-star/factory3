@@ -37,6 +37,19 @@ st.markdown(_CSS, unsafe_allow_html=True)
 _EMPRESA_ID = os.getenv("RH_EMPRESA_ID", "rh_empresa_1")
 
 
+def _run_skill(nombre: str, context: dict) -> dict:
+    import sys
+    _root = str(Path(__file__).parent.parent.parent)
+    if _root not in sys.path:
+        sys.path.insert(0, _root)
+    from factory.engine import SkillLoader, SkillRunner
+    _base = Path(__file__).parent.parent.parent / "factory"
+    ext = _base / "skills" / "externos"
+    ext.mkdir(parents=True, exist_ok=True)
+    loader = SkillLoader(internal_root=_base / "skills" / "internos", external_root=ext)
+    return SkillRunner(loader).run(nombre, context, source="internos")
+
+
 # ── Data ──────────────────────────────────────────────────────────────────────
 
 @st.cache_data(ttl=30)
@@ -276,7 +289,7 @@ elif page == "Pipeline":
             by_etapa[e] = []
         by_etapa[e].append(p)
 
-    tabs = st.tabs([f"{e.upper()} ({len(by_etapa.get(e,[]))})"] for e in etapas_ord)
+    tabs = st.tabs([f"{e.upper()} ({len(by_etapa.get(e,[]))})" for e in etapas_ord])
     for tab, etapa in zip(tabs, etapas_ord):
         with tab:
             items = by_etapa.get(etapa, [])
@@ -390,6 +403,23 @@ elif page == "Reclutadores":
 elif page == "Seeds":
     st.title("Seeds de prueba")
 
+    if st.button("＋ Crear Seed (1 vacante + 5 candidatos)", key="btn_seed1"):
+        with st.spinner("Generando... puede tardar ~30s"):
+            r = _run_skill("rh_seed_generator", {
+                "empresa_id": _EMPRESA_ID,
+                "n_vacantes": 1,
+                "n_candidatos_por_vacante": 5,
+                "profundidad": "simple",
+                "dry_run": False,
+                "tipo": "seed",
+            })
+        if r.get("ok"):
+            st.success("Seed creado.")
+            st.cache_data.clear()
+            st.rerun()
+        else:
+            st.error(r.get("error", "Error al crear seed"))
+
     seeds = _seeds()
     by_label: dict[str, dict] = {}
     for s in seeds:
@@ -467,6 +497,25 @@ elif page == "Ultima Vacante":
                         st.write(requisitos)
 
         st.divider()
+
+        if st.button("＋ Agregar 10 candidatos a esta vacante", key="btn_seedc10"):
+            with st.spinner("Generando 10 candidatos... puede tardar ~30s"):
+                r = _run_skill("rh_seed_generator", {
+                    "empresa_id": _EMPRESA_ID,
+                    "vacante_id_existente": vid,
+                    "vacante_titulo": vac.get("titulo", ""),
+                    "n_vacantes": 0,
+                    "n_candidatos_por_vacante": 10,
+                    "profundidad": "simple",
+                    "dry_run": False,
+                    "tipo": "seed",
+                })
+            if r.get("ok"):
+                st.success("10 candidatos agregados.")
+                st.cache_data.clear()
+                st.rerun()
+            else:
+                st.error(r.get("error", "Error al generar candidatos"))
 
         # ── Cuatro tabs ──────────────────────────────────────────────────────
         tab_cands, tab_pipe, tab_ai, tab_resp = st.tabs(

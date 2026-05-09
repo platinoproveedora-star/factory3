@@ -22,7 +22,7 @@ class RhSeedGeneratorService:
 
         n_vacantes   = min(int(context.get("n_vacantes", 1)), _MAX_VACANTES)
         n_candidatos = min(int(context.get("n_candidatos_por_vacante", 5)), _MAX_CANDIDATOS)
-        profundidad  = context.get("profundidad", "simple")
+        profundidad  = context.get("profundidad", "medio")
         puestos      = context.get("puestos", [])
         sectores     = context.get("sectores", ["logistica", "retail", "manufactura", "servicios"])
         seed_label   = context.get("seed_label") or f"seed_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
@@ -86,6 +86,9 @@ class RhSeedGeneratorService:
                 "canal":       "telegram",
                 "estado":      "activa",
                 "tipo":        tipo,
+                "turno":       vacante_data.get("turno"),
+                "zona":        vacante_data.get("zona"),
+                "sueldo":      vacante_data.get("sueldo"),
             })
             if not v_row.get("ok"):
                 errores.append(f"vacante {i+1}: {v_row.get('error')}")
@@ -241,11 +244,14 @@ class RhSeedGeneratorService:
             f"{puesto_txt}\nSector: {sector}\n\n"
             f"Genera en JSON:\n"
             '{"titulo":"...","descripcion":"...",'
+            '"turno":"matutino|vespertino|nocturno|mixto",'
+            '"zona":"nombre de zona o ciudad",'
+            '"sueldo":"rango en MXN ej: $8,000-$10,000 mensuales",'
             '"requisitos":{"reglas_knockout":[{"campo":"...","debe_contener":"..."}],'
             '"criterios_scoring":["criterio 1"]},'
             f'"preguntas":["pregunta 1",...,"pregunta {n_preguntas}"]'
             "}\n\n"
-            "Las preguntas deben cubrir nombre, telefono, disponibilidad, experiencia y requisito tecnico."
+            "Las preguntas deben cubrir nombre, telefono, turno disponible, zona de residencia, experiencia y requisito tecnico."
         )
         system = "Eres experto en RH. Generas datos realistas para pruebas. Solo JSON valido, sin bloques de codigo."
         try:
