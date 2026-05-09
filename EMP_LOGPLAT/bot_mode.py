@@ -1,4 +1,8 @@
-"""Handler for /logplat mode — modo libre, Haiku interpreta todo."""
+"""Handler for /logplat mode.
+
+Captura: solo con /+viaje /+gasto /+pago previo (hint en state).
+Chat libre: cualquier texto sin hint → Haiku consulta las 3 tablas.
+"""
 
 from __future__ import annotations
 
@@ -14,15 +18,16 @@ import service as svc  # noqa: E402
 
 _AYUDA = (
     "<b>Modo LOGPLAT activo</b> — Logística Platino\n\n"
-    "Envía texto, foto o PDF y capturo automáticamente.\n\n"
-    "/+viaje        — registrar viaje\n"
-    "/+gasto        — registrar gasto\n"
-    "/+pago         — registrar pago\n"
+    "<b>Agregar:</b>\n"
+    "/+viaje        — capturar viaje (texto, foto o PDF)\n"
+    "/+gasto        — capturar gasto (texto, foto o PDF)\n"
+    "/+pago         — capturar pago (texto, foto o PDF)\n\n"
+    "<b>Consultar:</b>\n"
     "/reporteviajes — últimos 10 viajes\n"
     "/reportegastos — últimos 10 gastos\n"
     "/pagos         — últimos 10 pagos\n"
-    "/ayuda         — esta ayuda\n"
-    "/salir         — salir del modo"
+    "o escribe cualquier pregunta y te respondo.\n\n"
+    "/ayuda — esta ayuda | /salir — salir del modo"
 )
 
 
@@ -55,22 +60,34 @@ def ejecutar(update: dict, state: dict) -> dict:
     hint      = state.get("hint", "")
     new_state = {k: v for k, v in state.items() if k != "hint"}
 
+    # ── Modo captura: solo si hay hint activo ─────────────────────────────────
+    if hint:
+        if photo or document:
+            return _capture_doc(photo, document, hint, new_state)
+        if raw_text:
+            return _capture_text(raw_text, hint, new_state)
+
+    # ── Sin hint: foto/doc sin comando ────────────────────────────────────────
     if photo or document:
-        return _capture_doc(photo, document, hint, new_state)
+        return _ok(
+            "Para agregar un documento usa primero /+viaje, /+gasto o /+pago.",
+            state,
+        )
 
+    # ── Chat libre ────────────────────────────────────────────────────────────
     if raw_text:
-        return _capture_text(raw_text, hint, new_state)
+        return _chat_libre(raw_text, state)
 
-    return _ok("Envía texto, foto o PDF para capturar. Escribe /ayuda para ver comandos.", state)
+    return _ok("Escribe algo o usa /ayuda para ver comandos.", state)
 
 
-# ─── CAPTURE ─────────────────────────────────────────────────────────────────
+# ─── CAPTURA ─────────────────────────────────────────────────────────────────
 
 def _capture_text(text: str, hint: str, state: dict) -> dict:
     r = svc.interpretar_libre(text, None, None, hint)
     if not r.get("ok"):
         return _ok(f"No pude interpretar: {r.get('error')}", state)
-    return _dispatch(r.get("action", "desconocido"), r.get("data", {}), state)
+    return _dispatch(hint, r.get("data", {}), state)
 
 
 def _capture_doc(photo, document, hint: str, state: dict) -> dict:
@@ -88,10 +105,10 @@ def _capture_doc(photo, document, hint: str, state: dict) -> dict:
     r = svc.interpretar_libre("", base64.b64encode(file_bytes).decode(), media_type, hint)
     if not r.get("ok"):
         return _ok(f"No pude leer el documento: {r.get('error')}", state)
-    return _dispatch(r.get("action", "desconocido"), r.get("data", {}), state)
+    return _dispatch(hint, r.get("data", {}), state)
 
 
-# ─── DISPATCH ────────────────────────────────────────────────────────────────
+# ─── DISPATCH (acción forzada por hint) ──────────────────────────────────────
 
 def _dispatch(action: str, data: dict, state: dict) -> dict:
     if action == "viaje":
@@ -100,11 +117,7 @@ def _dispatch(action: str, data: dict, state: dict) -> dict:
         return _save_gasto(data, state)
     if action == "pago":
         return _save_pago(data, state)
-    return _ok(
-        "No pude determinar si es viaje, gasto o pago.\n"
-        "Escribe /+viaje, /+gasto o /+pago para dar una pista y vuelve a enviar.",
-        state,
-    )
+    return _ok("No pude determinar el tipo. Usa /+viaje, /+gasto o /+pago.", state)
 
 
 # ─── SAVERS ──────────────────────────────────────────────────────────────────
@@ -146,6 +159,15 @@ def _save_pago(data: dict, state: dict) -> dict:
            f"Monto: ${float(data.get('monto_pago') or 0):,.0f}\n"
            f"Método: {data.get('metodo_pago')}")
     return _ok(msg, state)
+
+
+# ─── CHAT LIBRE ──────────────────────────────────────────────────────────────
+
+def _chat_libre(texto: str, state: dict) -> dict:
+    r = svc.consultar(texto)
+    if not r.get("ok"):
+        return _ok(f"Error consultando: {r.get('error')}", state)
+    return _ok(r["response"], state)
 
 
 # ─── REPORTES ────────────────────────────────────────────────────────────────

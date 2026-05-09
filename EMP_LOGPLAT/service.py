@@ -257,6 +257,26 @@ def lista_pagos(limit: int = 10) -> list[dict]:
     return r.get("data", []) if r.get("ok") else []
 
 
+# ─── CHAT LIBRE ──────────────────────────────────────────────────────────────
+
+def consultar(texto: str) -> dict:
+    viajes = reporte_viajes(30)
+    gastos = reporte_gastos(30)
+    pagos  = lista_pagos(30)
+
+    ctx = (
+        "Eres el asistente de Logística Platino. Responde en español, de forma concisa.\n"
+        "Solo usa los datos que se te dan. No inventes registros.\n\n"
+        f"VIAJES: {json.dumps(viajes, ensure_ascii=False)}\n\n"
+        f"GASTOS: {json.dumps(gastos, ensure_ascii=False)}\n\n"
+        f"PAGOS: {json.dumps(pagos, ensure_ascii=False)}"
+    )
+    r = _ai.run({"mode": "chat", "text": texto, "context": ctx})
+    if not r.get("ok"):
+        return r
+    return {"ok": True, "response": r["data"]["response"]}
+
+
 # ─── TELEGRAM FILE DOWNLOAD ──────────────────────────────────────────────────
 
 def descargar_telegram(file_id: str) -> tuple[bytes | None, str | None]:

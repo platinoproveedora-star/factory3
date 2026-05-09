@@ -22,6 +22,15 @@ def run(context: dict) -> dict:
     if not api_key:
         return {"ok": False, "error": "ANTHROPIC_API_KEY no configurada"}
 
+    if mode == "chat":
+        if not text and not ctx:
+            return {"ok": False, "error": "text requerido para mode=chat"}
+        messages = [{"role": "user", "content": f"{ctx}\n\nPregunta: {text}" if ctx else text}]
+        raw = _call_haiku(messages, api_key)
+        if not raw.get("ok"):
+            return raw
+        return {"ok": True, "data": {"response": raw["text"]}}
+
     if mode == "extract":
         if not schema:
             return {"ok": False, "error": "schema requerido para mode=extract"}
@@ -31,7 +40,7 @@ def run(context: dict) -> dict:
             return {"ok": False, "error": "actions requerido para mode=classify"}
         instruction = _classify_instruction(actions, hint, ctx)
     else:
-        return {"ok": False, "error": f"mode invalido: {mode}. Usar 'extract' o 'classify'"}
+        return {"ok": False, "error": f"mode invalido: {mode}. Usar 'extract', 'classify' o 'chat'"}
 
     messages = _build_messages(instruction, text, content_b64, media_type)
     raw = _call_haiku(messages, api_key)
