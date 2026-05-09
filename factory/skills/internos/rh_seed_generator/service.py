@@ -123,7 +123,7 @@ class RhSeedGeneratorService:
 
             cands_info = []
             for cand in candidatos_batch:
-                cand_folio = self._insertar_candidato(db, cand, vacante_id, empresa_id, preguntas, seed_label, resumen)
+                cand_folio = self._insertar_candidato(db, cand, vacante_id, empresa_id, preguntas, seed_label, resumen, vacante_data)
                 if cand_folio:
                     cands_info.append({"folio": cand_folio, "nombre": cand.get("nombre"), "score": cand.get("score", 0)})
 
@@ -158,7 +158,39 @@ class RhSeedGeneratorService:
 
     # -------------------------------------------------------------------------
 
-    def _insertar_candidato(self, db, cand, vacante_id, empresa_id, preguntas, seed_label, resumen) -> str | None:
+    def _enriquecer_detalle(self, resp_pares: list, vacante_data: dict) -> dict:
+        detalle: dict = {}
+        turno = vacante_data.get("turno")
+        zona  = vacante_data.get("zona")
+        if resp_pares and (turno or zona):
+            try:
+                from factory.skills.internos.rh_shift_zone_validator.service import RhShiftZoneValidatorService
+                r = RhShiftZoneValidatorService().ejecutar({
+                    "turno_requerido": turno or "no especificado",
+                    "zona_trabajo":    zona or "no especificada",
+                    "respuestas":      resp_pares,
+                })
+                if r.get("ok"):
+                    detalle["shift_zone"] = r["data"]
+            except Exception:
+                pass
+        if resp_pares:
+            try:
+                from factory.skills.internos.rh_dimension_analyzer.service import RhDimensionAnalyzerService
+                svc = RhDimensionAnalyzerService()
+                for dim in ("compromiso", "conducta"):
+                    r = svc.ejecutar({
+                        "dimension": dim,
+                        "respuestas": resp_pares,
+                        "puesto": vacante_data.get("titulo", "operador"),
+                    })
+                    if r.get("ok"):
+                        detalle[f"dimension_{dim}"] = r["data"]
+            except Exception:
+                pass
+        return detalle
+
+    def _insertar_candidato(self, db, cand, vacante_id, empresa_id, preguntas, seed_label, resumen, vacante_data=None) -> str | None:
         c_row = db.rest_insert("candidatos", {
             "vacante_id":    vacante_id,
             "nombre":        cand.get("nombre"),
@@ -196,12 +228,15 @@ class RhSeedGeneratorService:
                 r_data = r_row["data"][0] if isinstance(r_row["data"], list) else r_row["data"]
                 self._track(db, seed_label, empresa_id, "respuestas", r_data["id"])
 
+        resp_pares = [{"pregunta": p, "respuesta": r} for p, r in zip(preguntas, cand.get("respuestas", []))]
+        detalle = self._enriquecer_detalle(resp_pares, vacante_data or {})
+        detalle["resumen"] = cand.get("resumen_score", "seed")
         score_val = cand.get("score", 50)
         s_row = db.rest_insert("scores", {
             "candidato_id":  cand_id, "vacante_id": vacante_id,
             "score_total":   score_val,
             "pasa_knockout": cand.get("pasa_knockout", score_val >= 60),
-            "detalle":       {"resumen": cand.get("resumen_score", "seed")},
+            "detalle":       detalle,
         })
         if s_row.get("ok"):
             s_data = s_row["data"][0] if isinstance(s_row["data"], list) else s_row["data"]

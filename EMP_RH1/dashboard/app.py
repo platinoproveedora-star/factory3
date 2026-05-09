@@ -81,6 +81,10 @@ def _reclutadores():
     return select("reclutadores", "select=*&order=nombre.asc&limit=200")
 
 @st.cache_data(ttl=30)
+def _scores_full():
+    return select("scores", "select=*&order=created_at.desc&limit=500")
+
+@st.cache_data(ttl=30)
 def _ultima_vacante():
     return select("vacantes", "select=*&order=created_at.desc&limit=1")
 
@@ -124,7 +128,7 @@ with st.sidebar:
     st.title("🏭 Factory3 RH")
     page = st.radio(
         "Sección",
-        ["Overview", "Vacantes", "Candidatos", "Pipeline", "Entrevistas", "Reclutadores", "Seeds", "Ultima Vacante"],
+        ["Overview", "Vacantes", "Candidatos", "Pipeline", "Entrevistas", "Reclutadores", "Seeds", "Ultima Vacante", "Análisis IA", "Offer Builder"],
         label_visibility="collapsed",
     )
     st.divider()
@@ -474,14 +478,17 @@ elif page == "Ultima Vacante":
                 st.markdown(f"**Folio:** {_folio(vac, 'V-')}")
                 st.markdown(f"**Titulo:** {vac.get('titulo', '—')}")
                 st.markdown(f"**Estado:** {_badge(vac.get('estado', '—'))}")
+                st.markdown(f"**Turno:** {vac.get('turno') or '—'}")
 
             with col2:
                 st.markdown(f"**Canal:** {vac.get('canal', '—')}")
                 st.markdown(f"**Empresa ID:** {vac.get('empresa_id', '—')}")
+                st.markdown(f"**Zona:** {vac.get('zona') or '—'}")
 
             with col3:
                 st.markdown(f"**Tipo:** {vac.get('tipo', 'real')}")
                 st.markdown(f"**Fecha creacion:** {(vac.get('created_at') or '')[:10]}")
+                st.markdown(f"**Sueldo:** {vac.get('sueldo') or '—'}")
 
             if vac.get("descripcion"):
                 with st.expander("Ver descripcion"):
@@ -646,28 +653,219 @@ elif page == "Ultima Vacante":
 
         # ── Tab Respuestas ───────────────────────────────────────────────────
         with tab_resp:
+            import pandas as pd
+
             respuestas_vac = _respuestas_vacante(vid)
             cands_resp     = _candidatos_vacante(vid)
+            scores_resp    = _scores_vacante(vid)
             cands_map_resp = {c.get("id"): c for c in cands_resp}
+            scores_map_resp = {s.get("candidato_id"): s for s in scores_resp}
 
             if not respuestas_vac:
                 st.info("Sin respuestas para esta vacante")
             else:
-                # Agrupar por candidato_id
-                by_cand: dict[str, list] = {}
-                for r in respuestas_vac:
-                    cid = r.get("candidato_id", "sin_candidato")
-                    if cid not in by_cand:
-                        by_cand[cid] = []
-                    by_cand[cid].append(r)
+                # Pivot: una fila por candidato, una columna por pregunta
+                by_cand: dict[str, dict] = {}
+                preguntas_ord: list[str] = []
+                seen_pregs: set[str] = set()
 
-                for cid, resp_list in by_cand.items():
-                    cand = cands_map_resp.get(cid, {})
-                    nombre_exp = cand.get("nombre") or _folio(cand, "C-") or cid[:8]
-                    with st.expander(f"💬 {nombre_exp} ({len(resp_list)} respuestas)"):
-                        for r in resp_list:
-                            pregunta  = r.get("pregunta") or r.get("texto_pregunta") or f"Pregunta {r.get('orden', '')}"
-                            respuesta = r.get("respuesta") or r.get("texto_respuesta") or "—"
-                            st.markdown(f"**{pregunta}**")
-                            st.write(respuesta)
-                            st.markdown("---")
+                for r in sorted(respuestas_vac, key=lambda x: x.get("orden", 0)):
+                    cid  = r.get("candidato_id", "")
+                    preg = r.get("pregunta") or f"P{r.get('orden','')}"
+                    resp = r.get("respuesta") or "—"
+                    if cid not in by_cand:
+                        cand = cands_map_resp.get(cid, {})
+                        sc   = scores_map_resp.get(cid, {})
+                        by_cand[cid] = {
+                            "Folio":  _folio(cand, "C-"),
+                            "Nombre": cand.get("nombre") or "—",
+                            "Estado": cand.get("estado") or "—",
+                            "Score":  sc.get("score_total", "—"),
+                            "KO":     "✓" if sc.get("pasa_knockout") else "✗",
+                        }
+                    by_cand[cid][preg] = resp
+                    if preg not in seen_pregs:
+                        seen_pregs.add(preg)
+                        preguntas_ord.append(preg)
+
+                cols_base = ["Folio", "Nombre", "Estado", "Score", "KO"]
+                rows = [
+                    {**{c: d.get(c, "—") for c in cols_base}, **{p: d.get(p, "—") for p in preguntas_ord}}
+                    for d in by_cand.values()
+                ]
+                df = pd.DataFrame(rows, columns=cols_base + preguntas_ord)
+                st.caption(f"{len(df)} candidatos · {len(preguntas_ord)} preguntas")
+                st.dataframe(df, use_container_width=True, hide_index=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Análisis IA
+# ═══════════════════════════════════════════════════════════════════════════════
+
+elif page == "Análisis IA":
+    import pandas as pd
+
+    st.title("Análisis IA")
+
+    if "analisis_resultados" not in st.session_state:
+        st.session_state.analisis_resultados = {}
+
+    scores_all  = _scores_full()
+    candidatos  = _candidatos()
+    vacantes    = _vacantes()
+    cands_map   = {c["id"]: c for c in candidatos}
+    vacs_map    = {v["id"]: v for v in vacantes}
+
+    # ── Tabla resumen ────────────────────────────────────────────────────────
+    st.subheader("Resumen de candidatos")
+    rows = []
+    for sc in scores_all:
+        cid     = sc.get("candidato_id", "")
+        cand    = cands_map.get(cid, {})
+        vac     = vacs_map.get(cand.get("vacante_id", ""), {})
+        detalle = sc.get("detalle") or {}
+        sz      = detalle.get("shift_zone", {})
+        comp    = detalle.get("dimension_compromiso", {})
+        cond    = detalle.get("dimension_conducta", {})
+        rows.append({
+            "Folio":      _folio(cand, "C-"),
+            "Nombre":     cand.get("nombre", "—"),
+            "Vacante":    _folio(vac, "V-"),
+            "Score":      sc.get("score_total", "—"),
+            "KO":         "✓" if sc.get("pasa_knockout") else "✗",
+            "Turno/Zona": sz.get("recomendacion", "—"),
+            "Compromiso": f"{comp.get('score','—')} {comp.get('nivel','')}".strip(),
+            "Conducta":   f"{cond.get('score','—')} {cond.get('nivel','')}".strip(),
+            "Resumen SZ": (sz.get("resumen") or "")[:80],
+        })
+    if rows:
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    else:
+        st.info("Sin datos. Corre un seed para generar candidatos con análisis.")
+
+    st.divider()
+
+    # ── Análisis completo por candidato ──────────────────────────────────────
+    st.subheader("Análisis completo por candidato")
+    opciones = {c["id"]: f"{_folio(c,'C-')} — {c.get('nombre','')}" for c in candidatos}
+    sel_id = st.selectbox("Selecciona candidato", [""] + list(opciones.keys()),
+                          format_func=lambda x: opciones.get(x, "Selecciona...") if x else "Selecciona...")
+
+    if sel_id:
+        cand_sel = cands_map.get(sel_id, {})
+        vac_sel  = vacs_map.get(cand_sel.get("vacante_id", ""), {})
+
+        col_btn, col_info = st.columns([1, 3])
+        with col_btn:
+            if st.button("⚡ Analizar todas las dimensiones", key="btn_analizar"):
+                with st.spinner("Analizando 6 dimensiones + turno/zona (~30s)..."):
+                    resultado = {}
+                    # Shift zone
+                    if vac_sel.get("turno") or vac_sel.get("zona"):
+                        r = _run_skill("rh_shift_zone_validator", {
+                            "turno_requerido": vac_sel.get("turno", "no especificado"),
+                            "zona_trabajo":    vac_sel.get("zona", "no especificada"),
+                            "candidato_id":    sel_id,
+                        })
+                        if r.get("ok"):
+                            resultado["shift_zone"] = r["data"]
+                    # 6 dimensiones
+                    for dim in ("conducta", "fisico", "compromiso", "maquinaria", "rutas", "tecnico"):
+                        r = _run_skill("rh_dimension_analyzer", {
+                            "dimension":    dim,
+                            "candidato_id": sel_id,
+                            "puesto":       vac_sel.get("titulo", "operador"),
+                        })
+                        if r.get("ok"):
+                            resultado[f"dimension_{dim}"] = r["data"]
+                    st.session_state.analisis_resultados[sel_id] = resultado
+                st.success("Análisis completado.")
+
+        with col_info:
+            st.write(f"**Puesto:** {vac_sel.get('titulo','—')} | **Turno:** {vac_sel.get('turno','—')} | **Zona:** {vac_sel.get('zona','—')}")
+
+        res = st.session_state.analisis_resultados.get(sel_id)
+        if res:
+            sz = res.get("shift_zone")
+            if sz:
+                rec = sz.get("recomendacion", "")
+                fn  = st.success if rec == "contratar" else (st.warning if rec == "revisar" else st.error)
+                fn(f"**Turno/Zona:** {rec.upper()} — {sz.get('resumen','')}")
+
+            dim_rows = []
+            for key, val in res.items():
+                if key.startswith("dimension_"):
+                    dim_rows.append({
+                        "Dimensión":     val.get("dimension", key).upper(),
+                        "Score (1-10)":  val.get("score", "—"),
+                        "Nivel":         val.get("nivel", "—"),
+                        "Recomendación": val.get("recomendacion", "—"),
+                        "Resumen":       (val.get("resumen") or "")[:100],
+                    })
+            if dim_rows:
+                st.dataframe(pd.DataFrame(dim_rows), use_container_width=True, hide_index=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Offer Builder
+# ═══════════════════════════════════════════════════════════════════════════════
+
+elif page == "Offer Builder":
+    import pandas as pd
+
+    st.title("Offer Builder")
+
+    if "ofertas" not in st.session_state:
+        st.session_state.ofertas = {}
+
+    score_min = st.number_input("Score mínimo de candidatos", min_value=0, max_value=100, value=60, step=5)
+
+    vacantes   = _vacantes()
+    scores_all = _scores_full()
+    candidatos = _candidatos()
+
+    scores_map  = {s["candidato_id"]: s for s in scores_all}
+    cands_map   = {c["id"]: c for c in candidatos}
+
+    by_vac: dict[str, list] = {}
+    for c in candidatos:
+        vid = c.get("vacante_id", "")
+        if vid not in by_vac:
+            by_vac[vid] = []
+        by_vac[vid].append(c)
+
+    hay_vacantes = False
+    for vac in vacantes:
+        vid   = vac.get("id", "")
+        cands = by_vac.get(vid, [])
+        aptos = [c for c in cands
+                 if (scores_map.get(c.get("id", ""), {}).get("score_total") or 0) >= score_min]
+        if not aptos:
+            continue
+        hay_vacantes = True
+
+        with st.expander(f"**{_folio(vac,'V-')}** — {vac.get('titulo','')}  |  {len(aptos)} candidatos ≥{score_min}pts"):
+            st.caption(f"Zona: {vac.get('zona','—')} | Turno: {vac.get('turno','—')} | Sueldo: {vac.get('sueldo','—')}")
+            for c in aptos:
+                sc    = scores_map.get(c.get("id",""), {})
+                cid   = c.get("id","")
+                folio = _folio(c, "C-")
+                col1, col2, col3 = st.columns([3, 1, 2])
+                col1.write(f"**{folio}** — {c.get('nombre','—')}")
+                col2.metric("Score", sc.get("score_total","—"))
+                with col3:
+                    if st.button("📄 Generar Oferta", key=f"offer_{cid}"):
+                        with st.spinner("Generando oferta con IA..."):
+                            r = _run_skill("rh_offer_builder", {
+                                "puesto":         vac.get("titulo", ""),
+                                "empresa":        _EMPRESA_ID,
+                                "zona":           vac.get("zona", ""),
+                                "notas_extra":    f"Candidato: {c.get('nombre','')}. Sueldo ofrecido: {vac.get('sueldo','')}",
+                            })
+                        if r.get("ok"):
+                            st.session_state.ofertas[cid] = r["data"].get("texto_oferta", "")
+                        else:
+                            st.error(r.get("error", "Error"))
+                if cid in st.session_state.ofertas:
+                    st.text_area("Oferta generada", st.session_state.ofertas[cid],
+                                 height=150, key=f"ta_{cid}")
