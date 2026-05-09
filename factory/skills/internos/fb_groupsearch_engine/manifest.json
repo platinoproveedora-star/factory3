@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "fb_groupsearch_engine",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Busca grupos públicos de Facebook por tema. Motor: Meta API → Haiku IA. Extensible para web search y scraping.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

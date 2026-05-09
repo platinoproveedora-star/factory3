@@ -71,6 +71,62 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "fb_groupsearch_engine": {
+    "tipo": "interno",
+    "nombre": "fb_groupsearch_engine",
+    "vertical": "facebook",
+    "descripcion": "Busca grupos públicos de Facebook por tema. Motor: Meta API → Haiku IA. Extensible para web search y scraping.",
+    "path": "skills/internos/fb_groupsearch_engine",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "fb_groupsearch_saver": {
+    "tipo": "interno",
+    "nombre": "fb_groupsearch_saver",
+    "vertical": "facebook",
+    "descripcion": "Crea search_id, registra búsqueda y guarda grupos en fb_gs_searches/fb_gs_groups con dedup",
+    "path": "skills/internos/fb_groupsearch_saver",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "fb_groupsearch_delete": {
+    "tipo": "interno",
+    "nombre": "fb_groupsearch_delete",
+    "vertical": "facebook",
+    "descripcion": "Elimina una búsqueda y todos sus grupos de fb_gs_searches y fb_gs_groups",
+    "path": "skills/internos/fb_groupsearch_delete",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "fb_groupsearch_list": {
+    "tipo": "interno",
+    "nombre": "fb_groupsearch_list",
+    "vertical": "facebook",
+    "kind": "data",
+    "descripcion": "Retorna lista de búsquedas de grupos FB para el dashboard",
+    "path": "skills/internos/fb_groupsearch_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "fb_groupsearch_groups": {
+    "tipo": "interno",
+    "nombre": "fb_groupsearch_groups",
+    "vertical": "facebook",
+    "kind": "data",
+    "descripcion": "Retorna grupos encontrados de una búsqueda específica para el dashboard",
+    "path": "skills/internos/fb_groupsearch_groups",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "fbgroups_run": {
+    "tipo": "interno",
+    "nombre": "fbgroups_run",
+    "vertical": "facebook",
+    "descripcion": "Bot mode fbgroups — maneja comandos /buscar /misbusquedas /ver /borrar en Telegram",
+    "path": "skills/internos/fbgroups_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "context_loader": {
     "tipo": "interno",
     "nombre": "context_loader",

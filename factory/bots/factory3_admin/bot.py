@@ -13,14 +13,16 @@ _COMMANDS_DEFAULT = {
         "/estado — Estado del sistema\n"
         "/rh1 — Entrar al modo Recursos Humanos\n"
         "/logplat — Entrar al modo Logística Platino\n"
+        "/fbgroups — Entrar al modo FB Groups Discovery\n"
         "/salir — Salir del modo activo"
     ),
     "/estado": "Sistema activo y funcionando.",
 }
 
 _MODES = {
-    "/rh1":     "rh_1",
-    "/logplat": "logplat",
+    "/rh1":      "rh_1",
+    "/logplat":  "logplat",
+    "/fbgroups": "fbgroups",
 }
 
 
@@ -60,8 +62,9 @@ def handle_update(update: dict, state: dict) -> dict:
     markup = None
     if text in ("/start", "/ayuda"):
         markup = {"inline_keyboard": [[
-            {"text": "Entrar a RH",      "callback_data": "/rh1"},
-            {"text": "Logística Platino","callback_data": "/logplat"},
+            {"text": "Entrar a RH",       "callback_data": "/rh1"},
+            {"text": "Logística Platino", "callback_data": "/logplat"},
+            {"text": "FB Groups",         "callback_data": "/fbgroups"},
         ]]}
     return {
         "response": response,
