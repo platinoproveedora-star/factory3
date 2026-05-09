@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS logplat.viajes (
     chofer              text,
     estatus_viaje       text DEFAULT 'activo',
     estatus_pago        text DEFAULT 'por_cobrar',
+    id_doc              text,
     created_at          timestamptz DEFAULT now(),
     updated_at          timestamptz DEFAULT now()
 );
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS logplat.gastos (
     concepto      text,
     chofer        text,
     tipo_gasto    text,
+    id_doc        text,
     created_at    timestamptz DEFAULT now(),
     updated_at    timestamptz DEFAULT now()
 );
@@ -48,6 +50,7 @@ CREATE TABLE IF NOT EXISTS logplat.pagos (
     monto_pago    numeric(12,2) DEFAULT 0,
     metodo_pago   text DEFAULT 'transferencia',
     observaciones text,
+    id_doc        text,
     created_at    timestamptz DEFAULT now(),
     updated_at    timestamptz DEFAULT now()
 );

@@ -93,6 +93,7 @@ def crear_viaje(data: dict) -> dict:
         "chofer":             data.get("chofer") or "",
         "estatus_viaje":      "activo",
         "estatus_pago":       data.get("estatus_pago") or "por_cobrar",
+        "id_doc":             data.get("id_doc") or None,
         "created_at":         now,
         "updated_at":         now,
     }
@@ -138,6 +139,7 @@ def crear_gasto(data: dict) -> dict:
         "concepto":      data.get("concepto") or "",
         "chofer":        data.get("chofer") or "",
         "tipo_gasto":    data.get("tipo_gasto") or "otro",
+        "id_doc":        data.get("id_doc") or None,
         "created_at":    now,
         "updated_at":    now,
     }
@@ -176,6 +178,7 @@ def crear_pago(data: dict) -> dict:
         "monto_pago":    float(data.get("monto_pago") or 0),
         "metodo_pago":   data.get("metodo_pago") or "transferencia",
         "observaciones": data.get("observaciones") or "",
+        "id_doc":        data.get("id_doc") or None,
         "created_at":    now,
         "updated_at":    now,
     }
@@ -207,11 +210,11 @@ def _actualizar_cxc(numero_viaje: str, monto_pago: float) -> None:
 _ACTIONS = {
     "viaje": {"cliente": None, "origen": None, "destino": None, "fecha_salida": None,
                "fecha_llegada": None, "chofer": None, "costo_viaje": None,
-               "precio_venta_viaje": None, "estatus_pago": "por_cobrar"},
+               "precio_venta_viaje": None, "estatus_pago": "por_cobrar", "id_doc": None},
     "gasto": {"concepto": None, "monto_gasto": None, "fecha_gasto": None,
-               "chofer": None, "numero_viaje": None, "tipo_gasto": None},
+               "chofer": None, "numero_viaje": None, "tipo_gasto": None, "id_doc": None},
     "pago":  {"monto_pago": None, "fecha_pago": None, "metodo_pago": None,
-               "numero_viaje": None, "cliente": None},
+               "numero_viaje": None, "cliente": None, "id_doc": None},
 }
 
 
