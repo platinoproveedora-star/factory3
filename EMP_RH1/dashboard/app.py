@@ -916,8 +916,11 @@ elif page == "FB Groups":
 
     st.title("FB Groups Discovery")
 
-    if "fb_grupos_visibles" not in st.session_state:
-        st.session_state.fb_grupos_visibles = None
+    if "fb_last_grupos" not in st.session_state:
+        st.session_state.fb_last_grupos  = []
+        st.session_state.fb_last_sid     = ""
+        st.session_state.fb_last_fuente  = ""
+        st.session_state.fb_last_tema    = ""
 
     tab_buscar, tab_historial = st.tabs(["Nueva búsqueda", "Historial"])
 
@@ -928,12 +931,12 @@ elif page == "FB Groups":
             placeholder="operadores de tráiler Mérida · cemento México · maquinaria pesada Chiapas",
         )
         if st.button("Buscar grupos", type="primary", disabled=not tema.strip()):
-            with st.spinner("Buscando grupos..."):
+            with st.spinner("Buscando grupos en Facebook..."):
                 engine_r = _run_skill("fb_groupsearch_engine", {"tema_busqueda": tema.strip(), "dry_run": False})
             if not engine_r.get("ok"):
-                st.error(engine_r.get("error", "Error en búsqueda"))
+                st.error(f"Error en búsqueda: {engine_r.get('error', 'desconocido')}")
             else:
-                ed = engine_r.get("data") or {}
+                ed     = engine_r.get("data") or {}
                 grupos = ed.get("grupos", [])
                 fuente = ed.get("fuente", "ia_sugerido")
                 with st.spinner("Guardando resultados..."):
@@ -944,68 +947,75 @@ elif page == "FB Groups":
                         "empresa_id":    _EMPRESA_ID,
                         "dry_run":       False,
                     })
-                if saver_r.get("ok"):
-                    sd = saver_r.get("data") or {}
-                    fuente_lbl = "Meta API" if fuente == "meta_api" else "IA sugerido ⚠️"
-                    st.success(f"{sd.get('total_grupos', 0)} grupos guardados — {sd.get('search_id')} — Fuente: {fuente_lbl}")
-                    st.session_state.fb_grupos_visibles = sd.get("search_id")
-                    st.cache_data.clear()
-                    st.rerun()
+                if not saver_r.get("ok"):
+                    st.error(f"Error al guardar: {saver_r.get('error', 'desconocido')}")
                 else:
-                    st.error(saver_r.get("error", "Error al guardar"))
+                    sd = saver_r.get("data") or {}
+                    st.session_state.fb_last_grupos = grupos
+                    st.session_state.fb_last_sid    = sd.get("search_id", "")
+                    st.session_state.fb_last_fuente = fuente
+                    st.session_state.fb_last_tema   = tema.strip()
+
+        if st.session_state.fb_last_sid:
+            fuente_lbl = "Meta API" if st.session_state.fb_last_fuente == "meta_api" else "IA sugerido ⚠️"
+            st.success(
+                f"**{len(st.session_state.fb_last_grupos)} grupos** encontrados — "
+                f"`{st.session_state.fb_last_sid}` — {fuente_lbl}"
+            )
+            df_new = pd.DataFrame([{
+                "Nombre":      g.get("grupo_nombre", ""),
+                "Miembros":    g.get("miembros_estimados", ""),
+                "Ubicación":   g.get("ubicacion_detectada", ""),
+                "Descripción": (g.get("descripcion") or "")[:80],
+                "URL":         g.get("grupo_url", ""),
+            } for g in st.session_state.fb_last_grupos])
+            st.dataframe(df_new, use_container_width=True, hide_index=True)
 
     # ── Historial ─────────────────────────────────────────────────────────────
     with tab_historial:
-        searches = select("fb_gs_searches", f"select=*&order=created_at.desc&limit=200")
+        searches = select("fb_gs_searches", "select=*&order=created_at.desc&limit=200")
 
         if not searches:
             st.info("Sin búsquedas guardadas. Usa la pestaña Nueva búsqueda.")
         else:
             df_s = pd.DataFrame([{
-                "Search ID":  s.get("search_id", ""),
-                "Tema":       s.get("tema_busqueda", ""),
-                "Grupos":     s.get("total_grupos", 0),
-                "Fuente":     s.get("fuente", ""),
-                "Estado":     s.get("estado", ""),
-                "Fecha":      (s.get("created_at") or "")[:10],
+                "Search ID": s.get("search_id", ""),
+                "Tema":      s.get("tema_busqueda", ""),
+                "Grupos":    s.get("total_grupos", 0),
+                "Fuente":    s.get("fuente", ""),
+                "Estado":    s.get("estado", ""),
+                "Fecha":     (s.get("created_at") or "")[:10],
             } for s in searches])
             st.dataframe(df_s, use_container_width=True, hide_index=True)
 
             selected_id = st.selectbox(
                 "Ver grupos de búsqueda",
                 options=[s.get("search_id") for s in searches],
-                index=0,
             )
             col1, col2 = st.columns([1, 5])
             with col1:
-                if st.button("Ver grupos"):
-                    st.session_state.fb_grupos_visibles = selected_id
+                ver = st.button("Ver grupos")
             with col2:
-                if st.button("Borrar búsqueda", type="secondary"):
-                    del_r = _run_skill("fb_groupsearch_delete", {"search_id": selected_id, "dry_run": False})
-                    if del_r.get("ok"):
-                        st.success(f"{selected_id} eliminada.")
-                        st.session_state.fb_grupos_visibles = None
-                        st.rerun()
-                    else:
-                        st.error(del_r.get("error", "Error al borrar"))
+                borrar = st.button("Borrar búsqueda", type="secondary")
 
-    # ── Tabla de grupos ───────────────────────────────────────────────────────
-    sid_ver = st.session_state.fb_grupos_visibles
-    if sid_ver:
-        st.divider()
-        st.subheader(f"Grupos — {sid_ver}")
-        grupos = select("fb_gs_groups", f"select=*&search_id=eq.{sid_ver}&order=created_at.desc&limit=500")
+            if ver:
+                grupos_h = select("fb_gs_groups", f"select=*&search_id=eq.{selected_id}&order=created_at.desc&limit=500")
+                if not grupos_h:
+                    st.info("Sin grupos para esta búsqueda.")
+                else:
+                    df_g = pd.DataFrame([{
+                        "Nombre":      g.get("grupo_nombre", ""),
+                        "Miembros":    g.get("miembros_estimados", ""),
+                        "Ubicación":   g.get("ubicacion_detectada", ""),
+                        "Descripción": (g.get("descripcion") or "")[:80],
+                        "URL":         g.get("grupo_url", ""),
+                        "Fuente":      g.get("fuente", ""),
+                    } for g in grupos_h])
+                    st.dataframe(df_g, use_container_width=True, hide_index=True)
 
-        if not grupos:
-            st.info("Sin grupos para esta búsqueda.")
-        else:
-            df_g = pd.DataFrame([{
-                "Nombre":    g.get("grupo_nombre", ""),
-                "URL":       g.get("grupo_url", ""),
-                "Miembros":  g.get("miembros_estimados", ""),
-                "Ubicación": g.get("ubicacion_detectada", ""),
-                "Fuente":    g.get("fuente", ""),
-                "Descripción": (g.get("descripcion") or "")[:80],
-            } for g in grupos])
-            st.dataframe(df_g, use_container_width=True, hide_index=True)
+            if borrar:
+                del_r = _run_skill("fb_groupsearch_delete", {"search_id": selected_id, "dry_run": False})
+                if del_r.get("ok"):
+                    st.success(f"{selected_id} eliminada.")
+                else:
+                    st.error(del_r.get("error", "Error al borrar"))
