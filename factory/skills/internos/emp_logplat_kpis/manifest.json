@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "emp_logplat_kpis",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "KPIs de Logistica Platino: utilidad semanal, saldo CXC, viajes. Expuesto en GET /data/emp_logplat_kpis.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

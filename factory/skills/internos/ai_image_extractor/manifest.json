@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "ai_image_extractor",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Extrae datos estructurados de imagen, PDF o texto usando Claude Haiku. Devuelve JSON segun schema.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}
