@@ -33,21 +33,22 @@ class FbGroupsearchEngineService:
         if context.get("dry_run", False):
             return {"ok": True, "message": "dry_run", "data": context}
 
-        grupos, fuente = self._buscar(tema, context)
+        limite = int(context.get("limite") or 25)
+        grupos, fuente = self._buscar(tema, context, limite)
 
         return {
             "ok": True,
             "message": f"{len(grupos)} grupos encontrados via {fuente}",
             "data": {
-                "grupos":         grupos,
-                "fuente":         fuente,
-                "tema_busqueda":  tema,
+                "grupos":        grupos,
+                "fuente":        fuente,
+                "tema_busqueda": tema,
             },
         }
 
     # ── Orquestador de capas ──────────────────────────────────────────────────
 
-    def _buscar(self, tema: str, context: dict) -> tuple[list, str]:
+    def _buscar(self, tema: str, context: dict, limite: int) -> tuple[list, str]:
         token = (
             os.getenv("META_ACCESS_TOKEN")
             or os.getenv("IG_ACCESS_TOKEN")
@@ -58,7 +59,7 @@ class FbGroupsearchEngineService:
         # Capa 1 — Meta Graph API
         if token:
             try:
-                grupos = self._buscar_meta_api(tema, token)
+                grupos = self._buscar_meta_api(tema, token, limite)
                 if grupos:
                     return grupos, "meta_api"
             except Exception:
@@ -66,7 +67,7 @@ class FbGroupsearchEngineService:
 
         # Capa 2 — Web search (futuro)
         # try:
-        #     grupos = self._buscar_web(tema)
+        #     grupos = self._buscar_web(tema, limite)
         #     if grupos:
         #         return grupos, "web_search"
         # except NotImplementedError:
@@ -74,25 +75,25 @@ class FbGroupsearchEngineService:
 
         # Capa 3 — Scraping (futuro)
         # try:
-        #     grupos = self._buscar_scraping(tema)
+        #     grupos = self._buscar_scraping(tema, limite)
         #     if grupos:
         #         return grupos, "scraping"
         # except NotImplementedError:
         #     pass
 
         # Capa 4 — Haiku IA (fallback)
-        return self._buscar_haiku(tema), "ia_sugerido"
+        return self._buscar_haiku(tema, limite), "ia_sugerido"
 
     # ── Implementaciones activas ──────────────────────────────────────────────
 
-    def _buscar_meta_api(self, tema: str, token: str) -> list:
+    def _buscar_meta_api(self, tema: str, token: str, limite: int = 25) -> list:
         version = os.getenv("IG_GRAPH_API_VERSION", "v25.0")
         params  = urllib.parse.urlencode({
             "type":         "group",
             "q":            tema,
             "fields":       "id,name,description,member_count,privacy",
             "access_token": token,
-            "limit":        25,
+            "limit":        limite,
         })
         url = f"https://graph.facebook.com/{version}/search?{params}"
         req = urllib.request.Request(
@@ -116,13 +117,13 @@ class FbGroupsearchEngineService:
             })
         return grupos
 
-    def _buscar_haiku(self, tema: str) -> list:
+    def _buscar_haiku(self, tema: str, limite: int = 25) -> list:
         api_key = os.getenv("ANTHROPIC_API_KEY", "")
         if not api_key:
             return []
 
         prompt = (
-            f"Genera una lista de 12 grupos públicos de Facebook que probablemente existan "
+            f"Genera una lista de {limite} grupos públicos de Facebook que probablemente existan "
             f"sobre el tema: '{tema}'.\n"
             f"Para cada grupo: nombre realista, descripción corta (1 línea), "
             f"miembros estimados (número entero), ubicación geográfica si aplica.\n"

@@ -926,13 +926,14 @@ elif page == "FB Groups":
 
     # ── Nueva búsqueda ────────────────────────────────────────────────────────
     with tab_buscar:
-        tema = st.text_input(
+        tema   = st.text_input(
             "Tema de búsqueda",
             placeholder="operadores de tráiler Mérida · cemento México · maquinaria pesada Chiapas",
         )
+        limite = st.select_slider("Cantidad de grupos", options=[10, 25, 50, 100], value=25)
         if st.button("Buscar grupos", type="primary", disabled=not tema.strip()):
             with st.spinner("Buscando grupos en Facebook..."):
-                engine_r = _run_skill("fb_groupsearch_engine", {"tema_busqueda": tema.strip(), "dry_run": False})
+                engine_r = _run_skill("fb_groupsearch_engine", {"tema_busqueda": tema.strip(), "limite": limite, "dry_run": False})
             if not engine_r.get("ok"):
                 st.error(f"Error en búsqueda: {engine_r.get('error', 'desconocido')}")
             else:
