@@ -25,6 +25,16 @@ Skills genéricos (sin empresa) no llevan prefijo `EMP_`.
 ### `logplat.gastos`
 `id` (uuid), `folio` (GAS-001…), `fecha`, `chofer`, `viaje_folio`, `concepto`, `monto`, `comprobante_url`, `notas`, `created_at`
 
+## Estructura de código
+```
+EMP_LOGPLAT/
+  CLAUDE.md
+  EMP_LOGPLAT.md
+  service.py          ← toda la lógica DB (viajes, gastos, pagos, cxp)
+  bot_mode.py         ← handler modo /logplat del bot factory3_admin
+```
+Skills de reporte (si se necesitan) van en `factory/skills/internos/emp_logplat_*/` e importan `service.py` desde `EMP_LOGPLAT/`.
+
 ## Skills planeados
 | Skill | Descripción |
 |---|---|

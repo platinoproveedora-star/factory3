@@ -390,7 +390,8 @@
     "tipo": "interno",
     "nombre": "supabase_query_table",
     "vertical": "factory_supabase",
-    "descripcion": "Consulta filas en Supabase via REST",
+    "kind": "data",
+    "descripcion": "Consulta filas en Supabase via REST. kind=data: expuesto en GET /data/supabase_query_table",
     "path": "skills/internos/supabase_query_table",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1329,7 +1330,7 @@
     "tipo": "interno",
     "nombre": "rh_dimension_analyzer",
     "vertical": "ai_hiring_assessment",
-    "descripcion": "Analiza una dimensión del candidato (conducta, fisico, compromiso, maquinaria, rutas, tecnico) usando IA y devuelve score 1-10, señales y recomendación",
+    "descripcion": "Analiza una dimensiï¿½n del candidato (conducta, fisico, compromiso, maquinaria, rutas, tecnico) usando IA y devuelve score 1-10, seï¿½ales y recomendaciï¿½n",
     "path": "skills/internos/rh_dimension_analyzer",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1347,7 +1348,7 @@
     "tipo": "interno",
     "nombre": "rh_interview_scheduler",
     "vertical": "ai_hiring_assessment",
-    "descripcion": "Agenda, cancela y lista entrevistas; notifica candidato y reclutador por Telegram; auto-calcula el próximo slot hábil si no se provee fecha",
+    "descripcion": "Agenda, cancela y lista entrevistas; notifica candidato y reclutador por Telegram; auto-calcula el prï¿½ximo slot hï¿½bil si no se provee fecha",
     "path": "skills/internos/rh_interview_scheduler",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1356,7 +1357,7 @@
     "tipo": "interno",
     "nombre": "rh_shift_zone_validator",
     "vertical": "ai_hiring_assessment",
-    "descripcion": "Valida turno requerido, zona de trabajo y dependencia de transporte del candidato en un solo análisis con IA",
+    "descripcion": "Valida turno requerido, zona de trabajo y dependencia de transporte del candidato en un solo anï¿½lisis con IA",
     "path": "skills/internos/rh_shift_zone_validator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1374,7 +1375,7 @@
     "tipo": "interno",
     "nombre": "dashboard_updater",
     "vertical": "factory",
-    "descripcion": "Actualiza un dashboard Streamlit existente con IA: agrega secciones, métricas y tablas nuevas sin romper lo existente",
+    "descripcion": "Actualiza un dashboard Streamlit existente con IA: agrega secciones, mï¿½tricas y tablas nuevas sin romper lo existente",
     "path": "skills/internos/dashboard_updater",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1383,7 +1384,7 @@
     "tipo": "interno",
     "nombre": "rh_retention_predictor",
     "vertical": "vertical_retention",
-    "descripcion": "Predice riesgo de desercion temprana del candidato: score 1-10, meses estimados, señales y recomendacion",
+    "descripcion": "Predice riesgo de desercion temprana del candidato: score 1-10, meses estimados, seï¿½ales y recomendacion",
     "path": "skills/internos/rh_retention_predictor",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1394,6 +1395,34 @@
     "vertical": "vertical_retention",
     "descripcion": "Genera y envia carta oferta laboral al candidato por Telegram. Registra estado en alertas.",
     "path": "skills/internos/rh_offer_sender",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "logplat_run": {
+    "tipo": "interno",
+    "nombre": "logplat_run",
+    "vertical": "vertical_logplat",
+    "descripcion": "Orquestador modo /logplat: comandos /+viaje, /+gasto, /+pago con captura manual o por imagen/PDF.",
+    "path": "skills/internos/logplat_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "ai_image_extractor": {
+    "tipo": "interno",
+    "nombre": "ai_image_extractor",
+    "vertical": "factory_ai",
+    "descripcion": "Extrae datos estructurados de imagen, PDF o texto usando Claude Haiku. Devuelve JSON segun schema.",
+    "path": "skills/internos/ai_image_extractor",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "emp_logplat_kpis": {
+    "tipo": "interno",
+    "nombre": "emp_logplat_kpis",
+    "vertical": "vertical_logplat",
+    "kind": "data",
+    "descripcion": "KPIs de Logistica Platino: utilidad semanal, saldo CXC, viajes. Expuesto en GET /data/emp_logplat_kpis.",
+    "path": "skills/internos/emp_logplat_kpis",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   }
