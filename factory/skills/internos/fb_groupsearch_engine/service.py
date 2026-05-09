@@ -33,8 +33,12 @@ class FbGroupsearchEngineService:
         if context.get("dry_run", False):
             return {"ok": True, "message": "dry_run", "data": context}
 
-        limite = int(context.get("limite") or 25)
+        limite       = int(context.get("limite") or 25)
+        min_miembros = int(context.get("min_miembros") or 0)
         grupos, fuente = self._buscar(tema, context, limite)
+
+        if min_miembros > 0:
+            grupos = [g for g in grupos if (g.get("miembros_estimados") or 0) >= min_miembros]
 
         return {
             "ok": True,
@@ -122,17 +126,20 @@ class FbGroupsearchEngineService:
         if not api_key:
             return []
 
+        # ~150 tokens por grupo en JSON; mínimo 1024, máximo 8192
+        max_tokens = min(8192, max(1024, limite * 160))
+
         prompt = (
-            f"Genera una lista de {limite} grupos públicos de Facebook que probablemente existan "
+            f"Genera una lista de exactamente {limite} grupos públicos de Facebook que probablemente existan "
             f"sobre el tema: '{tema}'.\n"
             f"Para cada grupo: nombre realista, descripción corta (1 línea), "
-            f"miembros estimados (número entero), ubicación geográfica si aplica.\n"
+            f"miembros estimados (número entero real, no pongas 0), ubicación geográfica si aplica.\n"
             f"Solo JSON válido sin bloques de código:\n"
             f'{{"grupos": [{{"nombre": "...", "descripcion": "...", "miembros": 1500, "ubicacion": "Mérida, Yucatán"}}]}}'
         )
         payload = {
             "model":      "claude-haiku-4-5-20251001",
-            "max_tokens": 1024,
+            "max_tokens": max_tokens,
             "messages":   [{"role": "user", "content": prompt}],
         }
         req = urllib.request.Request(
