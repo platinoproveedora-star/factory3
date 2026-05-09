@@ -52,11 +52,17 @@ class RhSeedGeneratorService:
         # Modo seedc: solo candidatos a vacante existente
         if vacante_id_existente:
             preguntas = self._get_preguntas(db, vacante_id_existente)
+            vac_ext_data = {
+                "titulo": context.get("vacante_titulo", ""),
+                "turno":  context.get("turno", ""),
+                "zona":   context.get("zona", ""),
+                "sueldo": context.get("sueldo", ""),
+            }
             candidatos_batch = self._generar_candidatos(
                 vacante_titulo_ext, "", preguntas, {}, n_candidatos
             )
             for cand in candidatos_batch:
-                self._insertar_candidato(db, cand, vacante_id_existente, empresa_id, preguntas, seed_label, resumen)
+                self._insertar_candidato(db, cand, vacante_id_existente, empresa_id, preguntas, seed_label, resumen, vac_ext_data)
             return {
                 "ok": True,
                 "message": f"seed '{seed_label}' — {resumen['candidatos']} candidatos agregados",

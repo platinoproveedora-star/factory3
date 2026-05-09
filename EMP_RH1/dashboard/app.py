@@ -506,16 +506,19 @@ elif page == "Ultima Vacante":
         st.divider()
 
         if st.button("＋ Agregar 10 candidatos a esta vacante", key="btn_seedc10"):
-            with st.spinner("Generando 10 candidatos... puede tardar ~30s"):
+            with st.spinner("Generando 10 candidatos... puede tardar ~45s"):
                 r = _run_skill("rh_seed_generator", {
-                    "empresa_id": _EMPRESA_ID,
+                    "empresa_id":           _EMPRESA_ID,
                     "vacante_id_existente": vid,
-                    "vacante_titulo": vac.get("titulo", ""),
-                    "n_vacantes": 0,
+                    "vacante_titulo":       vac.get("titulo", ""),
+                    "turno":               vac.get("turno", ""),
+                    "zona":                vac.get("zona", ""),
+                    "sueldo":              vac.get("sueldo", ""),
+                    "n_vacantes":          0,
                     "n_candidatos_por_vacante": 10,
-                    "profundidad": "simple",
-                    "dry_run": False,
-                    "tipo": "seed",
+                    "profundidad":         "medio",
+                    "dry_run":             False,
+                    "tipo":                "seed",
                 })
             if r.get("ok"):
                 st.success("10 candidatos agregados.")
@@ -744,6 +747,39 @@ elif page == "Análisis IA":
         st.info("Sin datos. Corre un seed para generar candidatos con análisis.")
 
     st.divider()
+
+    # ── Analizar todos los que no tienen análisis ─────────────────────────────
+    sin_analisis = [sc for sc in scores_all if not (sc.get("detalle") or {}).get("shift_zone") and not (sc.get("detalle") or {}).get("dimension_compromiso")]
+    if sin_analisis:
+        st.caption(f"{len(sin_analisis)} candidatos sin análisis IA")
+        if st.button(f"⚡ Analizar TODOS los candidatos sin análisis ({len(sin_analisis)})", key="btn_analizar_todos"):
+            prog = st.progress(0, text="Iniciando...")
+            for i, sc in enumerate(sin_analisis):
+                cid  = sc.get("candidato_id", "")
+                cand = cands_map.get(cid, {})
+                vac  = vacs_map.get(cand.get("vacante_id", ""), {})
+                prog.progress((i) / len(sin_analisis), text=f"Analizando {_folio(cand,'C-')} ({i+1}/{len(sin_analisis)})...")
+                resultado = {}
+                if vac.get("turno") or vac.get("zona"):
+                    r = _run_skill("rh_shift_zone_validator", {
+                        "turno_requerido": vac.get("turno", "no especificado"),
+                        "zona_trabajo":    vac.get("zona", "no especificada"),
+                        "candidato_id":    cid,
+                    })
+                    if r.get("ok"):
+                        resultado["shift_zone"] = r["data"]
+                for dim in ("compromiso", "conducta"):
+                    r = _run_skill("rh_dimension_analyzer", {
+                        "dimension":    dim,
+                        "candidato_id": cid,
+                        "puesto":       vac.get("titulo", "operador"),
+                    })
+                    if r.get("ok"):
+                        resultado[f"dimension_{dim}"] = r["data"]
+                st.session_state.analisis_resultados[cid] = resultado
+            prog.progress(1.0, text="Completado.")
+            st.cache_data.clear()
+            st.rerun()
 
     # ── Análisis completo por candidato ──────────────────────────────────────
     st.subheader("Análisis completo por candidato")
