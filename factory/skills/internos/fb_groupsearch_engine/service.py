@@ -53,23 +53,17 @@ class FbGroupsearchEngineService:
     # ── Orquestador de capas ──────────────────────────────────────────────────
 
     def _buscar(self, tema: str, context: dict, limite: int) -> tuple[list, str]:
-        token = (
-            os.getenv("META_ACCESS_TOKEN")
-            or os.getenv("IG_ACCESS_TOKEN")
-            or context.get("access_token")
-            or ""
-        ).strip()
+        # Capa 1 — Meta Graph API (bloqueado — requiere permiso groups_access_member_info)
+        # token = (os.getenv("META_ACCESS_TOKEN") or os.getenv("IG_ACCESS_TOKEN") or "").strip()
+        # if token:
+        #     try:
+        #         grupos = self._buscar_meta_api(tema, token, limite)
+        #         if grupos:
+        #             return grupos, "meta_api"
+        #     except Exception:
+        #         pass
 
-        # Capa 1 — Meta Graph API
-        if token:
-            try:
-                grupos = self._buscar_meta_api(tema, token, limite)
-                if grupos:
-                    return grupos, "meta_api"
-            except Exception:
-                pass
-
-        # Capa 2 — Web search (futuro)
+        # Capa 2 — Web search via Claude built-in (pendiente)
         # try:
         #     grupos = self._buscar_web(tema, limite)
         #     if grupos:
@@ -77,7 +71,7 @@ class FbGroupsearchEngineService:
         # except NotImplementedError:
         #     pass
 
-        # Capa 3 — Scraping (futuro)
+        # Capa 3 — Scraping (pendiente)
         # try:
         #     grupos = self._buscar_scraping(tema, limite)
         #     if grupos:
@@ -85,7 +79,7 @@ class FbGroupsearchEngineService:
         # except NotImplementedError:
         #     pass
 
-        # Capa 4 — Haiku IA (fallback)
+        # Capa 4 — Haiku IA (activo)
         return self._buscar_haiku(tema, limite), "ia_sugerido"
 
     # ── Implementaciones activas ──────────────────────────────────────────────
