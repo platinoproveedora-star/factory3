@@ -4,17 +4,18 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import date, datetime
 from pathlib import Path
 
-_AI_DIR = Path(__file__).parent.parent / "factory" / "skills" / "internos" / "ai_interpreter"
-if str(_AI_DIR) not in sys.path:
-    sys.path.insert(0, str(_AI_DIR))
-import service as _ai  # noqa: E402
+import importlib.util as _ilu
+
+_AI_DIR  = Path(__file__).parent.parent / "factory" / "skills" / "internos" / "ai_interpreter"
+_ai_spec = _ilu.spec_from_file_location("ai_interpreter_svc", _AI_DIR / "service.py")
+_ai      = _ilu.module_from_spec(_ai_spec)
+_ai_spec.loader.exec_module(_ai)
 
 _URL       = os.getenv("SUPABASE_URL", "").rstrip("/")
 _KEY       = (
