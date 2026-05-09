@@ -956,8 +956,7 @@ elif page == "FB Groups":
 
     # ── Historial ─────────────────────────────────────────────────────────────
     with tab_historial:
-        searches_r = _run_skill("fb_groupsearch_list", {"empresa_id": _EMPRESA_ID})
-        searches   = (searches_r.get("data") or []) if searches_r.get("ok") else []
+        searches = select("fb_gs_searches", f"select=*&order=created_at.desc&limit=200")
 
         if not searches:
             st.info("Sin búsquedas guardadas. Usa la pestaña Nueva búsqueda.")
@@ -987,7 +986,6 @@ elif page == "FB Groups":
                     if del_r.get("ok"):
                         st.success(f"{selected_id} eliminada.")
                         st.session_state.fb_grupos_visibles = None
-                        st.cache_data.clear()
                         st.rerun()
                     else:
                         st.error(del_r.get("error", "Error al borrar"))
@@ -997,8 +995,7 @@ elif page == "FB Groups":
     if sid_ver:
         st.divider()
         st.subheader(f"Grupos — {sid_ver}")
-        groups_r = _run_skill("fb_groupsearch_groups", {"search_id": sid_ver})
-        grupos   = (groups_r.get("data") or []) if groups_r.get("ok") else []
+        grupos = select("fb_gs_groups", f"select=*&search_id=eq.{sid_ver}&order=created_at.desc&limit=500")
 
         if not grupos:
             st.info("Sin grupos para esta búsqueda.")
