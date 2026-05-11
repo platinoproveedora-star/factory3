@@ -7,7 +7,7 @@ from datetime import date, datetime
 import pandas as pd
 import streamlit as st
 
-from db import select, update
+from db import select, update, insert
 
 st.set_page_config(page_title="LOGPLAT Dashboard", page_icon="🚛", layout="wide")
 
@@ -188,8 +188,18 @@ elif seccion == "Viajes":
     edit = st.data_editor(orig, use_container_width=True, key="edit_viajes", num_rows="fixed",
                           disabled=["folio","costo_viaje","utilidad_viaje"])
 
-    bc, ec = st.columns(2)
+    bc, ac, ec = st.columns(3)
     if bc.button("💾 Guardar cambios", key="save_v"): _guardar("viajes", orig, edit)
+    if ac.button("➕ Agregar Viaje", key="add_v"):
+        _folios = df["folio"].dropna().str.extract(r"(\d+)")[0].apply(_num)
+        _next   = int(_folios.max()) + 1 if not _folios.empty else 1
+        _nuevo  = f"VIA-{str(_next).zfill(3)}"
+        if insert("viajes", {"folio": _nuevo, "estatus_pago": "por_cobrar", "estatus_viaje": "activo"}):
+            st.success(f"✅ Viaje {_nuevo} creado. Edítalo en la tabla.")
+            st.cache_data.clear()
+            st.rerun()
+        else:
+            st.error("Error al crear el viaje.")
     _csv_btn(dff, "viajes", "csv_v")
 
     st.divider()
