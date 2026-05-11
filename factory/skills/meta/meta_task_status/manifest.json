@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "meta_task_status",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Retorna estado de la cola factory_tasks: pendientes, corriendo, completadas, errores",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

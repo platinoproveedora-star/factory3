@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import urllib.request
 from datetime import datetime
 
@@ -278,11 +279,24 @@ class RhSeedGeneratorService:
     # AI
     # -------------------------------------------------------------------------
 
+    _SECTORES_POOL = [
+        "logistica", "retail", "manufactura", "servicios", "construccion",
+        "salud", "educacion", "tecnologia", "alimentos", "transporte",
+        "hoteleria", "seguridad", "limpieza", "call center", "comercio",
+    ]
+    _CIUDADES_POOL = [
+        "CDMX", "Monterrey", "Guadalajara", "Mérida", "Puebla",
+        "Tijuana", "Querétaro", "León", "Cancún", "Hermosillo",
+        "Chihuahua", "Veracruz", "Aguascalientes", "Saltillo", "Culiacán",
+    ]
+
     def _generar_vacante(self, puesto, sector, profundidad) -> dict | None:
         n_preguntas = {"simple": 5, "medio": 10, "robusto": 20}.get(profundidad, 5)
-        puesto_txt  = f'El puesto es: "{puesto}".' if puesto else f"Inventa un puesto realista del sector {sector}."
+        sector_real = sector if sector != "logistica" else random.choice(self._SECTORES_POOL)
+        ciudad      = random.choice(self._CIUDADES_POOL)
+        puesto_txt  = f'El puesto es: "{puesto}".' if puesto else f"Inventa un puesto realista del sector {sector_real} en {ciudad}."
         prompt = (
-            f"{puesto_txt}\nSector: {sector}\n\n"
+            f"{puesto_txt}\nSector: {sector_real}\nCiudad: {ciudad}\n\n"
             f"Genera en JSON:\n"
             '{"titulo":"...","descripcion":"...",'
             '"turno":"matutino|vespertino|nocturno|mixto",'

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_latency_eval",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Evalúa tiempo de respuesta de una tarea contra umbrales en ms",
+  "requires_env": []
+}

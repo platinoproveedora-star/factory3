@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "meta_task_runner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Toma N tareas pendientes de factory_tasks, las ejecuta via SkillRunner y guarda resultado con latencia y eval básico",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -29,6 +29,10 @@ _CSS = """
 <style>
 [data-testid="metric-container"] { background:#1e1e2e; border-radius:8px; padding:12px; }
 [data-testid="stSidebar"] { background:#12121c; }
+[data-testid="stSidebar"] * { color:#ffffff !important; }
+[data-testid="stSidebar"] .stRadio label { color:#ffffff !important; }
+[data-testid="stSidebar"] p { color:#ffffff !important; }
+[data-testid="stSidebar"] span { color:#ffffff !important; }
 h1,h2,h3 { color:#e0e0ff; }
 </style>
 """
@@ -37,7 +41,7 @@ st.markdown(_CSS, unsafe_allow_html=True)
 _EMPRESA_ID = os.getenv("RH_EMPRESA_ID", "rh_empresa_1")
 
 
-def _run_skill(nombre: str, context: dict) -> dict:
+def _run_skill(nombre: str, context: dict, source: str = "internos") -> dict:
     import sys
     _root = str(Path(__file__).parent.parent.parent)
     if _root not in sys.path:
@@ -47,7 +51,12 @@ def _run_skill(nombre: str, context: dict) -> dict:
     ext = _base / "skills" / "externos"
     ext.mkdir(parents=True, exist_ok=True)
     loader = SkillLoader(internal_root=_base / "skills" / "internos", external_root=ext)
-    return SkillRunner(loader).run(nombre, context, source="internos")
+    # meta/eval: pasar ruta absoluta como source (SkillLoader fallback: Path(source)/name)
+    if source == "meta":
+        source = str(_base / "skills" / "meta")
+    elif source == "eval":
+        source = str(_base / "skills" / "eval")
+    return SkillRunner(loader).run(nombre, context, source=source)
 
 
 # ── Data ──────────────────────────────────────────────────────────────────────
@@ -128,7 +137,7 @@ with st.sidebar:
     st.title("🏭 Factory3 RH")
     page = st.radio(
         "Sección",
-        ["Overview", "Vacantes", "Candidatos", "Pipeline", "Entrevistas", "Reclutadores", "Seeds", "Ultima Vacante", "Análisis IA", "Offer Builder", "FB Groups"],
+        ["Overview", "Vacantes", "Candidatos", "Pipeline", "Entrevistas", "Reclutadores", "Seeds", "Ultima Vacante", "Análisis IA", "Offer Builder", "FB Groups", "Tasks"],
         label_visibility="collapsed",
     )
     st.divider()
@@ -1029,3 +1038,140 @@ elif page == "FB Groups":
                     st.success(f"{selected_id} eliminada.")
                 else:
                     st.error(del_r.get("error", "Error al borrar"))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tasks — cola factory_tasks
+# ═══════════════════════════════════════════════════════════════════════════════
+
+elif page == "Tasks":
+    import pandas as pd
+
+    st.title("Tasks — Cola de ejecución")
+
+    STATUS_COLORS = {
+        "pendiente":  "🟡",
+        "corriendo":  "🔵",
+        "completada": "🟢",
+        "error":      "🔴",
+    }
+
+    # ── Conteo resumen ────────────────────────────────────────────────────────
+    all_tasks = select("factory_tasks",
+        "select=task_id,skill_name,skill_source,status,prioridad,empresa_id,"
+        "latencia_ms,costo_tokens,error_msg,created_at,started_at,finished_at,"
+        "parent_task_id,generated_by,created_by"
+        "&order=created_at.desc&limit=200"
+    )
+
+    conteo = {}
+    for t in all_tasks:
+        s = t.get("status", "?")
+        conteo[s] = conteo.get(s, 0) + 1
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Pendientes",  conteo.get("pendiente",  0), delta=None)
+    c2.metric("Corriendo",   conteo.get("corriendo",  0), delta=None)
+    c3.metric("Completadas", conteo.get("completada", 0), delta=None)
+    c4.metric("Errores",     conteo.get("error",      0), delta=None)
+
+    st.divider()
+
+    # ── Filtros ───────────────────────────────────────────────────────────────
+    col_f1, col_f2, col_f3 = st.columns(3)
+    f_status = col_f1.selectbox("Status", ["", "pendiente", "corriendo", "completada", "error"],
+                                 format_func=lambda x: "Todos" if not x else x)
+    f_source = col_f2.selectbox("Fuente", ["", "internos", "meta", "eval"],
+                                 format_func=lambda x: "Todas" if not x else x)
+    f_skill  = col_f3.text_input("Skill contiene", placeholder="ej: rh_dimension")
+
+    tareas = all_tasks
+    if f_status:
+        tareas = [t for t in tareas if t.get("status") == f_status]
+    if f_source:
+        tareas = [t for t in tareas if t.get("skill_source") == f_source]
+    if f_skill:
+        tareas = [t for t in tareas if f_skill.lower() in (t.get("skill_name") or "").lower()]
+
+    st.caption(f"{len(tareas)} tareas")
+
+    # ── Tabla ─────────────────────────────────────────────────────────────────
+    if tareas:
+        rows = []
+        for t in tareas:
+            rows.append({
+                "ID":        t.get("task_id", ""),
+                "Skill":     t.get("skill_name", ""),
+                "Fuente":    t.get("skill_source", "internos"),
+                "Status":    STATUS_COLORS.get(t.get("status",""), "⚪") + " " + (t.get("status") or ""),
+                "Prior.":    t.get("prioridad", 5),
+                "ms":        t.get("latencia_ms", 0),
+                "Tokens":    t.get("costo_tokens", 0),
+                "Error":     (t.get("error_msg") or "")[:60],
+                "Padre":     t.get("parent_task_id") or "",
+                "Creado por": t.get("created_by") or "",
+                "Creado":    (t.get("created_at") or "")[:16],
+            })
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    else:
+        st.info("Sin tareas. Encola trabajo desde cualquier skill usando meta_task_enqueue.")
+
+    # ── Encolar análisis de dimensiones ──────────────────────────────────────
+    st.divider()
+    st.subheader("Encolar análisis de dimensiones")
+
+    emp_id_tasks = st.text_input("empresa_id", value="RH1", key="tasks_emp")
+    col_b1, col_b2 = st.columns(2)
+
+    if col_b1.button("Encolar dimensiones faltantes", key="btn_encolar_dims"):
+        scores_r = select("scores",
+            f"select=candidato_id,vacante_id,detalle&limit=500"
+        )
+        sin_analisis = [
+            s for s in scores_r
+            if not (s.get("detalle") or {}).get("dimension_compromiso")
+        ]
+        if not sin_analisis:
+            st.info("Todos los candidatos ya tienen análisis de dimensiones.")
+        else:
+            tareas_enc = []
+            dimensiones = ["conducta", "fisico", "compromiso", "maquinaria", "rutas", "tecnico"]
+            for sc in sin_analisis[:10]:  # max 10 candidatos por vez
+                for dim in dimensiones:
+                    tareas_enc.append({
+                        "skill_name":   "rh_dimension_analyzer",
+                        "skill_source": "internos",
+                        "context": {
+                            "dimension":    dim,
+                            "candidato_id": sc["candidato_id"],
+                            "vacante_id":   sc.get("vacante_id"),
+                            "guardar":      True,
+                            "dry_run":      False,
+                        },
+                        "empresa_id":  emp_id_tasks,
+                        "created_by":  "dashboard",
+                        "prioridad":   7,
+                    })
+            r = _run_skill("meta_task_enqueue", {
+                "tareas":     tareas_enc,
+                "empresa_id": emp_id_tasks,
+                "dry_run":    False,
+            }, source="meta")
+            if r.get("ok"):
+                enc = r.get("data", {}).get("encoladas", [])
+                st.success(f"{len(enc)} tareas encoladas para {len(sin_analisis[:100])} candidatos.")
+            else:
+                st.error(r.get("error", "Error al encolar"))
+
+    if col_b2.button("Procesar cola (batch 20)", key="btn_run_tasks"):
+        with st.spinner("Procesando tareas..."):
+            r = _run_skill("meta_task_runner", {
+                "batch_size": 20,
+                "empresa_id": emp_id_tasks,
+                "dry_run":    False,
+            }, source="meta")
+        if r.get("ok"):
+            st.success(r.get("message", "Procesado"))
+            st.json(r.get("data", {}).get("resumen", {}))
+        else:
+            st.error(r.get("error", "Error al procesar"))

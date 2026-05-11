@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "meta_task_enqueue",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Encola una o varias tareas en factory_tasks para ejecución en segundo plano",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

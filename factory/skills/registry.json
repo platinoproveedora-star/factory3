@@ -1472,6 +1472,70 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "meta_task_enqueue": {
+    "tipo": "meta",
+    "nombre": "meta_task_enqueue",
+    "vertical": "factory_meta",
+    "descripcion": "Encola una o varias tareas en factory_tasks para ejecución en segundo plano",
+    "path": "skills/meta/meta_task_enqueue",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_task_runner": {
+    "tipo": "meta",
+    "nombre": "meta_task_runner",
+    "vertical": "factory_meta",
+    "descripcion": "Toma N tareas pendientes de factory_tasks, las ejecuta via SkillRunner y guarda resultado",
+    "path": "skills/meta/meta_task_runner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_task_status": {
+    "tipo": "meta",
+    "nombre": "meta_task_status",
+    "vertical": "factory_meta",
+    "kind": "data",
+    "descripcion": "Retorna snapshot de la cola factory_tasks: pendientes, corriendo, completadas, errores",
+    "path": "skills/meta/meta_task_status",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_input_output_eval": {
+    "tipo": "eval",
+    "nombre": "skill_input_output_eval",
+    "vertical": "factory_eval",
+    "descripcion": "Valida que el resultado de un skill cumpla el contrato {ok, data/error}",
+    "path": "skills/eval/skill_input_output_eval",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_schema_eval": {
+    "tipo": "eval",
+    "nombre": "skill_schema_eval",
+    "vertical": "factory_eval",
+    "descripcion": "Valida que data del resultado contenga los campos requeridos según schema esperado",
+    "path": "skills/eval/skill_schema_eval",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_cost_eval": {
+    "tipo": "eval",
+    "nombre": "skill_cost_eval",
+    "vertical": "factory_eval",
+    "descripcion": "Evalúa costo en tokens de una tarea contra umbrales configurables",
+    "path": "skills/eval/skill_cost_eval",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_latency_eval": {
+    "tipo": "eval",
+    "nombre": "skill_latency_eval",
+    "vertical": "factory_eval",
+    "descripcion": "Evalúa tiempo de respuesta de una tarea contra umbrales en ms",
+    "path": "skills/eval/skill_latency_eval",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "emp_logplat_kpis": {
     "tipo": "interno",
     "nombre": "emp_logplat_kpis",

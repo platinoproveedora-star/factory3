@@ -121,7 +121,7 @@ def _run_background_skill(bg_task: dict, token: str, chat_id: int) -> None:
         from factory.engine import SkillLoader, SkillRunner
         ext = FACTORY_DIR / "skills" / "externos"
         ext.mkdir(parents=True, exist_ok=True)
-        loader = SkillLoader(internal_root=FACTORY_DIR / "skills" / "internos", external_root=ext)
+        loader = SkillLoader(internal_root=FACTORY_DIR / "skills" / "internos", external_root=ext, extra_roots={"meta": FACTORY_DIR / "skills" / "meta", "eval": FACTORY_DIR / "skills" / "eval"})
         runner = SkillRunner(loader)
         result = runner.run(bg_task["skill"], bg_task["context"], source="internos")
         response = bg_task.get("on_done", "Listo.")
@@ -243,7 +243,7 @@ def _get_data_runner():
         from factory.engine import SkillLoader, SkillRunner
         ext = FACTORY_DIR / "skills" / "externos"
         ext.mkdir(parents=True, exist_ok=True)
-        loader = SkillLoader(internal_root=FACTORY_DIR / "skills" / "internos", external_root=ext)
+        loader = SkillLoader(internal_root=FACTORY_DIR / "skills" / "internos", external_root=ext, extra_roots={"meta": FACTORY_DIR / "skills" / "meta", "eval": FACTORY_DIR / "skills" / "eval"})
         _data_runner = SkillRunner(loader)
     return _data_runner
 
@@ -277,6 +277,21 @@ def data(skill_name: str, request: Request):
     if not result.get("ok"):
         raise HTTPException(status_code=400, detail=result.get("error", "error"))
     return result.get("data", {})
+
+
+@app.post("/cron/tasks")
+def cron_tasks(request: Request):
+    """Render Cron endpoint — ejecuta meta_task_runner cada 5 min."""
+    from factory.engine import SkillLoader, SkillRunner
+    skills_dir = FACTORY_DIR / "skills"
+    ext = skills_dir / "externos"
+    ext.mkdir(parents=True, exist_ok=True)
+    loader = SkillLoader(internal_root=skills_dir / "internos", external_root=ext)
+    runner = SkillRunner(loader)
+    meta_source = str(skills_dir / "meta")
+    batch_size  = int(os.getenv("CRON_TASK_BATCH", "20"))
+    result = runner.run("meta_task_runner", {"batch_size": batch_size, "dry_run": False}, source=meta_source)
+    return {"ok": result.get("ok"), "message": result.get("message"), "data": result.get("data")}
 
 
 @app.post("/webhook/{bot_name}")

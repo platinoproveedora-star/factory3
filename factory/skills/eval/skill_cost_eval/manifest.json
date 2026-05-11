@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_cost_eval",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Evalúa costo en tokens de una tarea contra umbrales configurables",
+  "requires_env": []
+}

@@ -29,13 +29,24 @@ class SkillSpec:
 class SkillLoader:
     """Loads portable skills from internal and external skill roots."""
 
-    def __init__(self, internal_root: Path, external_root: Path | None = None):
+    def __init__(
+        self,
+        internal_root: Path,
+        external_root: Path | None = None,
+        extra_roots: dict[str, Path] | None = None,
+    ):
         self.internal_root = Path(internal_root)
         self.external_root = Path(external_root) if external_root else None
+        self._extra_roots: dict[str, Path] = (
+            {k: Path(v) for k, v in extra_roots.items()} if extra_roots else {}
+        )
 
     def resolve_path(self, name: str, source: str = "internos") -> Path:
         if source in ("interno", "internos", "internal"):
             return self.internal_root / name
+
+        if source in self._extra_roots:
+            return self._extra_roots[source] / name
 
         if source in ("externo", "externos", "external"):
             if not self.external_root:

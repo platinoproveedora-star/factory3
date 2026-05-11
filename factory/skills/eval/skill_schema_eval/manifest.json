@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_schema_eval",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida que data del resultado contenga los campos requeridos según schema esperado",
+  "requires_env": []
+}

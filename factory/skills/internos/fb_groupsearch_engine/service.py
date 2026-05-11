@@ -1,10 +1,9 @@
 """Service for fb_groupsearch_engine — busca grupos públicos de Facebook.
 
 Motor de búsqueda en capas:
-  1. Meta Graph API (token requerido, datos reales)
-  2. Web search      — pendiente: Google Custom Search / Bing
+  1. Meta Graph API  — bloqueado (requiere groups_access_member_info)
+  2. Web search      — activo: Anthropic web_search_20250305 built-in tool
   3. Scraping        — pendiente: playwright/selenium
-  4. Haiku IA        — fallback siempre activo, grupos plausibles
 """
 from __future__ import annotations
 
@@ -38,7 +37,11 @@ class FbGroupsearchEngineService:
         grupos, fuente = self._buscar(tema, context, limite)
 
         if min_miembros > 0:
-            grupos = [g for g in grupos if (g.get("miembros_estimados") or 0) >= min_miembros]
+            # miembros_estimados=None or 0 means unknown — keep it (don't filter out)
+            grupos = [
+                g for g in grupos
+                if not g.get("miembros_estimados") or g["miembros_estimados"] >= min_miembros
+            ]
 
         return {
             "ok": True,
@@ -63,15 +66,15 @@ class FbGroupsearchEngineService:
         #     except Exception:
         #         pass
 
-        # Capa 2 — Web search via Claude built-in (pendiente)
-        # try:
-        #     grupos = self._buscar_web(tema, limite)
-        #     if grupos:
-        #         return grupos, "web_search"
-        # except NotImplementedError:
-        #     pass
+        # Capa 2 — Web search via Anthropic built-in web_search_20250305
+        try:
+            grupos = self._buscar_web(tema, limite)
+            if grupos:
+                return grupos, "web_search"
+        except Exception:
+            pass
 
-        # Capa 3 — Scraping (pendiente)
+        # Capa 3 — Scraping (pendiente: playwright/selenium)
         # try:
         #     grupos = self._buscar_scraping(tema, limite)
         #     if grupos:
@@ -79,8 +82,7 @@ class FbGroupsearchEngineService:
         # except NotImplementedError:
         #     pass
 
-        # Capa 4 — Haiku IA (activo)
-        return self._buscar_haiku(tema, limite), "ia_sugerido"
+        return [], "sin_resultados"
 
     # ── Implementaciones activas ──────────────────────────────────────────────
 
@@ -168,18 +170,77 @@ class FbGroupsearchEngineService:
         except Exception:
             return []
 
+    # ── Implementación web search ─────────────────────────────────────────────
+
+    def _buscar_web(self, tema: str, limite: int = 25) -> list:
+        """Anthropic built-in web_search_20250305 — busca grupos reales de Facebook."""
+        api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            return []
+
+        prompt = (
+            f"Busca grupos públicos de Facebook sobre: '{tema}'.\n"
+            f"Necesito encontrar {limite} grupos reales. Busca en Facebook directamente y en páginas "
+            f"que listan grupos (groupsforexpats, findmyfbgroups, etc.).\n"
+            f"Para cada grupo extrae: nombre, URL exacta de Facebook "
+            f"(https://www.facebook.com/groups/...), descripción breve, "
+            f"número de miembros si aparece, y ubicación geográfica si aplica.\n"
+            f"Devuelve ÚNICAMENTE JSON válido, sin bloques de código ni texto extra:\n"
+            f'{{"grupos": [{{"nombre": "...", "url": "https://www.facebook.com/groups/...", '
+            f'"descripcion": "...", "miembros": 1500, "ubicacion": "Ciudad, País"}}]}}'
+        )
+
+        payload = {
+            "model":      "claude-sonnet-4-6",
+            "max_tokens": 4096,
+            "tools":      [{"type": "web_search_20250305", "name": "web_search"}],
+            "messages":   [{"role": "user", "content": prompt}],
+        }
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps(payload).encode(),
+            headers={
+                "content-type":      "application/json",
+                "x-api-key":         api_key,
+                "anthropic-version": "2023-06-01",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=90) as r:
+            result = json.loads(r.read().decode())
+
+        raw = ""
+        for block in result.get("content", []):
+            if block.get("type") == "text":
+                raw += block.get("text", "")
+        raw = raw.strip()
+
+        # Extract JSON from the response (handles prose before/after and code fences)
+        start = raw.find("{")
+        end   = raw.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            return []
+        raw = raw[start : end + 1]
+
+        data   = json.loads(raw)
+        grupos = []
+        for item in data.get("grupos", []):
+            url = item.get("url", "")
+            if not url.startswith("http"):
+                url = ""
+            grupos.append({
+                "grupo_nombre":        item.get("nombre", ""),
+                "grupo_url":           url,
+                "descripcion":         item.get("descripcion", ""),
+                "miembros_estimados":  item.get("miembros"),
+                "ubicacion_detectada": item.get("ubicacion", ""),
+            })
+        return grupos
+
     # ── Placeholders para extensión futura ───────────────────────────────────
 
-    def _buscar_web(self, tema: str) -> list:
-        """Web search via Google Custom Search API o Bing Web Search API.
-        Query sugerida: site:facebook.com/groups "{tema}"
-        """
-        raise NotImplementedError
-
     def _buscar_scraping(self, tema: str) -> list:
-        """Scraping directo con playwright o selenium.
-        Usar solo si Meta API y web search no están disponibles.
-        """
+        """Scraping directo con playwright o selenium."""
         raise NotImplementedError
 
     # ── Helpers ───────────────────────────────────────────────────────────────
