@@ -160,10 +160,18 @@ if seccion == "Overview":
         _u2.metric("Destino",      str(_ult.get("destino","—") or "—")[:30])
         _u3.metric("Precio Venta", _fmt(_ult.get("precio_venta_viaje", 0)))
         _u4.metric("Utilidad",     _fmt(_util_u))
+        _gv_det = dg[dg["numero_viaje"] == _fu] if not dg.empty and "numero_viaje" in dg.columns else pd.DataFrame()
+        if not _gv_det.empty:
+            st.caption("Gastos:")
+            _gc = [c for c in ["folio","fecha_gasto","concepto","monto_gasto","tipo_gasto","chofer"] if c in _gv_det.columns]
+            st.dataframe(_gv_det[_gc].reset_index(drop=True), use_container_width=True, hide_index=True)
+        else:
+            st.caption("Sin gastos registrados para este viaje.")
         _pv = dp[dp["numero_viaje"] == _fu] if not dp.empty and "numero_viaje" in dp.columns else pd.DataFrame()
         if not _pv.empty:
+            st.caption("Pagos:")
             _pc = [c for c in ["folio","fecha_pago","monto_pago","metodo_pago"] if c in _pv.columns]
-            st.dataframe(_pv[_pc], use_container_width=True, hide_index=True)
+            st.dataframe(_pv[_pc].reset_index(drop=True), use_container_width=True, hide_index=True)
         else:
             st.caption("Sin pagos registrados para este viaje.")
     else:
