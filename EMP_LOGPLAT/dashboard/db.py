@@ -47,6 +47,17 @@ def insert(table: str, data: dict) -> bool:
         return False
 
 
+def delete(table: str, folio: str) -> bool:
+    url = _url(table, f"folio=eq.{folio}")
+    req = urllib.request.Request(url, headers=_headers(write=True), method="DELETE")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            r.read()
+        return True
+    except Exception:
+        return False
+
+
 def update(table: str, folio: str, data: dict) -> bool:
     url  = _url(table, f"folio=eq.{folio}")
     body = json.dumps(data).encode()

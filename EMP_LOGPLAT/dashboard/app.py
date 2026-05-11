@@ -7,7 +7,7 @@ from datetime import date, datetime
 import pandas as pd
 import streamlit as st
 
-from db import select, update, insert
+from db import select, update, insert, delete
 
 st.set_page_config(page_title="LOGPLAT Dashboard", page_icon="🚛", layout="wide")
 
@@ -145,6 +145,57 @@ if seccion == "Overview":
     vxc = int((dv["estatus_pago"] == "por_cobrar").sum()) if not dv.empty and "estatus_pago" in dv.columns else 0
     r2[3].metric("Viajes por Cobrar", vxc)
 
+    # ── Último Viaje ───────────────────────────────────────────────────────────
+    st.divider()
+    st.subheader("📦 Último Viaje")
+    if not dv.empty and "fecha_salida" in dv.columns:
+        _dv_s = dv.copy()
+        _dv_s["_f"] = pd.to_datetime(_dv_s["fecha_salida"], errors="coerce")
+        _ult  = _dv_s.sort_values("_f", ascending=False).iloc[0]
+        _fu   = _ult["folio"]
+        _costo_u = dg[dg["numero_viaje"] == _fu]["monto_gasto"].apply(_num).sum() if not dg.empty and "numero_viaje" in dg.columns else 0
+        _util_u  = _num(_ult.get("precio_venta_viaje", 0)) - _costo_u
+        _u1, _u2, _u3, _u4 = st.columns(4)
+        _u1.metric("Folio",        _fu)
+        _u2.metric("Destino",      str(_ult.get("destino","—") or "—")[:30])
+        _u3.metric("Precio Venta", _fmt(_ult.get("precio_venta_viaje", 0)))
+        _u4.metric("Utilidad",     _fmt(_util_u))
+        _pv = dp[dp["numero_viaje"] == _fu] if not dp.empty and "numero_viaje" in dp.columns else pd.DataFrame()
+        if not _pv.empty:
+            _pc = [c for c in ["folio","fecha_pago","monto_pago","metodo_pago"] if c in _pv.columns]
+            st.dataframe(_pv[_pc], use_container_width=True, hide_index=True)
+        else:
+            st.caption("Sin pagos registrados para este viaje.")
+    else:
+        st.info("Sin viajes registrados.")
+
+    # ── Viajes del mes en curso ────────────────────────────────────────────────
+    st.divider()
+    _hoy_ov = date.today()
+    st.subheader(f"📅 Viajes {_hoy_ov.strftime('%B %Y').title()}")
+    if not dv.empty and "fecha_salida" in dv.columns:
+        _dv_m = dv.copy()
+        _dv_m["_f"] = pd.to_datetime(_dv_m["fecha_salida"], errors="coerce")
+        _dv_m = _dv_m[(_dv_m["_f"].dt.month == _hoy_ov.month) & (_dv_m["_f"].dt.year == _hoy_ov.year)]
+        if _dv_m.empty:
+            st.info(f"Sin viajes en {_hoy_ov.strftime('%B %Y')}.")
+        else:
+            if not dg.empty and "numero_viaje" in dg.columns:
+                _cm = (dg.assign(_mg=dg["monto_gasto"].apply(_num))
+                          .groupby("numero_viaje")["_mg"].sum().reset_index()
+                          .rename(columns={"numero_viaje": "folio", "_mg": "costo_viaje"}))
+                _dv_m = _dv_m.drop(columns=["costo_viaje"], errors="ignore").merge(_cm, on="folio", how="left")
+                _dv_m["costo_viaje"] = _dv_m["costo_viaje"].fillna(0)
+            _dv_m["utilidad_viaje"] = _dv_m["precio_venta_viaje"].apply(_num) - _dv_m["costo_viaje"].apply(_num)
+            _mc = [c for c in ["folio","destino","chofer","fecha_salida","precio_venta_viaje","costo_viaje","utilidad_viaje","estatus_pago"] if c in _dv_m.columns]
+            st.dataframe(_dv_m[_mc].reset_index(drop=True), use_container_width=True, hide_index=True)
+            _mm1, _mm2, _mm3 = st.columns(3)
+            _mm1.metric("Venta Mes",    _fmt(_dv_m["precio_venta_viaje"].apply(_num).sum()))
+            _mm2.metric("Costo Mes",    _fmt(_dv_m["costo_viaje"].apply(_num).sum()))
+            _mm3.metric("Utilidad Mes", _fmt(_dv_m["utilidad_viaje"].apply(_num).sum()))
+    else:
+        st.info("Sin viajes registrados.")
+
 
 # ─── VIAJES ───────────────────────────────────────────────────────────────────
 
@@ -195,12 +246,29 @@ elif seccion == "Viajes":
         _next   = int(_folios.max()) + 1 if not _folios.empty else 1
         _nuevo  = f"VIA-{str(_next).zfill(3)}"
         if insert("viajes", {"folio": _nuevo, "estatus_pago": "por_cobrar", "estatus_viaje": "activo"}):
-            st.success(f"✅ Viaje {_nuevo} creado. Edítalo en la tabla.")
+            insert("cuentas_por_cobrar", {
+                "folio": f"CXC-{str(_next).zfill(3)}",
+                "numero_viaje": _nuevo,
+                "monto_total": 0, "monto_pagado": 0,
+                "saldo_pendiente": 0, "estatus_cobro": "pendiente",
+            })
+            st.success(f"✅ Viaje {_nuevo} creado.")
             st.cache_data.clear()
             st.rerun()
         else:
             st.error("Error al crear el viaje.")
     _csv_btn(dff, "viajes", "csv_v")
+
+    with st.expander("🗑️ Borrar viaje"):
+        _del_v = st.selectbox("Folio", ["—"] + sorted(df["folio"].dropna().tolist()), key="del_v_sel")
+        if st.button("⚠️ Confirmar borrar", key="del_v_btn") and _del_v != "—":
+            delete("cuentas_por_cobrar", f"CXC-{_del_v.split('-',1)[1]}")
+            if delete("viajes", _del_v):
+                st.success(f"Borrado {_del_v}")
+                st.cache_data.clear()
+                st.rerun()
+            else:
+                st.error("Error al borrar.")
 
     st.divider()
     nums = ["costo_viaje","precio_venta_viaje","utilidad_viaje"]
@@ -249,6 +317,16 @@ elif seccion == "Gastos":
         else:
             st.error("Error al crear el gasto.")
     _csv_btn(dff, "gastos", "csv_g")
+
+    with st.expander("🗑️ Borrar gasto"):
+        _del_g = st.selectbox("Folio", ["—"] + sorted(df["folio"].dropna().tolist()), key="del_g_sel")
+        if st.button("⚠️ Confirmar borrar", key="del_g_btn") and _del_g != "—":
+            if delete("gastos", _del_g):
+                st.success(f"Borrado {_del_g}")
+                st.cache_data.clear()
+                st.rerun()
+            else:
+                st.error("Error al borrar.")
 
     st.divider()
     total_g = dff["monto_gasto"].apply(_num).sum() if "monto_gasto" in dff.columns else 0
@@ -378,6 +456,16 @@ elif seccion == "Pagos":
         else:
             st.error("Error al crear el pago.")
     _csv_btn(dff, "pagos", "csv_p")
+
+    with st.expander("🗑️ Borrar pago"):
+        _del_p = st.selectbox("Folio", ["—"] + sorted(df["folio"].dropna().tolist()), key="del_p_sel")
+        if st.button("⚠️ Confirmar borrar", key="del_p_btn") and _del_p != "—":
+            if delete("pagos", _del_p):
+                st.success(f"Borrado {_del_p}")
+                st.cache_data.clear()
+                st.rerun()
+            else:
+                st.error("Error al borrar.")
 
     st.divider()
     st.metric("Total Pagos Filtrados", _fmt(dff["monto_pago"].apply(_num).sum()) if "monto_pago" in dff.columns else "$0")
