@@ -137,7 +137,7 @@ with st.sidebar:
     st.title("🏭 Factory3 RH")
     page = st.radio(
         "Sección",
-        ["Overview", "Vacantes", "Candidatos", "Pipeline", "Entrevistas", "Reclutadores", "Seeds", "Ultima Vacante", "Análisis IA", "Offer Builder", "FB Groups", "Tasks", "Meta Skills"],
+        ["Overview", "Vacantes", "Candidatos", "Pipeline", "Entrevistas", "Reclutadores", "Seeds", "Ultima Vacante", "Análisis IA", "Offer Builder", "FB Groups", "Tasks", "Meta Skills", "SAT"],
         label_visibility="collapsed",
     )
     st.divider()
@@ -1774,3 +1774,125 @@ elif page == "Meta Skills":
                         st.markdown(f"{s['semaforo']} `{s['nombre']}` — {s['estado']}")
             else:
                 st.error(r.get("error", "Error"))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SAT — Facturas CFDI
+# ═══════════════════════════════════════════════════════════════════════════════
+
+elif page == "SAT":
+    import pandas as _pd_sat
+    from datetime import datetime as _dt
+
+    st.title("SAT — Facturas CFDI")
+
+    _sat_rfc = os.getenv("SAT_RFC", "")
+    _sat_ok  = bool(_sat_rfc and os.getenv("SAT_EFIRMA_CER_B64"))
+
+    _h1, _h2, _h3 = st.columns(3)
+    _h1.metric("RFC configurado", _sat_rfc or "no configurado")
+    _h2.metric("e.firma", "Cargada" if _sat_ok else "Pendiente")
+    _h3.metric("Credenciales SAT", "Listas" if _sat_ok else "Faltan env vars")
+
+    if not _sat_ok:
+        st.warning(
+            "Configura en Render: SAT_RFC, SAT_EFIRMA_CER_B64, SAT_EFIRMA_KEY_B64, SAT_EFIRMA_PASSWORD\n\n"
+            "Convierte tu .cer y .key a base64: base64 -w0 mi_firma.cer"
+        )
+
+    st.divider()
+
+    with st.expander("Descargar CFDIs del SAT", expanded=not _sat_ok):
+        _sc1, _sc2, _sc3 = st.columns(3)
+        _s_fi   = _sc1.text_input("Fecha inicio (YYYY-MM-DD)",
+                                   value=f"{_dt.now().year}-{_dt.now().month:02d}-01", key="sat_fi")
+        _s_ff   = _sc2.text_input("Fecha fin (YYYY-MM-DD)",
+                                   value=_dt.now().strftime("%Y-%m-%d"), key="sat_ff")
+        _s_tipo = _sc3.selectbox("Tipo", ["E", "R", "Ambos"],
+                                  format_func=lambda x: {"E": "Emitidos (ventas)",
+                                                          "R": "Recibidos (gastos)",
+                                                          "Ambos": "Ambos"}.get(x, x),
+                                  key="sat_tipo")
+        _s_tc = st.selectbox("Tipo comprobante (vacio=todos)",
+                              ["", "I", "E", "T", "N", "P"],
+                              format_func=lambda x: {"": "Todos", "I": "Ingreso", "E": "Egreso",
+                                                      "T": "Traslado", "N": "Nomina", "P": "Pago"}.get(x, x),
+                              key="sat_tc")
+        if st.button("Sincronizar con SAT", type="primary", key="btn_sat_sync", disabled=not _sat_ok):
+            _tipos_sync = ["E", "R"] if _s_tipo == "Ambos" else [_s_tipo]
+            for _t in _tipos_sync:
+                with st.spinner(f"Descargando {_t}..."):
+                    _r = _run_skill("sat_cfdi_sync", {
+                        "fecha_inicio":     _s_fi,
+                        "fecha_fin":        _s_ff,
+                        "tipo":             _t,
+                        "tipo_comprobante": _s_tc,
+                        "dry_run":          False,
+                    })
+                if _r.get("ok"):
+                    st.success(f"{_t}: {_r.get('message', 'OK')}")
+                    for _l in _r.get("data", {}).get("log", []):
+                        icon = "OK" if _l.get("ok") else "ERR"
+                        st.caption(f"{icon} {_l['paso']} — {_l.get('msg', '')}")
+                else:
+                    st.error(f"{_t}: {_r.get('error', 'Error')}")
+
+    st.divider()
+
+    _mes_actual = _dt.now().strftime("%Y-%m")
+    _fc1, _fc2, _fc3 = st.columns(3)
+    _f_mes = _fc1.text_input("Mes (YYYY-MM)", value=_mes_actual, key="sat_f_mes")
+    _f_dia = _fc2.text_input("Dia especifico YYYY-MM-DD (vacio=mes completo)", value="", key="sat_f_dia")
+    _f_rfc = _fc3.text_input("RFC", value=_sat_rfc, key="sat_f_rfc")
+
+    _ctx_list = {"rfc_propietario": _f_rfc, "dry_run": False}
+    if _f_dia.strip():
+        _ctx_list["dia"] = _f_dia.strip()
+    elif _f_mes.strip():
+        _ctx_list["mes"] = _f_mes.strip()
+
+    st.subheader("CFDIs Emitidos (ventas)")
+    with st.spinner("Cargando emitidos..."):
+        _re = _run_skill("sat_cfdi_list", {**_ctx_list, "tipo": "E"})
+    if _re.get("ok"):
+        _de = _re.get("data", {})
+        _me1, _me2, _me3 = st.columns(3)
+        _me1.metric("Total emitidos",  _de.get("total", 0))
+        _me2.metric("Monto total",     "${:,.2f}".format(_de.get("monto_total", 0)))
+        _me3.metric("Tipo Ingreso (I)", _de.get("total_ingresos", 0))
+        _cfdis_e = _de.get("cfdis", [])
+        if _cfdis_e:
+            import pandas as _pd2
+            _df_e   = _pd2.DataFrame(_cfdis_e)
+            _cols_e = [c for c in ["fecha_emision", "uuid_cfdi", "rfc_receptor", "nombre_receptor",
+                                    "tipo_comprobante", "total", "moneda", "forma_pago"]
+                       if c in _df_e.columns]
+            st.dataframe(_df_e[_cols_e], use_container_width=True, hide_index=True)
+        else:
+            st.info("Sin CFDIs emitidos para este periodo.")
+    else:
+        st.caption("sat_cfdi_list no disponible — " + _re.get("error", ""))
+
+    st.divider()
+
+    st.subheader("CFDIs Recibidos (gastos / compras)")
+    with st.spinner("Cargando recibidos..."):
+        _rr = _run_skill("sat_cfdi_list", {**_ctx_list, "tipo": "R"})
+    if _rr.get("ok"):
+        _dr = _rr.get("data", {})
+        _mr1, _mr2, _mr3 = st.columns(3)
+        _mr1.metric("Total recibidos", _dr.get("total", 0))
+        _mr2.metric("Monto total",     "${:,.2f}".format(_dr.get("monto_total", 0)))
+        _mr3.metric("Tipo Egreso (E)", _dr.get("total_egresos", 0))
+        _cfdis_r = _dr.get("cfdis", [])
+        if _cfdis_r:
+            import pandas as _pd3
+            _df_r   = _pd3.DataFrame(_cfdis_r)
+            _cols_r = [c for c in ["fecha_emision", "uuid_cfdi", "rfc_emisor", "nombre_emisor",
+                                    "tipo_comprobante", "total", "moneda", "forma_pago"]
+                       if c in _df_r.columns]
+            st.dataframe(_df_r[_cols_r], use_container_width=True, hide_index=True)
+        else:
+            st.info("Sin CFDIs recibidos para este periodo.")
+    else:
+        st.caption("sat_cfdi_list no disponible — " + _rr.get("error", ""))

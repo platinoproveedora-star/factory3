@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "sat_cfdi_verificar",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Verifica estado de una solicitud SAT y retorna lista de ids de paquetes listos para descargar.",
+  "requires_env": ["SAT_RFC", "SAT_EFIRMA_CER_B64", "SAT_EFIRMA_KEY_B64", "SAT_EFIRMA_PASSWORD"]
+}

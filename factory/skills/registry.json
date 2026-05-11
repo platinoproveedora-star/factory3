@@ -1727,5 +1727,78 @@
     "path": "skills/eval/skill_import_checker",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "sat_auth": {
+    "tipo": "interno",
+    "nombre": "sat_auth",
+    "vertical": "vertical_sat",
+    "descripcion": "Autenticación SAT Descarga Masiva via e.firma (SOAP + XML-DSig). Retorna token 5 min.",
+    "path": "skills/internos/sat_auth",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "sat_cfdi_solicitud": {
+    "tipo": "interno",
+    "nombre": "sat_cfdi_solicitud",
+    "vertical": "vertical_sat",
+    "descripcion": "Solicita paquete de descarga masiva SAT (rfc, fechas, tipo E/R). Retorna id_solicitud.",
+    "path": "skills/internos/sat_cfdi_solicitud",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "sat_cfdi_verificar": {
+    "tipo": "interno",
+    "nombre": "sat_cfdi_verificar",
+    "vertical": "vertical_sat",
+    "descripcion": "Verifica estado de solicitud SAT y retorna lista de ids de paquetes listos.",
+    "path": "skills/internos/sat_cfdi_verificar",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "sat_cfdi_descargar": {
+    "tipo": "interno",
+    "nombre": "sat_cfdi_descargar",
+    "vertical": "vertical_sat",
+    "descripcion": "Descarga paquete ZIP del SAT por id_paquete y extrae lista de XMLs de CFDIs.",
+    "path": "skills/internos/sat_cfdi_descargar",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "sat_cfdi_parser": {
+    "tipo": "interno",
+    "nombre": "sat_cfdi_parser",
+    "vertical": "vertical_sat",
+    "descripcion": "Parsea XML CFDI 3.3/4.0 y retorna dict estructurado: uuid, rfcs, total, fecha, conceptos.",
+    "path": "skills/internos/sat_cfdi_parser",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "sat_cfdi_store": {
+    "tipo": "interno",
+    "nombre": "sat_cfdi_store",
+    "vertical": "vertical_sat",
+    "descripcion": "Upsert de CFDIs parseados en Supabase tabla cfdi_documentos (dedup por uuid_cfdi).",
+    "path": "skills/internos/sat_cfdi_store",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "sat_cfdi_sync": {
+    "tipo": "interno",
+    "nombre": "sat_cfdi_sync",
+    "vertical": "vertical_sat",
+    "descripcion": "Orquestador SAT completo: auth→solicitud→verificar(poll)→descargar→parsear→guardar.",
+    "path": "skills/internos/sat_cfdi_sync",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "sat_cfdi_list": {
+    "tipo": "interno",
+    "nombre": "sat_cfdi_list",
+    "vertical": "vertical_sat",
+    "kind": "data",
+    "descripcion": "Lista CFDIs de Supabase filtrable por tipo (E/R), rfc, mes o dia. kind=data para dashboard.",
+    "path": "skills/internos/sat_cfdi_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

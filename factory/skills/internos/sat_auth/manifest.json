@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "sat_auth",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Autenticación con SAT Descarga Masiva via e.firma (SOAP + XML-DSig). Retorna token válido 5 min.",
+  "requires_env": ["SAT_RFC", "SAT_EFIRMA_CER_B64", "SAT_EFIRMA_KEY_B64", "SAT_EFIRMA_PASSWORD"]
+}

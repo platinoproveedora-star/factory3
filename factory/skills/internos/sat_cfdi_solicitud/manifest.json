@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "sat_cfdi_solicitud",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Solicita paquete de descarga masiva al SAT (rfc, fechas, tipo E=emitidos/R=recibidos). Retorna id_solicitud.",
+  "requires_env": ["SAT_RFC", "SAT_EFIRMA_CER_B64", "SAT_EFIRMA_KEY_B64", "SAT_EFIRMA_PASSWORD"]
+}

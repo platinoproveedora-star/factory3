@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "sat_cfdi_sync",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquestador SAT: auth→solicitud→verificar(poll)→descargar→parsear→guardar. Recibe rfc, fechas, tipo E/R.",
+  "requires_env": ["SAT_RFC", "SAT_EFIRMA_CER_B64", "SAT_EFIRMA_KEY_B64", "SAT_EFIRMA_PASSWORD", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
