@@ -169,11 +169,12 @@ elif seccion == "Viajes":
     dff = _date_filter(dff, "fecha_salida", f_desde, f_hasta)
 
     st.caption(f"{len(dff)} viaje(s)")
-    cols_show = [c for c in ["folio","cliente","origen","destino","fecha_salida","fecha_llegada",
+    cols_show = [c for c in ["id","folio","cliente","origen","destino","fecha_salida","fecha_llegada",
                               "chofer","costo_viaje","precio_venta_viaje","utilidad_viaje",
                               "estatus_pago","estatus_viaje","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
-    edit = st.data_editor(orig, use_container_width=True, key="edit_viajes", num_rows="fixed")
+    edit = st.data_editor(orig, use_container_width=True, key="edit_viajes", num_rows="fixed",
+                          disabled=["id","folio"])
 
     bc, ec = st.columns(2)
     if bc.button("💾 Guardar cambios", key="save_v"): _guardar("viajes", orig, edit)
@@ -207,10 +208,11 @@ elif seccion == "Gastos":
     dff = _date_filter(dff, "fecha_gasto", f_desde, f_hasta)
 
     st.caption(f"{len(dff)} gasto(s)")
-    cols_show = [c for c in ["folio","fecha_gasto","concepto","monto_gasto","tipo_gasto",
+    cols_show = [c for c in ["id","folio","fecha_gasto","concepto","monto_gasto","tipo_gasto",
                               "chofer","numero_viaje","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
-    edit = st.data_editor(orig, use_container_width=True, key="edit_gastos", num_rows="fixed")
+    edit = st.data_editor(orig, use_container_width=True, key="edit_gastos", num_rows="fixed",
+                          disabled=["id"])
 
     bc, _ = st.columns(2)
     if bc.button("💾 Guardar cambios", key="save_g"): _guardar("gastos", orig, edit)
@@ -222,12 +224,14 @@ elif seccion == "Gastos":
 
     st.subheader("📋 Gastos por Tipo")
     if "tipo_gasto" in dff.columns and "monto_gasto" in dff.columns:
-        grp = (dff.groupby("tipo_gasto")["monto_gasto"]
-               .agg(["count","sum"]).reset_index()
-               .rename(columns={"tipo_gasto":"Tipo","count":"Cantidad","sum":"Monto Total"}))
-        grp["Monto Total"] = grp["Monto Total"].apply(lambda x: _fmt(x))
-        grp["% del Total"] = dff.groupby("tipo_gasto")["monto_gasto"].sum().apply(
-            lambda x: f"{x/total_g*100:.1f}%" if total_g else "0%").values
+        _gt = dff.copy()
+        _gt["tipo_gasto"]  = _gt["tipo_gasto"].str.strip().str.lower().fillna("sin tipo")
+        _gt["monto_gasto"] = _gt["monto_gasto"].apply(_num)
+        grp = (_gt.groupby("tipo_gasto")["monto_gasto"]
+                  .agg(Cantidad="count", Monto="sum").reset_index()
+                  .rename(columns={"tipo_gasto": "Tipo"}))
+        grp["% del Total"] = grp["Monto"].apply(lambda x: f"{x/total_g*100:.1f}%" if total_g else "0%")
+        grp["Monto"]       = grp["Monto"].apply(_fmt)
         st.dataframe(grp, use_container_width=True, hide_index=True)
 
     st.divider()
@@ -309,22 +313,25 @@ elif seccion == "Pagos":
         st.info("Sin pagos registrados.")
         st.stop()
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     buscar  = c1.text_input("Cliente", key="p_cli")
     mp_fil  = c2.selectbox("Método Pago", ["Todos","transferencia","efectivo","cheque"], key="p_mp")
-    f_desde = c3.date_input("Desde", value=None, key="p_d")
-    f_hasta = c4.date_input("Hasta", value=None, key="p_h")
+    nv_fil  = c3.text_input("Núm. Viaje", key="p_nv")
+    f_desde = c4.date_input("Desde", value=None, key="p_d")
+    f_hasta = c5.date_input("Hasta", value=None, key="p_h")
 
     dff = df.copy()
     if buscar and "cliente" in dff.columns: dff = dff[dff["cliente"].str.contains(buscar, case=False, na=False)]
     if mp_fil != "Todos" and "metodo_pago" in dff.columns: dff = dff[dff["metodo_pago"] == mp_fil]
+    if nv_fil and "numero_viaje" in dff.columns: dff = dff[dff["numero_viaje"].fillna("").str.contains(nv_fil, case=False, na=False)]
     dff = _date_filter(dff, "fecha_pago", f_desde, f_hasta)
 
     st.caption(f"{len(dff)} pago(s)")
-    cols_show = [c for c in ["folio","fecha_pago","cliente","monto_pago","metodo_pago",
+    cols_show = [c for c in ["id","folio","fecha_pago","cliente","monto_pago","metodo_pago",
                               "numero_viaje","observaciones","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
-    edit = st.data_editor(orig, use_container_width=True, key="edit_pagos", num_rows="fixed")
+    edit = st.data_editor(orig, use_container_width=True, key="edit_pagos", num_rows="fixed",
+                          disabled=["id"])
 
     bc, _ = st.columns(2)
     if bc.button("💾 Guardar cambios", key="save_p"): _guardar("pagos", orig, edit)
@@ -338,53 +345,83 @@ elif seccion == "Pagos":
 
 elif seccion == "CXC":
     st.header("📋 Cuentas por Cobrar")
-    df = get_cxc()
-    if df.empty:
-        st.info("Sin cuentas por cobrar.")
-        st.stop()
+    df  = get_cxc()
+    dp  = get_pagos()
 
+    # Solo filtros — CXC es resultado de viajes vs pagos, no se edita directamente
     c1, c2, c3, c4 = st.columns(4)
     buscar  = c1.text_input("Cliente", key="c_cli")
     ec_fil  = c2.selectbox("Estatus", ["Todos","pendiente","parcial","pagado"], key="c_ec")
     f_desde = c3.date_input("Desde", value=None, key="c_d")
     f_hasta = c4.date_input("Hasta", value=None, key="c_h")
 
-    dff = df.copy()
-    if buscar and "cliente" in dff.columns: dff = dff[dff["cliente"].str.contains(buscar, case=False, na=False)]
-    if ec_fil != "Todos" and "estatus_cobro" in dff.columns: dff = dff[dff["estatus_cobro"] == ec_fil]
-    dff = _date_filter(dff, "fecha_viaje", f_desde, f_hasta)
+    dff = df.copy() if not df.empty else pd.DataFrame()
+    if not dff.empty:
+        if buscar and "cliente" in dff.columns:
+            dff = dff[dff["cliente"].str.contains(buscar, case=False, na=False)]
+        if ec_fil != "Todos" and "estatus_cobro" in dff.columns:
+            dff = dff[dff["estatus_cobro"] == ec_fil]
+        dff = _date_filter(dff, "fecha_viaje", f_desde, f_hasta)
+        if "fecha_viaje" in dff.columns and "estatus_cobro" in dff.columns:
+            hoy = pd.Timestamp(date.today())
+            fv  = pd.to_datetime(dff["fecha_viaje"], errors="coerce")
+            dff["dias_pendiente"] = (hoy - fv).dt.days.where(
+                dff["estatus_cobro"] != "pagado", 0).fillna(0).astype(int)
 
-    if "fecha_viaje" in dff.columns and "estatus_cobro" in dff.columns:
-        hoy = pd.Timestamp(date.today())
-        fv  = pd.to_datetime(dff["fecha_viaje"], errors="coerce")
-        dff["dias_pendiente"] = (hoy - fv).dt.days.where(dff["estatus_cobro"] != "pagado", 0).fillna(0).astype(int)
+    _cxc_cols = [c for c in ["id","folio","cliente","numero_viaje","monto_total","monto_pagado",
+                               "saldo_pendiente","estatus_cobro","dias_pendiente",
+                               "fecha_viaje","fecha_vencimiento"] if not dff.empty and c in dff.columns]
 
-    st.caption(f"{len(dff)} cuenta(s)")
-    cols_show = [c for c in ["folio","cliente","numero_viaje","monto_total","monto_pagado",
-                              "saldo_pendiente","estatus_cobro","dias_pendiente","fecha_viaje","fecha_vencimiento"] if c in dff.columns]
-    orig = dff[cols_show].copy()
-    edit = st.data_editor(orig, use_container_width=True, key="edit_cxc", num_rows="fixed")
+    # ── Arriba: Por Cobrar / Parciales ────────────────────────────────────────
+    st.subheader("🔴 Por Cobrar")
+    if not dff.empty and "estatus_cobro" in dff.columns:
+        _pend = dff[~dff["estatus_cobro"].isin(["pagado"])]
+        if _pend.empty:
+            st.success("✅ Todas las cuentas están liquidadas.")
+        else:
+            st.caption(f"{len(_pend)} cuenta(s) pendiente(s)")
+            st.dataframe(_pend[[c for c in _cxc_cols if c in _pend.columns]],
+                         use_container_width=True, hide_index=True)
+            _cm1, _cm2, _cm3 = st.columns(3)
+            _cm1.metric("Saldo Pendiente", _fmt(_pend["saldo_pendiente"].apply(_num).sum()) if "saldo_pendiente" in _pend.columns else "$0")
+            _cm2.metric("Total Facturado", _fmt(_pend["monto_total"].apply(_num).sum()) if "monto_total" in _pend.columns else "$0")
+            _cm3.metric("Días Promedio",   f"{_pend['dias_pendiente'].mean():.0f}" if "dias_pendiente" in _pend.columns and len(_pend) > 0 else "—")
+    else:
+        st.info("Sin cuentas por cobrar." if dff.empty else "✅ Todas liquidadas.")
 
-    bc, _ = st.columns(2)
-    if bc.button("💾 Guardar cambios", key="save_c"): _guardar("cuentas_por_cobrar", orig, edit)
-    _csv_btn(dff, "cxc", "csv_c")
+    if not dff.empty:
+        _csv_btn(dff, "cxc", "csv_c")
 
     st.divider()
-    c1, c2 = st.columns(2)
-    c1.metric("Saldo Pendiente Total", _fmt(dff["saldo_pendiente"].apply(_num).sum()) if "saldo_pendiente" in dff.columns else "$0")
-    c2.metric("Total Cobrado",         _fmt(dff["monto_pagado"].apply(_num).sum()) if "monto_pagado" in dff.columns else "$0")
 
-    st.subheader("👥 Resumen por Cliente")
-    if "cliente" in dff.columns:
-        grp = dff.groupby("cliente").agg(
-            Viajes=("numero_viaje","count"),
-            Total=("monto_total","sum"),
-            Cobrado=("monto_pagado","sum"),
-            Saldo=("saldo_pendiente","sum"),
-        ).reset_index().sort_values("Saldo", ascending=False)
-        for col in ["Total","Cobrado","Saldo"]:
-            grp[col] = grp[col].apply(_fmt)
-        st.dataframe(grp, use_container_width=True, hide_index=True)
+    # ── Abajo: Viajes pagados + detalle de pago ───────────────────────────────
+    st.subheader("🟢 Viajes Pagados")
+    if not dff.empty and "estatus_cobro" in dff.columns:
+        _pag = dff[dff["estatus_cobro"] == "pagado"]
+        if _pag.empty:
+            st.info("Sin viajes pagados aún.")
+        else:
+            if not dp.empty and "numero_viaje" in dp.columns and "numero_viaje" in _pag.columns:
+                _p_cols = [c for c in ["folio","numero_viaje","fecha_pago","monto_pago","metodo_pago"] if c in dp.columns]
+                _joined = _pag.merge(
+                    dp[_p_cols].rename(columns={"folio": "folio_pago"}),
+                    on="numero_viaje", how="left"
+                )
+                _show = [c for c in ["id","folio","cliente","numero_viaje","monto_total",
+                                      "folio_pago","fecha_pago","monto_pago","metodo_pago"] if c in _joined.columns]
+                st.caption(f"{len(_pag)} viaje(s) pagado(s)")
+                st.dataframe(_joined[_show], use_container_width=True, hide_index=True)
+            else:
+                st.dataframe(_pag[[c for c in _cxc_cols if c in _pag.columns]],
+                             use_container_width=True, hide_index=True)
+    else:
+        st.info("Sin datos de cuentas.")
+
+    if not dff.empty:
+        st.divider()
+        _rc1, _rc2 = st.columns(2)
+        _rc1.metric("Total CXC",     _fmt(dff["monto_total"].apply(_num).sum()) if "monto_total" in dff.columns else "$0")
+        _rc2.metric("Total Cobrado", _fmt(dff["monto_pagado"].apply(_num).sum()) if "monto_pagado" in dff.columns else "$0")
 
 
 # ─── ANÁLISIS ─────────────────────────────────────────────────────────────────
@@ -395,104 +432,143 @@ elif seccion == "Análisis":
     dg = get_gastos()
     dc = get_cxc()
 
-    # Utilidad por semana
+    # 1. Gastos sin viaje (arriba — pendiente de asignar)
+    st.subheader("⚠️ Gastos sin Viaje Asociado")
+    if not dg.empty and "numero_viaje" in dg.columns:
+        sin_viaje = dg[dg["numero_viaje"].isna() | (dg["numero_viaje"] == "")]
+        if sin_viaje.empty:
+            st.success("✅ Todos los gastos tienen viaje asociado.")
+        else:
+            _sv_cols = [c for c in ["folio","fecha_gasto","concepto","monto_gasto","tipo_gasto","chofer","numero_viaje"] if c in sin_viaje.columns]
+            sv_orig = sin_viaje[_sv_cols].copy()
+            sv_edit = st.data_editor(
+                sv_orig, use_container_width=True, hide_index=True, key="edit_sv", num_rows="fixed",
+                disabled=[c for c in _sv_cols if c != "numero_viaje"],
+                column_config={"numero_viaje": st.column_config.TextColumn("Viaje (editar)", help="Ej: VIA-001")},
+            )
+            if st.button("💾 Actualizar Viaje", key="save_sv"):
+                _guardar("gastos", sv_orig, sv_edit)
+                st.cache_data.clear()
+                st.rerun()
+    else:
+        st.info("Sin datos de gastos.")
+
+    st.divider()
+
+    # 2. Viajes sin gastos
+    st.subheader("⚠️ Viajes sin Gastos Registrados")
+    if not dv.empty and not dg.empty and "folio" in dv.columns and "numero_viaje" in dg.columns:
+        folios_con_gasto = set(dg["numero_viaje"].dropna().unique())
+        sin_gastos = dv[~dv["folio"].isin(folios_con_gasto)]
+        if sin_gastos.empty:
+            st.success("✅ Todos los viajes tienen gastos registrados.")
+        else:
+            _sg_cols = [c for c in ["folio","cliente","origen","destino","fecha_salida","estatus_viaje"] if c in sin_gastos.columns]
+            st.dataframe(sin_gastos[_sg_cols], use_container_width=True, hide_index=True)
+    else:
+        st.info("Sin datos suficientes.")
+
+    st.divider()
+
+    # 3. Gastos por camión/chofer × mes
+    st.subheader("🚛 Gastos por Camión × Mes")
+    if not dg.empty and "monto_gasto" in dg.columns and "fecha_gasto" in dg.columns:
+        _gcm = dg.copy()
+        _gcm["monto_gasto"] = _gcm["monto_gasto"].apply(_num)
+        _gcm["_f"]  = pd.to_datetime(_gcm["fecha_gasto"], errors="coerce")
+        _gcm["mes"] = _gcm["_f"].dt.to_period("M").astype(str)
+        _ucol = next((c for c in ["camion","unidad","chofer"] if c in _gcm.columns), None)
+        if _ucol:
+            _pivot = (_gcm.groupby([_ucol, "mes"])["monto_gasto"]
+                         .sum().unstack("mes").fillna(0).reset_index())
+            _pivot.columns.name = None
+            _pivot = _pivot.rename(columns={_ucol: "Chofer/Camión"})
+            for _c in _pivot.columns[1:]:
+                _pivot[_c] = _pivot[_c].apply(lambda x: _fmt(x) if _num(x) > 0 else "—")
+            st.dataframe(_pivot, use_container_width=True, hide_index=True)
+        else:
+            st.info("Sin columna de camión o chofer en gastos.")
+    else:
+        st.info("Sin datos suficientes.")
+
+    st.divider()
+
+    # 4. Utilidad por semana
     st.subheader("📅 Utilidad por Semana")
     if not dv.empty and "fecha_salida" in dv.columns and "utilidad_viaje" in dv.columns:
         dv2 = dv.copy()
+        dv2["_util"]        = dv2["utilidad_viaje"].apply(_num)
         dv2["fecha_salida"] = pd.to_datetime(dv2["fecha_salida"], errors="coerce")
-        dv2["semana"] = dv2["fecha_salida"].dt.to_period("W").astype(str)
-        semanal = dv2.groupby("semana")["utilidad_viaje"].apply(lambda x: x.apply(_num).sum()).reset_index()
+        dv2["semana"]       = dv2["fecha_salida"].dt.to_period("W").astype(str)
+        semanal = dv2.groupby("semana")["_util"].sum().reset_index()
         semanal.columns = ["Semana","Utilidad"]
         semanal["Utilidad"] = semanal["Utilidad"].apply(_fmt)
         st.dataframe(semanal, use_container_width=True, hide_index=True,
-                     column_config={"Semana": st.column_config.TextColumn("Semana", width="medium"),
+                     column_config={"Semana":   st.column_config.TextColumn("Semana",   width="medium"),
                                     "Utilidad": st.column_config.TextColumn("Utilidad", width="small")})
     else:
         st.info("Sin datos suficientes para utilidad por semana.")
 
     st.divider()
 
-    # Top 5 clientes
+    # 5. Gastos por tipo
+    st.subheader("📋 Gastos por Tipo")
+    if not dg.empty and "tipo_gasto" in dg.columns and "monto_gasto" in dg.columns:
+        _gt = dg.copy()
+        _gt["tipo_gasto"]  = _gt["tipo_gasto"].str.strip().str.lower().fillna("sin tipo")
+        _gt["monto_gasto"] = _gt["monto_gasto"].apply(_num)
+        _total_g = _gt["monto_gasto"].sum()
+        grp = (_gt.groupby("tipo_gasto")["monto_gasto"]
+                  .agg(Cantidad="count", Monto="sum").reset_index()
+                  .rename(columns={"tipo_gasto": "Tipo"}))
+        grp["% del Total"] = grp["Monto"].apply(lambda x: f"{x/_total_g*100:.1f}%" if _total_g else "0%")
+        grp["Monto"]       = grp["Monto"].apply(_fmt)
+        st.dataframe(grp, use_container_width=True, hide_index=True)
+    else:
+        st.info("Sin datos de gastos.")
+
+    st.divider()
+
+    # 6. Top 5 clientes (al final)
     st.subheader("🏆 Top 5 Clientes por Venta")
     if not dv.empty and "cliente" in dv.columns:
-        top = dv.groupby("cliente").agg(
-            Viajes=("folio","count"),
-            Venta_Total=("precio_venta_viaje","sum"),
+        _dv_t = dv.copy()
+        _dv_t["_venta"] = _dv_t["precio_venta_viaje"].apply(_num)
+        top = _dv_t.groupby("cliente").agg(
+            Viajes=("folio","count"), Venta_Total=("_venta","sum"),
         ).reset_index().sort_values("Venta_Total", ascending=False).head(5)
         if not dc.empty and "cliente" in dc.columns:
-            cobrado = dc.groupby("cliente")["monto_pagado"].sum().apply(_num).reset_index()
+            _dc_t = dc.copy()
+            _dc_t["_cobrado"] = _dc_t["monto_pagado"].apply(_num)
+            cobrado = _dc_t.groupby("cliente")["_cobrado"].sum().reset_index()
             cobrado.columns = ["cliente","Cobrado"]
-            top = top.merge(cobrado, on="cliente", how="left")
-            top["Saldo"] = (top["Venta_Total"] - top["Cobrado"]).apply(_fmt)
+            top = top.merge(cobrado, on="cliente", how="left").fillna(0)
+            top["Saldo"]   = (top["Venta_Total"] - top["Cobrado"]).apply(_fmt)
             top["Cobrado"] = top["Cobrado"].apply(_fmt)
         top["Venta_Total"] = top["Venta_Total"].apply(_fmt)
         st.dataframe(top, use_container_width=True, hide_index=True)
+    else:
+        st.info("Sin datos de viajes.")
 
     st.divider()
 
-    # Rentabilidad por chofer
+    # 7. Rentabilidad por chofer (al final)
     st.subheader("👷 Rentabilidad por Chofer")
     if not dv.empty and "chofer" in dv.columns:
-        rv = dv.groupby("chofer").agg(
-            Viajes=("folio","count"),
-            Utilidad_Viajes=("utilidad_viaje","sum"),
+        _dv_r = dv.copy()
+        _dv_r["_util"] = _dv_r["utilidad_viaje"].apply(_num)
+        rv = _dv_r.groupby("chofer").agg(
+            Viajes=("folio","count"), Utilidad_Viajes=("_util","sum"),
         ).reset_index()
         if not dg.empty and "chofer" in dg.columns:
-            rg = dg.groupby("chofer")["monto_gasto"].sum().apply(_num).reset_index()
+            _dg_r = dg.copy()
+            _dg_r["_gasto"] = _dg_r["monto_gasto"].apply(_num)
+            rg = _dg_r.groupby("chofer")["_gasto"].sum().reset_index()
             rg.columns = ["chofer","Gastos"]
             rv = rv.merge(rg, on="chofer", how="left").fillna(0)
             rv["Utilidad_Neta"] = (rv["Utilidad_Viajes"] - rv["Gastos"]).apply(_fmt)
-            rv["Gastos"] = rv["Gastos"].apply(_fmt)
+            rv["Gastos"]        = rv["Gastos"].apply(_fmt)
         rv["Utilidad_Viajes"] = rv["Utilidad_Viajes"].apply(_fmt)
         st.dataframe(rv, use_container_width=True, hide_index=True)
-
-    st.divider()
-
-    # Gastos por tipo
-    st.subheader("📋 Gastos por Tipo")
-    if not dg.empty and "tipo_gasto" in dg.columns and "monto_gasto" in dg.columns:
-        total_g = dg["monto_gasto"].apply(_num).sum()
-        grp = dg.groupby("tipo_gasto").agg(Cantidad=("folio","count"), Monto=("monto_gasto","sum")).reset_index()
-        grp["Porcentaje"] = grp["Monto"].apply(lambda x: f"{_num(x)/total_g*100:.1f}%" if total_g else "0%")
-        grp["Monto"] = grp["Monto"].apply(_fmt)
-        st.dataframe(grp, use_container_width=True, hide_index=True)
-
-    st.divider()
-
-    # Viajes sin gastos
-    st.subheader("⚠️ Viajes sin Gastos Registrados")
-    if not dv.empty and not dg.empty and "folio" in dv.columns and "numero_viaje" in dg.columns:
-        folios_con_gasto = set(dg["numero_viaje"].dropna().unique())
-        sin_gastos = dv[~dv["folio"].isin(folios_con_gasto)]
-        if sin_gastos.empty:
-            st.success("Todos los viajes tienen gastos registrados.")
-        else:
-            cols = [c for c in ["folio","cliente","origen","destino","fecha_salida","estatus_viaje"] if c in sin_gastos.columns]
-            st.dataframe(sin_gastos[cols], use_container_width=True, hide_index=True)
     else:
-        st.info("Sin datos suficientes.")
-
-    st.divider()
-
-    # Gastos sin viaje
-    st.subheader("⚠️ Gastos sin Viaje Asociado")
-    if not dg.empty and "numero_viaje" in dg.columns:
-        sin_viaje = dg[dg["numero_viaje"].isna() | (dg["numero_viaje"] == "")]
-        if sin_viaje.empty:
-            st.success("Todos los gastos tienen viaje asociado.")
-        else:
-            cols = [c for c in ["folio","fecha_gasto","concepto","monto_gasto","tipo_gasto","chofer","numero_viaje"] if c in sin_viaje.columns]
-            sv_orig = sin_viaje[cols].copy()
-            sv_edit = st.data_editor(
-                sv_orig,
-                use_container_width=True,
-                hide_index=True,
-                key="edit_sv",
-                num_rows="fixed",
-                disabled=[c for c in cols if c != "numero_viaje"],
-                column_config={"numero_viaje": st.column_config.TextColumn("Viaje (editar)", help="Escribe el folio del viaje, ej: VIA-001")},
-            )
-            if st.button("💾 Actualizar Viaje", key="save_sv"):
-                _guardar("gastos", sv_orig, sv_edit)
-                st.cache_data.clear()
-                st.rerun()
+        st.info("Sin datos de viajes.")
