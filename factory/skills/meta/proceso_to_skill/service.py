@@ -82,30 +82,28 @@ class ProcesoToSkillService:
         log.append({"paso": "skill_cases_generator", "ok": r5.get("ok"), "message": r5.get("message", "")})
         casos = r5.get("data", {}).get("casos", []) if r5.get("ok") else []
 
-        # 6. Eval seguridad del código generado
-        r6 = self._run(_EVAL_ROOT, "skill_safety_eval", {
-            "skill_name": "_generated_",
-            "source": "inline",
-            "_inline_code": codigo["service_py"],
-            "dry_run": False,
-        })
-        log.append({"paso": "skill_safety_eval", "ok": r6.get("ok"), "message": r6.get("message", "")})
-
-        # 7. Crear archivos via new_skill
+        # 6. Crear archivos via new_skill (service_py_override inyecta código generado)
         skill_name = spec["skill_name"]
-        r7 = self._run(_INT_ROOT, "new_skill", {
-            "nombre":      skill_name,
-            "vertical":    spec.get("vertical", vertical),
-            "descripcion": spec.get("descripcion", ""),
-            "requires_env": spec.get("requires_env", []),
-            "dry_run":     False,
-            "to_files":    True,
-            "base_dir":    "factory",
+        _factory_base = str(_SKILLS_ROOT.parent)   # factory/
+        r6 = self._run(_INT_ROOT, "new_skill", {
+            "nombre":             skill_name,
+            "vertical":           spec.get("vertical", vertical),
+            "descripcion":        spec.get("descripcion", ""),
+            "dry_run":            False,
+            "base_dir":           _factory_base,
             "service_py_override": codigo["service_py"],
         })
-        log.append({"paso": "new_skill", "ok": r7.get("ok"), "message": r7.get("message", "")})
-        if not r7.get("ok"):
-            return {"ok": False, "error": f"new_skill falló: {r7.get('error')}", "data": {"log": log, "codigo": codigo}}
+        log.append({"paso": "new_skill", "ok": r6.get("ok"), "message": r6.get("message", "")})
+        if not r6.get("ok"):
+            return {"ok": False, "error": f"new_skill falló: {r6.get('error')}", "data": {"log": log, "codigo": codigo}}
+
+        # 7. Safety eval sobre el skill recién creado en disco
+        r7 = self._run(_EVAL_ROOT, "skill_safety_eval", {
+            "skill_name": skill_name,
+            "source":     "internos",
+            "dry_run":    False,
+        })
+        log.append({"paso": "skill_safety_eval", "ok": r7.get("ok"), "message": r7.get("message", "")})
 
         # 8. Push a GitHub (opcional)
         push_result = None
@@ -113,11 +111,15 @@ class ProcesoToSkillService:
             import os
             repo   = os.getenv("GITHUB_REPO", "")
             branch = os.getenv("GITHUB_BRANCH", "main")
-            files  = r7["data"].get("files", {})
             r8 = self._run(_INT_ROOT, "github_push", {
                 "repo": repo, "branch": branch,
                 "message": f"feat: add auto-generated skill {skill_name}",
-                "files": files, "dry_run": False,
+                "files": {
+                    f"factory/skills/internos/{skill_name}/service.py": codigo["service_py"],
+                    f"factory/skills/internos/{skill_name}/skill.py":   codigo["skill_py"],
+                    f"factory/skills/internos/{skill_name}/manifest.json": codigo.get("manifest_json", {}),
+                },
+                "dry_run": False,
             })
             log.append({"paso": "github_push", "ok": r8.get("ok"), "message": r8.get("message", "")})
             push_result = r8
@@ -126,11 +128,13 @@ class ProcesoToSkillService:
             "ok": True,
             "message": f"skill '{skill_name}' creado — {len(log)} pasos completados",
             "data": {
-                "skill_name": skill_name,
-                "spec": spec,
+                "skill_name":   skill_name,
+                "spec":         spec,
+                "codigo":       codigo,
                 "casos_prueba": casos,
-                "log": log,
-                "push": push_result,
+                "safety":       r7.get("data", {}),
+                "log":          log,
+                "push":         push_result,
             },
         }
 

@@ -9,15 +9,23 @@ from pathlib import Path
 
 _SKILLS_ROOT = Path(__file__).parent.parent.parent   # factory/skills/
 
+# Skills que NO requieren IA — siempre corren en regression
 _DEFAULT_SKILLS = [
-    ("rh_basic_validation",   "internos", {"candidato_id": "test-dry"}),
-    ("rh_candidate_scoring",  "internos", {"candidato_id": "test-dry", "vacante_id": "test-dry"}),
-    ("rh_candidate_ranking",  "internos", {"vacante_id": "test-dry"}),
-    ("rh_candidate_search",   "internos", {"query": "test"}),
-    ("meta_task_enqueue",     "meta",     {"skill": "test_skill", "context": {}}),
-    ("meta_task_status",      "meta",     {"folio": "TASK-0001"}),
-    ("workflow_capture",      "meta",     {"proceso": "test proceso"}),
-    ("pattern_extractor",     "meta",     {"pasos": [{"numero": 1, "accion": "test"}]}),
+    ("rh_basic_validation",      "internos", {"candidato_id": "test-dry"}),
+    ("rh_candidate_scoring",     "internos", {"candidato_id": "test-dry", "vacante_id": "test-dry"}),
+    ("rh_candidate_ranking",     "internos", {"vacante_id": "test-dry"}),
+    ("rh_candidate_search",      "internos", {"query": "test"}),
+    ("meta_task_enqueue",        "meta",     {"skill": "test_skill", "context": {}}),
+    ("meta_task_status",         "meta",     {"folio": "TASK-0001"}),
+    ("skill_safety_eval",        "eval",     {"skill_name": "rh_basic_validation", "source": "internos"}),
+    ("skill_breaking_detector",  "eval",     {"old_code": "def run(c): return {'ok':True}", "new_code": "def run(c): return {'ok':True}", "skill_name": "test"}),
+]
+
+# Skills con IA — solo se agregan si context tiene "include_ia": True
+_IA_SKILLS = [
+    ("workflow_capture",      "meta", {"proceso": "test proceso"}),
+    ("pattern_extractor",     "meta", {"pasos": [{"numero": 1, "accion": "test"}]}),
+    ("skill_spec_generator",  "meta", {"patron": {"nombre": "test", "descripcion": "test", "automatizable": True}}),
 ]
 
 
@@ -27,6 +35,8 @@ class RegressionEvalService:
         skills_override = context.get("skills")
         if skills_override:
             skills_to_test = [(s["name"], s.get("source", "internos"), s.get("input", {})) for s in skills_override]
+        elif context.get("include_ia"):
+            skills_to_test = _DEFAULT_SKILLS + _IA_SKILLS
         else:
             skills_to_test = _DEFAULT_SKILLS
 

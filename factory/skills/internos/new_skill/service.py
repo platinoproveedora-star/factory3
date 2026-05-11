@@ -77,7 +77,7 @@ class NewSkillService:
             skill_path / "SKILL.md": skill_md.render(nombre, vertical, descripcion),
             skill_path / "manifest.json": manifest_json.render(nombre, vertical, descripcion),
             skill_path / "skill.py": skill_py.render(class_name),
-            skill_path / "service.py": service_py.render(class_name),
+            skill_path / "service.py": context.get("service_py_override") or service_py.render(class_name),
         }
         for path, content in files.items():
             path.write_text(content, encoding="utf-8")

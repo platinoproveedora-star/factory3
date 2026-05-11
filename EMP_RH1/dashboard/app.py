@@ -1273,8 +1273,12 @@ elif page == "Meta Skills":
                     codigo = data.get("codigo") or {}
                     svc = codigo.get("service_py", "")
                     if svc:
-                        with st.expander("🐍 service.py generado", expanded=False):
+                        with st.expander("🐍 service.py generado", expanded=True):
                             st.code(svc, language="python")
+                        skl = codigo.get("skill_py", "")
+                        if skl:
+                            with st.expander("🐍 skill.py", expanded=False):
+                                st.code(skl, language="python")
 
                     # Casos de prueba
                     casos = data.get("casos_prueba", [])
@@ -1378,13 +1382,34 @@ elif page == "Meta Skills":
         elif skill_id == "regression_eval":
             ctx = {}
 
+        # Mostrar output del paso anterior si existe
+        prev_key = f"ms_output_{skill_id}"
+        if st.session_state.get(prev_key):
+            with st.expander("📤 Output del último run", expanded=False):
+                prev = st.session_state[prev_key]
+                svc_prev = (prev.get("data") or {}).get("service_py", "")
+                if svc_prev:
+                    st.code(svc_prev, language="python")
+                else:
+                    st.json(prev.get("data", prev))
+
         if ctx is not None and st.button(f"▶ Ejecutar {skill_id}", key="btn_run_paso"):
             ctx["dry_run"] = dry_paso
             with st.spinner("Ejecutando…"):
                 r = _run_skill(skill_id, ctx, source=skill_src)
+            st.session_state[prev_key] = r
             if r.get("ok"):
                 st.success(r.get("message", "OK"))
-                st.json(r.get("data", {}))
+                data_r = r.get("data", {})
+                # service_py como código, resto como JSON
+                svc_out = data_r.get("service_py", "")
+                if svc_out:
+                    st.code(svc_out, language="python")
+                    rest = {k: v for k, v in data_r.items() if k != "service_py"}
+                    if rest:
+                        st.json(rest)
+                else:
+                    st.json(data_r)
             else:
                 st.error(r.get("error", "Error"))
                 st.json(r)
