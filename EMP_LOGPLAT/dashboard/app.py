@@ -160,9 +160,10 @@ if seccion == "Overview":
         _u2.metric("Destino",      str(_ult.get("destino","—") or "—")[:30])
         _u3.metric("Precio Venta", _fmt(_ult.get("precio_venta_viaje", 0)))
         _u4.metric("Utilidad",     _fmt(_util_u))
-        _gv_det = dg[dg["numero_viaje"] == _fu] if not dg.empty and "numero_viaje" in dg.columns else pd.DataFrame()
+        _col_nv = next((c for c in ["numero_viaje","viaje_folio"] if not dg.empty and c in dg.columns), None)
+        _gv_det = dg[dg[_col_nv] == _fu] if _col_nv else pd.DataFrame()
+        st.caption(f"Gastos de {_fu} ({len(_gv_det)} registros):")
         if not _gv_det.empty:
-            st.caption("Gastos:")
             _gc = [c for c in ["folio","fecha_gasto","concepto","monto_gasto","tipo_gasto","chofer"] if c in _gv_det.columns]
             st.dataframe(_gv_det[_gc].reset_index(drop=True), use_container_width=True, hide_index=True)
         else:
