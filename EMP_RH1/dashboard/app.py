@@ -212,6 +212,30 @@ if page == "Overview":
                 cols[2].write(_badge(v.get("estado", "—")))
                 cols[3].caption(v.get("tipo", "real"))
 
+    st.divider()
+    st.subheader("Fábrica — Estado Global")
+    with st.spinner("Cargando stats…"):
+        _fs = _run_skill("factory_stats", {"dry_run": False}, source="eval")
+    if _fs.get("ok"):
+        _fsd = _fs.get("data", {})
+        _sk  = _fsd.get("skills", {})
+        _bo  = _fsd.get("bots", {})
+        _ag  = _fsd.get("agents", {})
+        fs1, fs2, fs3, fs4 = st.columns(4)
+        fs1.metric("Skills totales",  _sk.get("total", 0),   f"{_sk.get('en_disco',0)} en disco")
+        fs2.metric("Bots",            _bo.get("total", 0))
+        fs3.metric("Agents",          _ag.get("total", 0))
+        fs4.metric("Sincronizado",    "✅ Sí" if _sk.get("sincronizado") else "⚠️ No")
+        _col_k, _col_v = st.columns(2)
+        with _col_k:
+            st.caption("Por tipo")
+            st.json(_sk.get("por_tipo", {}), expanded=False)
+        with _col_v:
+            st.caption("Top verticales")
+            st.json(_sk.get("top_verticales", {}), expanded=False)
+    else:
+        st.caption("factory_stats no disponible")
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Vacantes
@@ -1483,6 +1507,28 @@ elif page == "Meta Skills":
 
         st.caption(f"{len(meta_skills)} meta · {len(eval_skills)} eval")
 
+        st.divider()
+        st.markdown("**Registry Sync** — agrega al registry los skills que faltan en disco")
+        rs_dry = st.checkbox("dry_run (solo previsualizar)", value=True, key="rs_dry")
+        if st.button("▶ Sincronizar Registry", key="btn_registry_sync"):
+            with st.spinner("Escaneando…"):
+                r = _run_skill("skill_registry_sync", {"dry_run": rs_dry}, source="meta")
+            if r.get("ok"):
+                d = r.get("data", {})
+                if d.get("agregados", 0) == 0:
+                    st.success("Registry sincronizado — nada que agregar")
+                else:
+                    if rs_dry:
+                        st.info(r.get("message", ""))
+                    else:
+                        st.success(r.get("message", ""))
+                detalle = d.get("detalle", [])
+                if detalle:
+                    st.dataframe(_pd.DataFrame(detalle), use_container_width=True, hide_index=True)
+                st.caption(f"En disco: {d.get('total_disco',0)}  |  Ya existían: {d.get('ya_existen',0)}")
+            else:
+                st.error(r.get("error", "Error"))
+
     # ── Tab 4: Eval ───────────────────────────────────────────────────────────
     with tab_eval:
         st.subheader("Verificar skills existentes")
@@ -1614,3 +1660,84 @@ elif page == "Meta Skills":
                     st.markdown(md)
                 else:
                     st.error(r.get("error", "Error"))
+
+        st.divider()
+
+        # ── Fila 4: Batch Eval + Import Checker ───────────────────────────────
+        col_e7, col_e8 = st.columns(2)
+
+        with col_e7:
+            st.markdown("**Batch Eval** — health + orphan + manifest + regression en uno")
+            if st.button("▶ Correr Batch Eval", key="btn_batch_eval"):
+                with st.spinner("Evaluando fábrica completa…"):
+                    r = _run_skill("skill_batch_eval", {"dry_run": False}, source="eval")
+                if r.get("ok"):
+                    d = r.get("data", {})
+                    res = d.get("resumen", {})
+                    st.success(r.get("message", "OK"))
+                    b1, b2, b3, b4 = st.columns(4)
+                    b1.metric("Skills OK",    res.get("skills_ok", 0))
+                    b2.metric("Con error",    res.get("skills_con_error", 0))
+                    b3.metric("Huérfanos",    res.get("huerfanos", 0) + res.get("fantasmas", 0))
+                    b4.metric("Regression",   f"{res.get('regression_ok',0)}/{res.get('regression_total',0)}")
+                    st.caption(f"Latencia total: {res.get('latencia_total_ms',0)} ms")
+                    resultados = d.get("resultados", {})
+                    if resultados:
+                        with st.expander("Detalle por check", expanded=False):
+                            for check_name, check_r in resultados.items():
+                                icon = "✅" if check_r.get("ok") else "❌"
+                                st.markdown(f"{icon} **{check_name}** — {check_r.get('message','')} ({check_r.get('ms',0)} ms)")
+                else:
+                    st.error(r.get("error", "Error"))
+
+        with col_e8:
+            st.markdown("**Import Checker** — verifica imports de un skill")
+            ic_skill  = st.text_input("Nombre del skill", value="rh_basic_validation", key="ic_skill")
+            ic_source = st.selectbox("Fuente", ["", "internos", "meta", "eval"],
+                                      format_func=lambda x: "Auto-detectar" if not x else x, key="ic_source")
+            if st.button("▶ Verificar Imports", key="btn_import_check"):
+                with st.spinner("Analizando imports…"):
+                    ctx_ic = {"skill_name": ic_skill, "dry_run": False}
+                    if ic_source:
+                        ctx_ic["source"] = ic_source
+                    r = _run_skill("skill_import_checker", ctx_ic, source="eval")
+                if r.get("ok"):
+                    d = r.get("data", {})
+                    if d.get("faltantes", 0) == 0:
+                        st.success(r.get("message", "Todos los imports disponibles"))
+                    else:
+                        st.warning(r.get("message", ""))
+                    imports_r = d.get("imports", [])
+                    if imports_r:
+                        st.dataframe(_pd.DataFrame(imports_r), use_container_width=True, hide_index=True)
+                else:
+                    st.error(r.get("error", "Error"))
+
+        st.divider()
+
+        # ── KPI Dashboard — meta_eval_kpis ────────────────────────────────────
+        st.markdown("**KPI Pipeline Fábrica** — cobertura y estado de meta/eval skills")
+        if st.button("▶ Cargar KPIs", key="btn_meta_kpis"):
+            with st.spinner("Calculando KPIs…"):
+                r = _run_skill("meta_eval_kpis", {"dry_run": False}, source="eval")
+            if r.get("ok"):
+                d = r.get("data", {})
+                res = d.get("resumen", {})
+                k1, k2, k3, k4 = st.columns(4)
+                k1.metric("Meta skills",    res.get("total_meta", 0), f"{res.get('meta_completos',0)} completos")
+                k2.metric("Eval skills",    res.get("total_eval", 0), f"{res.get('eval_completos',0)} completos")
+                k3.metric("Pipeline cubierto", f"{res.get('cobertura_pipeline',0)}%")
+                k4.metric("En registry",    res.get("meta_en_registry", 0) + res.get("eval_en_registry", 0))
+
+                pip = d.get("pipeline", {})
+                pc1, pc2 = st.columns(2)
+                with pc1:
+                    st.caption("Pipeline META")
+                    for s in pip.get("meta", []):
+                        st.markdown(f"{s['semaforo']} `{s['nombre']}` — {s['estado']}")
+                with pc2:
+                    st.caption("Pipeline EVAL")
+                    for s in pip.get("eval", []):
+                        st.markdown(f"{s['semaforo']} `{s['nombre']}` — {s['estado']}")
+            else:
+                st.error(r.get("error", "Error"))

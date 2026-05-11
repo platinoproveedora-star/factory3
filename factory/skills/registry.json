@@ -1671,5 +1671,52 @@
     "path": "skills/meta/skill_doc_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "skill_registry_sync": {
+    "tipo": "meta",
+    "nombre": "skill_registry_sync",
+    "vertical": "factory_meta",
+    "descripcion": "Escanea disco y agrega al registry los skills que faltan — dry_run=True por defecto",
+    "path": "skills/meta/skill_registry_sync",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "factory_stats": {
+    "tipo": "eval",
+    "nombre": "factory_stats",
+    "vertical": "factory_eval",
+    "kind": "data",
+    "descripcion": "KPIs globales de la fábrica: total skills, bots, agents, distribución por tipo y vertical",
+    "path": "skills/eval/factory_stats",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "meta_eval_kpis": {
+    "tipo": "eval",
+    "nombre": "meta_eval_kpis",
+    "vertical": "factory_eval",
+    "kind": "data",
+    "descripcion": "KPIs de meta y eval skills: conteo, cobertura de pipeline y semáforo por skill",
+    "path": "skills/eval/meta_eval_kpis",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_batch_eval": {
+    "tipo": "eval",
+    "nombre": "skill_batch_eval",
+    "vertical": "factory_eval",
+    "descripcion": "Corre health_check + orphan_detector + manifest_validator + regression en una sola llamada",
+    "path": "skills/eval/skill_batch_eval",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_import_checker": {
+    "tipo": "eval",
+    "nombre": "skill_import_checker",
+    "vertical": "factory_eval",
+    "descripcion": "Lee service.py de un skill y verifica que todos los imports estén disponibles",
+    "path": "skills/eval/skill_import_checker",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

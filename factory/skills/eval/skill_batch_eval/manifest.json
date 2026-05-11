@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_batch_eval",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Corre health_check + orphan_detector + manifest_validator + regression_eval y retorna reporte consolidado",
+  "requires_env": []
+}

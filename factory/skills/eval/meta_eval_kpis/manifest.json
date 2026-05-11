@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "meta_eval_kpis",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "KPIs de meta y eval skills: conteo, cobertura, salud y registro. Expuesto en GET /data/meta_eval_kpis",
+  "requires_env": []
+}

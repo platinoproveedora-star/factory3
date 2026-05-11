@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_registry_sync",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Escanea carpetas de skills en disco y agrega al registry.json los que faltan",
+  "requires_env": []
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "factory_stats",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "KPIs globales de la fábrica: skills por tipo y vertical, bots, agents. Expuesto en GET /data/factory_stats",
+  "requires_env": []
+}
