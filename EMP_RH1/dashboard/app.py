@@ -1319,6 +1319,19 @@ elif page == "Meta Skills":
         dry_paso = st.checkbox("dry_run", value=False, key="ms_dry_paso")
         ctx = None
 
+        # helper: propaga output del paso anterior al campo de este paso
+        def _prop_banner(from_skill: str, label: str, state_key: str, extract_fn):
+            prev = st.session_state.get(f"ms_out_{from_skill}", {})
+            val  = extract_fn(prev) if prev else None
+            if val:
+                if state_key not in st.session_state:
+                    st.session_state[state_key] = val
+                c1, c2 = st.columns([3, 1])
+                c1.caption(f"← output de `{from_skill}` disponible")
+                if c2.button("Usar", key=f"prop_{state_key}"):
+                    st.session_state[state_key] = val
+                    st.rerun()
+
         # ── inputs dedicados por paso ──────────────────────────────────────────
         if skill_id == "workflow_capture":
             p_proceso = st.text_area("Proceso a capturar", height=100,
@@ -1327,19 +1340,25 @@ elif page == "Meta Skills":
             ctx = {"proceso": p_proceso}
 
         elif skill_id == "pattern_extractor":
-            p_nombre = st.text_input("Nombre del proceso", value="mi_proceso", key="pp_nombre")
-            p_pasos  = st.text_area("Pasos (JSON array)", height=120,
-                value='[{"numero":1,"accion":"revisar lista","input":"candidatos","output":"seleccion","automatizable":true}]',
-                key="pp_pasos")
+            _prop_banner("workflow_capture", "pasos", "pp_pasos_pe",
+                         lambda d: _json.dumps(d.get("pasos", []), indent=2, ensure_ascii=False))
+            p_nombre = st.text_input("Nombre del proceso", value="mi_proceso", key="pp_nombre_pe")
+            default_pasos = '[{"numero":1,"accion":"revisar lista","input":"candidatos","output":"seleccion","automatizable":true}]'
+            if "pp_pasos_pe" not in st.session_state:
+                st.session_state["pp_pasos_pe"] = default_pasos
+            p_pasos = st.text_area("Pasos (JSON array)", height=120, key="pp_pasos_pe")
             try:
                 ctx = {"pasos": _json.loads(p_pasos), "proceso_nombre": p_nombre}
             except Exception as e:
                 st.error(f"Pasos JSON invalido: {e}")
 
         elif skill_id == "skill_spec_generator":
-            p_patron  = st.text_area("Patron (JSON)", height=120,
-                value='{"nombre":"revisar_candidatos","descripcion":"revisa y puntua candidatos","tipo":"repetitivo","automatizable":true}',
-                key="pp_patron")
+            _prop_banner("pattern_extractor", "patron", "pp_patron_sg",
+                         lambda d: _json.dumps((d.get("patrones") or [{}])[0], indent=2, ensure_ascii=False))
+            default_patron = '{"nombre":"revisar_candidatos","descripcion":"revisa y puntua candidatos","tipo":"repetitivo","automatizable":true}'
+            if "pp_patron_sg" not in st.session_state:
+                st.session_state["pp_patron_sg"] = default_patron
+            p_patron  = st.text_area("Patron (JSON)", height=120, key="pp_patron_sg")
             p_ctx_pro = st.text_input("Contexto del proceso (opcional)", key="pp_ctx_pro")
             try:
                 ctx = {"patron": _json.loads(p_patron), "proceso_contexto": p_ctx_pro}
@@ -1347,18 +1366,24 @@ elif page == "Meta Skills":
                 st.error(f"Patron JSON invalido: {e}")
 
         elif skill_id == "skill_code_generator":
-            p_spec = st.text_area("Spec (JSON)", height=180,
-                value='{"skill_name":"mi_skill","descripcion":"hace algo util","context_params":[],"output_fields":[],"logica_principal":"valida input, procesa, retorna resultado","requiere_ia":false,"requiere_db":false,"requires_env":[]}',
-                key="pp_spec_code")
+            _prop_banner("skill_spec_generator", "spec", "pp_spec_code",
+                         lambda d: _json.dumps(d, indent=2, ensure_ascii=False))
+            default_spec = '{"skill_name":"mi_skill","descripcion":"hace algo util","context_params":[],"output_fields":[],"logica_principal":"valida input, procesa, retorna resultado","requiere_ia":false,"requiere_db":false,"requires_env":[]}'
+            if "pp_spec_code" not in st.session_state:
+                st.session_state["pp_spec_code"] = default_spec
+            p_spec = st.text_area("Spec (JSON)", height=180, key="pp_spec_code")
             try:
                 ctx = {"spec": _json.loads(p_spec)}
             except Exception as e:
                 st.error(f"Spec JSON invalido: {e}")
 
         elif skill_id == "skill_cases_generator":
-            p_spec2   = st.text_area("Spec (JSON)", height=150,
-                value='{"skill_name":"mi_skill","descripcion":"hace algo util","context_params":[],"output_fields":[],"casos_edge":[]}',
-                key="pp_spec_cases")
+            _prop_banner("skill_spec_generator", "spec", "pp_spec_cases",
+                         lambda d: _json.dumps(d, indent=2, ensure_ascii=False))
+            default_spec2 = '{"skill_name":"mi_skill","descripcion":"hace algo util","context_params":[],"output_fields":[],"casos_edge":[]}'
+            if "pp_spec_cases" not in st.session_state:
+                st.session_state["pp_spec_cases"] = default_spec2
+            p_spec2   = st.text_area("Spec (JSON)", height=150, key="pp_spec_cases")
             p_n_casos = st.number_input("Numero de casos", min_value=1, max_value=10, value=5, key="pp_ncasos")
             try:
                 ctx = {"spec": _json.loads(p_spec2), "n_casos": p_n_casos}
@@ -1398,6 +1423,8 @@ elif page == "Meta Skills":
             with st.spinner("Ejecutando…"):
                 r = _run_skill(skill_id, ctx, source=skill_src)
             st.session_state[prev_key] = r
+            # guardar data para propagación al paso siguiente
+            st.session_state[f"ms_out_{skill_id}"] = r.get("data", {})
             if r.get("ok"):
                 st.success(r.get("message", "OK"))
                 data_r = r.get("data", {})
@@ -1460,6 +1487,7 @@ elif page == "Meta Skills":
     with tab_eval:
         st.subheader("Verificar skills existentes")
 
+        # ── Fila 1: Regression + Health Check ────────────────────────────────
         col_e1, col_e2 = st.columns(2)
 
         with col_e1:
@@ -1469,9 +1497,9 @@ elif page == "Meta Skills":
                     r = _run_skill("regression_eval", {"dry_run": False}, source="eval")
                 if r.get("ok"):
                     d = r.get("data", {})
-                    total   = d.get("total", 0)
-                    ok_cnt  = d.get("ok", 0)
-                    errors  = d.get("errores", 0)
+                    total  = d.get("total", 0)
+                    ok_cnt = d.get("ok", 0)
+                    errors = d.get("errores", 0)
                     st.metric("Resultado", f"{ok_cnt}/{total} OK", delta=f"-{errors} errores" if errors else None)
                     resultados = d.get("resultados", [])
                     if resultados:
@@ -1483,25 +1511,106 @@ elif page == "Meta Skills":
                     st.error(r.get("error", "Error"))
 
         with col_e2:
-            st.markdown("**Safety Eval** — detecta patrones peligrosos en un skill")
-            ev_skill  = st.text_input("Nombre del skill", value="rh_candidate_scoring", key="ev_skill_name")
+            st.markdown("**Health Check** — estado de todos los skills")
+            solo_mal = st.checkbox("Solo con problemas", value=True, key="hc_solo_mal")
+            if st.button("▶ Correr Health Check", key="btn_health"):
+                with st.spinner("Escaneando…"):
+                    r = _run_skill("skill_health_check", {"solo_problemas": solo_mal, "dry_run": False}, source="eval")
+                if r.get("ok"):
+                    d = r.get("data", {})
+                    st.success(r.get("message", ""))
+                    skills_r = d.get("skills", [])
+                    if skills_r:
+                        df_hc = _pd.DataFrame(skills_r)[["semaforo", "nombre", "folder", "en_registry", "service_py", "skill_py", "issues"]]
+                        st.dataframe(df_hc, use_container_width=True, hide_index=True)
+                    else:
+                        st.info("Todos los skills están sanos.")
+                else:
+                    st.error(r.get("error", "Error"))
+
+        st.divider()
+
+        # ── Fila 2: Orphan Detector + Manifest Validator ──────────────────────
+        col_e3, col_e4 = st.columns(2)
+
+        with col_e3:
+            st.markdown("**Orphan Detector** — huerfanos y fantasmas")
+            if st.button("▶ Detectar Orphans", key="btn_orphan"):
+                with st.spinner("Analizando…"):
+                    r = _run_skill("skill_orphan_detector", {"dry_run": False}, source="eval")
+                if r.get("ok"):
+                    d = r.get("data", {})
+                    if d.get("limpio"):
+                        st.success("Fabrica limpia — sin huerfanos ni fantasmas")
+                    else:
+                        st.warning(r.get("message", ""))
+                        problemas = d.get("problemas", [])
+                        if problemas:
+                            st.dataframe(_pd.DataFrame(problemas), use_container_width=True, hide_index=True)
+                    st.caption(f"En disco: {d.get('total_disco',0)}  |  En registry: {d.get('total_registry',0)}")
+                else:
+                    st.error(r.get("error", "Error"))
+
+        with col_e4:
+            st.markdown("**Manifest Validator** — campos requeridos")
+            mv_skill = st.text_input("Skill específico (vacío = todos)", value="", key="mv_skill")
+            if st.button("▶ Validar Manifests", key="btn_manifest_val"):
+                with st.spinner("Validando…"):
+                    ctx_mv = {"dry_run": False}
+                    if mv_skill.strip():
+                        ctx_mv["skill_name"] = mv_skill.strip()
+                    r = _run_skill("skill_manifest_validator", ctx_mv, source="eval")
+                if r.get("ok"):
+                    d = r.get("data", {})
+                    if d.get("invalidos", 0) == 0:
+                        st.success(r.get("message", "Todos válidos"))
+                    else:
+                        st.warning(r.get("message", ""))
+                    resultados = d.get("resultados", [])
+                    invalidos_r = [r2 for r2 in resultados if not r2.get("valido")]
+                    if invalidos_r:
+                        st.dataframe(_pd.DataFrame(invalidos_r), use_container_width=True, hide_index=True)
+                else:
+                    st.error(r.get("error", "Error"))
+
+        st.divider()
+
+        # ── Fila 3: Safety + Doc Generator ───────────────────────────────────
+        col_e5, col_e6 = st.columns(2)
+
+        with col_e5:
+            st.markdown("**Safety Eval** — detecta patrones peligrosos")
+            ev_skill  = st.text_input("Nombre del skill", value="rh_basic_validation", key="ev_skill_name")
             ev_source = st.selectbox("Fuente", ["internos", "meta", "eval"], key="ev_source")
             if st.button("▶ Revisar Seguridad", key="btn_safety"):
                 with st.spinner("Analizando…"):
-                    r = _run_skill("skill_safety_eval", {
-                        "skill_name": ev_skill,
-                        "source":     ev_source,
-                    }, source="eval")
+                    r = _run_skill("skill_safety_eval", {"skill_name": ev_skill, "source": ev_source}, source="eval")
                 if r.get("ok"):
                     d = r.get("data", {})
-                    safe = d.get("safe", False)
-                    if safe:
-                        st.success(f"✅ SEGURO — score {d.get('score', 0):.0%}")
+                    if d.get("safe"):
+                        st.success(f"SEGURO — score {d.get('score', 0):.0%}")
                     else:
-                        st.warning(f"⚠ {r.get('message', '')}")
+                        st.warning(r.get("message", ""))
                     hallazgos = d.get("hallazgos", [])
                     if hallazgos:
                         st.dataframe(_pd.DataFrame(hallazgos), use_container_width=True, hide_index=True)
-                    st.caption(f"dry_run presente: {'✅' if d.get('tiene_dry_run') else '❌'}  |  {d.get('lineas_revisadas', 0)} líneas revisadas")
+                    st.caption(f"dry_run: {'✅' if d.get('tiene_dry_run') else '❌'}  |  {d.get('lineas_revisadas', 0)} líneas")
+                else:
+                    st.error(r.get("error", "Error"))
+
+        with col_e6:
+            st.markdown("**Doc Generator** — genera markdown de un skill")
+            dg_skill  = st.text_input("Nombre del skill", value="rh_basic_validation", key="dg_skill")
+            dg_source = st.selectbox("Fuente", ["", "internos", "meta", "eval"],
+                                      format_func=lambda x: "Auto-detectar" if not x else x, key="dg_source")
+            if st.button("▶ Generar Docs", key="btn_doc_gen"):
+                with st.spinner("Generando…"):
+                    ctx_dg = {"skill_name": dg_skill, "dry_run": False}
+                    if dg_source:
+                        ctx_dg["source"] = dg_source
+                    r = _run_skill("skill_doc_generator", ctx_dg, source="meta")
+                if r.get("ok"):
+                    md = r.get("data", {}).get("markdown", "")
+                    st.markdown(md)
                 else:
                     st.error(r.get("error", "Error"))

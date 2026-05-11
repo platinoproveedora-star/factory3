@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_manifest_validator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida que todos los manifests tengan los campos requeridos con tipos correctos",
+  "requires_env": []
+}

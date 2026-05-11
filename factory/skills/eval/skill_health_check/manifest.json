@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_health_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Escanea todos los skills y reporta cuáles tienen manifest, service.py, skill.py y entrada en registry",
+  "requires_env": []
+}

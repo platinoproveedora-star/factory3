@@ -1635,5 +1635,41 @@
     "path": "skills/eval/skill_breaking_detector",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "skill_health_check": {
+    "tipo": "eval",
+    "nombre": "skill_health_check",
+    "vertical": "factory_eval",
+    "descripcion": "Escanea todos los skills y reporta cuáles tienen manifest, service.py, skill.py y entrada en registry",
+    "path": "skills/eval/skill_health_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_orphan_detector": {
+    "tipo": "eval",
+    "nombre": "skill_orphan_detector",
+    "vertical": "factory_eval",
+    "descripcion": "Detecta skills en carpeta sin entrada en registry, y entradas en registry sin carpeta",
+    "path": "skills/eval/skill_orphan_detector",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_manifest_validator": {
+    "tipo": "eval",
+    "nombre": "skill_manifest_validator",
+    "vertical": "factory_eval",
+    "descripcion": "Valida que todos los manifests tengan los campos requeridos con tipos correctos",
+    "path": "skills/eval/skill_manifest_validator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_doc_generator": {
+    "tipo": "meta",
+    "nombre": "skill_doc_generator",
+    "vertical": "factory_meta",
+    "descripcion": "Lee manifest.json y service.py de un skill y genera documentación markdown sin IA",
+    "path": "skills/meta/skill_doc_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_orphan_detector",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Detecta skills en carpeta sin entrada en registry, y entradas en registry sin carpeta",
+  "requires_env": []
+}
