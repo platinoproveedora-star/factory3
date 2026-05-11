@@ -21,11 +21,17 @@ st.markdown("""
     border-radius: 8px;
     padding: 12px;
 }
-h1, h2, h3 { color: #e0e0ff; }
+h1, h2, h3, h4 { color: #f0f4ff !important; }
+p, span, div, li { color: #d0d8e8 !important; }
+[data-testid="stMarkdownContainer"] p { color: #d0d8e8 !important; }
+[data-testid="stMarkdownContainer"] li { color: #d0d8e8 !important; }
+label, .stSelectbox label, .stTextInput label, .stDateInput label { color: #c9d1d9 !important; }
 .stDataFrame { border: 1px solid #30363d; border-radius: 6px; }
-label { color: #c9d1d9 !important; }
-[data-testid="stMetricValue"] { color: #f0b429; font-size: 1.4rem; }
-[data-testid="stMetricLabel"] { color: #c9d1d9; }
+[data-testid="stMetricValue"] { color: #f0b429 !important; font-size: 1.4rem; }
+[data-testid="stMetricLabel"] { color: #aab8cc !important; }
+[data-testid="stCaptionContainer"] { color: #8b98a8 !important; }
+.stRadio label { color: #d0d8e8 !important; }
+[data-baseweb="select"] { color: #d0d8e8 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -224,6 +230,75 @@ elif seccion == "Gastos":
             lambda x: f"{x/total_g*100:.1f}%" if total_g else "0%").values
         st.dataframe(grp, use_container_width=True, hide_index=True)
 
+    st.divider()
+
+    # ── Gastos del mes actual ─────────────────────────────────────────────────
+    hoy = date.today()
+    st.subheader(f"🗓️ Gastos — {hoy.strftime('%B %Y').title()}")
+    if "fecha_gasto" in df.columns and "monto_gasto" in df.columns:
+        _df_mes = df.copy()
+        _df_mes["_f"] = pd.to_datetime(_df_mes["fecha_gasto"], errors="coerce")
+        _df_mes = _df_mes[(_df_mes["_f"].dt.month == hoy.month) & (_df_mes["_f"].dt.year == hoy.year)]
+        if _df_mes.empty:
+            st.info("Sin gastos en el mes actual.")
+        else:
+            _cols_m = [c for c in ["folio","fecha_gasto","concepto","monto_gasto","tipo_gasto","chofer","numero_viaje"] if c in _df_mes.columns]
+            st.dataframe(
+                _df_mes[_cols_m].reset_index(drop=True),
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "folio":         st.column_config.TextColumn("Folio",    width="small"),
+                    "fecha_gasto":   st.column_config.DateColumn("Fecha",    format="DD/MM/YYYY"),
+                    "concepto":      st.column_config.TextColumn("Concepto"),
+                    "monto_gasto":   st.column_config.NumberColumn("Monto",  format="$%,.0f"),
+                    "tipo_gasto":    st.column_config.TextColumn("Tipo",     width="small"),
+                    "chofer":        st.column_config.TextColumn("Chofer",   width="medium"),
+                    "numero_viaje":  st.column_config.TextColumn("Viaje",    width="small"),
+                },
+            )
+            st.metric(f"Total {hoy.strftime('%B').title()}", _fmt(_df_mes["monto_gasto"].apply(_num).sum()))
+
+    st.divider()
+
+    # ── Filtro por mes ────────────────────────────────────────────────────────
+    st.subheader("📆 Ver Gastos por Mes")
+    if "fecha_gasto" in df.columns:
+        _tmp = df.copy()
+        _tmp["_f"] = pd.to_datetime(_tmp["fecha_gasto"], errors="coerce")
+        _tmp["_mes"] = _tmp["_f"].dt.to_period("M")
+        _meses = sorted(_tmp["_mes"].dropna().unique().astype(str), reverse=True)
+    else:
+        _meses = []
+
+    if _meses:
+        mes_sel = st.selectbox("Mes", _meses, key="g_mes_sel")
+        _df_filtrado = df.copy()
+        _df_filtrado["_f"]   = pd.to_datetime(_df_filtrado["fecha_gasto"], errors="coerce")
+        _df_filtrado["_mes"] = _df_filtrado["_f"].dt.to_period("M").astype(str)
+        _df_filtrado = _df_filtrado[_df_filtrado["_mes"] == mes_sel]
+        _cols_m2 = [c for c in ["folio","fecha_gasto","concepto","monto_gasto","tipo_gasto","chofer","numero_viaje"] if c in _df_filtrado.columns]
+        if _df_filtrado.empty:
+            st.info(f"Sin gastos en {mes_sel}.")
+        else:
+            st.dataframe(
+                _df_filtrado[_cols_m2].reset_index(drop=True),
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "folio":         st.column_config.TextColumn("Folio",    width="small"),
+                    "fecha_gasto":   st.column_config.DateColumn("Fecha",    format="DD/MM/YYYY"),
+                    "concepto":      st.column_config.TextColumn("Concepto"),
+                    "monto_gasto":   st.column_config.NumberColumn("Monto",  format="$%,.0f"),
+                    "tipo_gasto":    st.column_config.TextColumn("Tipo",     width="small"),
+                    "chofer":        st.column_config.TextColumn("Chofer"),
+                    "numero_viaje":  st.column_config.TextColumn("Viaje",    width="small"),
+                },
+            )
+            st.metric(f"Total {mes_sel}", _fmt(_df_filtrado["monto_gasto"].apply(_num).sum()))
+    else:
+        st.info("Sin gastos con fecha registrada.")
+
 
 # ─── PAGOS ────────────────────────────────────────────────────────────────────
 
@@ -328,9 +403,12 @@ elif seccion == "Análisis":
         dv2["semana"] = dv2["fecha_salida"].dt.to_period("W").astype(str)
         semanal = dv2.groupby("semana")["utilidad_viaje"].apply(lambda x: x.apply(_num).sum()).reset_index()
         semanal.columns = ["Semana","Utilidad"]
-        st.line_chart(semanal.set_index("Semana"))
+        semanal["Utilidad"] = semanal["Utilidad"].apply(_fmt)
+        st.dataframe(semanal, use_container_width=True, hide_index=True,
+                     column_config={"Semana": st.column_config.TextColumn("Semana", width="medium"),
+                                    "Utilidad": st.column_config.TextColumn("Utilidad", width="small")})
     else:
-        st.info("Sin datos suficientes para gráfica de utilidad.")
+        st.info("Sin datos suficientes para utilidad por semana.")
 
     st.divider()
 
@@ -403,5 +481,18 @@ elif seccion == "Análisis":
         if sin_viaje.empty:
             st.success("Todos los gastos tienen viaje asociado.")
         else:
-            cols = [c for c in ["folio","fecha_gasto","concepto","monto_gasto","tipo_gasto","chofer"] if c in sin_viaje.columns]
-            st.dataframe(sin_viaje[cols], use_container_width=True, hide_index=True)
+            cols = [c for c in ["folio","fecha_gasto","concepto","monto_gasto","tipo_gasto","chofer","numero_viaje"] if c in sin_viaje.columns]
+            sv_orig = sin_viaje[cols].copy()
+            sv_edit = st.data_editor(
+                sv_orig,
+                use_container_width=True,
+                hide_index=True,
+                key="edit_sv",
+                num_rows="fixed",
+                disabled=[c for c in cols if c != "numero_viaje"],
+                column_config={"numero_viaje": st.column_config.TextColumn("Viaje (editar)", help="Escribe el folio del viaje, ej: VIA-001")},
+            )
+            if st.button("💾 Actualizar Viaje", key="save_sv"):
+                _guardar("gastos", sv_orig, sv_edit)
+                st.cache_data.clear()
+                st.rerun()
