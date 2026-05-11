@@ -1296,56 +1296,98 @@ elif page == "Meta Skills":
         st.subheader("Ejecutar cada paso del pipeline manualmente")
 
         STEPS = [
-            ("1. Capturar proceso",    "workflow_capture",    "meta"),
-            ("2. Extraer patrones",    "pattern_extractor",   "meta"),
-            ("3. Generar spec",        "skill_spec_generator","meta"),
-            ("4. Generar código",      "skill_code_generator","meta"),
-            ("5. Generar casos",       "skill_cases_generator","meta"),
-            ("6. Eval seguridad",      "skill_safety_eval",   "eval"),
-            ("7. Eval calidad",        "skill_quality_eval",  "eval"),
-            ("8. Regression check",    "regression_eval",     "eval"),
+            ("1. Capturar proceso",  "workflow_capture",     "meta"),
+            ("2. Extraer patrones",  "pattern_extractor",    "meta"),
+            ("3. Generar spec",      "skill_spec_generator", "meta"),
+            ("4. Generar código",    "skill_code_generator", "meta"),
+            ("5. Generar casos",     "skill_cases_generator","meta"),
+            ("6. Eval seguridad",    "skill_safety_eval",    "eval"),
+            ("7. Eval calidad",      "skill_quality_eval",   "eval"),
+            ("8. Regression check",  "regression_eval",      "eval"),
         ]
 
-        step_sel = st.selectbox("Paso", [s[0] for s in STEPS], key="ms_step_sel")
+        step_sel  = st.selectbox("Paso", [s[0] for s in STEPS], key="ms_step_sel")
         skill_sel = next(s for s in STEPS if s[0] == step_sel)
+        skill_id  = skill_sel[1]
+        skill_src = skill_sel[2]
+        st.caption(f"Skill: `{skill_id}`  |  Fuente: `{skill_src}`")
 
-        st.caption(f"Skill: `{skill_sel[1]}`  |  Fuente: `{skill_sel[2]}`")
-
-        default_ctx = {
-            "workflow_capture":    '{"proceso": "describe aquí el proceso"}',
-            "pattern_extractor":   '{"pasos": [], "proceso_nombre": "mi_proceso"}',
-            "skill_spec_generator":'{"patron": {"nombre": "nombre_patron", "descripcion": "...", "tipo": "repetitivo", "automatizable": true}}',
-            "skill_code_generator":'{"spec": {"skill_name": "mi_skill", "descripcion": "...", "context_params": [], "output_fields": [], "logica_principal": "...", "requiere_ia": false, "requiere_db": false, "requires_env": []}}',
-            "skill_cases_generator":'{"spec": {"skill_name": "mi_skill", "descripcion": "...", "context_params": [], "output_fields": [], "casos_edge": []}, "n_casos": 5}',
-            "skill_safety_eval":   '{"skill_name": "rh_basic_validation", "source": "internos"}',
-            "skill_quality_eval":  '{"skill_name": "rh_basic_validation", "source": "internos", "test_input": {"candidato_id": "test"}}',
-            "regression_eval":     '{"dry_run": false}',
-        }
-
-        ctx_txt = st.text_area(
-            "Context (JSON)",
-            value=default_ctx.get(skill_sel[1], "{}"),
-            height=160,
-            key="ms_ctx_paso",
-        )
         dry_paso = st.checkbox("dry_run", value=False, key="ms_dry_paso")
+        ctx = None
 
-        if st.button(f"▶ Ejecutar {skill_sel[1]}", key="btn_run_paso"):
+        # ── inputs dedicados por paso ──────────────────────────────────────────
+        if skill_id == "workflow_capture":
+            p_proceso = st.text_area("Proceso a capturar", height=100,
+                placeholder="Ej: Cada semana reviso candidatos nuevos y los puntuo a mano en Excel",
+                key="pp_proceso")
+            ctx = {"proceso": p_proceso}
+
+        elif skill_id == "pattern_extractor":
+            p_nombre = st.text_input("Nombre del proceso", value="mi_proceso", key="pp_nombre")
+            p_pasos  = st.text_area("Pasos (JSON array)", height=120,
+                value='[{"numero":1,"accion":"revisar lista","input":"candidatos","output":"seleccion","automatizable":true}]',
+                key="pp_pasos")
             try:
-                ctx = _json.loads(ctx_txt)
+                ctx = {"pasos": _json.loads(p_pasos), "proceso_nombre": p_nombre}
             except Exception as e:
-                st.error(f"JSON inválido: {e}")
-                ctx = None
-            if ctx is not None:
-                ctx["dry_run"] = dry_paso
-                with st.spinner("Ejecutando…"):
-                    r = _run_skill(skill_sel[1], ctx, source=skill_sel[2])
-                if r.get("ok"):
-                    st.success(r.get("message", "OK"))
-                    st.json(r.get("data", {}))
-                else:
-                    st.error(r.get("error", "Error"))
-                    st.json(r)
+                st.error(f"Pasos JSON invalido: {e}")
+
+        elif skill_id == "skill_spec_generator":
+            p_patron  = st.text_area("Patron (JSON)", height=120,
+                value='{"nombre":"revisar_candidatos","descripcion":"revisa y puntua candidatos","tipo":"repetitivo","automatizable":true}',
+                key="pp_patron")
+            p_ctx_pro = st.text_input("Contexto del proceso (opcional)", key="pp_ctx_pro")
+            try:
+                ctx = {"patron": _json.loads(p_patron), "proceso_contexto": p_ctx_pro}
+            except Exception as e:
+                st.error(f"Patron JSON invalido: {e}")
+
+        elif skill_id == "skill_code_generator":
+            p_spec = st.text_area("Spec (JSON)", height=180,
+                value='{"skill_name":"mi_skill","descripcion":"hace algo util","context_params":[],"output_fields":[],"logica_principal":"valida input, procesa, retorna resultado","requiere_ia":false,"requiere_db":false,"requires_env":[]}',
+                key="pp_spec_code")
+            try:
+                ctx = {"spec": _json.loads(p_spec)}
+            except Exception as e:
+                st.error(f"Spec JSON invalido: {e}")
+
+        elif skill_id == "skill_cases_generator":
+            p_spec2   = st.text_area("Spec (JSON)", height=150,
+                value='{"skill_name":"mi_skill","descripcion":"hace algo util","context_params":[],"output_fields":[],"casos_edge":[]}',
+                key="pp_spec_cases")
+            p_n_casos = st.number_input("Numero de casos", min_value=1, max_value=10, value=5, key="pp_ncasos")
+            try:
+                ctx = {"spec": _json.loads(p_spec2), "n_casos": p_n_casos}
+            except Exception as e:
+                st.error(f"Spec JSON invalido: {e}")
+
+        elif skill_id == "skill_safety_eval":
+            p_sn  = st.text_input("Nombre del skill", value="rh_basic_validation", key="pp_safety_skill")
+            p_src = st.selectbox("Fuente", ["internos", "meta", "eval"], key="pp_safety_src")
+            ctx   = {"skill_name": p_sn, "source": p_src}
+
+        elif skill_id == "skill_quality_eval":
+            p_sn2  = st.text_input("Nombre del skill", value="rh_basic_validation", key="pp_quality_skill")
+            p_src2 = st.selectbox("Fuente", ["internos", "meta", "eval"], key="pp_quality_src")
+            p_inp  = st.text_area("test_input (JSON)", value='{"candidato_id":"test-dry"}', height=80, key="pp_quality_inp")
+            try:
+                ctx = {"skill_name": p_sn2, "source": p_src2, "test_input": _json.loads(p_inp)}
+            except Exception as e:
+                st.error(f"test_input JSON invalido: {e}")
+
+        elif skill_id == "regression_eval":
+            ctx = {}
+
+        if ctx is not None and st.button(f"▶ Ejecutar {skill_id}", key="btn_run_paso"):
+            ctx["dry_run"] = dry_paso
+            with st.spinner("Ejecutando…"):
+                r = _run_skill(skill_id, ctx, source=skill_src)
+            if r.get("ok"):
+                st.success(r.get("message", "OK"))
+                st.json(r.get("data", {}))
+            else:
+                st.error(r.get("error", "Error"))
+                st.json(r)
 
     # ── Tab 3: Mis Skills ─────────────────────────────────────────────────────
     with tab_lista:
