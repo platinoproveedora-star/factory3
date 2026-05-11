@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 
-_FACTORY_ROOT = Path(__file__).parent.parent.parent.parent
+_SKILLS_ROOT = Path(__file__).parent.parent.parent   # factory/skills/
 
 _DANGEROUS_PATTERNS = [
     (r"\bos\.system\b",           "os.system — ejecución de comandos shell"),
@@ -87,9 +87,9 @@ class SkillSafetyEvalService:
 
     def _resolve_skill_path(self, name: str, source: str) -> Path | None:
         roots = {
-            "internos": _FACTORY_ROOT / "internos",
-            "meta":     _FACTORY_ROOT / "meta",
-            "eval":     _FACTORY_ROOT / "eval",
+            "internos": _SKILLS_ROOT / "internos",
+            "meta":     _SKILLS_ROOT / "meta",
+            "eval":     _SKILLS_ROOT / "eval",
         }
         root = roots.get(source)
         if root is None:
