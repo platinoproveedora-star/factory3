@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_cases_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera casos de prueba con input/output esperado a partir de una spec técnica de skill",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

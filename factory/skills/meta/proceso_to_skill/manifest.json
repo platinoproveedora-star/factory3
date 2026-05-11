@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "proceso_to_skill",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquestador end-to-end: texto de proceso → spec → código → eval → registro → push",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

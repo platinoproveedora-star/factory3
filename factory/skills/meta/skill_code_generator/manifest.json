@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_code_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Toma una spec técnica y genera service.py, skill.py y manifest.json con lógica real via IA",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

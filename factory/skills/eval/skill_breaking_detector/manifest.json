@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_breaking_detector",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Compara service.py viejo vs nuevo y detecta cambios breaking: funciones removidas, firmas cambiadas, contratos rotos",
+  "requires_env": []
+}

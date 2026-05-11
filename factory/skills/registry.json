@@ -1599,5 +1599,41 @@
     "path": "skills/eval/regression_eval",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "skill_code_generator": {
+    "tipo": "meta",
+    "nombre": "skill_code_generator",
+    "vertical": "factory_meta",
+    "descripcion": "Toma una spec técnica y genera service.py, skill.py y manifest.json con lógica real via IA",
+    "path": "skills/meta/skill_code_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_cases_generator": {
+    "tipo": "meta",
+    "nombre": "skill_cases_generator",
+    "vertical": "factory_meta",
+    "descripcion": "Genera casos de prueba con input/output esperado a partir de una spec técnica de skill",
+    "path": "skills/meta/skill_cases_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "proceso_to_skill": {
+    "tipo": "meta",
+    "nombre": "proceso_to_skill",
+    "vertical": "factory_meta",
+    "descripcion": "Orquestador end-to-end: texto de proceso → spec → código → eval → registro → push",
+    "path": "skills/meta/proceso_to_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_breaking_detector": {
+    "tipo": "eval",
+    "nombre": "skill_breaking_detector",
+    "vertical": "factory_eval",
+    "descripcion": "Compara service.py viejo vs nuevo y detecta cambios breaking: funciones removidas, firmas cambiadas, contratos rotos",
+    "path": "skills/eval/skill_breaking_detector",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }
