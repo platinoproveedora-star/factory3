@@ -57,6 +57,7 @@ sat_cfdi_list         →  dashboard / consulta filtrable
 
 | Variable | Descripción |
 |----------|-------------|
+| `EMPRESA_ID` | ID de la empresa en factory3 (ej. `RH1`) |
 | `SAT_RFC` | RFC del contribuyente (ej. `XAXX010101000`) |
 | `SAT_EFIRMA_CER_B64` | Certificado `.cer` codificado en base64 |
 | `SAT_EFIRMA_KEY_B64` | Llave privada `.key` codificada en base64 |
@@ -105,7 +106,8 @@ Ya incluidas en `requirements.txt`.
 ```sql
 CREATE TABLE cfdi_documentos (
   id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  uuid_cfdi        text        UNIQUE NOT NULL,
+  empresa_id       text        NOT NULL,          -- ID empresa (multi-tenant)
+  uuid_cfdi        text        NOT NULL,
   tipo             text        NOT NULL,          -- 'E' emitido, 'R' recibido
   rfc_emisor       text,
   nombre_emisor    text,
@@ -124,11 +126,13 @@ CREATE TABLE cfdi_documentos (
   estado           text        DEFAULT 'vigente', -- vigente, cancelado
   conceptos        jsonb,
   xml_raw          text,
-  rfc_propietario  text,       -- RFC de quien descargó
-  created_at       timestamptz DEFAULT now()
+  rfc_propietario  text,       -- RFC de quien descargó (= RFC de empresa)
+  created_at       timestamptz DEFAULT now(),
+  UNIQUE (empresa_id, uuid_cfdi)                  -- dedup por empresa + folio SAT
 );
 
 -- Índices recomendados
+CREATE INDEX idx_cfdi_empresa       ON cfdi_documentos (empresa_id);
 CREATE INDEX idx_cfdi_tipo          ON cfdi_documentos (tipo);
 CREATE INDEX idx_cfdi_rfc_prop      ON cfdi_documentos (rfc_propietario);
 CREATE INDEX idx_cfdi_fecha         ON cfdi_documentos (fecha_emision);
@@ -293,9 +297,10 @@ Crea la tabla desde el dashboard en **Supabase → SQL Editor** o con `supabase_
 **Input:**
 ```python
 {
+  "empresa_id":      "RH1",           # o env EMPRESA_ID — requerido
   "cfdis":           [<lista de dicts de sat_cfdi_parser>],
-  "tipo":            "E",            # E o R — se guarda en campo tipo
-  "rfc_propietario": "XAXX010101000",
+  "tipo":            "E",             # E o R — se guarda en campo tipo
+  "rfc_propietario": "XAXX010101000", # RFC de la empresa
   "dry_run": False,
 }
 ```
@@ -313,6 +318,7 @@ Crea la tabla desde el dashboard en **Supabase → SQL Editor** o con `supabase_
 **Input:**
 ```python
 {
+  "empresa_id":      "RH1",            # o env EMPRESA_ID — requerido
   "rfc":             "XAXX010101000",  # o SAT_RFC env var
   "fecha_inicio":    "2025-01-01",
   "fecha_fin":       "2025-01-31",
@@ -350,6 +356,7 @@ Crea la tabla desde el dashboard en **Supabase → SQL Editor** o con `supabase_
 **Input (query params o context):**
 ```python
 {
+  "empresa_id":       "RH1",            # o env EMPRESA_ID — filtra por empresa
   "tipo":             "E",              # E=emitidos, R=recibidos, ""=todos
   "rfc_propietario":  "XAXX010101000",  # o SAT_RFC env var
   "mes":              "2025-01",        # YYYY-MM — mutuamente excluyente con dia

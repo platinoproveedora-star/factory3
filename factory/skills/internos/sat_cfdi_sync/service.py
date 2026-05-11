@@ -17,6 +17,7 @@ _POLL_SLEEP   = 15  # segundos entre verificaciones
 class SatCfdiSyncService:
 
     def ejecutar(self, context: dict) -> dict:
+        empresa_id   = context.get("empresa_id")   or os.getenv("EMPRESA_ID", "")
         rfc          = context.get("rfc")          or os.getenv("SAT_RFC", "")
         cer_b64      = context.get("cer_b64")      or os.getenv("SAT_EFIRMA_CER_B64", "")
         key_b64      = context.get("key_b64")      or os.getenv("SAT_EFIRMA_KEY_B64", "")
@@ -29,8 +30,8 @@ class SatCfdiSyncService:
         if context.get("dry_run"):
             return {"ok": True, "message": "dry_run", "data": {"cfdis_guardados": 0, "log": []}}
 
-        if not all([rfc, cer_b64, key_b64, key_pwd, fecha_inicio, fecha_fin]):
-            return {"ok": False, "error": "Faltan: rfc/efirma creds y fecha_inicio/fecha_fin"}
+        if not all([empresa_id, rfc, cer_b64, key_b64, key_pwd, fecha_inicio, fecha_fin]):
+            return {"ok": False, "error": "Faltan: empresa_id/rfc/efirma creds y fecha_inicio/fecha_fin"}
 
         creds = {"rfc": rfc, "cer_b64": cer_b64, "key_b64": key_b64, "key_password": key_pwd}
         log   = []
@@ -97,7 +98,8 @@ class SatCfdiSyncService:
 
             cfdis = r5["data"].get("cfdis", [])
             r6    = self._run("sat_cfdi_store", {
-                "cfdis": cfdis, "tipo": tipo, "rfc_propietario": rfc, "dry_run": False,
+                "empresa_id": empresa_id, "cfdis": cfdis, "tipo": tipo,
+                "rfc_propietario": rfc, "dry_run": False,
             })
             log.append({"paso": "sat_cfdi_store", "ok": r6.get("ok"), "msg": r6.get("message", "")})
             total_guardados += r6.get("data", {}).get("insertados", 0)

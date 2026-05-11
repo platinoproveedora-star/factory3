@@ -1,4 +1,4 @@
-"""Upsert de CFDIs parseados en Supabase tabla cfdi_documentos (dedup por uuid_cfdi)."""
+"""Upsert de CFDIs parseados en Supabase tabla cfdi_documentos (dedup por empresa_id+uuid_cfdi)."""
 from __future__ import annotations
 
 import json
@@ -9,12 +9,16 @@ import urllib.request
 class SatCfdiStoreService:
 
     def ejecutar(self, context: dict) -> dict:
-        cfdis          = context.get("cfdis") or []
+        cfdis           = context.get("cfdis") or []
+        empresa_id      = context.get("empresa_id") or os.getenv("EMPRESA_ID", "")
         rfc_propietario = context.get("rfc_propietario") or os.getenv("SAT_RFC", "")
         tipo            = context.get("tipo", "E")
 
         if context.get("dry_run"):
             return {"ok": True, "message": "dry_run", "data": {"insertados": 0, "total": len(cfdis)}}
+
+        if not empresa_id:
+            return {"ok": False, "error": "Falta empresa_id (o env EMPRESA_ID)"}
 
         if not cfdis:
             return {"ok": True, "message": "0 CFDIs — nada que guardar", "data": {"insertados": 0}}
@@ -29,6 +33,7 @@ class SatCfdiStoreService:
             if not c.get("uuid"):
                 continue
             rows.append({
+                "empresa_id":      empresa_id,
                 "uuid_cfdi":       c["uuid"],
                 "tipo":            tipo,
                 "rfc_emisor":      c.get("rfc_emisor", ""),

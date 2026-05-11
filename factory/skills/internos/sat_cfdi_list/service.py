@@ -17,6 +17,7 @@ class SatCfdiListService:
         if not url or not key:
             return {"ok": False, "error": "Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY"}
 
+        empresa_id      = context.get("empresa_id") or os.getenv("EMPRESA_ID", "")
         tipo            = context.get("tipo", "")           # E / R / ""
         rfc_propietario = context.get("rfc_propietario") or os.getenv("SAT_RFC", "")
         mes             = context.get("mes", "")             # YYYY-MM
@@ -24,6 +25,8 @@ class SatCfdiListService:
         limit           = int(context.get("limit", 500))
 
         filters = []
+        if empresa_id:
+            filters.append(f"empresa_id=eq.{empresa_id}")
         if tipo:
             filters.append(f"tipo=eq.{tipo}")
         if rfc_propietario:
@@ -37,7 +40,7 @@ class SatCfdiListService:
             filters.append(f"fecha_emision=lt.{next_m}-01")
 
         qs = "&".join(filters + [f"limit={limit}", "order=fecha_emision.desc"])
-        endpoint = f"{url}/rest/v1/cfdi_documentos?select=uuid_cfdi,tipo,rfc_emisor,nombre_emisor,rfc_receptor,nombre_receptor,fecha_emision,total,moneda,tipo_comprobante,forma_pago,metodo_pago,rfc_propietario,estado&{qs}"
+        endpoint = f"{url}/rest/v1/cfdi_documentos?select=empresa_id,uuid_cfdi,tipo,rfc_emisor,nombre_emisor,rfc_receptor,nombre_receptor,fecha_emision,total,moneda,tipo_comprobante,forma_pago,metodo_pago,rfc_propietario,estado&{qs}"
 
         req = urllib.request.Request(
             endpoint,
@@ -63,6 +66,6 @@ class SatCfdiListService:
                 "total_ingresos": total_i,
                 "total_egresos":  total_e,
                 "monto_total":    round(monto, 2),
-                "filtros":        {"tipo": tipo, "mes": mes, "dia": dia, "rfc": rfc_propietario},
+                "filtros":        {"empresa_id": empresa_id, "tipo": tipo, "mes": mes, "dia": dia, "rfc": rfc_propietario},
             },
         }
