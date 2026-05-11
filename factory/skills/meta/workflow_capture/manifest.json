@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "workflow_capture",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Recibe descripción de un proceso humano y lo convierte en pasos estructurados JSON",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

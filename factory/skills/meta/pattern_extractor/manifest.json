@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "pattern_extractor",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Recibe pasos de un proceso y detecta patrones repetitivos/automatizables",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_safety_eval",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lee service.py de un skill y detecta patrones peligrosos o inseguros",
+  "requires_env": []
+}

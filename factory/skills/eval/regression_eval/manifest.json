@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "regression_eval",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Corre skills existentes con dry_run=True y verifica que retornen ok:true sin errores",
+  "requires_env": []
+}

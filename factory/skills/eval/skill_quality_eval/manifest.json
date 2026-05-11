@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_quality_eval",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Ejecuta un skill con input de prueba y evalúa la calidad del output",
+  "requires_env": []
+}

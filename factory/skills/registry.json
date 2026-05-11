@@ -1545,5 +1545,59 @@
     "path": "skills/internos/emp_logplat_kpis",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "workflow_capture": {
+    "tipo": "meta",
+    "nombre": "workflow_capture",
+    "vertical": "factory_meta",
+    "descripcion": "Recibe descripción de un proceso humano y lo convierte en pasos estructurados JSON",
+    "path": "skills/meta/workflow_capture",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "pattern_extractor": {
+    "tipo": "meta",
+    "nombre": "pattern_extractor",
+    "vertical": "factory_meta",
+    "descripcion": "Detecta patrones repetitivos/automatizables en los pasos de un proceso",
+    "path": "skills/meta/pattern_extractor",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_spec_generator": {
+    "tipo": "meta",
+    "nombre": "skill_spec_generator",
+    "vertical": "factory_meta",
+    "descripcion": "Convierte un patrón automatizable en spec técnica completa para un skill factory3",
+    "path": "skills/meta/skill_spec_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_quality_eval": {
+    "tipo": "eval",
+    "nombre": "skill_quality_eval",
+    "vertical": "factory_eval",
+    "descripcion": "Ejecuta un skill con input de prueba y evalúa la calidad del output",
+    "path": "skills/eval/skill_quality_eval",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_safety_eval": {
+    "tipo": "eval",
+    "nombre": "skill_safety_eval",
+    "vertical": "factory_eval",
+    "descripcion": "Lee service.py de un skill y detecta patrones peligrosos o inseguros",
+    "path": "skills/eval/skill_safety_eval",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "regression_eval": {
+    "tipo": "eval",
+    "nombre": "regression_eval",
+    "vertical": "factory_eval",
+    "descripcion": "Corre skills existentes con dry_run=True y verifica que retornen ok:true sin errores",
+    "path": "skills/eval/regression_eval",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }
