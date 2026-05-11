@@ -137,7 +137,7 @@ with st.sidebar:
     st.title("🏭 Factory3 RH")
     page = st.radio(
         "Sección",
-        ["Overview", "Vacantes", "Candidatos", "Pipeline", "Entrevistas", "Reclutadores", "Seeds", "Ultima Vacante", "Análisis IA", "Offer Builder", "FB Groups", "Tasks"],
+        ["Overview", "Vacantes", "Candidatos", "Pipeline", "Entrevistas", "Reclutadores", "Seeds", "Ultima Vacante", "Análisis IA", "Offer Builder", "FB Groups", "Tasks", "Meta Skills"],
         label_visibility="collapsed",
     )
     st.divider()
@@ -1175,3 +1175,266 @@ elif page == "Tasks":
             st.json(r.get("data", {}).get("resumen", {}))
         else:
             st.error(r.get("error", "Error al procesar"))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Meta Skills — Fábrica de Skills
+# ═══════════════════════════════════════════════════════════════════════════════
+
+elif page == "Meta Skills":
+    import json as _json
+    from pathlib import Path as _Path
+
+    st.title("Meta Skills — Fábrica de Skills")
+
+    # Pipeline visual
+    st.markdown("""
+    <div style="background:#1a1a2e;border-radius:10px;padding:14px 20px;font-family:monospace;font-size:13px;color:#ccc;margin-bottom:16px">
+    <b style="color:#a0c4ff">PIPELINE</b><br><br>
+    📝 <b>proceso_texto</b><br>
+    &nbsp;&nbsp;&nbsp;↓ <span style="color:#90ee90">workflow_capture</span> &nbsp;→ pasos estructurados<br>
+    &nbsp;&nbsp;&nbsp;↓ <span style="color:#90ee90">pattern_extractor</span> &nbsp;→ patrones automatizables<br>
+    &nbsp;&nbsp;&nbsp;↓ <span style="color:#90ee90">skill_spec_generator</span> → spec técnica completa<br>
+    &nbsp;&nbsp;&nbsp;↓ <span style="color:#ffd700">skill_code_generator</span> → service.py + skill.py (Sonnet)<br>
+    &nbsp;&nbsp;&nbsp;↓ <span style="color:#ffd700">skill_cases_generator</span> → casos de prueba<br>
+    &nbsp;&nbsp;&nbsp;↓ <span style="color:#ff9999">skill_safety_eval</span> &nbsp;&nbsp;→ revisión seguridad<br>
+    &nbsp;&nbsp;&nbsp;↓ <span style="color:#ff9999">skill_quality_eval</span> &nbsp;→ score calidad<br>
+    &nbsp;&nbsp;&nbsp;↓ <span style="color:#a0c4ff">new_skill</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ archivos en disco + registry<br>
+    &nbsp;&nbsp;&nbsp;↓ <span style="color:#a0c4ff">github_push</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ deploy automático<br>
+    </div>
+    """, unsafe_allow_html=True)
+
+    tab_auto, tab_paso, tab_lista, tab_eval = st.tabs([
+        "🚀 Add New Skill", "🔧 Paso a Paso", "📋 Mis Skills", "🔍 Eval"
+    ])
+
+    # ── Tab 1: Add New Skill (automático) ────────────────────────────────────
+    with tab_auto:
+        st.subheader("Construir skill desde un proceso")
+
+        col_l, col_r = st.columns([2, 1])
+        with col_l:
+            ms_proceso  = st.text_area(
+                "Describe el proceso a automatizar",
+                placeholder="Ej: Cada semana descargo un CSV de ventas, lo filtro por región, calculo totales por vendedor y lo envío por email al gerente.",
+                height=130,
+                key="ms_proceso_txt",
+            )
+        with col_r:
+            ms_vertical    = st.selectbox("Vertical", ["general", "rh", "ventas", "ops", "meta", "eval", "factory"], key="ms_vertical")
+            ms_patron_ix   = st.number_input("Índice de patrón (0=primero automatizable)", min_value=0, max_value=10, value=0, key="ms_patron_ix")
+            ms_dry         = st.checkbox("Solo spec (dry_run)", value=True, key="ms_dry")
+            ms_push        = st.checkbox("Push a GitHub al final", value=False, key="ms_push")
+
+        if st.button("🚀 Construir Skill", type="primary", key="btn_build_skill", use_container_width=True):
+            if not ms_proceso.strip():
+                st.warning("Describe el proceso primero.")
+            else:
+                with st.spinner("Ejecutando pipeline…"):
+                    r = _run_skill("proceso_to_skill", {
+                        "proceso":       ms_proceso.strip(),
+                        "vertical":      ms_vertical,
+                        "patron_index":  ms_patron_ix,
+                        "push":          ms_push,
+                        "dry_run":       ms_dry,
+                    }, source="meta")
+
+                if r.get("ok"):
+                    st.success(r.get("message", "OK"))
+                    data = r.get("data", {})
+
+                    # Log de pasos
+                    log = data.get("log", [])
+                    if log:
+                        with st.expander("📋 Log de pasos", expanded=False):
+                            for paso in log:
+                                icon = "✅" if paso.get("ok") else "❌"
+                                st.markdown(f"{icon} **{paso['paso']}** — {paso.get('message','')}")
+
+                    # Spec
+                    spec = data.get("spec", {})
+                    if spec:
+                        with st.expander(f"📄 Spec: `{spec.get('skill_name','?')}`", expanded=True):
+                            c1, c2 = st.columns(2)
+                            c1.markdown(f"**Nombre:** `{spec.get('skill_name','')}`")
+                            c1.markdown(f"**Vertical:** {spec.get('vertical','')}")
+                            c1.markdown(f"**Requiere IA:** {'Sí' if spec.get('requiere_ia') else 'No'}")
+                            c1.markdown(f"**Requiere DB:** {'Sí' if spec.get('requiere_db') else 'No'}")
+                            c2.markdown(f"**Descripción:** {spec.get('descripcion','')}")
+                            c2.markdown(f"**Env vars:** `{', '.join(spec.get('requires_env',[]))}`")
+                            st.markdown("**Lógica principal:**")
+                            st.info(spec.get("logica_principal", ""))
+                            params = spec.get("context_params", [])
+                            if params:
+                                st.markdown("**Parámetros:**")
+                                st.dataframe(params, use_container_width=True, hide_index=True)
+
+                    # Código generado
+                    codigo = data.get("codigo") or {}
+                    svc = codigo.get("service_py", "")
+                    if svc:
+                        with st.expander("🐍 service.py generado", expanded=False):
+                            st.code(svc, language="python")
+
+                    # Casos de prueba
+                    casos = data.get("casos_prueba", [])
+                    if casos:
+                        with st.expander(f"🧪 {len(casos)} casos de prueba", expanded=False):
+                            import pandas as _pd
+                            st.dataframe(_pd.DataFrame(casos), use_container_width=True, hide_index=True)
+
+                else:
+                    st.error(r.get("error", "Error desconocido"))
+                    data = r.get("data", {})
+                    if data.get("log"):
+                        for paso in data["log"]:
+                            icon = "✅" if paso.get("ok") else "❌"
+                            st.markdown(f"{icon} **{paso['paso']}** — {paso.get('message','')}")
+
+    # ── Tab 2: Paso a Paso ────────────────────────────────────────────────────
+    with tab_paso:
+        st.subheader("Ejecutar cada paso del pipeline manualmente")
+
+        STEPS = [
+            ("1. Capturar proceso",    "workflow_capture",    "meta"),
+            ("2. Extraer patrones",    "pattern_extractor",   "meta"),
+            ("3. Generar spec",        "skill_spec_generator","meta"),
+            ("4. Generar código",      "skill_code_generator","meta"),
+            ("5. Generar casos",       "skill_cases_generator","meta"),
+            ("6. Eval seguridad",      "skill_safety_eval",   "eval"),
+            ("7. Eval calidad",        "skill_quality_eval",  "eval"),
+            ("8. Regression check",    "regression_eval",     "eval"),
+        ]
+
+        step_sel = st.selectbox("Paso", [s[0] for s in STEPS], key="ms_step_sel")
+        skill_sel = next(s for s in STEPS if s[0] == step_sel)
+
+        st.caption(f"Skill: `{skill_sel[1]}`  |  Fuente: `{skill_sel[2]}`")
+
+        default_ctx = {
+            "workflow_capture":    '{"proceso": "describe aquí el proceso"}',
+            "pattern_extractor":   '{"pasos": [], "proceso_nombre": "mi_proceso"}',
+            "skill_spec_generator":'{"patron": {"nombre": "nombre_patron", "descripcion": "...", "tipo": "repetitivo", "automatizable": true}}',
+            "skill_code_generator":'{"spec": {"skill_name": "mi_skill", "descripcion": "...", "context_params": [], "output_fields": [], "logica_principal": "...", "requiere_ia": false, "requiere_db": false, "requires_env": []}}',
+            "skill_cases_generator":'{"spec": {"skill_name": "mi_skill", "descripcion": "...", "context_params": [], "output_fields": [], "casos_edge": []}, "n_casos": 5}',
+            "skill_safety_eval":   '{"skill_name": "rh_basic_validation", "source": "internos"}',
+            "skill_quality_eval":  '{"skill_name": "rh_basic_validation", "source": "internos", "test_input": {"candidato_id": "test"}}',
+            "regression_eval":     '{"dry_run": false}',
+        }
+
+        ctx_txt = st.text_area(
+            "Context (JSON)",
+            value=default_ctx.get(skill_sel[1], "{}"),
+            height=160,
+            key="ms_ctx_paso",
+        )
+        dry_paso = st.checkbox("dry_run", value=False, key="ms_dry_paso")
+
+        if st.button(f"▶ Ejecutar {skill_sel[1]}", key="btn_run_paso"):
+            try:
+                ctx = _json.loads(ctx_txt)
+            except Exception as e:
+                st.error(f"JSON inválido: {e}")
+                ctx = None
+            if ctx is not None:
+                ctx["dry_run"] = dry_paso
+                with st.spinner("Ejecutando…"):
+                    r = _run_skill(skill_sel[1], ctx, source=skill_sel[2])
+                if r.get("ok"):
+                    st.success(r.get("message", "OK"))
+                    st.json(r.get("data", {}))
+                else:
+                    st.error(r.get("error", "Error"))
+                    st.json(r)
+
+    # ── Tab 3: Mis Skills ─────────────────────────────────────────────────────
+    with tab_lista:
+        st.subheader("Skills Meta y Eval registrados")
+
+        _base_sk = _Path(__file__).parent.parent.parent / "factory" / "skills"
+
+        def _listar_skills_dir(folder: str) -> list[dict]:
+            d = _base_sk / folder
+            if not d.exists():
+                return []
+            result = []
+            for p in sorted(d.iterdir()):
+                if not p.is_dir():
+                    continue
+                m = p / "manifest.json"
+                if m.exists():
+                    try:
+                        info = _json.loads(m.read_text(encoding="utf-8"))
+                    except Exception:
+                        info = {}
+                    result.append({
+                        "Tipo":        folder,
+                        "Nombre":      p.name,
+                        "Descripción": info.get("description", ""),
+                        "Env vars":    ", ".join(info.get("requires_env", [])),
+                        "service.py":  "✅" if (p / "service.py").exists() else "❌",
+                    })
+            return result
+
+        meta_skills = _listar_skills_dir("meta")
+        eval_skills = _listar_skills_dir("eval")
+
+        import pandas as _pd
+        if meta_skills:
+            st.markdown("**Meta Skills** (generación / orquestación)")
+            st.dataframe(_pd.DataFrame(meta_skills), use_container_width=True, hide_index=True)
+        if eval_skills:
+            st.markdown("**Eval Skills** (verificación / calidad)")
+            st.dataframe(_pd.DataFrame(eval_skills), use_container_width=True, hide_index=True)
+
+        st.caption(f"{len(meta_skills)} meta · {len(eval_skills)} eval")
+
+    # ── Tab 4: Eval ───────────────────────────────────────────────────────────
+    with tab_eval:
+        st.subheader("Verificar skills existentes")
+
+        col_e1, col_e2 = st.columns(2)
+
+        with col_e1:
+            st.markdown("**Regression Eval** — corre skills core con dry_run")
+            if st.button("▶ Correr Regression", key="btn_regression"):
+                with st.spinner("Corriendo…"):
+                    r = _run_skill("regression_eval", {"dry_run": False}, source="eval")
+                if r.get("ok"):
+                    d = r.get("data", {})
+                    total   = d.get("total", 0)
+                    ok_cnt  = d.get("ok", 0)
+                    errors  = d.get("errores", 0)
+                    st.metric("Resultado", f"{ok_cnt}/{total} OK", delta=f"-{errors} errores" if errors else None)
+                    resultados = d.get("resultados", [])
+                    if resultados:
+                        st.dataframe(
+                            _pd.DataFrame(resultados)[["skill", "pass", "latencia_ms", "error"]],
+                            use_container_width=True, hide_index=True,
+                        )
+                else:
+                    st.error(r.get("error", "Error"))
+
+        with col_e2:
+            st.markdown("**Safety Eval** — detecta patrones peligrosos en un skill")
+            ev_skill  = st.text_input("Nombre del skill", value="rh_candidate_scoring", key="ev_skill_name")
+            ev_source = st.selectbox("Fuente", ["internos", "meta", "eval"], key="ev_source")
+            if st.button("▶ Revisar Seguridad", key="btn_safety"):
+                with st.spinner("Analizando…"):
+                    r = _run_skill("skill_safety_eval", {
+                        "skill_name": ev_skill,
+                        "source":     ev_source,
+                    }, source="eval")
+                if r.get("ok"):
+                    d = r.get("data", {})
+                    safe = d.get("safe", False)
+                    if safe:
+                        st.success(f"✅ SEGURO — score {d.get('score', 0):.0%}")
+                    else:
+                        st.warning(f"⚠ {r.get('message', '')}")
+                    hallazgos = d.get("hallazgos", [])
+                    if hallazgos:
+                        st.dataframe(_pd.DataFrame(hallazgos), use_container_width=True, hide_index=True)
+                    st.caption(f"dry_run presente: {'✅' if d.get('tiene_dry_run') else '❌'}  |  {d.get('lineas_revisadas', 0)} líneas revisadas")
+                else:
+                    st.error(r.get("error", "Error"))
