@@ -236,8 +236,18 @@ elif seccion == "Gastos":
     edit = st.data_editor(orig, use_container_width=True, key="edit_gastos", num_rows="fixed",
                           disabled=["folio"])
 
-    bc, _ = st.columns(2)
+    bc, ac, _ = st.columns(3)
     if bc.button("💾 Guardar cambios", key="save_g"): _guardar("gastos", orig, edit)
+    if ac.button("➕ Agregar Gasto", key="add_g"):
+        _folios = df["folio"].dropna().str.extract(r"(\d+)")[0].apply(_num)
+        _next   = int(_folios.max()) + 1 if not _folios.empty else 1
+        _nuevo  = f"GAS-{str(_next).zfill(3)}"
+        if insert("gastos", {"folio": _nuevo}):
+            st.success(f"✅ Gasto {_nuevo} creado. Edítalo en la tabla.")
+            st.cache_data.clear()
+            st.rerun()
+        else:
+            st.error("Error al crear el gasto.")
     _csv_btn(dff, "gastos", "csv_g")
 
     st.divider()
@@ -355,8 +365,18 @@ elif seccion == "Pagos":
     edit = st.data_editor(orig, use_container_width=True, key="edit_pagos", num_rows="fixed",
                           disabled=["folio"])
 
-    bc, _ = st.columns(2)
+    bc, ac, _ = st.columns(3)
     if bc.button("💾 Guardar cambios", key="save_p"): _guardar("pagos", orig, edit)
+    if ac.button("➕ Agregar Pago", key="add_p"):
+        _folios = df["folio"].dropna().str.extract(r"(\d+)")[0].apply(_num)
+        _next   = int(_folios.max()) + 1 if not _folios.empty else 1
+        _nuevo  = f"PAG-{str(_next).zfill(3)}"
+        if insert("pagos", {"folio": _nuevo}):
+            st.success(f"✅ Pago {_nuevo} creado. Edítalo en la tabla.")
+            st.cache_data.clear()
+            st.rerun()
+        else:
+            st.error("Error al crear el pago.")
     _csv_btn(dff, "pagos", "csv_p")
 
     st.divider()
