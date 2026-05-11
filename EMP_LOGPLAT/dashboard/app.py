@@ -150,10 +150,22 @@ if seccion == "Overview":
 
 elif seccion == "Viajes":
     st.header("🚚 Viajes")
-    df = get_viajes()
+    df  = get_viajes()
+    dg_ = get_gastos()
     if df.empty:
         st.info("Sin viajes registrados.")
         st.stop()
+
+    # Costo = suma de gastos por viaje (calculado, no editable)
+    if not dg_.empty and "numero_viaje" in dg_.columns and "monto_gasto" in dg_.columns:
+        _costos = (dg_.copy()
+                     .assign(monto_gasto=dg_["monto_gasto"].apply(_num))
+                     .groupby("numero_viaje")["monto_gasto"].sum()
+                     .reset_index()
+                     .rename(columns={"numero_viaje": "folio", "monto_gasto": "costo_viaje"}))
+        df = df.drop(columns=["costo_viaje"], errors="ignore").merge(_costos, on="folio", how="left")
+        df["costo_viaje"] = df["costo_viaje"].fillna(0)
+    df["utilidad_viaje"] = df["precio_venta_viaje"].apply(_num) - df["costo_viaje"].apply(_num)
 
     c1, c2, c3, c4, c5 = st.columns(5)
     buscar   = c1.text_input("Cliente", key="v_cli")
@@ -174,7 +186,7 @@ elif seccion == "Viajes":
                               "estatus_pago","estatus_viaje","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_viajes", num_rows="fixed",
-                          disabled=["folio"])
+                          disabled=["folio","costo_viaje","utilidad_viaje"])
 
     bc, ec = st.columns(2)
     if bc.button("💾 Guardar cambios", key="save_v"): _guardar("viajes", orig, edit)
