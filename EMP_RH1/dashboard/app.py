@@ -1070,8 +1070,41 @@ elif page == "FB Groups":
 
 elif page == "Tasks":
     import pandas as pd
+    import json as _json_t
+    from pathlib import Path as _Path_t
 
     st.title("Tasks — Cola de ejecución")
+
+    # ── Roadmap / Features pendientes ─────────────────────────────────────────
+    _roadmap_file = _Path_t(__file__).parent / "roadmap.json"
+    _SEMAFORO = {"pendiente": "🟡", "en_curso": "🔵", "listo": "🟢", "bloqueado": "🔴"}
+
+    with st.expander("📋 Roadmap — Features pendientes", expanded=True):
+        _roadmap = []
+        if _roadmap_file.exists():
+            try:
+                _roadmap = _json_t.loads(_roadmap_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        if _roadmap:
+            for _t in _roadmap:
+                _sem = _SEMAFORO.get(_t.get("status", "pendiente"), "⚫")
+                with st.container(border=True):
+                    _hcol1, _hcol2 = st.columns([8, 1])
+                    _hcol1.markdown(f"**#{_t['id']} — {_t['titulo']}**")
+                    _hcol2.caption(f"{_sem} {_t.get('status','')}")
+                    st.caption(_t.get("descripcion", ""))
+                    _meta1, _meta2, _meta3 = st.columns(3)
+                    _meta1.caption(f"Categoría: `{_t.get('categoria','')}`  |  Prioridad: {_t.get('prioridad','')}")
+                    if _t.get("skills_a_construir"):
+                        _meta2.caption("Skills: " + " · ".join(f"`{s}`" for s in _t["skills_a_construir"]))
+                    if _t.get("requiere_creds"):
+                        _meta3.caption("Creds: " + " · ".join(f"`{c}`" for c in _t["requiere_creds"]))
+        else:
+            st.info("Sin items en roadmap.json")
+
+    st.divider()
 
     STATUS_COLORS = {
         "pendiente":  "🟡",
