@@ -169,12 +169,12 @@ elif seccion == "Viajes":
     dff = _date_filter(dff, "fecha_salida", f_desde, f_hasta)
 
     st.caption(f"{len(dff)} viaje(s)")
-    cols_show = [c for c in ["id","folio","cliente","origen","destino","fecha_salida","fecha_llegada",
+    cols_show = [c for c in ["folio","cliente","origen","destino","fecha_salida","fecha_llegada",
                               "chofer","costo_viaje","precio_venta_viaje","utilidad_viaje",
                               "estatus_pago","estatus_viaje","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_viajes", num_rows="fixed",
-                          disabled=["id","folio"])
+                          disabled=["folio"])
 
     bc, ec = st.columns(2)
     if bc.button("💾 Guardar cambios", key="save_v"): _guardar("viajes", orig, edit)
@@ -208,11 +208,11 @@ elif seccion == "Gastos":
     dff = _date_filter(dff, "fecha_gasto", f_desde, f_hasta)
 
     st.caption(f"{len(dff)} gasto(s)")
-    cols_show = [c for c in ["id","folio","fecha_gasto","concepto","monto_gasto","tipo_gasto",
-                              "chofer","numero_viaje","id_doc"] if c in dff.columns]
+    cols_show = [c for c in ["folio","numero_viaje","fecha_gasto","concepto","monto_gasto",
+                              "tipo_gasto","chofer","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_gastos", num_rows="fixed",
-                          disabled=["id"])
+                          disabled=["folio"])
 
     bc, _ = st.columns(2)
     if bc.button("💾 Guardar cambios", key="save_g"): _guardar("gastos", orig, edit)
@@ -327,11 +327,11 @@ elif seccion == "Pagos":
     dff = _date_filter(dff, "fecha_pago", f_desde, f_hasta)
 
     st.caption(f"{len(dff)} pago(s)")
-    cols_show = [c for c in ["id","folio","fecha_pago","cliente","monto_pago","metodo_pago",
-                              "numero_viaje","observaciones","id_doc"] if c in dff.columns]
+    cols_show = [c for c in ["folio","numero_viaje","fecha_pago","cliente","monto_pago",
+                              "metodo_pago","observaciones","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_pagos", num_rows="fixed",
-                          disabled=["id"])
+                          disabled=["folio"])
 
     bc, _ = st.columns(2)
     if bc.button("💾 Guardar cambios", key="save_p"): _guardar("pagos", orig, edit)
@@ -368,7 +368,7 @@ elif seccion == "CXC":
             dff["dias_pendiente"] = (hoy - fv).dt.days.where(
                 dff["estatus_cobro"] != "pagado", 0).fillna(0).astype(int)
 
-    _cxc_cols = [c for c in ["id","folio","cliente","numero_viaje","monto_total","monto_pagado",
+    _cxc_cols = [c for c in ["folio","cliente","numero_viaje","monto_total","monto_pagado",
                                "saldo_pendiente","estatus_cobro","dias_pendiente",
                                "fecha_viaje","fecha_vencimiento"] if not dff.empty and c in dff.columns]
 
@@ -407,7 +407,7 @@ elif seccion == "CXC":
                     dp[_p_cols].rename(columns={"folio": "folio_pago"}),
                     on="numero_viaje", how="left"
                 )
-                _show = [c for c in ["id","folio","cliente","numero_viaje","monto_total",
+                _show = [c for c in ["folio","cliente","numero_viaje","monto_total",
                                       "folio_pago","fecha_pago","monto_pago","metodo_pago"] if c in _joined.columns]
                 st.caption(f"{len(_pag)} viaje(s) pagado(s)")
                 st.dataframe(_joined[_show], use_container_width=True, hide_index=True)
