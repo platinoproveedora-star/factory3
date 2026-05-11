@@ -1,7 +1,14 @@
 """Handler for /logplat mode.
 
-Captura: solo con /+viaje /+gasto /+pago previo (hint en state).
-Chat libre: cualquier texto sin hint → Haiku consulta las 3 tablas.
+Comandos: /gasto  /pago  /viaje
+  - Texto libre sin hint  → chat con Haiku sobre los datos
+  - /gasto + texto        → interpreta y guarda gasto
+  - /gasto + foto         → extrae gasto de imagen + sube comprobante
+  - /pago  + texto        → interpreta y guarda pago
+  - /pago  + foto         → extrae pago de imagen + sube comprobante
+  - /viaje + texto        → interpreta y guarda viaje
+  - /viaje + foto/PDF     → sube documento, pregunta número de viaje
+  - Siguiente msg tras /viaje+foto → folio → liga doc al viaje
 """
 
 from __future__ import annotations
@@ -14,21 +21,27 @@ _DIR = Path(__file__).parent
 if str(_DIR) not in sys.path:
     sys.path.insert(0, str(_DIR))
 
-import service as svc  # noqa: E402
+import service as svc
 
 _AYUDA = (
     "<b>Modo LOGPLAT activo</b> — Logística Platino\n\n"
-    "<b>Agregar:</b>\n"
-    "/+viaje        — capturar viaje (texto, foto o PDF)\n"
-    "/+gasto        — capturar gasto (texto, foto o PDF)\n"
-    "/+pago         — capturar pago (texto, foto o PDF)\n\n"
+    "<b>Capturar:</b>\n"
+    "/gasto   — registrar gasto (texto o foto del comprobante)\n"
+    "/pago    — registrar pago (texto o foto del recibo)\n"
+    "/viaje   — registrar viaje o subir documento a un viaje\n\n"
     "<b>Consultar:</b>\n"
     "/reporteviajes — últimos 10 viajes\n"
     "/reportegastos — últimos 10 gastos\n"
     "/pagos         — últimos 10 pagos\n"
-    "o escribe cualquier pregunta y te respondo.\n\n"
+    "o escribe cualquier pregunta.\n\n"
     "/ayuda — esta ayuda | /salir — salir del modo"
 )
+
+_PROMPTS = {
+    "gasto": "💸 Envía los datos del gasto (texto) o una foto del comprobante.",
+    "pago":  "💰 Envía los datos del pago (texto) o una foto del recibo.",
+    "viaje": "🚚 Envía texto con los datos del viaje, o una foto/PDF para subirlo como documento.",
+}
 
 
 def ejecutar(update: dict, state: dict) -> dict:
@@ -38,43 +51,45 @@ def ejecutar(update: dict, state: dict) -> dict:
     photo    = message.get("photo")
     document = message.get("document")
 
+    # ── Comandos fijos ────────────────────────────────────────────────────────
     if text in ("/ayuda", "/help"):
         return _ok(_AYUDA, state)
-
     if text == "/reporteviajes":
         return _reporte_viajes(state)
-
     if text == "/reportegastos":
         return _reporte_gastos(state)
-
     if text == "/pagos":
         return _lista_pagos(state)
 
-    if raw_text in ("/+viaje", "/+gasto", "/+pago"):
-        hint = raw_text[2:]
-        return _ok(
-            f"Listo, envía los datos del {hint} (texto, foto o PDF).",
-            {**state, "hint": hint},
-        )
+    # ── Activar captura ───────────────────────────────────────────────────────
+    if text in ("/gasto", "/viaje", "/pago"):
+        hint = text[1:]
+        return _ok(_PROMPTS[hint], {**state, "hint": hint})
 
     hint      = state.get("hint", "")
     new_state = {k: v for k, v in state.items() if k != "hint"}
 
-    # ── Modo captura: solo si hay hint activo ─────────────────────────────────
-    if hint:
+    # ── Esperando folio para ligar doc de viaje ───────────────────────────────
+    if hint == "viaje_doc_pending":
+        doc_url = state.get("doc_url", "")
+        folio   = raw_text.upper().strip()
+        if not folio:
+            return _ok("Escribe el número de viaje (ej: VIA-022).", state)
+        clean = {k: v for k, v in state.items() if k not in ("hint", "doc_url")}
+        if svc.ligar_doc_viaje(folio, doc_url):
+            return _ok(f"✅ Documento guardado en viaje <b>{folio}</b>.", clean)
+        return _ok(f"No encontré el viaje {folio}. Verifica el folio e intenta de nuevo.", state)
+
+    # ── Con hint activo ───────────────────────────────────────────────────────
+    if hint in ("gasto", "pago", "viaje"):
         if photo or document:
             return _capture_doc(photo, document, hint, new_state)
         if raw_text:
             return _capture_text(raw_text, hint, new_state)
 
-    # ── Sin hint: foto/doc sin comando ────────────────────────────────────────
+    # ── Sin hint ──────────────────────────────────────────────────────────────
     if photo or document:
-        return _ok(
-            "Para agregar un documento usa primero /+viaje, /+gasto o /+pago.",
-            state,
-        )
-
-    # ── Chat libre ────────────────────────────────────────────────────────────
+        return _ok("Usa /gasto, /pago o /viaje antes de enviar un archivo.", state)
     if raw_text:
         return _chat_libre(raw_text, state)
 
@@ -93,31 +108,44 @@ def _capture_text(text: str, hint: str, state: dict) -> dict:
 def _capture_doc(photo, document, hint: str, state: dict) -> dict:
     if photo:
         file_id    = photo[-1]["file_id"]
+        filename   = f"{photo[-1]['file_id']}.jpg"
         media_type = "image/jpeg"
     else:
         file_id    = document["file_id"]
-        media_type = document.get("mime_type", "image/jpeg")
+        filename   = document.get("file_name") or f"{document['file_id']}.pdf"
+        media_type = document.get("mime_type", "application/pdf")
 
     file_bytes, err = svc.descargar_telegram(file_id)
     if err:
         return _ok(f"Error descargando archivo: {err}", state)
 
+    # Subir a Storage
+    doc_url, err_up = svc.subir_documento(file_bytes, filename, media_type)
+
+    # Viaje + foto: solo subir doc y pedir folio
+    if hint == "viaje":
+        if not doc_url:
+            return _ok(f"Error subiendo documento: {err_up}", state)
+        new_state = {**state, "hint": "viaje_doc_pending", "doc_url": doc_url}
+        return _ok("📎 Documento subido.\n¿A qué número de viaje lo ligo? (ej: VIA-022)", new_state)
+
+    # Gasto / Pago: extraer datos + guardar con id_doc
     r = svc.interpretar_libre("", base64.b64encode(file_bytes).decode(), media_type, hint)
     if not r.get("ok"):
         return _ok(f"No pude leer el documento: {r.get('error')}", state)
-    return _dispatch(hint, r.get("data", {}), state)
+    data = r.get("data", {})
+    if doc_url:
+        data["id_doc"] = doc_url
+    return _dispatch(hint, data, state)
 
 
-# ─── DISPATCH (acción forzada por hint) ──────────────────────────────────────
+# ─── DISPATCH ────────────────────────────────────────────────────────────────
 
 def _dispatch(action: str, data: dict, state: dict) -> dict:
-    if action == "viaje":
-        return _save_viaje(data, state)
-    if action == "gasto":
-        return _save_gasto(data, state)
-    if action == "pago":
-        return _save_pago(data, state)
-    return _ok("No pude determinar el tipo. Usa /+viaje, /+gasto o /+pago.", state)
+    if action == "viaje": return _save_viaje(data, state)
+    if action == "gasto": return _save_gasto(data, state)
+    if action == "pago":  return _save_pago(data, state)
+    return _ok("No pude determinar el tipo. Usa /gasto, /pago o /viaje.", state)
 
 
 # ─── SAVERS ──────────────────────────────────────────────────────────────────
@@ -126,14 +154,10 @@ def _save_viaje(data: dict, state: dict) -> dict:
     r = svc.crear_viaje(data)
     if not r.get("ok"):
         return _ok(f"Error guardando viaje: {r.get('error')}", state)
-    v    = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
-    util = float(data.get("precio_venta_viaje") or 0) - float(data.get("costo_viaje") or 0)
-    msg  = (f"✅ Viaje <b>{v.get('folio','?')}</b> registrado.\n"
-            f"Ruta: {data.get('origen')} → {data.get('destino')}\n"
-            f"Cliente: {data.get('cliente')}\n"
-            f"Utilidad: ${util:,.0f}")
-    if data.get("estatus_pago") == "por_cobrar":
-        msg += "\n📋 CXC generada automáticamente."
+    v   = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
+    msg = (f"✅ Viaje <b>{v.get('folio','?')}</b> registrado.\n"
+           f"Ruta: {data.get('origen') or '?'} → {data.get('destino') or '?'}\n"
+           f"Cliente: {data.get('cliente') or '—'}")
     return _ok(msg, state)
 
 
@@ -143,9 +167,11 @@ def _save_gasto(data: dict, state: dict) -> dict:
         return _ok(f"Error guardando gasto: {r.get('error')}", state)
     g   = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
     msg = (f"✅ Gasto <b>{g.get('folio','?')}</b> registrado.\n"
-           f"Concepto: {data.get('concepto')}\n"
+           f"Concepto: {data.get('concepto') or '—'}\n"
            f"Monto: ${float(data.get('monto_gasto') or 0):,.0f}\n"
-           f"Viaje: {data.get('numero_viaje') or 'sin viaje'}")
+           f"Viaje: {data.get('numero_viaje') or '— (asigna desde el dash)'}")
+    if data.get("id_doc"):
+        msg += "\n📎 Comprobante guardado."
     return _ok(msg, state)
 
 
@@ -155,9 +181,11 @@ def _save_pago(data: dict, state: dict) -> dict:
         return _ok(f"Error guardando pago: {r.get('error')}", state)
     p   = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
     msg = (f"✅ Pago <b>{p.get('folio','?')}</b> registrado.\n"
-           f"Viaje: {data.get('numero_viaje')}\n"
            f"Monto: ${float(data.get('monto_pago') or 0):,.0f}\n"
-           f"Método: {data.get('metodo_pago')}")
+           f"Método: {data.get('metodo_pago') or '—'}\n"
+           f"Viaje: {data.get('numero_viaje') or '— (asigna desde el dash)'}")
+    if data.get("id_doc"):
+        msg += "\n📎 Comprobante guardado."
     return _ok(msg, state)
 
 
@@ -179,11 +207,9 @@ def _reporte_viajes(state: dict) -> dict:
     lines = ["<b>Últimos viajes:</b>"]
     for v in viajes:
         lines.append(
-            f"\n<b>{v.get('folio')}</b> — {v.get('cliente')}\n"
-            f"  {v.get('origen')} → {v.get('destino')}\n"
-            f"  Venta: ${float(v.get('precio_venta_viaje') or 0):,.0f} | "
-            f"Utilidad: ${float(v.get('utilidad_viaje') or 0):,.0f} | "
-            f"{v.get('estatus_pago')}"
+            f"\n<b>{v.get('folio')}</b> — {v.get('cliente') or '—'}\n"
+            f"  → {v.get('destino') or '—'}\n"
+            f"  Venta: ${float(v.get('precio_venta_viaje') or 0):,.0f} | {v.get('estatus_pago')}"
         )
     return _ok("\n".join(lines), state)
 
@@ -195,7 +221,7 @@ def _reporte_gastos(state: dict) -> dict:
     lines = ["<b>Últimos gastos:</b>"]
     for g in gastos:
         lines.append(
-            f"\n<b>{g.get('folio')}</b> — {g.get('concepto')}\n"
+            f"\n<b>{g.get('folio')}</b> — {g.get('concepto') or '—'}\n"
             f"  ${float(g.get('monto_gasto') or 0):,.0f} | {g.get('fecha_gasto')} | "
             f"Viaje: {g.get('numero_viaje') or 'ninguno'}"
         )
@@ -209,7 +235,7 @@ def _lista_pagos(state: dict) -> dict:
     lines = ["<b>Últimos pagos:</b>"]
     for p in pagos:
         lines.append(
-            f"\n<b>{p.get('folio')}</b> — {p.get('cliente')}\n"
+            f"\n<b>{p.get('folio')}</b>\n"
             f"  ${float(p.get('monto_pago') or 0):,.0f} | {p.get('fecha_pago')} | "
             f"{p.get('metodo_pago')} | Viaje: {p.get('numero_viaje') or 'ninguno'}"
         )

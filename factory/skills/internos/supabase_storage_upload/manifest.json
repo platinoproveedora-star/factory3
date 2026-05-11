@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "supabase_storage_upload",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Sube un archivo (base64) a Supabase Storage y retorna la URL pública",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

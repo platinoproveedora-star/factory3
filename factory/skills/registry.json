@@ -1463,6 +1463,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "supabase_storage_upload": {
+    "tipo": "interno",
+    "nombre": "supabase_storage_upload",
+    "vertical": "factory_infra",
+    "descripcion": "Sube un archivo base64 a Supabase Storage y retorna la URL pública. Input: bucket, path, content_b64, content_type.",
+    "path": "skills/internos/supabase_storage_upload",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "ai_interpreter": {
     "tipo": "interno",
     "nombre": "ai_interpreter",

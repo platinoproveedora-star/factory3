@@ -280,6 +280,41 @@ def consultar(texto: str) -> dict:
     return {"ok": True, "response": r["data"]["response"]}
 
 
+# ─── SUPABASE STORAGE ────────────────────────────────────────────────────────
+
+_BUCKET = "logplat-docs"
+
+
+def subir_documento(file_bytes: bytes, filename: str, content_type: str) -> tuple[str | None, str | None]:
+    ts   = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    path = f"logplat/{ts}_{filename}"
+    req  = urllib.request.Request(
+        f"{_URL}/storage/v1/object/{_BUCKET}/{path}",
+        data=file_bytes, method="POST",
+        headers={
+            "apikey":        _KEY,
+            "Authorization": f"Bearer {_KEY}",
+            "Content-Type":  content_type,
+            "x-upsert":      "true",
+            "User-Agent":    "FactoryFactory/0.1 (+https://github.com/)",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            r.read()
+        return f"{_URL}/storage/v1/object/public/{_BUCKET}/{path}", None
+    except urllib.error.HTTPError as e:
+        return None, f"HTTP {e.code}: {e.read().decode()}"
+    except Exception as e:
+        return None, str(e)
+
+
+def ligar_doc_viaje(folio: str, doc_url: str) -> bool:
+    r = _req("PATCH", "viajes", {"id_doc": doc_url},
+             params={"folio": f"eq.{folio}"}, write=True)
+    return r.get("ok", False)
+
+
 # ─── TELEGRAM FILE DOWNLOAD ──────────────────────────────────────────────────
 
 def descargar_telegram(file_id: str) -> tuple[bytes | None, str | None]:
