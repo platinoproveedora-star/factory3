@@ -1,30 +1,44 @@
 # Tablas Supabase — Registry
 
-Schema: `public` | Actualizado: 2026-05-07
+Actualizado: 2026-05-11
 
-## Índice
+## Schema `public`
 
 | Tabla | Vertical | Descripción |
 |---|---|---|
 | [agent_memory](#agent_memory) | factory | Memoria persistente de agentes |
-| [entrevistas](#entrevistas) | ai_hiring_assessment | Entrevistas agendadas por candidato y reclutador |
-| [reclutadores](#reclutadores) | mass_digital_hiring | Reclutadores activos para asignación de candidatos |
-| [alertas](#alertas) | vertical_rh | Alertas enviadas a candidatos |
 | [bot_states](#bot_states) | factory | Estado de sesión por chat_id de Telegram |
-| [candidatos](#candidatos) | vertical_rh | Candidatos registrados — tabla central del funnel |
-| [conversaciones](#conversaciones) | vertical_rh | Estado de conversación activa por candidato y vacante |
-| [cuestionarios](#cuestionarios) | vertical_rh | Cuestionarios generados por vacante |
-| [eventos_historial](#eventos_historial) | vertical_rh | Log de eventos por candidato |
-| [fb_grupos](#fb_grupos) | vertical_facebook | Grupos de Facebook descubiertos para publicar |
-| [fb_publicaciones](#fb_publicaciones) | vertical_facebook | Registro de posts publicados en grupos FB |
-| [mensajes](#mensajes) | factory | Mensajes dentro de una conversación |
-| [onboarding_docs](#onboarding_docs) | vertical_tractohub | Documentos recopilados en onboarding de operador |
-| [pipeline](#pipeline) | vertical_rh | Historial de etapas por candidato |
-| [respuestas](#respuestas) | vertical_rh | Respuestas del candidato al cuestionario |
-| [scores](#scores) | vertical_rh | Puntuación y resultado knockout por candidato |
+| [factory_tasks](#factory_tasks) | factory | Cola de tareas asíncronas del runtime |
 | [test_seeds](#test_seeds) | factory | Registro de IDs generados por seeds de prueba |
-| [vacantes](#vacantes) | vertical_rh | Vacantes activas por empresa |
-| [whatsapp_broadcasts](#whatsapp_broadcasts) | vertical_whatsapp | Broadcasts enviados o programados por WhatsApp |
+| [candidatos](#candidatos) | rh | Candidatos registrados — tabla central del funnel |
+| [vacantes](#vacantes) | rh | Vacantes activas por empresa |
+| [pipeline](#pipeline) | rh | Historial de etapas por candidato |
+| [conversaciones](#conversaciones) | rh | Estado de conversación activa por candidato y vacante |
+| [mensajes](#mensajes) | rh | Mensajes dentro de una conversación |
+| [cuestionarios](#cuestionarios) | rh | Cuestionarios generados por vacante |
+| [respuestas](#respuestas) | rh | Respuestas del candidato al cuestionario |
+| [scores](#scores) | rh | Puntuación y resultado knockout por candidato |
+| [entrevistas](#entrevistas) | rh | Entrevistas agendadas por candidato y reclutador |
+| [reclutadores](#reclutadores) | rh | Reclutadores activos para asignación de candidatos |
+| [alertas](#alertas) | rh | Alertas enviadas a candidatos |
+| [eventos_historial](#eventos_historial) | rh | Log de eventos por candidato |
+| [onboarding_docs](#onboarding_docs) | tractohub | Documentos recopilados en onboarding de operador |
+| [fb_grupos](#fb_grupos) | social | Grupos de Facebook descubiertos para publicar |
+| [fb_gs_searches](#fb_gs_searches) | social | Búsquedas de grupos FB vía Google Search |
+| [fb_gs_groups](#fb_gs_groups) | social | Grupos encontrados por búsqueda FB-GS |
+| [fb_publicaciones](#fb_publicaciones) | social | Registro de posts publicados en grupos FB |
+| [whatsapp_broadcasts](#whatsapp_broadcasts) | social | Broadcasts enviados o programados por WhatsApp |
+| [cfdi_documentos](#cfdi_documentos) | fiscal | Documentos CFDI timbrados (facturas, notas) |
+
+## Schema `logplat`
+
+| Tabla | Descripción |
+|---|---|
+| [logplat.viajes](#logplatviajes) | Viajes de transporte. Folio VIA-001… |
+| [logplat.gastos](#logplatgastos) | Gastos operativos por viaje. Folio GAS-001… |
+| [logplat.pagos](#logplatpagos) | Pagos recibidos de clientes. Folio PAG-001… |
+| [logplat.cuentas_por_cobrar](#logplatcuentas_por_cobrar) | CXC derivada de viajes. Folio CXC-001… |
+| [logplat.viaje_docs](#logplatviaje_docs) | Documentos adjuntos a viajes. Folio DOC-001… |
 
 ---
 
@@ -347,4 +361,214 @@ Broadcasts enviados o programados por WhatsApp vía `whatsapp_group_broadcaster`
 | `empresa_id` | text | SÍ | — | ID de empresa |
 | `fecha` | timestamptz | SÍ | — | Fecha de envío |
 | `error` | text | SÍ | — | Error si falló |
+| `created_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## factory_tasks
+
+Cola de tareas asíncronas del runtime factory3. Trazabilidad de ejecuciones de skills.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `task_id` | text | NO | — | ID externo de la tarea |
+| `empresa_id` | text | SÍ | — | ID de empresa |
+| `skill_name` | text | NO | — | Skill ejecutado |
+| `skill_source` | text | SÍ | — | Origen del skill |
+| `context` | jsonb | SÍ | — | Contexto de entrada |
+| `status` | text | NO | — | pending \| running \| done \| error |
+| `resultado` | jsonb | SÍ | — | Resultado de la ejecución |
+| `error_msg` | text | SÍ | — | Mensaje de error si falló |
+| `prioridad` | integer | SÍ | — | Prioridad de ejecución |
+| `parent_task_id` | text | SÍ | — | ID de tarea padre (orquestación) |
+| `costo_tokens` | integer | SÍ | — | Tokens consumidos |
+| `latencia_ms` | integer | SÍ | — | Latencia de ejecución |
+| `created_at` | timestamptz | SÍ | now() | — |
+| `started_at` | timestamptz | SÍ | — | — |
+| `finished_at` | timestamptz | SÍ | — | — |
+
+---
+
+## fb_gs_searches
+
+Búsquedas de grupos de Facebook ejecutadas vía Google Search.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `search_id` | text | NO | — | ID externo de la búsqueda |
+| `empresa_id` | text | SÍ | — | ID de empresa |
+| `usuario_id` | text | SÍ | — | Usuario que lanzó la búsqueda |
+| `tema_busqueda` | text | SÍ | — | Tema / keyword buscado |
+| `fuente` | text | SÍ | — | google_search \| manual |
+| `estado` | text | SÍ | — | pendiente \| completado \| error |
+| `total_grupos` | integer | SÍ | — | Grupos encontrados |
+| `created_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## fb_gs_groups
+
+Grupos encontrados en una búsqueda FB-GS. N filas por `search_id`.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `search_id` | text | NO | — | FK → fb_gs_searches.search_id |
+| `empresa_id` | text | SÍ | — | ID de empresa |
+| `grupo_nombre` | text | SÍ | — | Nombre del grupo |
+| `grupo_url` | text | SÍ | — | URL del grupo |
+| `descripcion` | text | SÍ | — | Descripción extraída |
+| `miembros_estimados` | integer | SÍ | — | Miembros estimados |
+| `ubicacion_detectada` | text | SÍ | — | Ciudad/estado detectado |
+| `fuente` | text | SÍ | — | Fuente del dato |
+| `created_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## cfdi_documentos
+
+Documentos CFDI timbrados (facturas, notas de crédito). UUID CFDI único.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `uuid_cfdi` | text | NO | — | UUID del CFDI (único) |
+| `empresa_id` | text | NO | — | RFC propietario / ID empresa |
+| `tipo` | text | SÍ | — | ingreso \| egreso \| traslado |
+| `tipo_comprobante` | text | SÍ | — | I \| E \| T \| N \| P |
+| `rfc_emisor` | text | SÍ | — | RFC del emisor |
+| `nombre_emisor` | text | SÍ | — | Razón social emisor |
+| `rfc_receptor` | text | SÍ | — | RFC del receptor |
+| `nombre_receptor` | text | SÍ | — | Razón social receptor |
+| `fecha_emision` | date | SÍ | — | Fecha del comprobante |
+| `fecha_timbrado` | timestamptz | SÍ | — | Fecha de timbrado SAT |
+| `total` | numeric | SÍ | — | Total del CFDI |
+| `subtotal` | numeric | SÍ | — | Subtotal |
+| `descuento` | numeric | SÍ | — | Descuento aplicado |
+| `moneda` | text | SÍ | 'MXN' | Moneda |
+| `metodo_pago` | text | SÍ | — | PUE \| PPD |
+| `forma_pago` | text | SÍ | — | 01 efectivo, 03 transferencia… |
+| `uso_cfdi` | text | SÍ | — | Clave de uso (G01, G03…) |
+| `estado` | text | SÍ | — | vigente \| cancelado |
+| `conceptos` | jsonb | SÍ | — | Array de conceptos del CFDI |
+| `xml_raw` | text | SÍ | — | XML completo del CFDI |
+| `created_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## logplat.viajes
+
+Schema: `logplat` | Empresa: LOGPLAT — Platino Logística
+
+Viajes de transporte. Tabla central de la vertical logplat.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `folio` | text | NO | — | Folio visible VIA-001… |
+| `empresa_id` | text | NO | 'LOGPLAT' | ID de empresa |
+| `cliente` | text | SÍ | — | Cliente del viaje |
+| `origen` | text | SÍ | — | Ciudad/punto de origen |
+| `destino` | text | SÍ | — | Ciudad/punto de destino |
+| `fecha_salida` | date | SÍ | — | Fecha de salida |
+| `fecha_llegada` | date | SÍ | — | Fecha de llegada |
+| `chofer` | text | SÍ | — | Nombre del chofer |
+| `costo_viaje` | numeric | SÍ | 0 | Suma de gastos (calculado) |
+| `precio_venta_viaje` | numeric | SÍ | 0 | Precio cobrado al cliente |
+| `utilidad_viaje` | numeric | SÍ | 0 | precio_venta − costo (calculado) |
+| `estatus_viaje` | text | SÍ | 'activo' | activo \| terminado \| cancelado |
+| `estatus_pago` | text | SÍ | 'por_cobrar' | por_cobrar \| parcial \| pagado |
+| `id_doc` | text | SÍ | — | URL legacy de doc único (ver viaje_docs) |
+| `created_at` | timestamptz | SÍ | now() | — |
+| `updated_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## logplat.gastos
+
+Schema: `logplat` | Empresa: LOGPLAT
+
+Gastos operativos por viaje (diesel, casetas, pensiones, etc.).
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `folio` | text | NO | — | Folio visible GAS-001… |
+| `empresa_id` | text | NO | 'LOGPLAT' | ID de empresa |
+| `numero_viaje` | text | SÍ | — | FK → viajes.folio |
+| `fecha_gasto` | date | SÍ | — | Fecha del gasto |
+| `fecha_captura` | timestamptz | SÍ | — | Fecha de captura en sistema |
+| `monto_gasto` | numeric | NO | — | Monto del gasto |
+| `concepto` | text | SÍ | — | Descripción del gasto |
+| `chofer` | text | SÍ | — | Chofer que generó el gasto |
+| `tipo_gasto` | text | SÍ | 'otro' | diesel \| caseta \| pension \| otro |
+| `id_doc` | text | SÍ | — | URL del comprobante en Storage |
+| `created_at` | timestamptz | SÍ | now() | — |
+| `updated_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## logplat.pagos
+
+Schema: `logplat` | Empresa: LOGPLAT
+
+Pagos recibidos de clientes por viaje.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `folio` | text | NO | — | Folio visible PAG-001… |
+| `empresa_id` | text | NO | 'LOGPLAT' | ID de empresa |
+| `numero_viaje` | text | SÍ | — | FK → viajes.folio |
+| `cliente` | text | SÍ | — | Cliente que pagó |
+| `fecha_pago` | date | SÍ | — | Fecha del pago |
+| `monto_pago` | numeric | NO | — | Monto recibido |
+| `metodo_pago` | text | SÍ | 'transferencia' | transferencia \| efectivo \| cheque |
+| `observaciones` | text | SÍ | — | Notas del pago |
+| `id_doc` | text | SÍ | — | URL del comprobante en Storage |
+| `created_at` | timestamptz | SÍ | now() | — |
+| `updated_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## logplat.cuentas_por_cobrar
+
+Schema: `logplat` | Empresa: LOGPLAT
+
+CXC derivada automáticamente al crear un viaje con `estatus_pago=por_cobrar`. Read-only en dashboard.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `folio` | text | NO | — | Folio visible CXC-001… |
+| `empresa_id` | text | NO | 'LOGPLAT' | ID de empresa |
+| `numero_viaje` | text | NO | — | FK → viajes.folio |
+| `cliente` | text | SÍ | — | Cliente |
+| `monto_total` | numeric | SÍ | 0 | Total a cobrar |
+| `monto_pagado` | numeric | SÍ | 0 | Total pagado acumulado |
+| `saldo_pendiente` | numeric | SÍ | 0 | monto_total − monto_pagado |
+| `fecha_viaje` | date | SÍ | — | Fecha del viaje asociado |
+| `fecha_vencimiento` | date | SÍ | — | Fecha límite de pago |
+| `estatus_cobro` | text | SÍ | 'pendiente' | pendiente \| parcial \| pagado |
+| `created_at` | timestamptz | SÍ | now() | — |
+| `updated_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## logplat.viaje_docs
+
+Schema: `logplat` | Empresa: LOGPLAT
+
+Documentos adjuntos a viajes (cartas porte, permisos, etc.). N documentos por viaje.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `folio` | text | NO | — | Folio visible DOC-001… |
+| `viaje_folio` | text | NO | — | FK → viajes.folio |
+| `doc_url` | text | NO | — | URL pública en Supabase Storage |
+| `tipo` | text | NO | 'otro' | carta_porte \| permiso \| otro |
+| `nombre` | text | SÍ | — | Nombre original del archivo |
 | `created_at` | timestamptz | SÍ | now() | — |
