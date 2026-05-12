@@ -108,6 +108,10 @@ class LeadScoreService:
             )
             with urllib.request.urlopen(req, timeout=15) as r:
                 text = json.loads(r.read().decode())["content"][0]["text"].strip()
+                if text.startswith("```"):
+                    text = text.split("```")[1]
+                    if text.startswith("json"): text = text[4:]
+                    text = text.strip()
                 return int(json.loads(text).get("ajuste", 0))
         except Exception:
             return 0

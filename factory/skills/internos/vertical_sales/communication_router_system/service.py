@@ -114,6 +114,12 @@ class CommunicationRouterService:
             )
             with urllib.request.urlopen(req, timeout=15) as r:
                 text = json.loads(r.read().decode())["content"][0]["text"].strip()
+                # strip markdown code fences if Haiku wraps the JSON
+                if text.startswith("```"):
+                    text = text.split("```")[1]
+                    if text.startswith("json"):
+                        text = text[4:]
+                    text = text.strip()
                 intent = json.loads(text).get("intent", "otro")
                 return intent if intent in _INTENTS else "otro"
         except Exception:
