@@ -315,10 +315,25 @@ def subir_documento(file_bytes: bytes, filename: str, content_type: str) -> tupl
         return None, str(e)
 
 
-def ligar_doc_viaje(folio: str, doc_url: str) -> bool:
-    r = _req("PATCH", "viajes", {"id_doc": doc_url},
-             params={"folio": f"eq.{folio}"}, write=True)
+def agregar_doc_viaje(viaje_folio: str, doc_url: str, nombre: str = "", tipo: str = "otro") -> bool:
+    folio_doc = _next_folio("viaje_docs", "DOC")
+    r = _req("POST", "viaje_docs", {
+        "folio":       folio_doc,
+        "viaje_folio": viaje_folio,
+        "doc_url":     doc_url,
+        "tipo":        tipo or "otro",
+        "nombre":      nombre or "",
+    }, write=True)
     return r.get("ok", False)
+
+
+def docs_por_viaje(viaje_folio: str) -> list[dict]:
+    r = _req("GET", "viaje_docs", params={
+        "viaje_folio": f"eq.{viaje_folio}",
+        "select":      "folio,doc_url,tipo,nombre,created_at",
+        "order":       "created_at.asc",
+    })
+    return r.get("data", []) if r.get("ok") else []
 
 
 # ─── TELEGRAM FILE DOWNLOAD ──────────────────────────────────────────────────

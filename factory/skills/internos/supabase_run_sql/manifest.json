@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "supabase_run_sql",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Ejecuta SQL arbitrario en Supabase via Management API",
+  "requires_env": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"]
+}

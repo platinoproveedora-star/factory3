@@ -83,14 +83,15 @@ def ejecutar(update: dict, state: dict) -> dict:
 
     # ── Esperando folio para ligar doc de viaje ───────────────────────────────
     if hint == "viaje_doc_pending":
-        doc_url = state.get("doc_url", "")
-        folio   = _normalizar_folio(raw_text)
+        doc_url  = state.get("doc_url", "")
+        doc_name = state.get("doc_name", "")
+        folio    = _normalizar_folio(raw_text)
         if not folio:
             return _ok("Escribe el número de viaje (ej: VIA-022 o solo 22).", state)
-        clean = {k: v for k, v in state.items() if k not in ("hint", "doc_url")}
-        if svc.ligar_doc_viaje(folio, doc_url):
-            return _ok(f"✅ Documento guardado en viaje <b>{folio}</b>.", clean)
-        return _ok(f"No encontré el viaje {folio}. Verifica el número e intenta de nuevo.", state)
+        clean = {k: v for k, v in state.items() if k not in ("hint", "doc_url", "doc_name")}
+        if svc.agregar_doc_viaje(folio, doc_url, nombre=doc_name):
+            return _ok(f"✅ Documento guardado en viaje <b>{folio}</b>.\nPuedes enviar otro archivo para el mismo viaje.", clean)
+        return _ok(f"No pude guardar el documento en {folio}. Verifica el número e intenta de nuevo.", state)
 
     # ── Con hint activo ───────────────────────────────────────────────────────
     if hint in ("gasto", "pago", "viaje"):
@@ -138,8 +139,8 @@ def _capture_doc(photo, document, hint: str, state: dict) -> dict:
     if hint == "viaje":
         if not doc_url:
             return _ok(f"Error subiendo documento: {err_up}", state)
-        new_state = {**state, "hint": "viaje_doc_pending", "doc_url": doc_url}
-        return _ok("📎 Documento subido.\n¿A qué número de viaje lo ligo? (ej: VIA-022)", new_state)
+        new_state = {**state, "hint": "viaje_doc_pending", "doc_url": doc_url, "doc_name": filename}
+        return _ok("📎 Documento subido.\n¿A qué número de viaje lo ligo? (ej: VIA-022 o solo 22)", new_state)
 
     # Gasto / Pago: extraer datos + guardar con id_doc
     r = svc.interpretar_libre("", base64.b64encode(file_bytes).decode(), media_type, hint)

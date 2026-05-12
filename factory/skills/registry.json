@@ -1472,6 +1472,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "supabase_run_sql": {
+    "tipo": "interno",
+    "nombre": "supabase_run_sql",
+    "vertical": "factory_infra",
+    "descripcion": "Ejecuta SQL arbitrario en Supabase via Management API. Input: sql, dry_run (default true).",
+    "path": "skills/internos/supabase_run_sql",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "ai_interpreter": {
     "tipo": "interno",
     "nombre": "ai_interpreter",

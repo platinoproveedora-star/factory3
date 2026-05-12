@@ -69,6 +69,11 @@ def get_cxc() -> pd.DataFrame:
     rows = select("cuentas_por_cobrar", "select=*&order=created_at.desc&limit=1000")
     return pd.DataFrame(rows) if rows else pd.DataFrame()
 
+@st.cache_data(ttl=30)
+def get_docs_viaje(viaje_folio: str) -> list[dict]:
+    rows = select("viaje_docs", f"viaje_folio=eq.{viaje_folio}&select=folio,doc_url,tipo,nombre,created_at&order=created_at.asc")
+    return rows or []
+
 
 # ─── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -279,6 +284,17 @@ elif seccion == "Viajes":
                 st.rerun()
             else:
                 st.error("Error al borrar.")
+
+    with st.expander("📎 Documentos del viaje"):
+        _folios_v = ["—"] + sorted(df["folio"].dropna().tolist(), reverse=True)
+        _sel_v    = st.selectbox("Viaje", _folios_v, key="docs_v_sel")
+        if _sel_v != "—":
+            _docs = get_docs_viaje(_sel_v)
+            if _docs:
+                for d in _docs:
+                    st.markdown(f"[{d.get('nombre') or d.get('folio')}]({d.get('doc_url')})  —  `{d.get('tipo')}`")
+            else:
+                st.caption("Sin documentos.")
 
     st.divider()
     nums = ["costo_viaje","precio_venta_viaje","utilidad_viaje"]
