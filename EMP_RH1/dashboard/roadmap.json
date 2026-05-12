@@ -5,10 +5,41 @@
     "prioridad": 1,
     "categoria": "vertical_sat",
     "titulo": "SAT México — Descarga de CFDIs (facturas ingresos y egresos)",
-    "descripcion": "Skills construidos: sat_auth, sat_cfdi_solicitud, sat_cfdi_verificar, sat_cfdi_descargar, sat_cfdi_parser, sat_cfdi_store, sat_cfdi_sync, sat_cfdi_list. Pendiente: crear tabla cfdi_documentos en Supabase y agregar env vars SAT en Render.",
+    "descripcion": "Skills construidos: sat_auth, sat_cfdi_solicitud, sat_cfdi_verificar, sat_cfdi_descargar, sat_cfdi_parser, sat_cfdi_store, sat_cfdi_sync, sat_cfdi_list. Tabla cfdi_documentos creada en Supabase. Pendiente: agregar env vars SAT en Render y probar con e.firma real.",
     "requiere_ia": false,
     "requiere_creds": ["SAT_RFC", "SAT_EFIRMA_CER_B64", "SAT_EFIRMA_KEY_B64", "SAT_EFIRMA_PASSWORD"],
     "requiere_deps": ["cryptography", "lxml"],
     "skills_a_construir": []
+  },
+  {
+    "id": 2,
+    "status": "pendiente",
+    "prioridad": 2,
+    "categoria": "vertical_crm",
+    "titulo": "CRM / Leads / Ventas — Pipeline completo de ventas automatizado",
+    "descripcion": "Vertical CRM para captura, gestión y seguimiento de leads con pipeline de ventas. 18 skills MVP: captura (store, CSV, webhook), gestión (clasificar, asignar, dedup), pipeline (etapas, oportunidades, cotizaciones, cierres), seguimiento (email, WhatsApp, recordatorios) y análisis (KPIs, fuentes, vendedores).",
+    "requiere_ia": true,
+    "requiere_creds": ["ANTHROPIC_API_KEY"],
+    "requiere_deps": [],
+    "skills_a_construir": [
+      "crm_lead_store",
+      "crm_lead_importar_csv",
+      "crm_lead_captura_webhook",
+      "crm_lead_duplicados_detectar",
+      "crm_lead_clasificar",
+      "crm_lead_asignar_vendedor",
+      "crm_lead_actualizar",
+      "crm_lead_list",
+      "crm_pipeline_manager",
+      "crm_oportunidad_crear",
+      "crm_cotizacion_generar",
+      "crm_cierre_registrar",
+      "crm_seguimiento_email",
+      "crm_seguimiento_whatsapp",
+      "crm_seguimiento_recordatorio",
+      "crm_kpis",
+      "crm_analisis_fuente",
+      "crm_analisis_vendedor"
+    ]
   }
 ]
