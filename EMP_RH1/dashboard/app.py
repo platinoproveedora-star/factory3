@@ -1795,10 +1795,24 @@ elif page == "SAT":
     _h3.metric("Credenciales SAT", "Listas" if _sat_ok else "Faltan env vars")
 
     if not _sat_ok:
-        st.warning(
-            "Configura en Render: SAT_RFC, SAT_EFIRMA_CER_B64, SAT_EFIRMA_KEY_B64, SAT_EFIRMA_PASSWORD\n\n"
-            "Convierte tu .cer y .key a base64: base64 -w0 mi_firma.cer"
-        )
+        st.warning("Configura en Render: SAT_RFC, SAT_EFIRMA_CER_B64, SAT_EFIRMA_KEY_B64, SAT_EFIRMA_PASSWORD")
+
+    st.divider()
+
+    with st.expander("Convertir e.firma a base64", expanded=not _sat_ok):
+        import base64 as _b64mod
+        st.caption("Sube tu .cer y .key para obtener el base64 que pegas en las env vars de Render.")
+        _ub1, _ub2 = st.columns(2)
+        _cer_up = _ub1.file_uploader("Certificado (.cer)", key="sat_cer_up")
+        _key_up = _ub2.file_uploader("Llave privada (.key)", key="sat_key_up")
+        if _cer_up:
+            _cer_b64_str = _b64mod.b64encode(_cer_up.read()).decode()
+            _ub1.text_area("SAT_EFIRMA_CER_B64 — copia en Render:",
+                           value=_cer_b64_str, height=130, key="sat_cer_b64_out")
+        if _key_up:
+            _key_b64_str = _b64mod.b64encode(_key_up.read()).decode()
+            _ub2.text_area("SAT_EFIRMA_KEY_B64 — copia en Render:",
+                           value=_key_b64_str, height=130, key="sat_key_b64_out")
 
     st.divider()
 
