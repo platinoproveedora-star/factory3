@@ -1801,18 +1801,42 @@ elif page == "SAT":
 
     with st.expander("Convertir e.firma a base64", expanded=not _sat_ok):
         import base64 as _b64mod
-        st.caption("Sube tu .cer y .key para obtener el base64 que pegas en las env vars de Render.")
+        st.markdown("""
+**¿Qué es esto?**
+Para que el sistema pueda conectarse al SAT necesita tu **e.firma** (antes FIEL) — son dos archivos
+que el SAT te entrega: `.cer` (certificado) y `.key` (llave privada). Como no podemos subir archivos
+directamente a Render, los convertimos a texto base64 y los pegamos como variables de entorno.
+
+**Pasos:**
+1. Sube aquí tu `.cer` y tu `.key` → aparece el texto base64 de cada uno
+2. Entra a **[render.com](https://render.com)** → tu servicio → **Environment**
+3. Agrega o edita estas variables:
+
+| Variable | Valor |
+|---|---|
+| `EMPRESA_ID` | El código de empresa (ej. `RH1`) |
+| `SAT_RFC` | Tu RFC (ej. `XAXX010101000`) |
+| `SAT_EFIRMA_CER_B64` | El texto que aparece abajo al subir el `.cer` |
+| `SAT_EFIRMA_KEY_B64` | El texto que aparece abajo al subir el `.key` |
+| `SAT_EFIRMA_PASSWORD` | La contraseña de tu e.firma |
+
+4. Clic en **Save Changes** → Render redeploya automáticamente → listo
+""")
+        st.divider()
+        st.caption("Sube tus archivos para generar el base64:")
         _ub1, _ub2 = st.columns(2)
         _cer_up = _ub1.file_uploader("Certificado (.cer)", key="sat_cer_up")
         _key_up = _ub2.file_uploader("Llave privada (.key)", key="sat_key_up")
         if _cer_up:
             _cer_b64_str = _b64mod.b64encode(_cer_up.read()).decode()
-            _ub1.text_area("SAT_EFIRMA_CER_B64 — copia en Render:",
+            _ub1.text_area("SAT_EFIRMA_CER_B64 — selecciona todo y copia:",
                            value=_cer_b64_str, height=130, key="sat_cer_b64_out")
+            _ub1.caption("Ctrl+A dentro del campo para seleccionar todo")
         if _key_up:
             _key_b64_str = _b64mod.b64encode(_key_up.read()).decode()
-            _ub2.text_area("SAT_EFIRMA_KEY_B64 — copia en Render:",
+            _ub2.text_area("SAT_EFIRMA_KEY_B64 — selecciona todo y copia:",
                            value=_key_b64_str, height=130, key="sat_key_b64_out")
+            _ub2.caption("Ctrl+A dentro del campo para seleccionar todo")
 
     st.divider()
 
