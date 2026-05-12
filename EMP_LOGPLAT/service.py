@@ -229,6 +229,9 @@ def interpretar_libre(texto: str, content_b64: str | None, media_type: str | Non
         "context":     "Eres un asistente de captura logística para Platino Logística.",
     })
     if not r.get("ok"):
+        err = str(r.get("error", ""))
+        if "400" in err or "credit" in err.lower() or "billing" in err.lower():
+            return {"ok": False, "error": "⚠️ Sin créditos de IA — recarga tu cuenta en console.anthropic.com y vuelve a intentarlo."}
         return r
     d = r.get("data", {})
     return {"ok": True, "action": d.get("action", "desconocido"), "data": d.get("fields", {})}
@@ -276,6 +279,9 @@ def consultar(texto: str) -> dict:
     )
     r = _ai.run({"mode": "chat", "text": texto, "context": ctx})
     if not r.get("ok"):
+        err = str(r.get("error", ""))
+        if "400" in err or "credit" in err.lower() or "billing" in err.lower():
+            return {"ok": False, "error": "⚠️ Sin créditos de IA — recarga tu cuenta en console.anthropic.com."}
         return r
     return {"ok": True, "response": r["data"]["response"]}
 

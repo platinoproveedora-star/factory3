@@ -44,6 +44,18 @@ _PROMPTS = {
 }
 
 
+def _normalizar_folio(texto: str) -> str:
+    """'22', '022', 'via-22', 'viaje 22' → 'VIA-022'"""
+    import re
+    t = texto.upper().strip()
+    if not t:
+        return ""
+    m = re.search(r"\d+", t)
+    if not m:
+        return t
+    return f"VIA-{int(m.group()):03d}"
+
+
 def ejecutar(update: dict, state: dict) -> dict:
     message  = update.get("message", {})
     raw_text = (message.get("text") or "").strip()
@@ -72,13 +84,13 @@ def ejecutar(update: dict, state: dict) -> dict:
     # ── Esperando folio para ligar doc de viaje ───────────────────────────────
     if hint == "viaje_doc_pending":
         doc_url = state.get("doc_url", "")
-        folio   = raw_text.upper().strip()
+        folio   = _normalizar_folio(raw_text)
         if not folio:
-            return _ok("Escribe el número de viaje (ej: VIA-022).", state)
+            return _ok("Escribe el número de viaje (ej: VIA-022 o solo 22).", state)
         clean = {k: v for k, v in state.items() if k not in ("hint", "doc_url")}
         if svc.ligar_doc_viaje(folio, doc_url):
             return _ok(f"✅ Documento guardado en viaje <b>{folio}</b>.", clean)
-        return _ok(f"No encontré el viaje {folio}. Verifica el folio e intenta de nuevo.", state)
+        return _ok(f"No encontré el viaje {folio}. Verifica el número e intenta de nuevo.", state)
 
     # ── Con hint activo ───────────────────────────────────────────────────────
     if hint in ("gasto", "pago", "viaje"):

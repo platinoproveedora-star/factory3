@@ -246,7 +246,8 @@ elif seccion == "Viajes":
                               "estatus_pago","estatus_viaje","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_viajes", num_rows="fixed",
-                          disabled=["folio","costo_viaje","utilidad_viaje"])
+                          disabled=["folio","costo_viaje","utilidad_viaje"],
+                          column_config={"id_doc": st.column_config.LinkColumn("documento", display_text="📎 ver")})
 
     bc, ac, ec = st.columns(3)
     if bc.button("💾 Guardar cambios", key="save_v"): _guardar("viajes", orig, edit)
@@ -311,7 +312,8 @@ elif seccion == "Gastos":
                               "tipo_gasto","chofer","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_gastos", num_rows="fixed",
-                          disabled=["folio"])
+                          disabled=["folio"],
+                          column_config={"id_doc": st.column_config.LinkColumn("documento", display_text="📎 ver")})
 
     bc, ac, _ = st.columns(3)
     if bc.button("💾 Guardar cambios", key="save_g"): _guardar("gastos", orig, edit)
@@ -450,7 +452,8 @@ elif seccion == "Pagos":
                               "metodo_pago","observaciones","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_pagos", num_rows="fixed",
-                          disabled=["folio"])
+                          disabled=["folio"],
+                          column_config={"id_doc": st.column_config.LinkColumn("documento", display_text="📎 ver")})
 
     bc, ac, _ = st.columns(3)
     if bc.button("💾 Guardar cambios", key="save_p"): _guardar("pagos", orig, edit)
