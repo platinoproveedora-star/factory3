@@ -1,4 +1,5 @@
 -- Logística Platino — Schema y tablas
+-- Actualizado: 2026-05-11
 -- 1. Ejecutar este SQL en Supabase SQL Editor
 -- 2. Dashboard > Settings > API > Exposed schemas > agregar "logplat"
 
@@ -69,4 +70,14 @@ CREATE TABLE IF NOT EXISTS logplat.cuentas_por_cobrar (
     estatus_cobro     text DEFAULT 'pendiente',
     created_at        timestamptz DEFAULT now(),
     updated_at        timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS logplat.viaje_docs (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    folio       text UNIQUE NOT NULL,
+    viaje_folio text NOT NULL,
+    doc_url     text NOT NULL,
+    tipo        text NOT NULL DEFAULT 'otro',
+    nombre      text,
+    created_at  timestamptz DEFAULT now()
 );
