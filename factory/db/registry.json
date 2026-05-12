@@ -1,0 +1,207 @@
+{
+  "logplat.viajes": {
+    "schema": "logplat",
+    "tabla": "viajes",
+    "vertical": "logplat",
+    "empresa": "LOGPLAT",
+    "descripcion": "Viajes de transporte. Folio VIA-001...",
+    "columnas_clave": ["folio", "cliente", "origen", "destino", "chofer", "fecha_salida", "precio_venta_viaje", "costo_viaje", "utilidad_viaje", "estatus_pago", "estatus_viaje", "id_doc"]
+  },
+  "logplat.gastos": {
+    "schema": "logplat",
+    "tabla": "gastos",
+    "vertical": "logplat",
+    "empresa": "LOGPLAT",
+    "descripcion": "Gastos operativos por viaje (diesel, casetas, etc.). Folio GAS-001...",
+    "columnas_clave": ["folio", "numero_viaje", "fecha_gasto", "concepto", "monto_gasto", "tipo_gasto", "chofer", "id_doc"]
+  },
+  "logplat.pagos": {
+    "schema": "logplat",
+    "tabla": "pagos",
+    "vertical": "logplat",
+    "empresa": "LOGPLAT",
+    "descripcion": "Pagos recibidos de clientes por viaje. Folio PAG-001...",
+    "columnas_clave": ["folio", "numero_viaje", "cliente", "fecha_pago", "monto_pago", "metodo_pago", "id_doc"]
+  },
+  "logplat.cuentas_por_cobrar": {
+    "schema": "logplat",
+    "tabla": "cuentas_por_cobrar",
+    "vertical": "logplat",
+    "empresa": "LOGPLAT",
+    "descripcion": "CXC derivada automáticamente de viajes. Folio CXC-001. Read-only en dashboard.",
+    "columnas_clave": ["folio", "numero_viaje", "cliente", "monto_total", "monto_pagado", "saldo_pendiente", "estatus_cobro"]
+  },
+  "logplat.viaje_docs": {
+    "schema": "logplat",
+    "tabla": "viaje_docs",
+    "vertical": "logplat",
+    "empresa": "LOGPLAT",
+    "descripcion": "Documentos adjuntos a viajes (cartas porte, permisos). N docs por viaje. Folio DOC-001...",
+    "columnas_clave": ["folio", "viaje_folio", "doc_url", "tipo", "nombre"]
+  },
+
+  "public.bot_states": {
+    "schema": "public",
+    "tabla": "bot_states",
+    "vertical": "factory_infra",
+    "descripcion": "Estado modal persistente de cada chat del bot admin. Clave: chat_id.",
+    "columnas_clave": ["chat_id", "state", "updated_at"]
+  },
+  "public.factory_tasks": {
+    "schema": "public",
+    "tabla": "factory_tasks",
+    "vertical": "factory_infra",
+    "descripcion": "Cola de tareas asíncronas del runtime factory3. Trazabilidad de ejecuciones de skills.",
+    "columnas_clave": ["task_id", "empresa_id", "skill_name", "status", "resultado", "created_at", "finished_at"]
+  },
+  "public.agent_memory": {
+    "schema": "public",
+    "tabla": "agent_memory",
+    "vertical": "factory_infra",
+    "descripcion": "Memoria persistente de agentes AI. Clave: agent_name + user_id.",
+    "columnas_clave": ["agent_name", "user_id", "memory_type", "content", "metadata"]
+  },
+
+  "public.vacantes": {
+    "schema": "public",
+    "tabla": "vacantes",
+    "vertical": "rh",
+    "descripcion": "Vacantes publicadas. Folio asignado. Estado: activa / cerrada.",
+    "columnas_clave": ["folio", "empresa_id", "titulo", "puesto", "zona", "turno", "sueldo", "estado", "canal"]
+  },
+  "public.candidatos": {
+    "schema": "public",
+    "tabla": "candidatos",
+    "vertical": "rh",
+    "descripcion": "Candidatos capturados por canal (Telegram, WhatsApp, FB). Folio asignado.",
+    "columnas_clave": ["folio", "vacante_id", "nombre", "telefono", "email", "canal", "estado", "duplicado_de"]
+  },
+  "public.pipeline": {
+    "schema": "public",
+    "tabla": "pipeline",
+    "vertical": "rh",
+    "descripcion": "Etapa actual de cada candidato en el proceso de contratación.",
+    "columnas_clave": ["candidato_id", "vacante_id", "etapa", "notas"]
+  },
+  "public.conversaciones": {
+    "schema": "public",
+    "tabla": "conversaciones",
+    "vertical": "rh",
+    "descripcion": "Hilo de conversación bot-candidato por canal. Guarda paso del cuestionario y datos temporales.",
+    "columnas_clave": ["candidato_id", "vacante_id", "canal", "estado", "cuestionario_paso", "datos_temp"]
+  },
+  "public.mensajes": {
+    "schema": "public",
+    "tabla": "mensajes",
+    "vertical": "rh",
+    "descripcion": "Mensajes individuales dentro de una conversación (rol: user / assistant).",
+    "columnas_clave": ["conversacion_id", "rol", "contenido"]
+  },
+  "public.cuestionarios": {
+    "schema": "public",
+    "tabla": "cuestionarios",
+    "vertical": "rh",
+    "descripcion": "Cuestionarios generados por vacante/canal. Preguntas en JSON.",
+    "columnas_clave": ["empresa_id", "vacante_id", "puesto", "canal", "profundidad", "preguntas"]
+  },
+  "public.respuestas": {
+    "schema": "public",
+    "tabla": "respuestas",
+    "vertical": "rh",
+    "descripcion": "Respuestas del candidato al cuestionario, una fila por pregunta.",
+    "columnas_clave": ["candidato_id", "vacante_id", "pregunta", "respuesta", "orden"]
+  },
+  "public.scores": {
+    "schema": "public",
+    "tabla": "scores",
+    "vertical": "rh",
+    "descripcion": "Puntuación de candidato por vacante. Incluye detalle de knockout y criterios.",
+    "columnas_clave": ["candidato_id", "vacante_id", "score_total", "pasa_knockout", "detalle"]
+  },
+  "public.entrevistas": {
+    "schema": "public",
+    "tabla": "entrevistas",
+    "vertical": "rh",
+    "descripcion": "Entrevistas agendadas entre candidato y reclutador.",
+    "columnas_clave": ["candidato_id", "reclutador_id", "vacante_id", "fecha_hora", "tipo", "estado"]
+  },
+  "public.reclutadores": {
+    "schema": "public",
+    "tabla": "reclutadores",
+    "vertical": "rh",
+    "descripcion": "Reclutadores con acceso al bot. Identificados por telegram_chat_id.",
+    "columnas_clave": ["nombre", "empresa_id", "telegram_chat_id", "zona", "activo"]
+  },
+  "public.alertas": {
+    "schema": "public",
+    "tabla": "alertas",
+    "vertical": "rh",
+    "descripcion": "Alertas disparadas a candidatos (recordatorios, estatus). Registro de envíos.",
+    "columnas_clave": ["candidato_id", "tipo", "canal", "mensaje", "enviado"]
+  },
+  "public.eventos_historial": {
+    "schema": "public",
+    "tabla": "eventos_historial",
+    "vertical": "rh",
+    "descripcion": "Log de eventos por candidato (cambios de estado, acciones del bot).",
+    "columnas_clave": ["candidato_id", "tipo_evento", "datos"]
+  },
+  "public.onboarding_docs": {
+    "schema": "public",
+    "tabla": "onboarding_docs",
+    "vertical": "rh",
+    "descripcion": "Documentos recolectados en onboarding por candidato (INE, CURP, etc.).",
+    "columnas_clave": ["candidato_id", "empresa_id", "doc_clave", "doc_nombre", "estado", "file_id", "valor_texto"]
+  },
+  "public.test_seeds": {
+    "schema": "public",
+    "tabla": "test_seeds",
+    "vertical": "factory_infra",
+    "descripcion": "Registros semilla creados por tests. Permiten limpieza post-test por seed_label.",
+    "columnas_clave": ["seed_label", "empresa_id", "tabla", "registro_id"]
+  },
+
+  "public.fb_grupos": {
+    "schema": "public",
+    "tabla": "fb_grupos",
+    "vertical": "social",
+    "descripcion": "Catálogo de grupos de Facebook por vertical/región para publicación de vacantes.",
+    "columnas_clave": ["url", "slug", "nombre", "region", "vertical", "activo"]
+  },
+  "public.fb_gs_searches": {
+    "schema": "public",
+    "tabla": "fb_gs_searches",
+    "vertical": "social",
+    "descripcion": "Búsquedas de grupos FB via Google Search. Una fila por búsqueda ejecutada.",
+    "columnas_clave": ["search_id", "empresa_id", "tema_busqueda", "fuente", "estado", "total_grupos"]
+  },
+  "public.fb_gs_groups": {
+    "schema": "public",
+    "tabla": "fb_gs_groups",
+    "vertical": "social",
+    "descripcion": "Grupos encontrados en una búsqueda FB-GS. N filas por search_id.",
+    "columnas_clave": ["search_id", "empresa_id", "grupo_nombre", "grupo_url", "miembros_estimados", "ubicacion_detectada"]
+  },
+  "public.fb_publicaciones": {
+    "schema": "public",
+    "tabla": "fb_publicaciones",
+    "vertical": "social",
+    "descripcion": "Registro de publicaciones de vacantes en grupos de Facebook.",
+    "columnas_clave": ["vacante_id", "empresa_id", "grupo_url", "texto", "publicado", "dry_run", "fecha"]
+  },
+  "public.whatsapp_broadcasts": {
+    "schema": "public",
+    "tabla": "whatsapp_broadcasts",
+    "vertical": "social",
+    "descripcion": "Mensajes broadcast enviados por WhatsApp a candidatos o prospectos.",
+    "columnas_clave": ["destino", "texto", "enviado", "backend", "vacante_id", "empresa_id", "fecha", "error"]
+  },
+
+  "public.cfdi_documentos": {
+    "schema": "public",
+    "tabla": "cfdi_documentos",
+    "vertical": "fiscal",
+    "descripcion": "Documentos CFDI (facturas, notas de crédito) timbrados. UUID único por CFDI.",
+    "columnas_clave": ["uuid_cfdi", "empresa_id", "tipo_comprobante", "rfc_emisor", "rfc_receptor", "total", "fecha_emision", "estado"]
+  }
+}
