@@ -71,59 +71,59 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "fb_groupsearch_engine": {
+  "vertical_fb/fb_groupsearch_engine": {
     "tipo": "interno",
-    "nombre": "fb_groupsearch_engine",
-    "vertical": "facebook",
+    "nombre": "vertical_fb/fb_groupsearch_engine",
+    "vertical": "vertical_fb",
     "descripcion": "Busca grupos públicos de Facebook por tema. Motor: Meta API → Haiku IA. Extensible para web search y scraping.",
-    "path": "skills/internos/fb_groupsearch_engine",
+    "path": "skills/internos/vertical_fb/fb_groupsearch_engine",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "fb_groupsearch_saver": {
+  "vertical_fb/fb_groupsearch_saver": {
     "tipo": "interno",
-    "nombre": "fb_groupsearch_saver",
-    "vertical": "facebook",
+    "nombre": "vertical_fb/fb_groupsearch_saver",
+    "vertical": "vertical_fb",
     "descripcion": "Crea search_id, registra búsqueda y guarda grupos en fb_gs_searches/fb_gs_groups con dedup",
-    "path": "skills/internos/fb_groupsearch_saver",
+    "path": "skills/internos/vertical_fb/fb_groupsearch_saver",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "fb_groupsearch_delete": {
+  "vertical_fb/fb_groupsearch_delete": {
     "tipo": "interno",
-    "nombre": "fb_groupsearch_delete",
-    "vertical": "facebook",
+    "nombre": "vertical_fb/fb_groupsearch_delete",
+    "vertical": "vertical_fb",
     "descripcion": "Elimina una búsqueda y todos sus grupos de fb_gs_searches y fb_gs_groups",
-    "path": "skills/internos/fb_groupsearch_delete",
+    "path": "skills/internos/vertical_fb/fb_groupsearch_delete",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "fb_groupsearch_list": {
+  "vertical_fb/fb_groupsearch_list": {
     "tipo": "interno",
-    "nombre": "fb_groupsearch_list",
-    "vertical": "facebook",
+    "nombre": "vertical_fb/fb_groupsearch_list",
+    "vertical": "vertical_fb",
     "kind": "data",
     "descripcion": "Retorna lista de búsquedas de grupos FB para el dashboard",
-    "path": "skills/internos/fb_groupsearch_list",
+    "path": "skills/internos/vertical_fb/fb_groupsearch_list",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "fb_groupsearch_groups": {
+  "vertical_fb/fb_groupsearch_groups": {
     "tipo": "interno",
-    "nombre": "fb_groupsearch_groups",
-    "vertical": "facebook",
+    "nombre": "vertical_fb/fb_groupsearch_groups",
+    "vertical": "vertical_fb",
     "kind": "data",
     "descripcion": "Retorna grupos encontrados de una búsqueda específica para el dashboard",
-    "path": "skills/internos/fb_groupsearch_groups",
+    "path": "skills/internos/vertical_fb/fb_groupsearch_groups",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "fbgroups_run": {
+  "vertical_fb/fbgroups_run": {
     "tipo": "interno",
-    "nombre": "fbgroups_run",
-    "vertical": "facebook",
+    "nombre": "vertical_fb/fbgroups_run",
+    "vertical": "vertical_fb",
     "descripcion": "Bot mode fbgroups — maneja comandos /buscar /misbusquedas /ver /borrar en Telegram",
-    "path": "skills/internos/fbgroups_run",
+    "path": "skills/internos/vertical_fb/fbgroups_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1001,282 +1001,282 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_refresh_connection": {
+  "vertical_meta/meta_refresh_connection": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_refresh_connection",
+    "nombre": "vertical_meta/meta_refresh_connection",
     "descripcion": "Refresca metadata de pagina, cuenta Instagram y token debug",
-    "path": "skills/internos/meta_refresh_connection",
+    "path": "skills/internos/vertical_meta/meta_refresh_connection",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_reel_script": {
+  "vertical_instagram/ig_reel_script": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_reel_script",
+    "nombre": "vertical_instagram/ig_reel_script",
     "descripcion": "Genera guion completo para Reel con hook optimizado para watch time",
-    "path": "skills/internos/ig_reel_script",
+    "path": "skills/internos/vertical_instagram/ig_reel_script",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_calendar_generator": {
+  "vertical_instagram/ig_calendar_generator": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_calendar_generator",
+    "nombre": "vertical_instagram/ig_calendar_generator",
     "descripcion": "Genera calendario editorial mensual de Instagram por semana con formatos y objetivos",
-    "path": "skills/internos/ig_calendar_generator",
+    "path": "skills/internos/vertical_instagram/ig_calendar_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_reply_comment": {
+  "vertical_instagram/ig_reply_comment": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_reply_comment",
+    "nombre": "vertical_instagram/ig_reply_comment",
     "descripcion": "Responde un comentario de Instagram con un mensaje especifico via Graph API",
-    "path": "skills/internos/ig_reply_comment",
+    "path": "skills/internos/vertical_instagram/ig_reply_comment",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_get_permissions": {
+  "vertical_meta/meta_get_permissions": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_get_permissions",
+    "nombre": "vertical_meta/meta_get_permissions",
     "descripcion": "Lista permisos asociados al access token actual",
-    "path": "skills/internos/meta_get_permissions",
+    "path": "skills/internos/vertical_meta/meta_get_permissions",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_caption_generator": {
+  "vertical_instagram/ig_caption_generator": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_caption_generator",
+    "nombre": "vertical_instagram/ig_caption_generator",
     "descripcion": "Genera un caption completo para Instagram con hook, cuerpo, emojis y CTA",
-    "path": "skills/internos/ig_caption_generator",
+    "path": "skills/internos/vertical_instagram/ig_caption_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_debug_token": {
+  "vertical_meta/meta_debug_token": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_debug_token",
+    "nombre": "vertical_meta/meta_debug_token",
     "descripcion": "Inspecciona un access token de Meta Graph API con debug_token",
-    "path": "skills/internos/meta_debug_token",
+    "path": "skills/internos/vertical_meta/meta_debug_token",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_reply_dm": {
+  "vertical_instagram/ig_reply_dm": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_reply_dm",
+    "nombre": "vertical_instagram/ig_reply_dm",
     "descripcion": "Envia un mensaje directo a un usuario de Instagram via Instagram Messaging API",
-    "path": "skills/internos/ig_reply_dm",
+    "path": "skills/internos/vertical_instagram/ig_reply_dm",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_post_carousel": {
+  "vertical_instagram/ig_post_carousel": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_post_carousel",
+    "nombre": "vertical_instagram/ig_post_carousel",
     "descripcion": "Publica un carrusel de hasta 10 imagenes en Instagram via Meta Graph API",
-    "path": "skills/internos/ig_post_carousel",
+    "path": "skills/internos/vertical_instagram/ig_post_carousel",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_connection_check": {
+  "vertical_meta/meta_connection_check": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_connection_check",
+    "nombre": "vertical_meta/meta_connection_check",
     "descripcion": "Valida una conexion Meta y calcula readiness para Instagram",
-    "path": "skills/internos/meta_connection_check",
+    "path": "skills/internos/vertical_meta/meta_connection_check",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_get_post_insights": {
+  "vertical_instagram/ig_get_post_insights": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_get_post_insights",
+    "nombre": "vertical_instagram/ig_get_post_insights",
     "descripcion": "Obtiene metricas de alcance y engagement de un post de Instagram via Graph API",
-    "path": "skills/internos/ig_get_post_insights",
+    "path": "skills/internos/vertical_instagram/ig_get_post_insights",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_top_posts_analyzer": {
+  "vertical_instagram/ig_top_posts_analyzer": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_top_posts_analyzer",
+    "nombre": "vertical_instagram/ig_top_posts_analyzer",
     "descripcion": "Identifica los posts con mejor rendimiento de una cuenta de Instagram segun una metrica",
-    "path": "skills/internos/ig_top_posts_analyzer",
+    "path": "skills/internos/vertical_instagram/ig_top_posts_analyzer",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_carousel_builder": {
+  "vertical_instagram/ig_carousel_builder": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_carousel_builder",
+    "nombre": "vertical_instagram/ig_carousel_builder",
     "descripcion": "Genera estructura de copy slide por slide para carruseles de Instagram",
-    "path": "skills/internos/ig_carousel_builder",
+    "path": "skills/internos/vertical_instagram/ig_carousel_builder",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_content_brief": {
+  "vertical_instagram/ig_content_brief": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_content_brief",
+    "nombre": "vertical_instagram/ig_content_brief",
     "descripcion": "Genera brief de contenido para Instagram por objetivo de campana",
-    "path": "skills/internos/ig_content_brief",
+    "path": "skills/internos/vertical_instagram/ig_content_brief",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_get_auth_url": {
+  "vertical_meta/meta_get_auth_url": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_get_auth_url",
+    "nombre": "vertical_meta/meta_get_auth_url",
     "descripcion": "Construye una URL OAuth de Meta para autorizar permisos de Instagram",
-    "path": "skills/internos/meta_get_auth_url",
+    "path": "skills/internos/vertical_meta/meta_get_auth_url",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_list_pages": {
+  "vertical_meta/meta_list_pages": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_list_pages",
+    "nombre": "vertical_meta/meta_list_pages",
     "descripcion": "Lista paginas Meta accesibles por el token",
-    "path": "skills/internos/meta_list_pages",
+    "path": "skills/internos/vertical_meta/meta_list_pages",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_get_instagram_account": {
+  "vertical_meta/meta_get_instagram_account": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_get_instagram_account",
+    "nombre": "vertical_meta/meta_get_instagram_account",
     "descripcion": "Obtiene la cuenta Instagram Business conectada a una pagina Meta",
-    "path": "skills/internos/meta_get_instagram_account",
+    "path": "skills/internos/vertical_meta/meta_get_instagram_account",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_schedule_post": {
+  "vertical_instagram/ig_schedule_post": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_schedule_post",
+    "nombre": "vertical_instagram/ig_schedule_post",
     "descripcion": "Programa una publicacion de Instagram para una fecha y hora futura via Meta Graph API",
-    "path": "skills/internos/ig_schedule_post",
+    "path": "skills/internos/vertical_instagram/ig_schedule_post",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_story_script": {
+  "vertical_instagram/ig_story_script": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_story_script",
+    "nombre": "vertical_instagram/ig_story_script",
     "descripcion": "Genera guion de historia de Instagram con frames, stickers interactivos y CTA",
-    "path": "skills/internos/ig_story_script",
+    "path": "skills/internos/vertical_instagram/ig_story_script",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_alt_text_generator": {
+  "vertical_instagram/ig_alt_text_generator": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_alt_text_generator",
+    "nombre": "vertical_instagram/ig_alt_text_generator",
     "descripcion": "Genera alt text descriptivo para imagenes de Instagram para accesibilidad y SEO",
-    "path": "skills/internos/ig_alt_text_generator",
+    "path": "skills/internos/vertical_instagram/ig_alt_text_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_best_time_selector": {
+  "vertical_instagram/ig_best_time_selector": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_best_time_selector",
+    "nombre": "vertical_instagram/ig_best_time_selector",
     "descripcion": "Calcula los mejores horarios de publicacion en Instagram segun formato y region de audiencia",
-    "path": "skills/internos/ig_best_time_selector",
+    "path": "skills/internos/vertical_instagram/ig_best_time_selector",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_hashtag_generator": {
+  "vertical_instagram/ig_hashtag_generator": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_hashtag_generator",
+    "nombre": "vertical_instagram/ig_hashtag_generator",
     "descripcion": "Genera sets de hashtags estrategicos para Instagram agrupados por alcance",
-    "path": "skills/internos/ig_hashtag_generator",
+    "path": "skills/internos/vertical_instagram/ig_hashtag_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_post_image": {
+  "vertical_instagram/ig_post_image": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_post_image",
+    "nombre": "vertical_instagram/ig_post_image",
     "descripcion": "Publica una imagen en Instagram via Meta Graph API con caption y alt text opcional",
-    "path": "skills/internos/ig_post_image",
+    "path": "skills/internos/vertical_instagram/ig_post_image",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_revoke_connection": {
+  "vertical_meta/meta_revoke_connection": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_revoke_connection",
+    "nombre": "vertical_meta/meta_revoke_connection",
     "descripcion": "Revoca permisos Meta del token conectado",
-    "path": "skills/internos/meta_revoke_connection",
+    "path": "skills/internos/vertical_meta/meta_revoke_connection",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_extend_token": {
+  "vertical_meta/meta_extend_token": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_extend_token",
+    "nombre": "vertical_meta/meta_extend_token",
     "descripcion": "Extiende un token corto de Meta usando fb_exchange_token",
-    "path": "skills/internos/meta_extend_token",
+    "path": "skills/internos/vertical_meta/meta_extend_token",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_get_auth_token": {
+  "vertical_instagram/ig_get_auth_token": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_get_auth_token",
+    "nombre": "vertical_instagram/ig_get_auth_token",
     "descripcion": "Intercambia un token de corta duracion por un token de larga duracion de Meta",
-    "path": "skills/internos/ig_get_auth_token",
+    "path": "skills/internos/vertical_instagram/ig_get_auth_token",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_exchange_code": {
+  "vertical_meta/meta_exchange_code": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_exchange_code",
+    "nombre": "vertical_meta/meta_exchange_code",
     "descripcion": "Intercambia un code OAuth de Meta por access_token",
-    "path": "skills/internos/meta_exchange_code",
+    "path": "skills/internos/vertical_meta/meta_exchange_code",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_get_account_insights": {
+  "vertical_instagram/ig_get_account_insights": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_get_account_insights",
+    "nombre": "vertical_instagram/ig_get_account_insights",
     "descripcion": "Obtiene metricas de cuenta de Instagram via Graph API",
-    "path": "skills/internos/ig_get_account_insights",
+    "path": "skills/internos/vertical_instagram/ig_get_account_insights",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "ig_post_reel": {
+  "vertical_instagram/ig_post_reel": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
-    "nombre": "ig_post_reel",
+    "nombre": "vertical_instagram/ig_post_reel",
     "descripcion": "Publica un Reel en Instagram via Meta Graph API con polling de procesamiento",
-    "path": "skills/internos/ig_post_reel",
+    "path": "skills/internos/vertical_instagram/ig_post_reel",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "meta_store_connection": {
+  "vertical_meta/meta_store_connection": {
     "vertical": "vertical_meta",
     "tipo": "interno",
-    "nombre": "meta_store_connection",
+    "nombre": "vertical_meta/meta_store_connection",
     "descripcion": "Valida y normaliza un payload portable de conexion Meta",
-    "path": "skills/internos/meta_store_connection",
+    "path": "skills/internos/vertical_meta/meta_store_connection",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "facebook_marketplace_poster": {
+  "vertical_fb/facebook_marketplace_poster": {
     "tipo": "interno",
-    "nombre": "facebook_marketplace_poster",
-    "vertical": "vertical_facebook",
+    "nombre": "vertical_fb/facebook_marketplace_poster",
+    "vertical": "vertical_fb",
     "descripcion": "Publica oferta de trabajo en Facebook Marketplace seccion Empleos via Playwright. Soporta dry_run.",
-    "path": "skills/internos/facebook_marketplace_poster",
+    "path": "skills/internos/vertical_fb/facebook_marketplace_poster",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1318,39 +1318,39 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "facebook_group_finder": {
+  "vertical_fb/facebook_group_finder": {
     "tipo": "interno",
-    "nombre": "facebook_group_finder",
-    "vertical": "vertical_facebook",
+    "nombre": "vertical_fb/facebook_group_finder",
+    "vertical": "vertical_fb",
     "descripcion": "Busca grupos de Facebook via Google scraping por keywords y region. Guarda en tabla fb_grupos.",
-    "path": "skills/internos/facebook_group_finder",
+    "path": "skills/internos/vertical_fb/facebook_group_finder",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "facebook_post_generator": {
+  "vertical_fb/facebook_post_generator": {
     "tipo": "interno",
-    "nombre": "facebook_post_generator",
-    "vertical": "vertical_facebook",
+    "nombre": "vertical_fb/facebook_post_generator",
+    "vertical": "vertical_fb",
     "descripcion": "Genera variantes de post para Facebook adaptadas al grupo y vacante usando IA.",
-    "path": "skills/internos/facebook_post_generator",
+    "path": "skills/internos/vertical_fb/facebook_post_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "facebook_post_publisher": {
+  "vertical_fb/facebook_post_publisher": {
     "tipo": "interno",
-    "nombre": "facebook_post_publisher",
-    "vertical": "vertical_facebook",
+    "nombre": "vertical_fb/facebook_post_publisher",
+    "vertical": "vertical_fb",
     "descripcion": "Publica un post en un grupo de Facebook via Playwright. Un grupo por llamada. Soporta dry_run.",
-    "path": "skills/internos/facebook_post_publisher",
+    "path": "skills/internos/vertical_fb/facebook_post_publisher",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "facebook_post_tracker": {
+  "vertical_fb/facebook_post_tracker": {
     "tipo": "interno",
-    "nombre": "facebook_post_tracker",
-    "vertical": "vertical_facebook",
+    "nombre": "vertical_fb/facebook_post_tracker",
+    "vertical": "vertical_fb",
     "descripcion": "Registra publicaciones FB en Supabase y controla cooldowns por grupo.",
-    "path": "skills/internos/facebook_post_tracker",
+    "path": "skills/internos/vertical_fb/facebook_post_tracker",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1493,7 +1493,7 @@
   "meta_task_enqueue": {
     "tipo": "meta",
     "nombre": "meta_task_enqueue",
-    "vertical": "factory_meta",
+    "vertical": "meta",
     "descripcion": "Encola una o varias tareas en factory_tasks para ejecución en segundo plano",
     "path": "skills/meta/meta_task_enqueue",
     "entrypoint": "skill.py",
@@ -1502,7 +1502,7 @@
   "meta_task_runner": {
     "tipo": "meta",
     "nombre": "meta_task_runner",
-    "vertical": "factory_meta",
+    "vertical": "meta",
     "descripcion": "Toma N tareas pendientes de factory_tasks, las ejecuta via SkillRunner y guarda resultado",
     "path": "skills/meta/meta_task_runner",
     "entrypoint": "skill.py",
@@ -1511,7 +1511,7 @@
   "meta_task_status": {
     "tipo": "meta",
     "nombre": "meta_task_status",
-    "vertical": "factory_meta",
+    "vertical": "meta",
     "kind": "data",
     "descripcion": "Retorna snapshot de la cola factory_tasks: pendientes, corriendo, completadas, errores",
     "path": "skills/meta/meta_task_status",
@@ -1712,7 +1712,7 @@
   "meta_eval_kpis": {
     "tipo": "eval",
     "nombre": "meta_eval_kpis",
-    "vertical": "factory_eval",
+    "vertical": "eval",
     "kind": "data",
     "descripcion": "KPIs de meta y eval skills: conteo, cobertura de pipeline y semáforo por skill",
     "path": "skills/eval/meta_eval_kpis",
@@ -1737,76 +1737,621 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "sat_auth": {
+  "vertical_sat/sat_auth": {
     "tipo": "interno",
-    "nombre": "sat_auth",
+    "nombre": "vertical_sat/sat_auth",
     "vertical": "vertical_sat",
     "descripcion": "Autenticación SAT Descarga Masiva via e.firma (SOAP + XML-DSig). Retorna token 5 min.",
-    "path": "skills/internos/sat_auth",
+    "path": "skills/internos/vertical_sat/sat_auth",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "sat_cfdi_solicitud": {
+  "vertical_sat/sat_cfdi_solicitud": {
     "tipo": "interno",
-    "nombre": "sat_cfdi_solicitud",
+    "nombre": "vertical_sat/sat_cfdi_solicitud",
     "vertical": "vertical_sat",
     "descripcion": "Solicita paquete de descarga masiva SAT (rfc, fechas, tipo E/R). Retorna id_solicitud.",
-    "path": "skills/internos/sat_cfdi_solicitud",
+    "path": "skills/internos/vertical_sat/sat_cfdi_solicitud",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "sat_cfdi_verificar": {
+  "vertical_sat/sat_cfdi_verificar": {
     "tipo": "interno",
-    "nombre": "sat_cfdi_verificar",
+    "nombre": "vertical_sat/sat_cfdi_verificar",
     "vertical": "vertical_sat",
     "descripcion": "Verifica estado de solicitud SAT y retorna lista de ids de paquetes listos.",
-    "path": "skills/internos/sat_cfdi_verificar",
+    "path": "skills/internos/vertical_sat/sat_cfdi_verificar",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "sat_cfdi_descargar": {
+  "vertical_sat/sat_cfdi_descargar": {
     "tipo": "interno",
-    "nombre": "sat_cfdi_descargar",
+    "nombre": "vertical_sat/sat_cfdi_descargar",
     "vertical": "vertical_sat",
     "descripcion": "Descarga paquete ZIP del SAT por id_paquete y extrae lista de XMLs de CFDIs.",
-    "path": "skills/internos/sat_cfdi_descargar",
+    "path": "skills/internos/vertical_sat/sat_cfdi_descargar",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "sat_cfdi_parser": {
+  "vertical_sat/sat_cfdi_parser": {
     "tipo": "interno",
-    "nombre": "sat_cfdi_parser",
+    "nombre": "vertical_sat/sat_cfdi_parser",
     "vertical": "vertical_sat",
     "descripcion": "Parsea XML CFDI 3.3/4.0 y retorna dict estructurado: uuid, rfcs, total, fecha, conceptos.",
-    "path": "skills/internos/sat_cfdi_parser",
+    "path": "skills/internos/vertical_sat/sat_cfdi_parser",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "sat_cfdi_store": {
+  "vertical_sat/sat_cfdi_store": {
     "tipo": "interno",
-    "nombre": "sat_cfdi_store",
+    "nombre": "vertical_sat/sat_cfdi_store",
     "vertical": "vertical_sat",
     "descripcion": "Upsert de CFDIs parseados en Supabase tabla cfdi_documentos (dedup por uuid_cfdi).",
-    "path": "skills/internos/sat_cfdi_store",
+    "path": "skills/internos/vertical_sat/sat_cfdi_store",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "sat_cfdi_sync": {
+  "vertical_sat/sat_cfdi_sync": {
     "tipo": "interno",
-    "nombre": "sat_cfdi_sync",
+    "nombre": "vertical_sat/sat_cfdi_sync",
     "vertical": "vertical_sat",
     "descripcion": "Orquestador SAT completo: auth→solicitud→verificar(poll)→descargar→parsear→guardar.",
-    "path": "skills/internos/sat_cfdi_sync",
+    "path": "skills/internos/vertical_sat/sat_cfdi_sync",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "sat_cfdi_list": {
+  "vertical_sat/sat_cfdi_list": {
     "tipo": "interno",
-    "nombre": "sat_cfdi_list",
+    "nombre": "vertical_sat/sat_cfdi_list",
     "vertical": "vertical_sat",
     "kind": "data",
     "descripcion": "Lista CFDIs de Supabase filtrable por tipo (E/R), rfc, mes o dia. kind=data para dashboard.",
-    "path": "skills/internos/sat_cfdi_list",
+    "path": "skills/internos/vertical_sat/sat_cfdi_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/communication_router_system": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/communication_router_system",
+    "vertical": "vertical_sales",
+    "descripcion": "Normaliza mensajes multicanal, identifica empresa/usuario y clasifica intención comercial con IA",
+    "path": "skills/internos/vertical_sales/communication_router_system",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/lead_pipeline_system": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/lead_pipeline_system",
+    "vertical": "vertical_sales",
+    "descripcion": "Convierte mensaje comercial en lead: dedup por user_id+canal, crea con folio VEN-XXX, asigna estado inicial",
+    "path": "skills/internos/vertical_sales/lead_pipeline_system",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/lead_score_system": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/lead_score_system",
+    "vertical": "vertical_sales",
+    "descripcion": "Puntúa lead 0-100 según intención, canal y señales del mensaje con IA. Actualiza score en tabla leads.",
+    "path": "skills/internos/vertical_sales/lead_score_system",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/automation_orchestrator_system": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/automation_orchestrator_system",
+    "vertical": "vertical_sales",
+    "descripcion": "Decide siguiente acción post-lead según score e intención, encola tarea y registra en automation_logs",
+    "path": "skills/internos/vertical_sales/automation_orchestrator_system",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/ai_followup_system": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/ai_followup_system",
+    "vertical": "vertical_sales",
+    "descripcion": "Genera mensaje de seguimiento personalizado con IA y crea tarea en followup_tasks",
+    "path": "skills/internos/vertical_sales/ai_followup_system",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/conversation_log_system": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/conversation_log_system",
+    "vertical": "vertical_sales",
+    "descripcion": "Guarda historial de mensajes (in/out) por lead en conversation_messages para contexto de seguimiento",
+    "path": "skills/internos/vertical_sales/conversation_log_system",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/dashboard_operational_system": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/dashboard_operational_system",
+    "vertical": "vertical_sales",
+    "kind": "data",
+    "descripcion": "kind=data — retorna leads, tareas y métricas de ventas para dashboard via GET /data/",
+    "path": "skills/internos/vertical_sales/dashboard_operational_system",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/sales_run": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/sales_run",
+    "vertical": "vertical_sales",
+    "descripcion": "Bot mode multicanal — recibe webhook y orquesta flujo completo: router → lead → score → followup",
+    "path": "skills/internos/vertical_sales/sales_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/sales_lead_update": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/sales_lead_update",
+    "vertical": "vertical_sales",
+    "descripcion": "Actualiza campos del lead: nombre, teléfono, email, estado. Registra updated_at.",
+    "path": "skills/internos/vertical_sales/sales_lead_update",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/sales_task_complete": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/sales_task_complete",
+    "vertical": "vertical_sales",
+    "descripcion": "Marca tarea de seguimiento como completada o la reprograma con nueva fecha.",
+    "path": "skills/internos/vertical_sales/sales_task_complete",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/sales_notify_agent": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/sales_notify_agent",
+    "vertical": "vertical_sales",
+    "descripcion": "Notifica al agente de ventas por Telegram cuando llega lead caliente (score >= 70).",
+    "path": "skills/internos/vertical_sales/sales_notify_agent",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/sales_report": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/sales_report",
+    "vertical": "vertical_sales",
+    "kind": "data",
+    "descripcion": "kind=data — reporte de conversión por período: leads, tasa cierre, score promedio, por canal.",
+    "path": "skills/internos/vertical_sales/sales_report",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sales/sales_list": {
+    "tipo": "interno",
+    "nombre": "vertical_sales/sales_list",
+    "vertical": "vertical_sales",
+    "kind": "data",
+    "descripcion": "kind=data — lista filtrable de leads por estado, canal, nivel y fecha. Paginado.",
+    "path": "skills/internos/vertical_sales/sales_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_campaign_planner": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_campaign_planner",
+    "vertical": "vertical_marketing",
+    "descripcion": "Planea campaña por objetivo, oferta, audiencia, canales, funnel y KPIs con IA.",
+    "path": "skills/internos/vertical_marketing/marketing_campaign_planner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_offer_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_offer_builder",
+    "vertical": "vertical_marketing",
+    "descripcion": "Estructura oferta completa: promesa, beneficios, objeciones y CTA con IA.",
+    "path": "skills/internos/vertical_marketing/marketing_offer_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_copy_generator": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_copy_generator",
+    "vertical": "vertical_marketing",
+    "descripcion": "Genera 3 variantes de copy para meta, google, linkedin, email o landing.",
+    "path": "skills/internos/vertical_marketing/marketing_copy_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_creative_brief": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_creative_brief",
+    "vertical": "vertical_marketing",
+    "descripcion": "Crea brief creativo completo para imagen, video, carrusel o anuncio.",
+    "path": "skills/internos/vertical_marketing/marketing_creative_brief",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_angle_generator": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_angle_generator",
+    "vertical": "vertical_marketing",
+    "descripcion": "Genera ángulos de venta por dolor, deseo, urgencia, autoridad y prueba social.",
+    "path": "skills/internos/vertical_marketing/marketing_angle_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_persona_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_persona_builder",
+    "vertical": "vertical_marketing",
+    "descripcion": "Define buyer persona: dolores, motivadores, objeciones, lenguaje y triggers de compra.",
+    "path": "skills/internos/vertical_marketing/marketing_persona_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_landing_alignment": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_landing_alignment",
+    "vertical": "vertical_marketing",
+    "descripcion": "Revisa coherencia entre anuncio, oferta, landing y conversión. Devuelve score y gaps.",
+    "path": "skills/internos/vertical_marketing/marketing_landing_alignment",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_compliance_checker": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_compliance_checker",
+    "vertical": "vertical_marketing",
+    "descripcion": "Revisa claims, promesas sensibles y riesgos de política publicitaria por plataforma.",
+    "path": "skills/internos/vertical_marketing/marketing_compliance_checker",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_report_generator": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_report_generator",
+    "vertical": "vertical_marketing",
+    "descripcion": "Genera reporte ejecutivo de campaña con resultados, aprendizajes y próximos pasos.",
+    "path": "skills/internos/vertical_marketing/marketing_report_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_budget_planner": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_budget_planner",
+    "vertical": "vertical_ads",
+    "descripcion": "Distribuye presupuesto por canal, campaña, conjunto, etapa de funnel y prueba con IA.",
+    "path": "skills/internos/vertical_ads/ads_budget_planner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_audience_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_audience_builder",
+    "vertical": "vertical_ads",
+    "descripcion": "Define audiencias objetivo, lookalikes y exclusiones para Meta, Google, TikTok o LinkedIn.",
+    "path": "skills/internos/vertical_ads/ads_audience_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_experiment_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_experiment_builder",
+    "vertical": "vertical_ads",
+    "descripcion": "Diseña experimentos A/B/n con variantes, KPIs, duración y significancia estadística.",
+    "path": "skills/internos/vertical_ads/ads_experiment_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_creative_validator": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_creative_validator",
+    "vertical": "vertical_ads",
+    "descripcion": "Valida formato, dimensiones, duración y peso de creativos contra specs por plataforma (reglas fijas).",
+    "path": "skills/internos/vertical_ads/ads_creative_validator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_approval_queue_create": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_approval_queue_create",
+    "vertical": "vertical_ads",
+    "descripcion": "Crea payload estructurado de aprobación con nivel de riesgo y checklist para revisión humana.",
+    "path": "skills/internos/vertical_ads/ads_approval_queue_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_scheduler_run": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_scheduler_run",
+    "vertical": "vertical_ads",
+    "descripcion": "Planifica lanzamientos, pausas y cambios programados de campañas con IA.",
+    "path": "skills/internos/vertical_ads/ads_scheduler_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_performance_analyzer": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_performance_analyzer",
+    "vertical": "vertical_ads",
+    "descripcion": "Analiza CTR, CPC, CPL, CPA, ROAS y frecuencia. Diagnostica fatiga y recomienda acciones.",
+    "path": "skills/internos/vertical_ads/ads_performance_analyzer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_optimizer": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_optimizer",
+    "vertical": "vertical_ads",
+    "descripcion": "Recomienda pausar, escalar, duplicar o redistribuir presupuesto según performance de campañas.",
+    "path": "skills/internos/vertical_ads/ads_optimizer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_guardrails": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_guardrails",
+    "vertical": "vertical_ads",
+    "descripcion": "Bloquea gasto excesivo, campañas sin tracking o configuraciones riesgosas. Reglas fijas.",
+    "path": "skills/internos/vertical_ads/ads_guardrails",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_report_generator": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_report_generator",
+    "vertical": "vertical_ads",
+    "descripcion": "Genera reporte operativo multicanal de inversión, métricas y acciones recomendadas.",
+    "path": "skills/internos/vertical_ads/ads_report_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_connection_check": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_connection_check",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Valida token y acceso a cuenta publicitaria Meta Ads. Retorna estado, moneda y balance.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_connection_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_list_ad_accounts": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_list_ad_accounts",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Lista todas las cuentas publicitarias accesibles con el token Meta.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_list_ad_accounts",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_get_ad_account": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_get_ad_account",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Obtiene detalles completos de una cuenta publicitaria: balance, límites, negocio y estado.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_get_ad_account",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_store_connection": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_store_connection",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Normaliza y devuelve payload portable de conexión Meta Ads (token + ad_account_id + metadata).",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_store_connection",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_pixel_check": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_pixel_check",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Lista pixels instalados en la cuenta publicitaria y verifica su último disparo.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_pixel_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_create_campaign": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_create_campaign",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Crea una campaña en Meta Ads con objetivo, estado y categorías especiales.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_create_campaign",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_update_campaign": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_update_campaign",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Actualiza nombre, estado o presupuesto de una campaña Meta Ads existente.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_update_campaign",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_create_adset": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_create_adset",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Crea un conjunto de anuncios con targeting, presupuesto, optimización y calendario.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_create_adset",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_update_adset": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_update_adset",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Actualiza presupuesto, estado, bid o fechas de un conjunto de anuncios existente.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_update_adset",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_create_creative": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_create_creative",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Crea un creativo de anuncio con imagen/video, copy, enlace y call-to-action.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_create_creative",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_create_ad": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_create_ad",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Crea un anuncio vinculando conjunto de anuncios y creativo.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_create_ad",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_preview_ad": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_preview_ad",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Genera preview HTML de un anuncio en el formato de placement solicitado.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_preview_ad",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_get_insights": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_get_insights",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Obtiene métricas de performance (impresiones, clics, gasto, ROAS, acciones) por nivel y período.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_get_insights",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_publish_flow": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_publish_flow",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Orquestador: crea campaña → conjunto → creativo → anuncio en secuencia con un solo payload.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_publish_flow",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_dashboard_data": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_dashboard_data",
+    "vertical": "vertical_meta_ads",
+    "kind": "data",
+    "descripcion": "Devuelve campañas activas con gasto, impresiones y clics para el dashboard.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_dashboard_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_dm_lead_qualifier": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_dm_lead_qualifier",
+    "vertical": "vertical_instagram",
+    "descripcion": "Clasifica un DM de Instagram con Haiku (es_lead, intent, score) y enruta a vertical_sales si es lead.",
+    "path": "skills/internos/vertical_instagram/ig_dm_lead_qualifier",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_comment_lead_detect": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_comment_lead_detect",
+    "vertical": "vertical_instagram",
+    "descripcion": "Detecta intención comercial en comentarios de Instagram, genera respuesta sugerida y crea lead si aplica.",
+    "path": "skills/internos/vertical_instagram/ig_comment_lead_detect",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_lead_form_create": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_lead_form_create",
+    "vertical": "vertical_instagram",
+    "descripcion": "Crea formulario de captación de leads en Meta (leadgen_forms) para una página de Instagram.",
+    "path": "skills/internos/vertical_instagram/ig_lead_form_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_lead_form_reads": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_lead_form_reads",
+    "vertical": "vertical_instagram",
+    "descripcion": "Lee leads de un formulario Meta Ads y los normaliza (nombre, email, teléfono, campos custom).",
+    "path": "skills/internos/vertical_instagram/ig_lead_form_reads",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_leads_sync": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_leads_sync",
+    "vertical": "vertical_instagram",
+    "descripcion": "Sincroniza leads de formulario IG hacia vertical_sales/communication_router_system en bloque.",
+    "path": "skills/internos/vertical_instagram/ig_leads_sync",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_boost_post": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_boost_post",
+    "vertical": "vertical_instagram",
+    "descripcion": "Impulsa un post existente de Instagram creando campaña Meta Ads (campaign+adset+creative+ad) en un solo paso.",
+    "path": "skills/internos/vertical_instagram/ig_boost_post",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_comment_monitor": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_comment_monitor",
+    "vertical": "vertical_instagram",
+    "descripcion": "Monitorea comentarios nuevos en posts de Instagram, detecta leads con IA y responde automáticamente si auto_reply=True.",
+    "path": "skills/internos/vertical_instagram/ig_comment_monitor",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_auto_responder": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_auto_responder",
+    "vertical": "vertical_instagram",
+    "descripcion": "Genera respuesta personalizada con Haiku y la envía por DM o reply a comentario de Instagram.",
+    "path": "skills/internos/vertical_instagram/ig_auto_responder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_list": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_list",
+    "vertical": "vertical_instagram",
+    "kind": "data",
+    "descripcion": "kind=data — lista posts, leads o comentarios de Instagram para dashboard via GET /data/.",
+    "path": "skills/internos/vertical_instagram/ig_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_dm_campaign": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_dm_campaign",
+    "vertical": "vertical_instagram",
+    "descripcion": "Envía DM a lista de usuarios de Instagram. Soporta mensaje estático o generado con IA por usuario.",
+    "path": "skills/internos/vertical_instagram/ig_dm_campaign",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_competitor_analyzer": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_competitor_analyzer",
+    "vertical": "vertical_instagram",
+    "descripcion": "Analiza cuenta competidora de Instagram: perfil, métricas, top posts y patrones con IA.",
+    "path": "skills/internos/vertical_instagram/ig_competitor_analyzer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_account_audit": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_account_audit",
+    "vertical": "vertical_instagram",
+    "descripcion": "Audita tu cuenta de Instagram: bio, contenido, engagement y recomendaciones con IA.",
+    "path": "skills/internos/vertical_instagram/ig_account_audit",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_content_orchestrator": {
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_content_orchestrator",
+    "vertical": "vertical_instagram",
+    "descripcion": "Orquesta creación de contenido IG: caption + hashtags + alt_text, publica si publicar=True.",
+    "path": "skills/internos/vertical_instagram/ig_content_orchestrator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   }

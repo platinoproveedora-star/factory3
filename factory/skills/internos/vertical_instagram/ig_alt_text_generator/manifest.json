@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_instagram/ig_alt_text_generator",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Genera alt text descriptivo para imagenes de Instagram para accesibilidad y SEO.",
+    "vertical":  "vertical_instagram",
+    "requires_env":  [
+                         "ANTHROPIC_API_KEY"
+                     ]
+}

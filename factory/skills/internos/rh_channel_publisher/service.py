@@ -49,7 +49,7 @@ class RhChannelPublisherService:
         }
 
     def _publicar_facebook(self, texto, vacante_id, empresa_id, dry_run, base_dir) -> dict:
-        skill = self._cargar_skill("facebook_post_publisher", base_dir)
+        skill = self._cargar_skill("vertical_fb/facebook_post_publisher", base_dir)
         if not skill:
             return {"ok": False, "error": "facebook_post_publisher no encontrado"}
         return skill.run({

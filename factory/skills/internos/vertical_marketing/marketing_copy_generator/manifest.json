@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/marketing_copy_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera 3 variantes de copy reutilizable para anuncios en meta, google, linkedin, email o landing.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

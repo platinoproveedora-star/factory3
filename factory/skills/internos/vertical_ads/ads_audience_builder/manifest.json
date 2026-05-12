@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/ads_audience_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Define audiencia abstracta: geografía, edad, intereses, exclusiones e intención.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

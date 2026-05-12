@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_sales/dashboard_operational_system",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "kind=data — retorna leads, tareas de seguimiento y métricas para dashboard via GET /data/",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_sales/lead_pipeline_system",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Convierte mensaje comercial en lead: dedup por user_id+canal, crea con folio VEN-XXX, asigna estado inicial",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

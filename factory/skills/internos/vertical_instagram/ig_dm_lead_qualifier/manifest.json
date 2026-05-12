@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_dm_lead_qualifier",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Clasifica un DM de Instagram como lead, extrae intent y lo registra en vertical_sales.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

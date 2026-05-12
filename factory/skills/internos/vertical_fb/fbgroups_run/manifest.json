@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_fb/fbgroups_run",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Bot mode fbgroups â€” maneja comandos /buscar /misbusquedas /ver /borrar en Telegram",
+    "requires_env":  [
+                         "SUPABASE_URL",
+                         "SUPABASE_SERVICE_ROLE_KEY"
+                     ]
+}

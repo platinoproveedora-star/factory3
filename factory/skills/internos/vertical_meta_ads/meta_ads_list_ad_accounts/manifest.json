@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_ads_list_ad_accounts",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista todas las cuentas publicitarias accesibles con el token Meta.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

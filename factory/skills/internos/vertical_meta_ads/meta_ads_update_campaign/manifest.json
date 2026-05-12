@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_ads_update_campaign",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Actualiza nombre, estado o presupuesto de una campaña Meta Ads existente.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/ads_budget_planner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Distribuye presupuesto por canal, campaña, conjunto, etapa de funnel y prueba con IA.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

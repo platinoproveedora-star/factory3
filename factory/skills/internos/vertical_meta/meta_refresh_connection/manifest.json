@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_meta/meta_refresh_connection",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Refresca metadata de page/Instagram Business Account y agrega token debug si hay credenciales de app.",
+    "vertical":  "vertical_meta",
+    "requires_env":  [
+
+                     ]
+}

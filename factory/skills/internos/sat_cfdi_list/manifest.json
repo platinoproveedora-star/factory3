@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "sat_cfdi_list",
-  "version": "0.1.0",
-  "kind": "data",
-  "entrypoint": "skill.py",
-  "description": "Lista CFDIs de Supabase filtrable por tipo (E/R), rfc_propietario, mes (YYYY-MM) o dia (YYYY-MM-DD). kind=data para dashboard.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
-}

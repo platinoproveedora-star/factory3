@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/marketing_creative_brief",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea brief creativo completo para imagen, video, carrusel o anuncio con concepto, specs y copy guía.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

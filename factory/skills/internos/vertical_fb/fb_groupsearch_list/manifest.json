@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_fb/fb_groupsearch_list",
+    "version":  "0.1.0",
+    "kind":  "data",
+    "entrypoint":  "skill.py",
+    "description":  "Retorna lista de bÃºsquedas de grupos FB para el dashboard",
+    "requires_env":  [
+                         "SUPABASE_URL",
+                         "SUPABASE_SERVICE_ROLE_KEY"
+                     ]
+}

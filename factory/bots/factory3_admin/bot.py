@@ -14,6 +14,7 @@ _COMMANDS_DEFAULT = {
         "/rh1 — Entrar al modo Recursos Humanos\n"
         "/logplat — Entrar al modo Logística Platino\n"
         "/fbgroups — Entrar al modo FB Groups Discovery\n"
+        "/sales — Entrar al modo Ventas / CRM\n"
         "/salir — Salir del modo activo"
     ),
     "/estado": "Sistema activo y funcionando.",
@@ -23,6 +24,12 @@ _MODES = {
     "/rh1":      "rh_1",
     "/logplat":  "logplat",
     "/fbgroups": "fbgroups",
+    "/sales":    "sales",
+}
+
+_MODE_SKILLS = {
+    "fbgroups": "vertical_fb/fbgroups_run",
+    "sales":    "vertical_sales/sales_run",
 }
 
 
@@ -61,11 +68,16 @@ def handle_update(update: dict, state: dict) -> dict:
     )
     markup = None
     if text in ("/start", "/ayuda"):
-        markup = {"inline_keyboard": [[
-            {"text": "Entrar a RH",       "callback_data": "/rh1"},
-            {"text": "Logística Platino", "callback_data": "/logplat"},
-            {"text": "FB Groups",         "callback_data": "/fbgroups"},
-        ]]}
+        markup = {"inline_keyboard": [
+            [
+                {"text": "Entrar a RH",       "callback_data": "/rh1"},
+                {"text": "Logística Platino", "callback_data": "/logplat"},
+            ],
+            [
+                {"text": "FB Groups",  "callback_data": "/fbgroups"},
+                {"text": "Ventas CRM", "callback_data": "/sales"},
+            ],
+        ]}
     return {
         "response": response,
         "state":    {},
@@ -85,7 +97,8 @@ def _run_mode_skill(mode: str, update: dict, state: dict) -> dict:
         external_root=ext,
     )
     runner = SkillRunner(loader)
-    result = runner.run(f"{mode}_run", {"update": update, "state": state}, source="internos")
+    skill_name = _MODE_SKILLS.get(mode, f"{mode}_run")
+    result = runner.run(skill_name, {"update": update, "state": state}, source="internos")
 
     if result.get("ok") and result.get("data"):
         return result["data"]

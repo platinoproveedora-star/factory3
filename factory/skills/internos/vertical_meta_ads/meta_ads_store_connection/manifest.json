@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_ads_store_connection",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Normaliza y devuelve payload portable de conexión Meta Ads (token + ad_account_id + metadata).",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

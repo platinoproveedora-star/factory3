@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_ads_dashboard_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Devuelve campañas activas con gasto, impresiones y clics para el dashboard.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

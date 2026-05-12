@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/ads_creative_validator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida formatos, proporciones, duración, tamaño y requisitos mínimos del asset por plataforma.",
+  "requires_env": []
+}

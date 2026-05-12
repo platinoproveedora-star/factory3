@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_sales/sales_report",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "kind=data — reporte de conversión por período: leads, tasa cierre, score promedio, leads por canal.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

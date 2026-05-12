@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_sales/ai_followup_system",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera mensaje de seguimiento personalizado con IA y crea tarea en followup_tasks con fecha y estado",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ANTHROPIC_API_KEY"]
+}

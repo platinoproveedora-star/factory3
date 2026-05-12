@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_instagram/ig_get_auth_token",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Intercambia un token de corta duracion por un token de larga duracion de Meta (60 dias).",
+    "vertical":  "vertical_instagram",
+    "requires_env":  [
+
+                     ]
+}

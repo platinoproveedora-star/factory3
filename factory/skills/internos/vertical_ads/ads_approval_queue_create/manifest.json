@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/ads_approval_queue_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea solicitud de aprobación humana antes de publicar o gastar presupuesto. Retorna payload estructurado.",
+  "requires_env": []
+}

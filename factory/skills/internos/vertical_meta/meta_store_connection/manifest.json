@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_meta/meta_store_connection",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Valida y normaliza un payload portable de conexion Meta sin depender de Supabase.",
+    "vertical":  "vertical_meta",
+    "requires_env":  [
+
+                     ]
+}

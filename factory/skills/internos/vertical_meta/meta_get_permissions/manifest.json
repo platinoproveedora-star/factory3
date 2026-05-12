@@ -1,0 +1,15 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_meta/meta_get_permissions",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Lista permisos asociados al access token actual con /me/permissions.",
+    "vertical":  "vertical_meta",
+    "permissions":  [
+
+                    ],
+    "requires_env":  [
+
+                     ]
+}

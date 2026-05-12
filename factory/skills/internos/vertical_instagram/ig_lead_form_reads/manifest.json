@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_lead_form_reads",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lee leads capturados de un formulario Lead Ads de Meta. Devuelve campos normalizados.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

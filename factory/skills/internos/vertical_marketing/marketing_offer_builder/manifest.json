@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/marketing_offer_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Estructura oferta completa: promesa, beneficios, objeciones y CTA con IA.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

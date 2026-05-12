@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_competitor_analyzer",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Analiza cuenta de Instagram competidora: perfil, métricas, top posts y patrones de contenido con IA.",
+  "requires_env": ["IG_ACCESS_TOKEN", "ANTHROPIC_API_KEY"]
+}

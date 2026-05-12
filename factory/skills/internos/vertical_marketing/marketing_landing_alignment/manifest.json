@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/marketing_landing_alignment",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Revisa coherencia entre anuncio, oferta, landing y conversión esperada. Devuelve score y gaps.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

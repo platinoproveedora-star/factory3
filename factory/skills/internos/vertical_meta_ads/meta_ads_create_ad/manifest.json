@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_ads_create_ad",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un anuncio vinculando conjunto de anuncios y creativo.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

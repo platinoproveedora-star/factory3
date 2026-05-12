@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_boost_post",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Convierte un post existente de Instagram en campaña de Meta Ads con presupuesto y targeting.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

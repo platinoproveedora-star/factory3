@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_ads_preview_ad",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera preview HTML de un anuncio en el formato de placement solicitado.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

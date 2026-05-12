@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_instagram/ig_top_posts_analyzer",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Identifica los posts con mejor rendimiento de una cuenta de Instagram segun una metrica.",
+    "vertical":  "vertical_instagram",
+    "requires_env":  [
+                         "IG_ACCESS_TOKEN"
+                     ]
+}

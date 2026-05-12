@@ -970,7 +970,7 @@ elif page == "FB Groups":
             min_miembros = st.select_slider("Miembros mínimos", options=[0, 100, 200, 500, 1000, 5000], value=100)
         if st.button("Buscar grupos", type="primary", disabled=not tema.strip()):
             with st.spinner("Buscando grupos en Facebook..."):
-                engine_r = _run_skill("fb_groupsearch_engine", {
+                engine_r = _run_skill("vertical_fb/fb_groupsearch_engine", {
                     "tema_busqueda": tema.strip(),
                     "limite":        limite,
                     "min_miembros":  min_miembros,
@@ -983,7 +983,7 @@ elif page == "FB Groups":
                 grupos = ed.get("grupos", [])
                 fuente = ed.get("fuente", "ia_sugerido")
                 with st.spinner("Guardando resultados..."):
-                    saver_r = _run_skill("fb_groupsearch_saver", {
+                    saver_r = _run_skill("vertical_fb/fb_groupsearch_saver", {
                         "grupos":        grupos,
                         "fuente":        fuente,
                         "tema_busqueda": tema.strip(),
@@ -1057,7 +1057,7 @@ elif page == "FB Groups":
                     st.dataframe(df_g, use_container_width=True, hide_index=True)
 
             if borrar:
-                del_r = _run_skill("fb_groupsearch_delete", {"search_id": selected_id, "dry_run": False})
+                del_r = _run_skill("vertical_fb/fb_groupsearch_delete", {"search_id": selected_id, "dry_run": False})
                 if del_r.get("ok"):
                     st.success(f"{selected_id} eliminada.")
                 else:
@@ -1860,7 +1860,7 @@ directamente a Render, los convertimos a texto base64 y los pegamos como variabl
             _tipos_sync = ["E", "R"] if _s_tipo == "Ambos" else [_s_tipo]
             for _t in _tipos_sync:
                 with st.spinner(f"Descargando {_t}..."):
-                    _r = _run_skill("sat_cfdi_sync", {
+                    _r = _run_skill("vertical_sat/sat_cfdi_sync", {
                         "fecha_inicio":     _s_fi,
                         "fecha_fin":        _s_ff,
                         "tipo":             _t,
@@ -1891,7 +1891,7 @@ directamente a Render, los convertimos a texto base64 y los pegamos como variabl
 
     st.subheader("CFDIs Emitidos (ventas)")
     with st.spinner("Cargando emitidos..."):
-        _re = _run_skill("sat_cfdi_list", {**_ctx_list, "tipo": "E"})
+        _re = _run_skill("vertical_sat/sat_cfdi_list", {**_ctx_list, "tipo": "E"})
     if _re.get("ok"):
         _de = _re.get("data", {})
         _me1, _me2, _me3 = st.columns(3)
@@ -1915,7 +1915,7 @@ directamente a Render, los convertimos a texto base64 y los pegamos como variabl
 
     st.subheader("CFDIs Recibidos (gastos / compras)")
     with st.spinner("Cargando recibidos..."):
-        _rr = _run_skill("sat_cfdi_list", {**_ctx_list, "tipo": "R"})
+        _rr = _run_skill("vertical_sat/sat_cfdi_list", {**_ctx_list, "tipo": "R"})
     if _rr.get("ok"):
         _dr = _rr.get("data", {})
         _mr1, _mr2, _mr3 = st.columns(3)

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/marketing_persona_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Define buyer persona: dolores, motivadores, objeciones, lenguaje y triggers de compra.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

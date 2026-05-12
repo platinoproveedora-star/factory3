@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_dm_campaign",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Envía DM a una lista de usuarios de Instagram. Soporta mensaje estático o generado con IA por usuario.",
+  "requires_env": ["IG_ACCESS_TOKEN", "ANTHROPIC_API_KEY"]
+}

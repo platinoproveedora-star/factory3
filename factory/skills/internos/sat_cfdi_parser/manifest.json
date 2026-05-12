@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "sat_cfdi_parser",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Parsea un XML CFDI y retorna dict estructurado: uuid, rfcs, total, fecha, tipo_comprobante, conceptos.",
-  "requires_env": []
-}

@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_sat/sat_cfdi_store",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Upsert de CFDIs parseados en Supabase tabla cfdi_documentos. Dedup por uuid_cfdi.",
+    "requires_env":  [
+                         "SUPABASE_URL",
+                         "SUPABASE_SERVICE_ROLE_KEY"
+                     ]
+}

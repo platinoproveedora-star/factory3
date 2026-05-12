@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/ads_report_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera reporte operativo multicanal de inversión, métricas y acciones recomendadas.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

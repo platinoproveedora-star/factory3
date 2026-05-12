@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_comment_monitor",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Monitorea comentarios nuevos en un post de Instagram, detecta leads con IA y responde automáticamente si se configura.",
+  "requires_env": ["IG_ACCESS_TOKEN", "ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

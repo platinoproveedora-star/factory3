@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_fb/fb_groupsearch_saver",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Crea search_id, registra bÃºsqueda y guarda grupos en fb_gs_searches y fb_gs_groups con dedup",
+    "requires_env":  [
+                         "SUPABASE_URL",
+                         "SUPABASE_SERVICE_ROLE_KEY"
+                     ]
+}

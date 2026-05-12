@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_content_orchestrator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquesta creación y publicación de contenido IG: caption + hashtags + alt_text, y publica si publicar=True.",
+  "requires_env": ["IG_ACCESS_TOKEN", "ANTHROPIC_API_KEY"]
+}

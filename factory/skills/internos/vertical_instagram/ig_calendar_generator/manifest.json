@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_instagram/ig_calendar_generator",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Genera calendario editorial mensual de Instagram por semana con formatos y objetivos.",
+    "vertical":  "vertical_instagram",
+    "requires_env":  [
+                         "ANTHROPIC_API_KEY"
+                     ]
+}

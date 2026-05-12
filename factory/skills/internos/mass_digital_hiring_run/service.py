@@ -216,7 +216,7 @@ class MassDigitalHiringRunService:
     def _buscar_grupos(self, context: dict) -> dict:
         region   = self._cfg(context, "region", "MDH_REGION", "Mexico")
         keywords = context.get("keywords") or ["trabajo", "empleo", "operadores", "choferes"]
-        return self._get_runner().run("facebook_group_finder", {
+        return self._get_runner().run("vertical_fb/facebook_group_finder", {
             "keywords": keywords,
             "region":   region,
             "limit":    context.get("limit", 20),
@@ -240,7 +240,7 @@ class MassDigitalHiringRunService:
 
         runner = self._get_runner()
 
-        ck = runner.run("facebook_post_tracker", {
+        ck = runner.run("vertical_fb/facebook_post_tracker", {
             "accion":         "puede_publicar",
             "grupo_url":      grupo_url,
             "vacante_id":     vacante_id,
@@ -253,7 +253,7 @@ class MassDigitalHiringRunService:
         r   = db.rest_select("vacantes", filters={"id": vacante_id}, select="titulo,descripcion,requisitos,salario,ubicacion", limit=1)
         vac = ((r.get("data") or [{}])[0]) if r.get("ok") else {}
 
-        pg = runner.run("facebook_post_generator", {
+        pg = runner.run("vertical_fb/facebook_post_generator", {
             "titulo_vacante":      vac.get("titulo", ""),
             "descripcion_vacante": vac.get("descripcion", ""),
             "requisitos":          vac.get("requisitos", ""),
@@ -268,7 +268,7 @@ class MassDigitalHiringRunService:
 
         texto = (pg.get("data") or {}).get("recomendada") or ""
 
-        pub = runner.run("facebook_post_publisher", {
+        pub = runner.run("vertical_fb/facebook_post_publisher", {
             "grupo_url": grupo_url,
             "texto":     texto,
             "dry_run":   dry_run,
@@ -277,7 +277,7 @@ class MassDigitalHiringRunService:
 
         publicado = (pub.get("data") or {}).get("publicado", False) or dry_run
 
-        runner.run("facebook_post_tracker", {
+        runner.run("vertical_fb/facebook_post_tracker", {
             "accion":       "registrar",
             "vacante_id":   vacante_id,
             "empresa_id":   empresa_id,

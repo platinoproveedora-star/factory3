@@ -1,0 +1,12 @@
+﻿{
+    "type":  "skill",
+    "name":  "vertical_instagram/ig_carousel_builder",
+    "version":  "0.1.0",
+    "kind":  "executable",
+    "entrypoint":  "skill.py",
+    "description":  "Genera estructura de copy slide por slide para carruseles de Instagram.",
+    "vertical":  "vertical_instagram",
+    "requires_env":  [
+                         "ANTHROPIC_API_KEY"
+                     ]
+}

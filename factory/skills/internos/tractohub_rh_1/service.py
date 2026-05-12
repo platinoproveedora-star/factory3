@@ -61,7 +61,7 @@ class TractohubRh1Service:
     def _buscar_grupos(self, context: dict) -> dict:
         keywords_extra: list = context.get("keywords_extra") or []
         keywords = _FB_KEYWORDS_BASE + keywords_extra
-        return self._get_runner().run("facebook_group_finder", {
+        return self._get_runner().run("vertical_fb/facebook_group_finder", {
             "keywords": keywords,
             "region":   _REGION,
             "limit":    context.get("limit", 20),
@@ -84,7 +84,7 @@ class TractohubRh1Service:
         runner = self._get_runner()
 
         # Verificar cooldown
-        ck = runner.run("facebook_post_tracker", {
+        ck = runner.run("vertical_fb/facebook_post_tracker", {
             "accion":        "puede_publicar",
             "grupo_url":     grupo_url,
             "vacante_id":    vacante_id,
@@ -101,7 +101,7 @@ class TractohubRh1Service:
         contacto = _CONTACTO or "Escríbenos por este medio"
 
         # Generar post
-        pg = runner.run("facebook_post_generator", {
+        pg = runner.run("vertical_fb/facebook_post_generator", {
             "titulo_vacante":      vac.get("titulo", ""),
             "descripcion_vacante": vac.get("descripcion", ""),
             "requisitos":          vac.get("requisitos", ""),
@@ -117,7 +117,7 @@ class TractohubRh1Service:
         texto = (pg.get("data") or {}).get("recomendada") or ""
 
         # Publicar
-        pub = runner.run("facebook_post_publisher", {
+        pub = runner.run("vertical_fb/facebook_post_publisher", {
             "grupo_url": grupo_url,
             "texto":     texto,
             "dry_run":   dry_run,
@@ -127,7 +127,7 @@ class TractohubRh1Service:
         publicado = (pub.get("data") or {}).get("publicado", False) or dry_run
 
         # Registrar
-        runner.run("facebook_post_tracker", {
+        runner.run("vertical_fb/facebook_post_tracker", {
             "accion":       "registrar",
             "vacante_id":   vacante_id,
             "empresa_id":   _EMPRESA_ID,

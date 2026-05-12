@@ -27,4 +27,6 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.43.0
 gspread==6.1.2
-google-auth==2.29.0
+google-auth==2.29.0
+cryptography==44.0.3
+lxml==5.3.1

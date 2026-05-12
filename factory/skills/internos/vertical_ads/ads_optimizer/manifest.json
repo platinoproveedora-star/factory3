@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/ads_optimizer",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Recomienda pausar, escalar, duplicar o redistribuir presupuesto según performance de campañas.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

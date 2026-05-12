@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/marketing_campaign_planner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Planea campaña por objetivo, oferta, audiencia, canales, funnel y KPIs con IA.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

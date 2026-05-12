@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_ads_create_creative",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un creativo de anuncio con imagen/video, copy, enlace y call-to-action.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

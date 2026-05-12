@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_ads_connection_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida token y acceso a cuenta publicitaria Meta Ads. Retorna estado, moneda y balance.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}
