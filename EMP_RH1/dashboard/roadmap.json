@@ -17,7 +17,7 @@
     "prioridad": 2,
     "categoria": "vertical_crm",
     "titulo": "CRM / Leads / Ventas — Pipeline completo de ventas automatizado",
-    "descripcion": "Vertical CRM para captura, gestión y seguimiento de leads con pipeline de ventas. 18 skills MVP: captura (store, CSV, webhook), gestión (clasificar, asignar, dedup), pipeline (etapas, oportunidades, cotizaciones, cierres), seguimiento (email, WhatsApp, recordatorios) y análisis (KPIs, fuentes, vendedores).",
+    "descripcion": "Vertical CRM para captura, gestión y seguimiento de leads con pipeline de ventas. 18 skills MVP: captura (store, CSV, webhook), gestión (clasificar, asignar, dedup), pipeline (etapas, oportunidades, cotizaciones, cierres), seguimiento (email, WhatsApp, recordatorios) y análisis (KPIs, fuentes, vendedores). Complemento directo de Instagram y Meta Ads para cerrar el ciclo lead → venta.",
     "requiere_ia": true,
     "requiere_creds": ["ANTHROPIC_API_KEY"],
     "requiere_deps": [],
@@ -40,6 +40,48 @@
       "crm_kpis",
       "crm_analisis_fuente",
       "crm_analisis_vendedor"
+    ]
+  },
+  {
+    "id": 3,
+    "status": "en_curso",
+    "prioridad": 3,
+    "categoria": "vertical_instagram",
+    "titulo": "Instagram Automation — Orquestador completo y automatización reactiva",
+    "descripcion": "19 skills ya construidos: generación de contenido (captions, reels, stories, carruseles, calendarios, hashtags), publicación (imagen, video, reel, programado), engagement (respuesta comentarios y DMs) y analytics (insights cuenta y posts). Pendiente: orquestador end-to-end, auto-responder reactivo, monitor de comentarios, campañas de DMs y dashboard.",
+    "requiere_ia": true,
+    "requiere_creds": ["IG_ACCESS_TOKEN", "IG_BUSINESS_ACCOUNT_ID", "ANTHROPIC_API_KEY"],
+    "requiere_deps": [],
+    "skills_a_construir": [
+      "ig_content_orchestrator",
+      "ig_auto_responder",
+      "ig_comment_monitor",
+      "ig_dm_campaign",
+      "ig_competitor_analyzer",
+      "ig_account_audit",
+      "ig_list"
+    ]
+  },
+  {
+    "id": 4,
+    "status": "pendiente",
+    "prioridad": 4,
+    "categoria": "vertical_meta_ads",
+    "titulo": "Meta Ads / Facebook Ads — Creación y gestión de campañas via API",
+    "descripcion": "Solo existe generación de contenido (ad_creator, copy_generator, campaign_planner). Falta integración real con Meta Ads API: crear campañas, conjuntos de anuncios y anuncios directamente desde factory3, audiencias personalizadas, gestión de presupuesto, reportes de rendimiento y optimización automática. Complemento de CRM para cerrar ciclo: lead → anuncio → conversión.",
+    "requiere_ia": true,
+    "requiere_creds": ["META_ACCESS_TOKEN", "META_APP_ID", "META_APP_SECRET", "META_AD_ACCOUNT_ID"],
+    "requiere_deps": [],
+    "skills_a_construir": [
+      "meta_ads_campana_crear",
+      "meta_ads_conjunto_crear",
+      "meta_ads_anuncio_crear",
+      "meta_ads_audiencia_crear",
+      "meta_ads_presupuesto_actualizar",
+      "meta_ads_pausar_activar",
+      "meta_ads_reportes",
+      "meta_ads_optimizar",
+      "meta_ads_list"
     ]
   }
 ]
