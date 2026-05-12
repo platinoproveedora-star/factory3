@@ -1,0 +1,17 @@
+name: factory3 cron
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-tasks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ejecutar meta_task_runner
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -X POST https://factory3.onrender.com/cron/tasks \
+            -H "Content-Type: application/json" \
+            -d "{}"
