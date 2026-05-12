@@ -38,7 +38,7 @@ class SalesRunService:
         user_id = str(from_u.get("id", "")).strip()
         chat_id = str(message.get("chat", {}).get("id", user_id)).strip()
         empresa_id = os.getenv("SALES_EMPRESA_ID", "sales_default")
-        dry_run    = state.get("dry_run", False)
+        dry_run    = self._bool_env("SALES_DRY_RUN", state.get("dry_run", False))
 
         if not texto:
             return {"ok": True, "data": {
@@ -71,13 +71,14 @@ class SalesRunService:
         d = result["data"]
         nivel = d.get("nivel", "frio")
         emoji = {"caliente": "🔥", "tibio": "🌡", "frio": "❄"}.get(nivel, "")
-        resp = (
-            f"{emoji} Lead registrado\n"
-            f"Folio: {d.get('lead_folio', '-')}\n"
-            f"Intent: {d.get('intent', '-')} | Score: {d.get('score', 0)} ({nivel})\n"
-        )
-        if d.get("mensaje_sugerido"):
-            resp += f"\nSiguiente paso: {d['mensaje_sugerido']}"
+        mensaje = d.get("mensaje_sugerido", "").strip()
+        if mensaje:
+            resp = f"{mensaje}\n\n<i>📋 {d.get('lead_folio', '-')} · {emoji}{nivel} · score {d.get('score', 0)}</i>"
+        else:
+            resp = (
+                f"Gracias por tu mensaje. En breve te contactamos con más información.\n\n"
+                f"<i>📋 {d.get('lead_folio', '-')} · {emoji}{nivel} · score {d.get('score', 0)}</i>"
+            )
         return {"ok": True, "data": {"response": resp, "state": state}}
 
     def _from_context(self, context: dict) -> dict:
@@ -162,3 +163,10 @@ class SalesRunService:
             "accion":           accion,
             "mensaje_sugerido": mensaje,
         }}
+
+    def _bool_env(self, name: str, default: bool) -> bool:
+        import os
+        value = os.getenv(name)
+        if value is None:
+            return bool(default)
+        return value.strip().lower() in {"1", "true", "yes", "si", "on"}
