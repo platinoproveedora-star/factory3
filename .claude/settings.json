@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(factory/skills/internos/**)",
+      "Write(factory/skills/internos/**)",
+      "Edit(factory/skills/internos/**)",
+      "Write(factory/skills/registry.json)",
+      "Edit(factory/skills/registry.json)",
+      "Write(factory/skills/active/**)",
+      "Write(docs/**)",
+      "Edit(docs/**)",
+      "Bash(python *)",
+      "Bash(mkdir *)"
+    ]
+  }
+}

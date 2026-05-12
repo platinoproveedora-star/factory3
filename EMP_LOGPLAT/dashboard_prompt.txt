@@ -1,0 +1,100 @@
+Genera el código completo de un dashboard Streamlit para Logística Platino (LOGPLAT).
+Devuelve DOS archivos separados por el marcador exacto ===DB.PY=== (primero app.py, luego db.py).
+Solo código Python limpio. Sin markdown. Sin bloques de código. Sin explicaciones.
+
+PALETA DE COLORES (azul-plata-dorado):
+- Fondo principal: #0d1117
+- Sidebar: #0a0f1a
+- Cards métricas: #161b2e
+- Azul acento: #4a9eff
+- Dorado: #f0b429
+- Texto plata: #c9d1d9
+- Verde: #3fb950  (pagado)
+- Rojo: #f85149   (por_cobrar/pendiente)
+- Amarillo: #e3b341 (parcial)
+
+SCHEMA SUPABASE: "logplat" (separado de public).
+db.py DEBE incluir Accept-Profile: logplat en GET y Content-Profile: logplat + Prefer: return=representation en PATCH/POST.
+
+TABLAS (schema logplat):
+viajes: id(uuid), folio(VIA-001), empresa_id, cliente, origen, destino, fecha_salida(date), fecha_llegada(date), costo_viaje(numeric), precio_venta_viaje(numeric), utilidad_viaje(numeric), chofer, estatus_viaje(activo/terminado), estatus_pago(por_cobrar/parcial/pagado), id_doc, created_at, updated_at
+gastos: id(uuid), folio(GAS-001), empresa_id, numero_viaje, fecha_gasto(date), fecha_captura, monto_gasto(numeric), concepto, chofer, tipo_gasto(diesel/casetas/comida/reparacion/maniobra/otro), id_doc, created_at, updated_at
+pagos: id(uuid), folio(PAG-001), empresa_id, numero_viaje, cliente, fecha_pago(date), monto_pago(numeric), metodo_pago(transferencia/efectivo/cheque), observaciones, id_doc, created_at, updated_at
+cuentas_por_cobrar: id(uuid), folio(CXC-001), empresa_id, numero_viaje, cliente, monto_total(numeric), monto_pagado(numeric), saldo_pendiente(numeric), fecha_viaje(date), fecha_vencimiento(date), estatus_cobro(pendiente/parcial/pagado), created_at, updated_at
+
+ESTRUCTURA SIDEBAR (st.radio): Overview | Viajes | Gastos | Pagos | CXC | Análisis
+
+REQUISITOS app.py:
+
+1. Imports: from __future__ import annotations; import os, streamlit as st, pandas as pd; from db import select, update
+
+2. CSS completo con la paleta de colores definida arriba. Incluir estilos para:
+   - Fondo general y sidebar
+   - [data-testid="metric-container"]: background #161b2e, border-left 3px solid #4a9eff, border-radius 8px, padding 12px
+   - h1,h2,h3: color #e0e0ff
+   - Botones primarios: background #4a9eff
+   - .stDataFrame: border 1px solid #30363d
+
+3. Título: st.title("🚛 LOGPLAT — Logística Platino")
+   Botón "↺ Actualizar" en sidebar que hace st.cache_data.clear() + st.rerun()
+
+4. Todas las funciones de datos usan @st.cache_data(ttl=30)
+
+5. OVERVIEW — 4 columnas de métricas + subtotales:
+   Fila 1: Total Viajes | Viajes Activos | Total Gastos (suma monto_gasto) | Utilidad Total (suma utilidad_viaje)
+   Fila 2: Saldo CXC Pendiente (suma saldo_pendiente donde estatus_cobro!=pagado) | Total Cobrado (suma monto_pagado en cxc) | Total Pagos Recibidos (suma monto_pago en pagos) | Viajes por Cobrar (count viajes donde estatus_pago=por_cobrar)
+   Formato montos: f"${v:,.0f}"
+
+6. VIAJES — sección completa:
+   - Filtros en columnas: buscar por cliente (text_input) | estatus_pago (selectbox: Todos/por_cobrar/parcial/pagado) | estatus_viaje (selectbox: Todos/activo/terminado) | rango fechas (date_input x2)
+   - st.data_editor con DataFrame completo (todas las columnas relevantes), use_container_width=True
+   - Columna "estatus_pago" coloreada con _badge()
+   - Totales al pie: suma precio_venta_viaje, costo_viaje, utilidad_viaje de los registros filtrados
+   - Botón "💾 Guardar cambios" que detecta filas modificadas y hace PATCH por folio
+   - Botón "📥 Exportar CSV"
+
+7. GASTOS — sección completa:
+   - Filtros: buscar concepto | tipo_gasto (selectbox) | numero_viaje (text) | rango fechas
+   - st.data_editor con todas las columnas, use_container_width=True
+   - Tabla agrupada por tipo_gasto debajo: columnas tipo_gasto | cantidad | monto_total — sin gráfica
+   - Total al pie del monto_gasto filtrado
+   - Botón guardar cambios + exportar CSV
+
+8. PAGOS — sección completa:
+   - Filtros: cliente | metodo_pago (selectbox) | rango fechas
+   - st.data_editor con todas las columnas
+   - Total al pie de monto_pago filtrado
+   - Botón guardar cambios + exportar CSV
+
+9. CXC — sección completa:
+   - Filtros: cliente | estatus_cobro (selectbox) | rango fechas
+   - Columna calculada "dias_pendiente": (hoy - fecha_viaje).days donde estatus_cobro != pagado, sino 0
+   - st.data_editor con todas las columnas + dias_pendiente
+   - Tabla resumen por cliente: cliente | viajes | monto_total | monto_pagado | saldo_pendiente
+   - Totales: saldo total pendiente, total cobrado
+   - Botón guardar cambios + exportar CSV
+
+10. ANÁLISIS — sección completa (todo con tablas, sin gráficas excepto donde se indique):
+    - Utilidad por semana: st.line_chart con DataFrame semana/utilidad_viaje (este sí con gráfica)
+    - Top 5 clientes por precio_venta_viaje: tabla cliente | viajes | total_venta | total_cobrado | saldo
+    - Rentabilidad por chofer: tabla chofer | viajes | gastos_total | utilidad_neta (utilidad_viaje - gastos)
+    - Gastos por tipo_gasto: tabla tipo_gasto | cantidad | monto_total | porcentaje del total
+    - Viajes sin gastos: tabla de viajes que no tienen ningún gasto en gastos (anti-join por folio/numero_viaje)
+    - Gastos sin viaje: tabla de gastos donde numero_viaje IS NULL o vacío
+
+11. Helper _badge(estatus): devuelve string con emoji
+    por_cobrar → "🔴 por cobrar" | parcial → "🟡 parcial" | pagado → "🟢 pagado"
+    activo → "🟢 activo" | terminado → "⚪ terminado" | pendiente → "🔴 pendiente"
+
+12. Función _guardar_cambios(tabla, df_original, df_editado):
+    - Compara fila por fila usando folio como key
+    - Para cada fila modificada llama update(tabla, folio, campos_cambiados)
+    - Muestra st.success con cantidad de filas guardadas o st.error si falla
+
+REQUISITOS db.py:
+- select(table, params="select=*&limit=1000") → list[dict]: GET con Accept-Profile: logplat
+- update(table, folio, data: dict) → bool: PATCH con Content-Profile: logplat, Prefer: return=representation, filtro ?folio=eq.{folio}
+- _key(): lee SUPABASE_KEY o SUPABASE_SERVICE_ROLE_KEY o SUPABASE_ANON_KEY
+- _url(table, params): construye URL desde SUPABASE_URL
+- Timeout 15s en select, 10s en update
+- Retorna [] en select si hay error, False en update si hay error

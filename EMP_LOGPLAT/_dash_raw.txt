@@ -1,0 +1,561 @@
+from __future__ import annotations
+import os
+import streamlit as st
+import pandas as pd
+from datetime import date, datetime
+from db import select, update
+
+st.set_page_config(
+    page_title="LOGPLAT — Logística Platino",
+    page_icon="🚛",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+CUSTOM_CSS = """
+<style>
+html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+    background-color: #0d1117 !important;
+    color: #c9d1d9 !important;
+}
+[data-testid="stSidebar"] {
+    background-color: #0a0f1a !important;
+    border-right: 1px solid #21262d;
+}
+[data-testid="stSidebar"] * {
+    color: #c9d1d9 !important;
+}
+[data-testid="metric-container"] {
+    background: #161b2e !important;
+    border-left: 3px solid #4a9eff !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+}
+[data-testid="metric-container"] label {
+    color: #8b949e !important;
+}
+[data-testid="metric-container"] [data-testid="stMetricValue"] {
+    color: #e0e0ff !important;
+    font-weight: 700;
+}
+h1, h2, h3 {
+    color: #e0e0ff !important;
+}
+h1 { border-bottom: 2px solid #f0b429; padding-bottom: 8px; }
+h2 { color: #4a9eff !important; }
+h3 { color: #c9d1d9 !important; }
+.stButton > button {
+    background-color: #4a9eff !important;
+    color: #0d1117 !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+}
+.stButton > button:hover {
+    background-color: #f0b429 !important;
+    color: #0d1117 !important;
+}
+.stDataFrame {
+    border: 1px solid #30363d !important;
+    border-radius: 6px;
+}
+.stDataFrame table {
+    background-color: #161b2e !important;
+    color: #c9d1d9 !important;
+}
+.stDataFrame th {
+    background-color: #0a0f1a !important;
+    color: #4a9eff !important;
+    border-bottom: 1px solid #30363d !important;
+}
+.stDataFrame td {
+    border-bottom: 1px solid #21262d !important;
+}
+[data-testid="stSelectbox"] > div > div {
+    background-color: #161b2e !important;
+    color: #c9d1d9 !important;
+    border: 1px solid #30363d !important;
+}
+[data-testid="stTextInput"] > div > div > input {
+    background-color: #161b2e !important;
+    color: #c9d1d9 !important;
+    border: 1px solid #30363d !important;
+}
+[data-testid="stDateInput"] > div > div > input {
+    background-color: #161b2e !important;
+    color: #c9d1d9 !important;
+    border: 1px solid #30363d !important;
+}
+.stRadio > div {
+    gap: 4px;
+}
+.stRadio label {
+    background: #161b2e !important;
+    border: 1px solid #30363d !important;
+    border-radius: 6px !important;
+    padding: 6px 14px !important;
+    cursor: pointer;
+}
+.metric-divider {
+    height: 2px;
+    background: linear-gradient(90deg, #4a9eff, #f0b429, #3fb950);
+    border-radius: 2px;
+    margin: 16px 0;
+}
+.section-card {
+    background: #161b2e;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+.totals-bar {
+    background: #0a0f1a;
+    border: 1px solid #f0b429;
+    border-radius: 6px;
+    padding: 10px 18px;
+    color: #f0b429;
+    font-weight: 600;
+    margin-top: 8px;
+}
+</style>
+"""
+
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+
+def _badge(estatus: str) -> str:
+    mapping = {
+        "por_cobrar": "🔴 por cobrar",
+        "parcial": "🟡 parcial",
+        "pagado": "🟢 pagado",
+        "activo": "🟢 activo",
+        "terminado": "⚪ terminado",
+        "pendiente": "🔴 pendiente",
+    }
+    return mapping.get(str(estatus).lower().strip(), estatus)
+
+
+@st.cache_data(ttl=30)
+def _load_viajes() -> pd.DataFrame:
+    rows = select("viajes", "select=*&limit=2000&order=created_at.desc")
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame(rows)
+    for col in ["fecha_salida", "fecha_llegada"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce").dt.date
+    for col in ["costo_viaje", "precio_venta_viaje", "utilidad_viaje"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    return df
+
+
+@st.cache_data(ttl=30)
+def _load_gastos() -> pd.DataFrame:
+    rows = select("gastos", "select=*&limit=2000&order=created_at.desc")
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame(rows)
+    for col in ["fecha_gasto", "fecha_captura"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce").dt.date
+    if "monto_gasto" in df.columns:
+        df["monto_gasto"] = pd.to_numeric(df["monto_gasto"], errors="coerce").fillna(0)
+    return df
+
+
+@st.cache_data(ttl=30)
+def _load_pagos() -> pd.DataFrame:
+    rows = select("pagos", "select=*&limit=2000&order=created_at.desc")
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame(rows)
+    if "fecha_pago" in df.columns:
+        df["fecha_pago"] = pd.to_datetime(df["fecha_pago"], errors="coerce").dt.date
+    if "monto_pago" in df.columns:
+        df["monto_pago"] = pd.to_numeric(df["monto_pago"], errors="coerce").fillna(0)
+    return df
+
+
+@st.cache_data(ttl=30)
+def _load_cxc() -> pd.DataFrame:
+    rows = select("cuentas_por_cobrar", "select=*&limit=2000&order=created_at.desc")
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame(rows)
+    for col in ["fecha_viaje", "fecha_vencimiento"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce").dt.date
+    for col in ["monto_total", "monto_pagado", "saldo_pendiente"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    return df
+
+
+def _guardar_cambios(tabla: str, df_original: pd.DataFrame, df_editado: pd.DataFrame) -> None:
+    if df_original.empty or df_editado.empty:
+        st.warning("No hay datos para guardar.")
+        return
+    if "folio" not in df_original.columns or "folio" not in df_editado.columns:
+        st.error("No se encontró columna 'folio' para identificar filas.")
+        return
+
+    saved = 0
+    errors = 0
+    orig_indexed = df_original.set_index("folio")
+    edit_indexed = df_editado.set_index("folio")
+
+    for folio in edit_indexed.index:
+        if folio not in orig_indexed.index:
+            continue
+        orig_row = orig_indexed.loc[folio]
+        edit_row = edit_indexed.loc[folio]
+        changed = {}
+        for col in edit_indexed.columns:
+            if col in orig_indexed.columns:
+                v_orig = orig_row[col]
+                v_edit = edit_row[col]
+                if pd.isna(v_orig) and pd.isna(v_edit):
+                    continue
+                if v_orig != v_edit:
+                    val = v_edit
+                    if isinstance(val, (date, datetime)):
+                        val = str(val)
+                    elif pd.isna(val):
+                        val = None
+                    changed[col] = val
+        if changed:
+            ok = update(tabla, folio, changed)
+            if ok:
+                saved += 1
+            else:
+                errors += 1
+
+    if errors == 0 and saved > 0:
+        st.success(f"✅ {saved} fila(s) guardada(s) correctamente.")
+        st.cache_data.clear()
+    elif saved == 0 and errors == 0:
+        st.info("ℹ️ No se detectaron cambios.")
+    else:
+        st.warning(f"⚠️ {saved} guardada(s), {errors} con error.")
+
+
+def _export_csv(df: pd.DataFrame, filename: str) -> None:
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="📥 Exportar CSV",
+        data=csv,
+        file_name=filename,
+        mime="text/csv",
+    )
+
+
+with st.sidebar:
+    st.markdown("## 🚛 LOGPLAT")
+    st.markdown("**Logística Platino**")
+    st.markdown("---")
+    seccion = st.radio(
+        "Navegación",
+        ["Overview", "Viajes", "Gastos", "Pagos", "CXC", "Análisis"],
+        label_visibility="collapsed",
+    )
+    st.markdown("---")
+    if st.button("↺ Actualizar"):
+        st.cache_data.clear()
+        st.rerun()
+    st.markdown("---")
+    st.caption(f"Última actualización: {datetime.now().strftime('%H:%M:%S')}")
+
+
+st.title("🚛 LOGPLAT — Logística Platino")
+
+
+if seccion == "Overview":
+    st.markdown("## 📊 Overview General")
+    st.markdown('<div class="metric-divider"></div>', unsafe_allow_html=True)
+
+    df_v = _load_viajes()
+    df_g = _load_gastos()
+    df_p = _load_pagos()
+    df_c = _load_cxc()
+
+    total_viajes = len(df_v) if not df_v.empty else 0
+    viajes_activos = int((df_v["estatus_viaje"] == "activo").sum()) if not df_v.empty and "estatus_viaje" in df_v.columns else 0
+    total_gastos = float(df_g["monto_gasto"].sum()) if not df_g.empty and "monto_gasto" in df_g.columns else 0.0
+    utilidad_total = float(df_v["utilidad_viaje"].sum()) if not df_v.empty and "utilidad_viaje" in df_v.columns else 0.0
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("🚚 Total Viajes", total_viajes)
+    col2.metric("🟢 Viajes Activos", viajes_activos)
+    col3.metric("💸 Total Gastos", f"${total_gastos:,.0f}")
+    col4.metric("📈 Utilidad Total", f"${utilidad_total:,.0f}")
+
+    st.markdown('<div class="metric-divider"></div>', unsafe_allow_html=True)
+
+    saldo_cxc = 0.0
+    total_cobrado_cxc = 0.0
+    if not df_c.empty:
+        if "saldo_pendiente" in df_c.columns and "estatus_cobro" in df_c.columns:
+            saldo_cxc = float(df_c[df_c["estatus_cobro"] != "pagado"]["saldo_pendiente"].sum())
+        if "monto_pagado" in df_c.columns:
+            total_cobrado_cxc = float(df_c["monto_pagado"].sum())
+
+    total_pagos = float(df_p["monto_pago"].sum()) if not df_p.empty and "monto_pago" in df_p.columns else 0.0
+    viajes_por_cobrar = 0
+    if not df_v.empty and "estatus_pago" in df_v.columns:
+        viajes_por_cobrar = int((df_v["estatus_pago"] == "por_cobrar").sum())
+
+    col5, col6, col7, col8 = st.columns(4)
+    col5.metric("⏳ Saldo CXC Pendiente", f"${saldo_cxc:,.0f}")
+    col6.metric("✅ Total Cobrado (CXC)", f"${total_cobrado_cxc:,.0f}")
+    col7.metric("💰 Total Pagos Recibidos", f"${total_pagos:,.0f}")
+    col8.metric("🔴 Viajes por Cobrar", viajes_por_cobrar)
+
+    st.markdown('<div class="metric-divider"></div>', unsafe_allow_html=True)
+    st.markdown("### 📋 Resumen rápido")
+
+    rcol1, rcol2 = st.columns(2)
+    with rcol1:
+        st.markdown("**Últimos 5 viajes**")
+        if not df_v.empty:
+            cols_show = [c for c in ["folio", "cliente", "origen", "destino", "estatus_pago", "precio_venta_viaje"] if c in df_v.columns]
+            tmp = df_v.head(5)[cols_show].copy()
+            if "estatus_pago" in tmp.columns:
+                tmp["estatus_pago"] = tmp["estatus_pago"].apply(_badge)
+            if "precio_venta_viaje" in tmp.columns:
+                tmp["precio_venta_viaje"] = tmp["precio_venta_viaje"].apply(lambda x: f"${x:,.0f}")
+            st.dataframe(tmp, use_container_width=True, hide_index=True)
+        else:
+            st.info("Sin datos de viajes.")
+
+    with rcol2:
+        st.markdown("**Últimos 5 pagos**")
+        if not df_p.empty:
+            cols_show = [c for c in ["folio", "cliente", "fecha_pago", "monto_pago", "metodo_pago"] if c in df_p.columns]
+            tmp = df_p.head(5)[cols_show].copy()
+            if "monto_pago" in tmp.columns:
+                tmp["monto_pago"] = tmp["monto_pago"].apply(lambda x: f"${x:,.0f}")
+            st.dataframe(tmp, use_container_width=True, hide_index=True)
+        else:
+            st.info("Sin datos de pagos.")
+
+
+elif seccion == "Viajes":
+    st.markdown("## 🚚 Viajes")
+    df_v = _load_viajes()
+
+    if df_v.empty:
+        st.warning("No se encontraron viajes.")
+    else:
+        st.markdown("### 🔍 Filtros")
+        fc1, fc2, fc3, fc4, fc5 = st.columns([2, 1, 1, 1, 1])
+        with fc1:
+            buscar_cliente = st.text_input("Buscar cliente", key="v_cliente")
+        with fc2:
+            filtro_estatus_pago = st.selectbox("Estatus pago", ["Todos", "por_cobrar", "parcial", "pagado"], key="v_ep")
+        with fc3:
+            filtro_estatus_viaje = st.selectbox("Estatus viaje", ["Todos", "activo", "terminado"], key="v_ev")
+        with fc4:
+            fecha_desde = st.date_input("Desde", value=None, key="v_fd")
+        with fc5:
+            fecha_hasta = st.date_input("Hasta", value=None, key="v_fh")
+
+        df_f = df_v.copy()
+        if buscar_cliente:
+            mask = df_f["cliente"].astype(str).str.lower().str.contains(buscar_cliente.lower(), na=False) if "cliente" in df_f.columns else pd.Series([True] * len(df_f))
+            df_f = df_f[mask]
+        if filtro_estatus_pago != "Todos" and "estatus_pago" in df_f.columns:
+            df_f = df_f[df_f["estatus_pago"] == filtro_estatus_pago]
+        if filtro_estatus_viaje != "Todos" and "estatus_viaje" in df_f.columns:
+            df_f = df_f[df_f["estatus_viaje"] == filtro_estatus_viaje]
+        if fecha_desde and "fecha_salida" in df_f.columns:
+            df_f = df_f[df_f["fecha_salida"].apply(lambda x: x >= fecha_desde if pd.notna(x) else False)]
+        if fecha_hasta and "fecha_salida" in df_f.columns:
+            df_f = df_f[df_f["fecha_salida"].apply(lambda x: x <= fecha_hasta if pd.notna(x) else False)]
+
+        st.markdown(f"**{len(df_f)} viaje(s) encontrado(s)**")
+
+        col_order = [c for c in ["folio", "cliente", "origen", "destino", "fecha_salida", "fecha_llegada",
+                                  "precio_venta_viaje", "costo_viaje", "utilidad_viaje", "chofer",
+                                  "estatus_viaje", "estatus_pago", "empresa_id", "id_doc"] if c in df_f.columns]
+        df_display = df_f[col_order].copy()
+
+        df_display_badged = df_display.copy()
+        for badge_col in ["estatus_pago", "estatus_viaje"]:
+            if badge_col in df_display_badged.columns:
+                df_display_badged[badge_col] = df_display_badged[badge_col].apply(_badge)
+
+        df_editado = st.data_editor(
+            df_display,
+            use_container_width=True,
+            hide_index=True,
+            key="viajes_editor",
+        )
+
+        suma_venta = df_f["precio_venta_viaje"].sum() if "precio_venta_viaje" in df_f.columns else 0
+        suma_costo = df_f["costo_viaje"].sum() if "costo_viaje" in df_f.columns else 0
+        suma_util = df_f["utilidad_viaje"].sum() if "utilidad_viaje" in df_f.columns else 0
+        st.markdown(
+            f'<div class="totals-bar">💰 Venta Total: <b>${suma_venta:,.0f}</b> &nbsp;|&nbsp; '
+            f'💸 Costo Total: <b>${suma_costo:,.0f}</b> &nbsp;|&nbsp; '
+            f'📈 Utilidad Total: <b>${suma_util:,.0f}</b></div>',
+            unsafe_allow_html=True,
+        )
+
+        btn1, btn2 = st.columns([1, 5])
+        with btn1:
+            if st.button("💾 Guardar cambios", key="v_save"):
+                _guardar_cambios("viajes", df_display, df_editado)
+        with btn2:
+            _export_csv(df_f, "viajes_logplat.csv")
+
+
+elif seccion == "Gastos":
+    st.markdown("## 💸 Gastos")
+    df_g = _load_gastos()
+
+    if df_g.empty:
+        st.warning("No se encontraron gastos.")
+    else:
+        st.markdown("### 🔍 Filtros")
+        gc1, gc2, gc3, gc4, gc5 = st.columns([2, 1, 1, 1, 1])
+        with gc1:
+            buscar_concepto = st.text_input("Buscar concepto", key="g_concepto")
+        with gc2:
+            tipos = ["Todos"] + sorted(df_g["tipo_gasto"].dropna().unique().tolist()) if "tipo_gasto" in df_g.columns else ["Todos"]
+            filtro_tipo = st.selectbox("Tipo gasto", tipos, key="g_tipo")
+        with gc3:
+            buscar_nviaje = st.text_input("N° Viaje", key="g_nviaje")
+        with gc4:
+            g_fecha_desde = st.date_input("Desde", value=None, key="g_fd")
+        with gc5:
+            g_fecha_hasta = st.date_input("Hasta", value=None, key="g_fh")
+
+        df_gf = df_g.copy()
+        if buscar_concepto and "concepto" in df_gf.columns:
+            df_gf = df_gf[df_gf["concepto"].astype(str).str.lower().str.contains(buscar_concepto.lower(), na=False)]
+        if filtro_tipo != "Todos" and "tipo_gasto" in df_gf.columns:
+            df_gf = df_gf[df_gf["tipo_gasto"] == filtro_tipo]
+        if buscar_nviaje and "numero_viaje" in df_gf.columns:
+            df_gf = df_gf[df_gf["numero_viaje"].astype(str).str.lower().str.contains(buscar_nviaje.lower(), na=False)]
+        if g_fecha_desde and "fecha_gasto" in df_gf.columns:
+            df_gf = df_gf[df_gf["fecha_gasto"].apply(lambda x: x >= g_fecha_desde if pd.notna(x) else False)]
+        if g_fecha_hasta and "fecha_gasto" in df_gf.columns:
+            df_gf = df_gf[df_gf["fecha_gasto"].apply(lambda x: x <= g_fecha_hasta if pd.notna(x) else False)]
+
+        st.markdown(f"**{len(df_gf)} gasto(s) encontrado(s)**")
+
+        col_order_g = [c for c in ["folio", "numero_viaje", "fecha_gasto", "fecha_captura", "monto_gasto",
+                                    "concepto", "tipo_gasto", "chofer", "empresa_id", "id_doc"] if c in df_gf.columns]
+        df_g_display = df_gf[col_order_g].copy()
+
+        df_g_editado = st.data_editor(
+            df_g_display,
+            use_container_width=True,
+            hide_index=True,
+            key="gastos_editor",
+        )
+
+        suma_gasto = df_gf["monto_gasto"].sum() if "monto_gasto" in df_gf.columns else 0
+        st.markdown(
+            f'<div class="totals-bar">💸 Total Gastos Filtrados: <b>${suma_gasto:,.0f}</b></div>',
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("### 📊 Resumen por Tipo de Gasto")
+        if "tipo_gasto" in df_gf.columns and "monto_gasto" in df_gf.columns:
+            resumen_tipo = (
+                df_gf.groupby("tipo_gasto")
+                .agg(cantidad=("folio", "count"), monto_total=("monto_gasto", "sum"))
+                .reset_index()
+                .sort_values("monto_total", ascending=False)
+            )
+            resumen_tipo["monto_total"] = resumen_tipo["monto_total"].apply(lambda x: f"${x:,.0f}")
+            st.dataframe(resumen_tipo, use_container_width=True, hide_index=True)
+
+        btn_g1, btn_g2 = st.columns([1, 5])
+        with btn_g1:
+            if st.button("💾 Guardar cambios", key="g_save"):
+                _guardar_cambios("gastos", df_g_display, df_g_editado)
+        with btn_g2:
+            _export_csv(df_gf, "gastos_logplat.csv")
+
+
+elif seccion == "Pagos":
+    st.markdown("## 💰 Pagos")
+    df_p = _load_pagos()
+
+    if df_p.empty:
+        st.warning("No se encontraron pagos.")
+    else:
+        st.markdown("### 🔍 Filtros")
+        pc1, pc2, pc3, pc4 = st.columns([2, 1, 1, 1])
+        with pc1:
+            buscar_cli_p = st.text_input("Buscar cliente", key="p_cli")
+        with pc2:
+            metodos = ["Todos"] + sorted(df_p["metodo_pago"].dropna().unique().tolist()) if "metodo_pago" in df_p.columns else ["Todos"]
+            filtro_metodo = st.selectbox("Método pago", metodos, key="p_metodo")
+        with pc3:
+            p_fecha_desde = st.date_input("Desde", value=None, key="p_fd")
+        with pc4:
+            p_fecha_hasta = st.date_input("Hasta", value=None, key="p_fh")
+
+        df_pf = df_p.copy()
+        if buscar_cli_p and "cliente" in df_pf.columns:
+            df_pf = df_pf[df_pf["cliente"].astype(str).str.lower().str.contains(buscar_cli_p.lower(), na=False)]
+        if filtro_metodo != "Todos" and "metodo_pago" in df_pf.columns:
+            df_pf = df_pf[df_pf["metodo_pago"] == filtro_metodo]
+        if p_fecha_desde and "fecha_pago" in df_pf.columns:
+            df_pf = df_pf[df_pf["fecha_pago"].apply(lambda x: x >= p_fecha_desde if pd.notna(x) else False)]
+        if p_fecha_hasta and "fecha_pago" in df_pf.columns:
+            df_pf = df_pf[df_pf["fecha_pago"].apply(lambda x: x <= p_fecha_hasta if pd.notna(x) else False)]
+
+        st.markdown(f"**{len(df_pf)} pago(s) encontrado(s)**")
+
+        col_order_p = [c for c in ["folio", "numero_viaje", "cliente", "fecha_pago", "monto_pago",
+                                    "metodo_pago", "observaciones", "empresa_id", "id_doc"] if c in df_pf.columns]
+        df_p_display = df_pf[col_order_p].copy()
+
+        df_p_editado = st.data_editor(
+            df_p_display,
+            use_container_width=True,
+            hide_index=True,
+            key="pagos_editor",
+        )
+
+        suma_pagos = df_pf["monto_pago"].sum() if "monto_pago" in df_pf.columns else 0
+        st.markdown(
+            f'<div class="totals-bar">💰 Total Pagos Filtrados: <b>${suma_pagos:,.0f}</b></div>',
+            unsafe_allow_html=True,
+        )
+
+        btn_p1, btn_p2 = st.columns([1, 5])
+        with btn_p1:
+            if st.button("💾 Guardar cambios", key="p_save"):
+                _guardar_cambios("pagos", df_p_display, df_p_editado)
+        with btn_p2:
+            _export_csv(df_pf, "pagos_logplat.csv")
+
+
+elif seccion == "CXC":
+    st.markdown("## 📋 Cuentas por Cobrar")
+    df_c = _load_cxc()
+
+    if df_c.empty:
+        st.warning("No se encontraron cuentas por cobrar.")
+    else:
+        st.markdown("### 🔍 Filtros")
+        cc1, cc2, cc3, cc4 = st.columns([2, 1, 1, 1])
+        with cc1:
+            buscar_cli_c = st.text_input("Buscar cliente", key="c_cli")
+        with cc2:
+            filtro_estatus_cobro = st.selectbox("Estatus cobro", ["Todos", "pendiente", "parcial", "pagado"], key="c_ec")
+        with cc3:
+            c_fecha_desde = st.date_input("Desde", value=None, key="c_fd")
+        with cc4:
+            c_fecha_hasta = st.date_input("Hasta", value=None, key="c_fh")
+
+        df_cf = df_c.copy()
+        if buscar_cli_c and "cliente" in df_cf.columns:
+            df_cf = df_cf[df_cf["cliente"].astype(str).str.lower().str.contains(bus
