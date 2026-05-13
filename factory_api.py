@@ -294,6 +294,21 @@ def cron_tasks(request: Request):
     return {"ok": result.get("ok"), "message": result.get("message"), "data": result.get("data")}
 
 
+@app.post("/run/{skill_name:path}")
+async def run_skill(skill_name: str, request: Request):
+    secret = os.getenv("FACTORY_RUN_SECRET", "")
+    if secret:
+        auth = request.headers.get("Authorization", "")
+        if auth != f"Bearer {secret}":
+            raise HTTPException(status_code=401, detail="Unauthorized")
+    body = await request.json()
+    try:
+        result = _get_data_runner().run(skill_name, body, source="internos")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return result
+
+
 @app.post("/webhook/{bot_name}")
 async def webhook(bot_name: str, request: Request, background_tasks: BackgroundTasks):
     update = await request.json()

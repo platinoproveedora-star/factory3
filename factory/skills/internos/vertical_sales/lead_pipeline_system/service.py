@@ -1,6 +1,6 @@
 """Convierte mensaje comercial en lead: dedup, creación con folio VEN-XXX, estado inicial."""
 from __future__ import annotations
-import json, os, urllib.request
+import json, os, urllib.error, urllib.request
 
 _SCHEMA           = "sales"
 _INTENT_COMERCIAL = {"consulta_comercial", "solicitud_precio", "disponibilidad", "agendar_cita", "seguimiento"}
@@ -127,5 +127,14 @@ class LeadPipelineService:
             with urllib.request.urlopen(req, timeout=10) as r:
                 rows = json.loads(r.read().decode())
                 return {"ok": True, "data": rows[0] if rows else row}
+        except urllib.error.HTTPError as e:
+            return {"ok": False, "error": self._http_error(e)}
         except Exception as e:
             return {"ok": False, "error": str(e)}
+
+    def _http_error(self, exc: urllib.error.HTTPError) -> str:
+        try:
+            body = exc.read().decode("utf-8", errors="replace")
+        except Exception:
+            body = ""
+        return f"HTTP {exc.code} {exc.reason}: {body or str(exc)}"
