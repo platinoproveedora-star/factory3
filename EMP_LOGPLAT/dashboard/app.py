@@ -100,6 +100,20 @@ def _clean(v, default=None):
         pass
     return v if v is not None else default
 
+def _json_value(v):
+    v = _clean(v)
+    if isinstance(v, (pd.Timestamp, datetime, date)):
+        return v.isoformat()
+    try:
+        if hasattr(v, "item"):
+            return v.item()
+    except (ValueError, TypeError):
+        pass
+    return v
+
+def _json_dict(data: dict) -> dict:
+    return {k: _json_value(v) for k, v in data.items()}
+
 def _next_cxc_folio() -> str:
     rows = select("cuentas_por_cobrar", "select=folio&order=folio.desc&limit=1000")
     nums = []
@@ -148,6 +162,7 @@ def _sync_cxc_for_viaje(viaje: dict) -> bool:
         "estatus_cobro": estatus,
         "updated_at": datetime.utcnow().isoformat(),
     }
+    payload = _json_dict(payload)
     if rows:
         return update("cuentas_por_cobrar", str(rows[0]["folio"]), payload)
     payload["folio"] = _next_cxc_folio()
@@ -184,6 +199,7 @@ def _guardar(tabla: str, df_orig: pd.DataFrame, df_edit: pd.DataFrame):
         edit = df_edit.iloc[i]
         cambios = {k: edit[k] for k in df_orig.columns if str(orig.get(k)) != str(edit.get(k)) and k not in ("id","created_at","folio")}
         if cambios:
+            cambios = _json_dict(cambios)
             ok = update(tabla, str(orig["folio"]), cambios)
             if ok:
                 guardados += 1
