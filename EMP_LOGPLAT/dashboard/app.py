@@ -7,7 +7,7 @@ from datetime import date, datetime
 import pandas as pd
 import streamlit as st
 
-from db import select, update, insert, delete
+from db import select, update, insert, delete, last_error
 
 st.set_page_config(page_title="LOGPLAT Dashboard", page_icon="🚛", layout="wide")
 
@@ -130,6 +130,14 @@ def _pagos_por_viaje(numero_viaje: str) -> float:
     rows = select("pagos", f"numero_viaje=eq.{numero_viaje}&select=monto_pago")
     return sum(_num(row.get("monto_pago")) for row in rows or [])
 
+def _viaje_por_folio(numero_viaje: str) -> dict | None:
+    rows = select("viajes", f"folio=eq.{numero_viaje}&select=*")
+    return rows[0] if rows else None
+
+def _sync_cxc_by_numero(numero_viaje: str) -> bool:
+    viaje = _viaje_por_folio(numero_viaje)
+    return _sync_cxc_for_viaje(viaje) if viaje else False
+
 def _sync_cxc_for_viaje(viaje: dict) -> bool:
     numero_viaje = str(viaje.get("folio") or "")
     if not numero_viaje:
@@ -138,8 +146,6 @@ def _sync_cxc_for_viaje(viaje: dict) -> bool:
     monto_total = _num(viaje.get("precio_venta_viaje"))
     monto_pagado = _pagos_por_viaje(numero_viaje)
     rows = select("cuentas_por_cobrar", f"numero_viaje=eq.{numero_viaje}&select=*")
-    if rows and monto_pagado <= 0:
-        monto_pagado = _num(rows[0].get("monto_pagado"))
 
     saldo = max(0.0, monto_total - monto_pagado)
     if monto_total <= 0:
@@ -164,10 +170,15 @@ def _sync_cxc_for_viaje(viaje: dict) -> bool:
     }
     payload = _json_dict(payload)
     if rows:
-        return update("cuentas_por_cobrar", str(rows[0]["folio"]), payload)
-    payload["folio"] = _next_cxc_folio()
-    payload["created_at"] = datetime.utcnow().isoformat()
-    return insert("cuentas_por_cobrar", payload)
+        ok = update("cuentas_por_cobrar", str(rows[0]["folio"]), payload)
+    else:
+        payload["folio"] = _next_cxc_folio()
+        payload["created_at"] = datetime.utcnow().isoformat()
+        ok = insert("cuentas_por_cobrar", payload)
+
+    if ok:
+        update("viajes", numero_viaje, {"estatus_pago": "por_cobrar" if estatus == "pendiente" else estatus})
+    return ok
 
 def _reparar_cxc_desde_viajes(viajes: pd.DataFrame) -> tuple[int, int]:
     ok, err = 0, 0
@@ -182,6 +193,49 @@ def _reparar_cxc_desde_viajes(viajes: pd.DataFrame) -> tuple[int, int]:
                 err += 1
     return ok, err
 
+def _build_cxc_view(viajes: pd.DataFrame, pagos: pd.DataFrame, cxc: pd.DataFrame) -> pd.DataFrame:
+    if viajes.empty or "folio" not in viajes.columns:
+        return cxc.copy() if not cxc.empty else pd.DataFrame()
+
+    pagos_por_viaje = {}
+    if not pagos.empty and "numero_viaje" in pagos.columns and "monto_pago" in pagos.columns:
+        pagos_por_viaje = (
+            pagos.assign(_monto=pagos["monto_pago"].apply(_num))
+            .groupby("numero_viaje")["_monto"]
+            .sum()
+            .to_dict()
+        )
+
+    cxc_por_viaje = {}
+    if not cxc.empty and "numero_viaje" in cxc.columns:
+        cxc_por_viaje = {str(row.get("numero_viaje") or ""): row.to_dict() for _, row in cxc.iterrows()}
+
+    rows = []
+    for _, viaje in viajes.iterrows():
+        numero = str(viaje.get("folio") or "")
+        if not numero:
+            continue
+        existente = cxc_por_viaje.get(numero, {})
+        total = _num(viaje.get("precio_venta_viaje"))
+        pagado = _num(pagos_por_viaje.get(numero, 0))
+        saldo = max(0.0, total - pagado)
+        estatus = "pagado" if total > 0 and saldo <= 0 else ("parcial" if pagado > 0 else "pendiente")
+        rows.append({
+            "folio": existente.get("folio") or f"CXC-{numero.split('-', 1)[-1]}",
+            "empresa_id": viaje.get("empresa_id") or existente.get("empresa_id") or "LOGPLAT",
+            "cliente": viaje.get("cliente") or existente.get("cliente") or "",
+            "numero_viaje": numero,
+            "monto_total": total,
+            "monto_pagado": pagado,
+            "saldo_pendiente": saldo,
+            "fecha_viaje": viaje.get("fecha_salida") or existente.get("fecha_viaje"),
+            "fecha_vencimiento": existente.get("fecha_vencimiento"),
+            "estatus_cobro": estatus,
+            "created_at": existente.get("created_at"),
+            "updated_at": existente.get("updated_at"),
+        })
+    return pd.DataFrame(rows)
+
 def _date_filter(df: pd.DataFrame, col: str, desde, hasta) -> pd.DataFrame:
     if col not in df.columns: return df
     try:
@@ -193,7 +247,7 @@ def _date_filter(df: pd.DataFrame, col: str, desde, hasta) -> pd.DataFrame:
 
 def _guardar(tabla: str, df_orig: pd.DataFrame, df_edit: pd.DataFrame):
     if df_orig.empty or "folio" not in df_orig.columns: return
-    guardados, errores = 0, 0
+    guardados, errores, sync_errores = 0, 0, 0
     for i in range(min(len(df_orig), len(df_edit))):
         orig = df_orig.iloc[i]
         edit = df_edit.iloc[i]
@@ -201,15 +255,44 @@ def _guardar(tabla: str, df_orig: pd.DataFrame, df_edit: pd.DataFrame):
         if cambios:
             cambios = _json_dict(cambios)
             ok = update(tabla, str(orig["folio"]), cambios)
+            if not ok and tabla == "cuentas_por_cobrar":
+                cxc_nuevo = orig.to_dict()
+                cxc_nuevo.update(cambios)
+                ok = insert(tabla, _json_dict(cxc_nuevo))
             if ok:
                 guardados += 1
                 if tabla == "viajes":
                     viaje_actualizado = orig.to_dict()
                     viaje_actualizado.update(cambios)
-                    _sync_cxc_for_viaje(viaje_actualizado)
+                    if not _sync_cxc_for_viaje(viaje_actualizado):
+                        sync_errores += 1
+                elif tabla == "pagos":
+                    pago_actualizado = orig.to_dict()
+                    pago_actualizado.update(cambios)
+                    viajes = {
+                        str(orig.get("numero_viaje") or "").strip(),
+                        str(pago_actualizado.get("numero_viaje") or "").strip(),
+                    }
+                    for numero_viaje in viajes:
+                        if numero_viaje and numero_viaje.lower() not in ("nan", "none"):
+                            if not _sync_cxc_by_numero(numero_viaje):
+                                sync_errores += 1
+                elif tabla == "gastos":
+                    gasto_actualizado = orig.to_dict()
+                    gasto_actualizado.update(cambios)
+                    numero_viaje = str(gasto_actualizado.get("numero_viaje") or "").strip()
+                    if numero_viaje and numero_viaje.lower() not in ("nan", "none"):
+                        if not _sync_cxc_by_numero(numero_viaje):
+                            sync_errores += 1
             else:  errores += 1
     if guardados: st.success(f"✅ {guardados} fila(s) guardada(s).")
     if errores:   st.error(f"❌ {errores} fila(s) con error.")
+    if sync_errores:
+        st.error(f"⚠️ {sync_errores} sincronización(es) de CXC fallaron: {last_error()}")
+    elif guardados and tabla in ("viajes", "pagos", "gastos"):
+        st.success("CXC actualizada.")
+    if errores and last_error():
+        st.error(last_error())
     if guardados or errores: st.cache_data.clear()
 
 def _csv_btn(df: pd.DataFrame, nombre: str, key: str):
@@ -584,7 +667,14 @@ elif seccion == "Pagos":
     with st.expander("🗑️ Borrar pago"):
         _del_p = st.selectbox("Folio", ["—"] + sorted(df["folio"].dropna().tolist()), key="del_p_sel")
         if st.button("⚠️ Confirmar borrar", key="del_p_btn") and _del_p != "—":
+            _viaje_pago = ""
+            if "numero_viaje" in df.columns:
+                _rows_pago = df[df["folio"] == _del_p]
+                if not _rows_pago.empty:
+                    _viaje_pago = str(_rows_pago.iloc[0].get("numero_viaje") or "").strip()
             if delete("pagos", _del_p):
+                if _viaje_pago:
+                    _sync_cxc_by_numero(_viaje_pago)
                 st.success(f"Borrado {_del_p}")
                 st.cache_data.clear()
                 st.rerun()
@@ -599,9 +689,10 @@ elif seccion == "Pagos":
 
 elif seccion == "CXC":
     st.header("📋 Cuentas por Cobrar")
-    df  = get_cxc()
+    dc  = get_cxc()
     dp  = get_pagos()
     dv  = get_viajes()
+    df  = _build_cxc_view(dv, dp, dc)
 
     if st.button("Reparar CXC desde viajes", key="repair_cxc"):
         ok, err = _reparar_cxc_desde_viajes(dv)

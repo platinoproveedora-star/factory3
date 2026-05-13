@@ -102,6 +102,7 @@ def crear_viaje(data: dict) -> dict:
         viaje = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
         if row["estatus_pago"] == "por_cobrar":
             _crear_cxc(viaje)
+        _sync_cxc_viaje(viaje.get("folio", folio))
     return r
 
 
@@ -146,6 +147,7 @@ def crear_gasto(data: dict) -> dict:
     r = _req("POST", "gastos", row, write=True)
     if r.get("ok") and data.get("numero_viaje"):
         _recalcular_utilidad(data["numero_viaje"])
+        _sync_cxc_viaje(data["numero_viaje"])
     return r
 
 
@@ -203,6 +205,40 @@ def _actualizar_cxc(numero_viaje: str, monto_pago: float) -> None:
     _req("PATCH", "viajes",
          {"estatus_pago": estatus, "updated_at": now},
          params={"folio": f"eq.{numero_viaje}"}, write=True)
+
+
+def _sync_cxc_viaje(numero_viaje: str) -> None:
+    rv = _req("GET", "viajes", params={"folio": f"eq.{numero_viaje}", "select": "*"})
+    if not rv.get("ok") or not rv.get("data"):
+        return
+    viaje = rv["data"][0]
+    rp = _req("GET", "pagos", params={"numero_viaje": f"eq.{numero_viaje}", "select": "monto_pago"})
+    monto_pagado = sum(float(p.get("monto_pago", 0)) for p in rp.get("data", [])) if rp.get("ok") else 0
+    monto_total = float(viaje.get("precio_venta_viaje", 0))
+    saldo = max(0.0, monto_total - monto_pagado)
+    estatus = "pagado" if monto_total > 0 and saldo <= 0 else ("parcial" if monto_pagado > 0 else "pendiente")
+    now = datetime.utcnow().isoformat()
+    rc = _req("GET", "cuentas_por_cobrar", params={"numero_viaje": f"eq.{numero_viaje}", "select": "*"})
+    if rc.get("ok") and rc.get("data"):
+        _req("PATCH", "cuentas_por_cobrar",
+             {"monto_total": monto_total, "monto_pagado": monto_pagado, "saldo_pendiente": saldo,
+              "estatus_cobro": estatus, "updated_at": now},
+             params={"numero_viaje": f"eq.{numero_viaje}"}, write=True)
+    else:
+        folio = _next_folio("cuentas_por_cobrar", "CXC")
+        _req("POST", "cuentas_por_cobrar", {
+            "folio":           folio,
+            "empresa_id":      viaje.get("empresa_id", "LOGPLAT"),
+            "numero_viaje":    numero_viaje,
+            "cliente":         viaje.get("cliente"),
+            "monto_total":     monto_total,
+            "monto_pagado":    monto_pagado,
+            "saldo_pendiente": saldo,
+            "fecha_viaje":     viaje.get("fecha_salida"),
+            "estatus_cobro":   estatus,
+            "created_at":      now,
+            "updated_at":      now,
+        }, write=True)
 
 
 # ─── IA — wrappers sobre ai_interpreter ──────────────────────────────────────
