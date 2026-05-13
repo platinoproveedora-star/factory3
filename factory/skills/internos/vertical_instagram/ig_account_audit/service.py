@@ -147,7 +147,13 @@ class IgAccountAuditService:
             )
             with urllib.request.urlopen(req, timeout=30) as r:
                 resp = json.loads(r.read().decode())
-            data = json.loads(resp["content"][0]["text"].strip())
+            text = resp["content"][0]["text"].strip()
+            if text.startswith("```"):
+                text = text.split("```")[1]
+                if text.startswith("json"):
+                    text = text[4:]
+                text = text.strip()
+            data = json.loads(text)
             return {"ok": True, "data": data}
         except Exception as e:
             return {"ok": False, "error": f"Haiku error: {e}"}
