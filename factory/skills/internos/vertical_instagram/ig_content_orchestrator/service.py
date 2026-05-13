@@ -51,6 +51,7 @@ class IgContentOrchestratorService:
         # 1. Caption
         r_caption = _run("vertical_instagram/ig_caption_generator", {
             **base_ctx,
+            "topic":   tema,
             "formato": tipo,
         })
         caption = r_caption.get("data", {}).get("caption", "") if r_caption.get("ok") else ""
@@ -58,6 +59,7 @@ class IgContentOrchestratorService:
         # 2. Hashtags
         r_hash = _run("vertical_instagram/ig_hashtag_generator", {
             **base_ctx,
+            "topic":   tema,
             "caption": caption,
         })
         hashtags = r_hash.get("data", {}).get("hashtags", []) if r_hash.get("ok") else []
