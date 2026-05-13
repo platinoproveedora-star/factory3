@@ -29,7 +29,8 @@ _AYUDA = (
     "<b>Modo LOGPLAT activo</b> — Logística Platino\n\n"
     "<b>Capturar:</b>\n"
     "/gasto   — registrar gasto\n"
-    "  Formato: <code>cantidad,concepto,12mayo26,viaje</code>\n"
+    "  Formato: <code>cantidad,concepto,dd/mm/yy,viaje</code>\n"
+    "  Ej: <code>500,gasolina,12/05/26,25</code>\n"
     "  O envía 📷 del comprobante\n\n"
     "/viaje   — registrar viaje\n"
     "  Formato: <code>numero,origen,destino,precio</code>\n"
@@ -45,7 +46,7 @@ _AYUDA = (
 )
 
 _PROMPTS = {
-    "gasto": "💸 Usa: <code>cantidad,concepto,12mayo26,viaje</code>\n\nO envía 📷 del comprobante.",
+    "gasto": "💸 Usa: <code>cantidad,concepto,12/05/26,viaje</code>\n\nO envía 📷 del comprobante.",
     "pago":  "💰 Envía los datos del pago (texto) o una foto del recibo.",
     "viaje": "🚚 Usa: <code>numero,origen,destino,precio</code>\n\nO envía 📄 foto/PDF para subirlo como documento.",
 }
@@ -64,24 +65,24 @@ def _normalizar_folio(texto: str) -> str:
 
 
 def _parsear_fecha(texto: str) -> str | None:
-    """'12mayo26' → '2026-05-12'"""
+    """'12/05/26' → '2026-05-12'"""
     import re
-    match = re.match(r"(\d{1,2})(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(\d{2})", texto.lower())
-    if not match:
-        return None
-    dia, mes_str, anio = match.groups()
-    meses = {"enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
-             "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12}
-    mes = meses.get(mes_str)
-    if not mes:
-        return None
-    anio_completo = 2000 + int(anio)
-    try:
-        from datetime import date
-        d = date(anio_completo, mes, int(dia))
-        return d.isoformat()
-    except ValueError:
-        return None
+    from datetime import date
+
+    # Intenta DD/MM/YY
+    match = re.match(r"(\d{1,2})[/-](\d{1,2})[/-](\d{2})", texto.strip())
+    if match:
+        dia_str, mes_str, anio_str = match.groups()
+        try:
+            dia = int(dia_str)
+            mes = int(mes_str)
+            anio = 2000 + int(anio_str)
+            d = date(anio, mes, dia)
+            return d.isoformat()
+        except (ValueError, TypeError):
+            pass
+
+    return None
 
 
 def _parsear_gasto_formato_exacto(texto: str) -> dict | None:
@@ -199,8 +200,8 @@ def _capture_text(text: str, hint: str, state: dict) -> dict:
         # Si falla formato exacto, pedir imagen
         return _ok(
             "❌ Formato incorrecto.\n\n"
-            "<b>Usa:</b> <code>cantidad,concepto,fecha,viaje</code>\n\n"
-            "<b>Ejemplo:</b>\n<code>500,gasolina,12mayo26,25</code>\n\n"
+            "<b>Usa:</b> <code>cantidad,concepto,dd/mm/yy,viaje</code>\n\n"
+            "<b>Ejemplo:</b>\n<code>500,gasolina,12/05/26,25</code>\n\n"
             "O envía una 📷 del comprobante y te lo interpreto.",
             state
         )
