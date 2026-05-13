@@ -86,12 +86,12 @@ class IgBoostPostService:
             pasos.append({"paso": "adset", "id": adset_id})
 
             # 3. Creative usando el post existente de IG
-            story_spec: dict = {"page_id": page_id}
-            if ig_actor_id:
-                story_spec["instagram_actor_id"] = ig_actor_id
-            story_spec["instagram_image_data"] = {
-                "instagram_media_id": post_id,
-                "link": link_destino,
+            story_spec: dict = {
+                "page_id": page_id,
+                "instagram_image_data": {
+                    "instagram_media_id": post_id,
+                    "link": link_destino,
+                },
             }
 
             cr = self._post(f"{ad_account_id}/adcreatives", {
