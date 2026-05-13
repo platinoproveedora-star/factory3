@@ -66,6 +66,11 @@ class IgCaptionGeneratorService:
 
         try:
             raw = self._call_anthropic(prompt, system)
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+                raw = raw.strip()
             data = json.loads(raw)
             if "caption" in data and "character_count" not in data:
                 data["character_count"] = len(data["caption"])

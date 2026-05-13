@@ -55,6 +55,10 @@ class IgHashtagGeneratorService:
         )
         try:
             raw = self._call_anthropic(prompt, system)
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"): raw = raw[4:]
+                raw = raw.strip()
             data = json.loads(raw)
             return {"ok": True, "data": data}
         except json.JSONDecodeError:

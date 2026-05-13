@@ -53,6 +53,10 @@ class IgAltTextGeneratorService:
         )
         try:
             raw = self._call_anthropic(prompt, system, max_tokens=512)
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"): raw = raw[4:]
+                raw = raw.strip()
             data = json.loads(raw)
             if "alt_text" in data:
                 data["character_count"] = len(data["alt_text"])
