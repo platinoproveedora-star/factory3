@@ -75,7 +75,7 @@ def _next_folio(table: str, prefix: str) -> str:
 # ─── VIAJES ──────────────────────────────────────────────────────────────────
 
 def crear_viaje(data: dict) -> dict:
-    folio = _next_folio("viajes", "VIA")
+    folio = data.get("folio") or _next_folio("viajes", "VIA")
     now   = datetime.utcnow().isoformat()
     costo = float(data.get("costo_viaje") or 0)
     venta = float(data.get("precio_venta_viaje") or 0)

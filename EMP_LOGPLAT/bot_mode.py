@@ -1,14 +1,16 @@
 """Handler for /logplat mode.
 
 Comandos: /gasto  /pago  /viaje
-  - Texto libre sin hint  → chat con Haiku sobre los datos
-  - /gasto + texto        → interpreta y guarda gasto
-  - /gasto + foto         → extrae gasto de imagen + sube comprobante
-  - /pago  + texto        → interpreta y guarda pago
-  - /pago  + foto         → extrae pago de imagen + sube comprobante
-  - /viaje + texto        → interpreta y guarda viaje
-  - /viaje + foto/PDF     → sube documento, pregunta número de viaje
-  - Siguiente msg tras /viaje+foto → folio → liga doc al viaje
+  - /gasto + texto formato exacto      → guarda gasto: cantidad,concepto,12mayo26,viaje
+  - /gasto + texto fallido             → pide foto del comprobante
+  - /gasto + foto                      → extrae gasto de imagen + sube comprobante
+  - /viaje + texto formato exacto      → guarda viaje: numero,origen,destino,precio
+  - /viaje + texto fallido             → pide foto/PDF del documento
+  - /viaje + foto/PDF                  → sube documento, pregunta número de viaje
+  - Siguiente msg tras /viaje+foto     → folio → liga doc al viaje
+  - /pago  + texto                     → interpreta y guarda pago
+  - /pago  + foto                      → extrae pago de imagen + sube comprobante
+  - Texto libre sin comando            → chat con Haiku sobre los datos
 """
 
 from __future__ import annotations
@@ -26,9 +28,14 @@ import service as svc
 _AYUDA = (
     "<b>Modo LOGPLAT activo</b> — Logística Platino\n\n"
     "<b>Capturar:</b>\n"
-    "/gasto   — registrar gasto (texto o foto del comprobante)\n"
-    "/pago    — registrar pago (texto o foto del recibo)\n"
-    "/viaje   — registrar viaje o subir documento a un viaje\n\n"
+    "/gasto   — registrar gasto\n"
+    "  Formato: <code>cantidad,concepto,12mayo26,viaje</code>\n"
+    "  O envía 📷 del comprobante\n\n"
+    "/viaje   — registrar viaje\n"
+    "  Formato: <code>numero,origen,destino,precio</code>\n"
+    "  Ej: <code>25,merida,cancun,15000</code>\n"
+    "  O envía 📄 documento\n\n"
+    "/pago    — registrar pago (texto o foto del recibo)\n\n"
     "<b>Consultar:</b>\n"
     "/reporteviajes — últimos 10 viajes\n"
     "/reportegastos — últimos 10 gastos\n"
@@ -38,9 +45,9 @@ _AYUDA = (
 )
 
 _PROMPTS = {
-    "gasto": "💸 Envía los datos del gasto (texto) o una foto del comprobante.",
+    "gasto": "💸 Usa: <code>cantidad,concepto,12mayo26,viaje</code>\n\nO envía 📷 del comprobante.",
     "pago":  "💰 Envía los datos del pago (texto) o una foto del recibo.",
-    "viaje": "🚚 Envía texto con los datos del viaje, o una foto/PDF para subirlo como documento.",
+    "viaje": "🚚 Usa: <code>numero,origen,destino,precio</code>\n\nO envía 📄 foto/PDF para subirlo como documento.",
 }
 
 
@@ -54,6 +61,78 @@ def _normalizar_folio(texto: str) -> str:
     if not m:
         return t
     return f"VIA-{int(m.group()):03d}"
+
+
+def _parsear_fecha(texto: str) -> str | None:
+    """'12mayo26' → '2026-05-12'"""
+    import re
+    match = re.match(r"(\d{1,2})(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(\d{2})", texto.lower())
+    if not match:
+        return None
+    dia, mes_str, anio = match.groups()
+    meses = {"enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
+             "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12}
+    mes = meses.get(mes_str)
+    if not mes:
+        return None
+    anio_completo = 2000 + int(anio)
+    try:
+        from datetime import date
+        d = date(anio_completo, mes, int(dia))
+        return d.isoformat()
+    except ValueError:
+        return None
+
+
+def _parsear_gasto_formato_exacto(texto: str) -> dict | None:
+    """'cantidad,concepto,12mayo26,viaje' → {monto_gasto, concepto, fecha_gasto, numero_viaje}"""
+    partes = [p.strip() for p in texto.split(",")]
+    if len(partes) != 4:
+        return None
+
+    cantidad_str, concepto, fecha_str, viaje = partes
+
+    try:
+        cantidad = int(cantidad_str)
+    except ValueError:
+        return None
+
+    fecha = _parsear_fecha(fecha_str)
+    if not fecha:
+        return None
+
+    viaje_folio = _normalizar_folio(viaje)
+    if not viaje_folio:
+        return None
+
+    return {
+        "monto_gasto": cantidad,
+        "concepto": concepto,
+        "fecha_gasto": fecha,
+        "numero_viaje": viaje_folio,
+    }
+
+
+def _parsear_viaje_formato_exacto(texto: str) -> dict | None:
+    """'numero,origen,destino,precio_venta' → {precio_venta_viaje, origen, destino} + folio generado"""
+    partes = [p.strip() for p in texto.split(",")]
+    if len(partes) != 4:
+        return None
+
+    numero_str, origen, destino, precio_str = partes
+
+    try:
+        numero = int(numero_str)
+        precio = int(precio_str)
+    except ValueError:
+        return None
+
+    return {
+        "numero": numero,
+        "origen": origen,
+        "destino": destino,
+        "precio_venta_viaje": precio,
+    }
 
 
 def ejecutar(update: dict, state: dict) -> dict:
@@ -112,6 +191,42 @@ def ejecutar(update: dict, state: dict) -> dict:
 # ─── CAPTURA ─────────────────────────────────────────────────────────────────
 
 def _capture_text(text: str, hint: str, state: dict) -> dict:
+    # Gasto: intentar formato exacto primero
+    if hint == "gasto":
+        parsed = _parsear_gasto_formato_exacto(text)
+        if parsed:
+            return _save_gasto(parsed, state)
+        # Si falla formato exacto, pedir imagen
+        return _ok(
+            "❌ Formato incorrecto.\n\n"
+            "<b>Usa:</b> <code>cantidad,concepto,fecha,viaje</code>\n\n"
+            "<b>Ejemplo:</b>\n<code>500,gasolina,12mayo26,25</code>\n\n"
+            "O envía una 📷 del comprobante y te lo interpreto.",
+            state
+        )
+
+    # Viaje: intentar formato exacto primero
+    if hint == "viaje":
+        parsed = _parsear_viaje_formato_exacto(text)
+        if parsed:
+            return _save_viaje_exacto(parsed, state)
+        # Si falla formato exacto, pedir imagen
+        return _ok(
+            "❌ Formato incorrecto.\n\n"
+            "<b>Usa:</b> <code>numero,origen,destino,precio</code>\n\n"
+            "<b>Ejemplo:</b>\n<code>25,merida,cancun,15000</code>\n\n"
+            "O envía una foto/PDF del documento.",
+            state
+        )
+
+    # Pago: interpretar con IA
+    if hint == "pago":
+        r = svc.interpretar_libre(text, None, None, hint)
+        if not r.get("ok"):
+            return _ok(f"No pude interpretar: {r.get('error')}", state)
+        return _dispatch(hint, r.get("data", {}), state)
+
+    # Fallback
     r = svc.interpretar_libre(text, None, None, hint)
     if not r.get("ok"):
         return _ok(f"No pude interpretar: {r.get('error')}", state)
@@ -171,6 +286,26 @@ def _save_viaje(data: dict, state: dict) -> dict:
     msg = (f"✅ Viaje <b>{v.get('folio','?')}</b> registrado.\n"
            f"Ruta: {data.get('origen') or '?'} → {data.get('destino') or '?'}\n"
            f"Cliente: {data.get('cliente') or '—'}")
+    return _ok(msg, state)
+
+
+def _save_viaje_exacto(data: dict, state: dict) -> dict:
+    """Guardar viaje desde formato exacto: numero,origen,destino,precio"""
+    folio = f"VIA-{data['numero']:03d}"
+    payload = {
+        "folio": folio,
+        "origen": data.get("origen", ""),
+        "destino": data.get("destino", ""),
+        "precio_venta_viaje": data.get("precio_venta_viaje", 0),
+        "estatus_pago": "por_cobrar",
+    }
+    r = svc.crear_viaje(payload)
+    if not r.get("ok"):
+        return _ok(f"❌ Error guardando viaje: {r.get('error')}", state)
+    v = (r["data"][0] if isinstance(r.get("data"), list) else r.get("data")) or {}
+    msg = (f"✅ Viaje <b>{v.get('folio','?')}</b> registrado.\n"
+           f"Ruta: {data.get('origen') or '?'} → {data.get('destino') or '?'}\n"
+           f"Venta: ${int(data.get('precio_venta_viaje', 0)):,}")
     return _ok(msg, state)
 
 
