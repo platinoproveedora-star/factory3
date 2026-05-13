@@ -73,6 +73,7 @@ class IgBoostPostService:
                 "campaign_id":       campaign_id,
                 "optimization_goal": "REACH",
                 "billing_event":     "IMPRESSIONS",
+                "bid_strategy":      "LOWEST_COST_WITHOUT_CAP",
                 "lifetime_budget":   budget_centavos,
                 "end_time":          self._end_time(dias),
                 "targeting":         json.dumps(targeting),
