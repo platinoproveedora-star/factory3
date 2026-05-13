@@ -267,7 +267,7 @@ def health():
     }
 
 
-@app.get("/data/{skill_name}")
+@app.get("/data/{skill_name:path}")
 def data(skill_name: str, request: Request):
     params = dict(request.query_params)
     try:
