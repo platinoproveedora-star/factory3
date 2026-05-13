@@ -17,7 +17,8 @@ class IgBoostPostService:
         access_token = (context.get("access_token") or os.getenv("IG_ACCESS_TOKEN") or os.getenv("META_ACCESS_TOKEN") or "").strip()
         ad_account_id = (context.get("ad_account_id") or os.getenv("META_AD_ACCOUNT_ID") or "").strip()
         page_id = (context.get("page_id") or os.getenv("IG_PAGE_ID") or os.getenv("META_PAGE_ID") or "").strip()
-        ig_actor_id = (context.get("ig_actor_id") or os.getenv("IG_ACTOR_ID") or "").strip()
+        ig_actor_id = (context.get("ig_actor_id") or os.getenv("IG_USER_ID") or os.getenv("IG_ACTOR_ID") or "").strip()
+        link_destino = (context.get("link") or f"https://www.instagram.com/{context.get('username') or 'platinoproveedora'}/").strip()
         budget_pesos = float(context.get("budget_pesos") or context.get("presupuesto") or 0)
         dias = int(context.get("dias") or 7)
         objetivo = (context.get("objetivo") or "OUTCOME_ENGAGEMENT").upper()
@@ -88,7 +89,10 @@ class IgBoostPostService:
             story_spec: dict = {"page_id": page_id}
             if ig_actor_id:
                 story_spec["instagram_actor_id"] = ig_actor_id
-            story_spec["instagram_image_data"] = {"instagram_media_id": post_id}
+            story_spec["instagram_image_data"] = {
+                "instagram_media_id": post_id,
+                "link": link_destino,
+            }
 
             cr = self._post(f"{ad_account_id}/adcreatives", {
                 "name":              f"[Boost] {nombre}",
