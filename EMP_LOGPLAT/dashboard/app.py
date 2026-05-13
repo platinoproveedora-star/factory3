@@ -92,6 +92,81 @@ def _num(v) -> float:
     try: return float(v)
     except: return 0.0
 
+def _clean(v, default=None):
+    try:
+        if pd.isna(v):
+            return default
+    except (TypeError, ValueError):
+        pass
+    return v if v is not None else default
+
+def _next_cxc_folio() -> str:
+    rows = select("cuentas_por_cobrar", "select=folio&order=folio.desc&limit=1000")
+    nums = []
+    for row in rows or []:
+        folio = str(row.get("folio") or "")
+        if "-" in folio:
+            try:
+                nums.append(int(folio.split("-", 1)[1]))
+            except (ValueError, IndexError):
+                pass
+    return f"CXC-{(max(nums) + 1) if nums else 1:03d}"
+
+def _pagos_por_viaje(numero_viaje: str) -> float:
+    rows = select("pagos", f"numero_viaje=eq.{numero_viaje}&select=monto_pago")
+    return sum(_num(row.get("monto_pago")) for row in rows or [])
+
+def _sync_cxc_for_viaje(viaje: dict) -> bool:
+    numero_viaje = str(viaje.get("folio") or "")
+    if not numero_viaje:
+        return False
+
+    monto_total = _num(viaje.get("precio_venta_viaje"))
+    monto_pagado = _pagos_por_viaje(numero_viaje)
+    rows = select("cuentas_por_cobrar", f"numero_viaje=eq.{numero_viaje}&select=*")
+    if rows and monto_pagado <= 0:
+        monto_pagado = _num(rows[0].get("monto_pagado"))
+
+    saldo = max(0.0, monto_total - monto_pagado)
+    if monto_total <= 0:
+        estatus = "pendiente"
+    elif saldo <= 0:
+        estatus = "pagado"
+    elif monto_pagado > 0:
+        estatus = "parcial"
+    else:
+        estatus = "pendiente"
+
+    payload = {
+        "empresa_id": _clean(viaje.get("empresa_id"), "LOGPLAT") or "LOGPLAT",
+        "numero_viaje": numero_viaje,
+        "cliente": _clean(viaje.get("cliente"), "") or "",
+        "monto_total": monto_total,
+        "monto_pagado": monto_pagado,
+        "saldo_pendiente": saldo,
+        "fecha_viaje": _clean(viaje.get("fecha_salida")),
+        "estatus_cobro": estatus,
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+    if rows:
+        return update("cuentas_por_cobrar", str(rows[0]["folio"]), payload)
+    payload["folio"] = _next_cxc_folio()
+    payload["created_at"] = datetime.utcnow().isoformat()
+    return insert("cuentas_por_cobrar", payload)
+
+def _reparar_cxc_desde_viajes(viajes: pd.DataFrame) -> tuple[int, int]:
+    ok, err = 0, 0
+    if viajes.empty:
+        return ok, err
+    for _, row in viajes.iterrows():
+        viaje = row.to_dict()
+        if str(viaje.get("estatus_pago") or "por_cobrar") in ("por_cobrar", "parcial", "pagado"):
+            if _sync_cxc_for_viaje(viaje):
+                ok += 1
+            else:
+                err += 1
+    return ok, err
+
 def _date_filter(df: pd.DataFrame, col: str, desde, hasta) -> pd.DataFrame:
     if col not in df.columns: return df
     try:
@@ -110,7 +185,12 @@ def _guardar(tabla: str, df_orig: pd.DataFrame, df_edit: pd.DataFrame):
         cambios = {k: edit[k] for k in df_orig.columns if str(orig.get(k)) != str(edit.get(k)) and k not in ("id","created_at","folio")}
         if cambios:
             ok = update(tabla, str(orig["folio"]), cambios)
-            if ok: guardados += 1
+            if ok:
+                guardados += 1
+                if tabla == "viajes":
+                    viaje_actualizado = orig.to_dict()
+                    viaje_actualizado.update(cambios)
+                    _sync_cxc_for_viaje(viaje_actualizado)
             else:  errores += 1
     if guardados: st.success(f"✅ {guardados} fila(s) guardada(s).")
     if errores:   st.error(f"❌ {errores} fila(s) con error.")
@@ -505,6 +585,16 @@ elif seccion == "CXC":
     st.header("📋 Cuentas por Cobrar")
     df  = get_cxc()
     dp  = get_pagos()
+    dv  = get_viajes()
+
+    if st.button("Reparar CXC desde viajes", key="repair_cxc"):
+        ok, err = _reparar_cxc_desde_viajes(dv)
+        if ok:
+            st.success(f"CXC sincronizada para {ok} viaje(s).")
+        if err:
+            st.error(f"{err} viaje(s) no se pudieron sincronizar.")
+        st.cache_data.clear()
+        st.rerun()
 
     # Solo filtros — CXC es resultado de viajes vs pagos, no se edita directamente
     c1, c2, c3, c4 = st.columns(4)
@@ -529,6 +619,30 @@ elif seccion == "CXC":
     _cxc_cols = [c for c in ["folio","cliente","numero_viaje","monto_total","monto_pagado",
                                "saldo_pendiente","estatus_cobro","dias_pendiente",
                                "fecha_viaje","fecha_vencimiento"] if not dff.empty and c in dff.columns]
+
+    if not dff.empty:
+        st.subheader("Editar CXC")
+        edit_cols = [c for c in ["folio","cliente","numero_viaje","monto_total","monto_pagado",
+                                  "saldo_pendiente","estatus_cobro","fecha_viaje","fecha_vencimiento"]
+                     if c in dff.columns]
+        cxc_orig = dff[edit_cols].copy()
+        cxc_edit = st.data_editor(
+            cxc_orig,
+            use_container_width=True,
+            hide_index=True,
+            key="edit_cxc",
+            num_rows="fixed",
+            disabled=["folio","numero_viaje"],
+            column_config={
+                "estatus_cobro": st.column_config.SelectboxColumn(
+                    "estatus_cobro",
+                    options=["pendiente","parcial","pagado"],
+                )
+            },
+        )
+        if st.button("Guardar cambios CXC", key="save_cxc"):
+            _guardar("cuentas_por_cobrar", cxc_orig, cxc_edit)
+            st.rerun()
 
     # ── Arriba: Por Cobrar / Parciales ────────────────────────────────────────
     st.subheader("🔴 Por Cobrar")
