@@ -56,10 +56,11 @@ class IgBoostPostService:
         try:
             # 1. Campaña
             c = self._post(f"{ad_account_id}/campaigns", {
-                "name":                  f"[Boost] {nombre}",
-                "objective":             objetivo,
-                "status":                "ACTIVE",
-                "special_ad_categories": json.dumps([]),
+                "name":                            f"[Boost] {nombre}",
+                "objective":                       objetivo,
+                "status":                          "ACTIVE",
+                "special_ad_categories":           json.dumps([]),
+                "is_adset_budget_sharing_enabled": "false",
             }, access_token)
             if "error" in c:
                 return {"ok": False, "error": f"campaign: {c['error'].get('message', c['error'])}"}
