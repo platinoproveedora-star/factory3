@@ -181,6 +181,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "activity_skill_plan": {
+    "tipo": "interno",
+    "nombre": "activity_skill_plan",
+    "vertical": "factory",
+    "descripcion": "Planea skills, herramientas, credenciales y orden de ejecucion para una actividad operativa.",
+    "path": "skills/internos/activity_skill_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "add_bot": {
     "tipo": "interno",
     "nombre": "add_bot",
@@ -2056,6 +2065,24 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_ads/ads_campaign_run": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_campaign_run",
+    "vertical": "vertical_ads",
+    "descripcion": "Orquesta una campaña pagada usando configuración de empresa, planeación, aprobación y Meta Lead Ads.",
+    "path": "skills/internos/vertical_ads/ads_campaign_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/ads_campaign_preflight_check": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/ads_campaign_preflight_check",
+    "vertical": "vertical_ads",
+    "descripcion": "Gate pre-lanzamiento: valida brief, config, activos, presupuesto, compliance, approvals, KPIs y flujo de leads antes de publicar.",
+    "path": "skills/internos/vertical_ads/ads_campaign_preflight_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_ads/ads_scheduler_run": {
     "tipo": "interno",
     "nombre": "vertical_ads/ads_scheduler_run",
@@ -2237,6 +2264,42 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_meta_ads/meta_lead_form_create": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_lead_form_create",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Crea un Instant Form de Meta Lead Ads desde preguntas custom o presets reutilizables.",
+    "path": "skills/internos/vertical_meta_ads/meta_lead_form_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_ads_lead_campaign_flow": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_ads_lead_campaign_flow",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Crea campana Meta Lead Ads generica: campaign, adset, creative y ad en PAUSED por defecto.",
+    "path": "skills/internos/vertical_meta_ads/meta_ads_lead_campaign_flow",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_leads_sync_to_rh": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_leads_sync_to_rh",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Lee leads de un formulario Meta y los guarda como candidatos RH en Supabase.",
+    "path": "skills/internos/vertical_meta_ads/meta_leads_sync_to_rh",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta_ads/meta_leads_sync_to_sales": {
+    "tipo": "interno",
+    "nombre": "vertical_meta_ads/meta_leads_sync_to_sales",
+    "vertical": "vertical_meta_ads",
+    "descripcion": "Lee leads de un formulario Meta y los enruta a vertical_sales/sales_run para pipeline, score y follow-up.",
+    "path": "skills/internos/vertical_meta_ads/meta_leads_sync_to_sales",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_instagram/ig_dm_lead_qualifier": {
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_dm_lead_qualifier",
@@ -2352,6 +2415,78 @@
     "vertical": "vertical_instagram",
     "descripcion": "Orquesta creación de contenido IG: caption + hashtags + alt_text, publica si publicar=True.",
     "path": "skills/internos/vertical_instagram/ig_content_orchestrator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_companies/company_config_loader": {
+    "tipo": "interno",
+    "nombre": "vertical_companies/company_config_loader",
+    "vertical": "vertical_companies",
+    "descripcion": "Carga y valida companies/<COMPANY_ID>/company.config.json para reutilizar agentes y skills por empresa.",
+    "path": "skills/internos/vertical_companies/company_config_loader",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_companies/company_context_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_companies/company_context_builder",
+    "vertical": "vertical_companies",
+    "descripcion": "Construye contexto operativo de campaña mezclando brief, defaults, reglas y stacks de una empresa.",
+    "path": "skills/internos/vertical_companies/company_context_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_companies/company_dashboard_scaffold": {
+    "tipo": "interno",
+    "nombre": "vertical_companies/company_dashboard_scaffold",
+    "vertical": "vertical_companies",
+    "descripcion": "Crea un dashboard Streamlit deterministico para una empresa con Campaign Ops integrado.",
+    "path": "skills/internos/vertical_companies/company_dashboard_scaffold",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_wabiz/wabiz_store_config": {
+    "tipo": "interno",
+    "nombre": "vertical_wabiz/wabiz_store_config",
+    "vertical": "vertical_wabiz",
+    "descripcion": "Guarda o actualiza credenciales WhatsApp Business por empresa_id en wabiz_config (Supabase).",
+    "path": "skills/internos/vertical_wabiz/wabiz_store_config",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_wabiz/wabiz_connection_check": {
+    "tipo": "interno",
+    "nombre": "vertical_wabiz/wabiz_connection_check",
+    "vertical": "vertical_wabiz",
+    "descripcion": "Valida token y phone_number_id WhatsApp contra Graph API v24.0. Carga config de Supabase si se pasa empresa_id.",
+    "path": "skills/internos/vertical_wabiz/wabiz_connection_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_wabiz/wabiz_webhook_parse": {
+    "tipo": "interno",
+    "nombre": "vertical_wabiz/wabiz_webhook_parse",
+    "vertical": "vertical_wabiz",
+    "descripcion": "Normaliza payload de webhook Meta WhatsApp al formato interno {empresa_id, from_phone, type, body}. Registra en wabiz_messages si dry_run=False.",
+    "path": "skills/internos/vertical_wabiz/wabiz_webhook_parse",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_wabiz/wabiz_send_text": {
+    "tipo": "interno",
+    "nombre": "vertical_wabiz/wabiz_send_text",
+    "vertical": "vertical_wabiz",
+    "descripcion": "Envía mensaje de texto a WhatsApp vía Graph API Cloud. Registra en wabiz_messages con direction=out.",
+    "path": "skills/internos/vertical_wabiz/wabiz_send_text",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_wabiz/wabiz_channel_router": {
+    "tipo": "interno",
+    "nombre": "vertical_wabiz/wabiz_channel_router",
+    "vertical": "vertical_wabiz",
+    "descripcion": "Router IA WhatsApp: carga historial de conversación, llama Haiku y envía respuesta vía wabiz_send_text.",
+    "path": "skills/internos/vertical_wabiz/wabiz_channel_router",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   }

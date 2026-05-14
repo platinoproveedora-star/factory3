@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: emp-camp-rstate-dashboard
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0
+    envVars:
+      - key: EMPRESA_ID
+        value: EMP_CAMP_RSTATE
+      - key: CAMPAIGN_SLUG
+        value: first_rstate_campaign
+      - key: CAMPAIGN_ASSETS_BUCKET
+        value: campaign-assets
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: META_ACCESS_TOKEN
+        sync: false
+      - key: META_AD_ACCOUNT_ID
+        sync: false
+      - key: META_PAGE_ID
+        sync: false
+      - key: META_PRIVACY_URL
+        sync: false

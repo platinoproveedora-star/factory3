@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_companies/company_dashboard_scaffold",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un dashboard Streamlit deterministico para una empresa con Campaign Ops integrado.",
+  "vertical": "vertical_companies",
+  "requires_env": []
+}

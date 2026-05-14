@@ -1,0 +1,40 @@
+{
+  "company_id": "EMP_CAMP_RSTATE",
+  "dry_run": true,
+  "execute": false,
+  "approver": "pendiente",
+  "message": "Oficina lista en piso 8 de Orion Business Hub, Merida. 28 m2 para 2 a 6 personas. Disponible con o sin inquilino activo que actualmente paga MXN 17,000 mensuales. Deja tus datos y recibe la ficha.",
+  "title": "Oficina en venta en Merida",
+  "description": "Lista para ocupar o conservar como inversion con renta mensual actual.",
+  "brief": {
+    "objective": "leads",
+    "audience": "inversionistas inmobiliarios, profesionistas independientes, pymes y compradores patrimoniales interesados en una oficina lista en Merida",
+    "property": {
+      "property_type": "Oficina",
+      "property_name": "Oficina en Orion Business Hub",
+      "building": "Orion Business Hub",
+      "floor": 8,
+      "location": "Merida, Yucatan, Mexico",
+      "size_m2": 28,
+      "capacity": "2 a 6 personas",
+      "price": 1950000,
+      "price_range": "MXN 1,950,000",
+      "operation_type": "venta",
+      "occupancy_options": "con o sin inquilino",
+      "current_rent": 17000,
+      "current_rent_period": "mensual",
+      "main_benefits": [
+        "oficina en piso 8 completamente lista",
+        "capacidad para 2 a 6 personas",
+        "opcion con inquilino activo",
+        "renta actual de MXN 17,000 mensuales",
+        "ubicacion corporativa en Orion Business Hub"
+      ],
+      "contact_owner": "ventas"
+    },
+    "budget": {
+      "daily": 200,
+      "total": 1400
+    }
+  }
+}

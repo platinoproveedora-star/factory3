@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/ads_campaign_preflight_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Gate pre-lanzamiento: valida brief, config, activos, presupuesto, compliance, approvals, KPIs y flujo de leads antes de publicar.",
+  "vertical": "vertical_ads",
+  "requires_env": []
+}

@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_companies/company_context_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Construye contexto operativo de campana mezclando brief, defaults, reglas y stacks de una empresa.",
+  "vertical": "vertical_companies",
+  "requires_env": []
+}

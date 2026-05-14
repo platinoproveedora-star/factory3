@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/ads_campaign_run",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquesta una campana pagada reutilizando company_context, marketing planner, aprobacion y Meta Lead Ads.",
+  "vertical": "vertical_ads",
+  "requires_env": []
+}

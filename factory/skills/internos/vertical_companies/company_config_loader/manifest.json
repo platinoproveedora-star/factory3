@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_companies/company_config_loader",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Carga y valida companies/<COMPANY_ID>/company.config.json para reutilizar agentes y skills por empresa.",
+  "vertical": "vertical_companies",
+  "requires_env": []
+}

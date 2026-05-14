@@ -1,0 +1,185 @@
+{
+  "company_id": "EMP_CAMP_RSTATE",
+  "company_name": "Camp RSTATE",
+  "company_type": "campaigns",
+  "industry": "real_estate",
+  "description": "Empresa de Factory 3 para crear, publicar y optimizar campanas de real estate.",
+  "agent_stack": {
+    "orchestrator": "campaign_orchestrator_agent",
+    "strategy": "campaign_strategy_agent",
+    "property": "campaign_product_agent",
+    "creative": "campaign_creative_agent",
+    "assets": "campaign_asset_agent",
+    "ads": "campaign_ads_agent",
+    "leads": "campaign_leads_agent",
+    "followup": "campaign_followup_agent",
+    "analytics": "campaign_analytics_agent",
+    "compliance": "campaign_compliance_agent"
+  },
+  "skill_stack": {
+    "orchestration": [
+      "vertical_ads/ads_campaign_run",
+      "vertical_companies/company_config_loader",
+      "vertical_companies/company_context_builder",
+      "activity_skill_plan"
+    ],
+    "strategy": [
+      "vertical_marketing/marketing_campaign_planner",
+      "vertical_marketing/marketing_offer_builder",
+      "vertical_marketing/marketing_angle_generator",
+      "vertical_marketing/marketing_persona_builder",
+      "vertical_ads/ads_audience_builder",
+      "vertical_ads/ads_budget_planner",
+      "vertical_ads/ads_campaign_preflight_check"
+    ],
+    "creative": [
+      "copy_generator",
+      "ad_creator",
+      "vertical_marketing/marketing_copy_generator",
+      "vertical_marketing/marketing_creative_brief",
+      "carousel_generator",
+      "vertical_instagram/ig_reel_script",
+      "vertical_instagram/ig_caption_generator",
+      "vertical_instagram/ig_hashtag_generator"
+    ],
+    "ads": [
+      "vertical_meta_ads/meta_ads_connection_check",
+      "vertical_meta_ads/meta_lead_form_create",
+      "vertical_meta_ads/meta_ads_lead_campaign_flow",
+      "vertical_meta_ads/meta_ads_preview_ad",
+      "vertical_meta_ads/meta_ads_update_campaign"
+    ],
+    "leads": [
+      "vertical_instagram/ig_lead_form_reads",
+      "vertical_instagram/ig_leads_sync",
+      "vertical_meta_ads/meta_leads_sync_to_sales",
+      "vertical_sales/lead_pipeline_system",
+      "vertical_sales/lead_score_system",
+      "vertical_sales/sales_lead_update",
+      "vertical_sales/ai_followup_system"
+    ],
+    "analytics": [
+      "vertical_meta_ads/meta_ads_get_insights",
+      "vertical_meta_ads/meta_ads_dashboard_data",
+      "vertical_ads/ads_performance_analyzer",
+      "vertical_ads/ads_optimizer",
+      "vertical_marketing/marketing_report_generator"
+    ],
+    "compliance": [
+      "vertical_marketing/marketing_compliance_checker",
+      "vertical_ads/ads_guardrails",
+      "vertical_ads/ads_creative_validator",
+      "vertical_meta_ads/meta_ads_pixel_check"
+    ]
+  },
+  "channels": [
+    "meta_ads",
+    "instagram",
+    "facebook_page",
+    "facebook_groups",
+    "facebook_marketplace",
+    "telegram_notifications"
+  ],
+  "campaign_defaults": {
+    "objective": "leads",
+    "initial_status": "PAUSED",
+    "approval_required": true,
+    "lead_form_preset": "inmobiliaria_venta_propiedades",
+    "currency": "MXN",
+    "minimum_daily_budget": 150,
+    "recommended_test_days": 7
+  },
+  "product_schema": {
+    "product_label": "property",
+    "required_fields": [
+      "property_type",
+      "location",
+      "price_range",
+      "operation_type",
+      "main_benefits",
+      "contact_owner"
+    ],
+    "optional_fields": [
+      "bedrooms",
+      "bathrooms",
+      "parking",
+      "amenities",
+      "delivery_date",
+      "financing_options",
+      "asset_urls",
+      "landing_url"
+    ]
+  },
+  "lead_schema": {
+    "required_fields": [
+      "full_name",
+      "phone",
+      "email",
+      "property_type",
+      "location_interest",
+      "budget",
+      "purchase_method",
+      "purchase_timeline"
+    ],
+    "optional_fields": [
+      "credit_preapproved",
+      "preferred_contact_time",
+      "notes"
+    ]
+  },
+  "lead_qualification": {
+    "score_fields": {
+      "budget_match": 30,
+      "location_match": 20,
+      "purchase_timeline": 20,
+      "purchase_method": 15,
+      "credit_preapproved": 15
+    },
+    "qualified_threshold": 70,
+    "hot_threshold": 85
+  },
+  "pipeline": {
+    "stages": [
+      "nuevo",
+      "contactado",
+      "calificado",
+      "cita_agendada",
+      "visita_realizada",
+      "propuesta",
+      "cierre",
+      "perdido"
+    ],
+    "default_stage": "nuevo"
+  },
+  "compliance": {
+    "blocked_claims": [
+      "plusvalia garantizada",
+      "retorno garantizado",
+      "credito aprobado para todos",
+      "sin riesgo"
+    ],
+    "requires_human_approval": [
+      "investment_claims",
+      "financing_claims",
+      "price_discount_claims",
+      "legal_property_status"
+    ]
+  },
+  "reporting": {
+    "kpis": [
+      "spend",
+      "impressions",
+      "clicks",
+      "cpl",
+      "leads",
+      "qualified_leads",
+      "appointments",
+      "cost_per_appointment"
+    ],
+    "optimization_thresholds": {
+      "max_cpl": 450,
+      "min_ctr": 0.8,
+      "max_frequency": 3.5
+    }
+  }
+}
