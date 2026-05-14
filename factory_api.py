@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi.responses import PlainTextResponse
 
 
 BASE_DIR = Path(__file__).parent
@@ -313,6 +314,71 @@ async def run_skill(skill_name: str, request: Request):
 async def webhook(bot_name: str, request: Request, background_tasks: BackgroundTasks):
     update = await request.json()
     return process_bot_update(bot_name, update, background_tasks)
+
+
+# --- WhatsApp Business webhook ---
+
+def _wabiz_verify_token(empresa_id: str) -> str | None:
+    try:
+        qs  = urllib.parse.urlencode({"empresa_id": f"eq.{empresa_id}", "select": "verify_token", "limit": "1"})
+        url = f"{os.getenv('SUPABASE_URL')}/rest/v1/wabiz_config?{qs}"
+        req = urllib.request.Request(url, headers={
+            "apikey":        os.getenv("SUPABASE_SERVICE_ROLE_KEY", ""),
+            "Authorization": f"Bearer {os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')}",
+            "Accept":        "application/json",
+        })
+        with urllib.request.urlopen(req, timeout=10) as r:
+            rows = json.loads(r.read().decode())
+            return rows[0]["verify_token"] if rows else None
+    except Exception:
+        return None
+
+
+@app.get("/wabiz/{empresa_id}")
+def wabiz_verify(empresa_id: str, request: Request):
+    """Meta llama este GET para verificar el webhook al momento de registrarlo."""
+    params     = dict(request.query_params)
+    mode       = params.get("hub.mode")
+    challenge  = params.get("hub.challenge", "")
+    token_recv = params.get("hub.verify_token", "")
+
+    if mode != "subscribe" or not challenge:
+        raise HTTPException(status_code=400, detail="Parámetros de verificación inválidos")
+
+    verify_token = _wabiz_verify_token(empresa_id)
+    if not verify_token or token_recv != verify_token:
+        raise HTTPException(status_code=403, detail="verify_token no coincide")
+
+    return PlainTextResponse(content=challenge)
+
+
+@app.post("/wabiz/{empresa_id}")
+async def wabiz_events(empresa_id: str, request: Request, background_tasks: BackgroundTasks):
+    """Recibe eventos Meta WhatsApp, parsea y enruta al router IA en background."""
+    body = await request.json()
+
+    def _process():
+        try:
+            runner = _get_data_runner()
+            parse  = runner.run(
+                "vertical_wabiz/wabiz_webhook_parse",
+                {"empresa_id": empresa_id, "body": body, "dry_run": False},
+                source="internos",
+            )
+            if not parse.get("ok"):
+                return
+            for event in parse.get("data", {}).get("events", []):
+                if event.get("kind") == "message":
+                    runner.run(
+                        "vertical_wabiz/wabiz_channel_router",
+                        {**event, "dry_run": False},
+                        source="internos",
+                    )
+        except Exception:
+            pass  # Meta requiere 200 siempre; errores quedan en logs de Render
+
+    background_tasks.add_task(_process)
+    return {"ok": True}
 
 
 if __name__ == "__main__":

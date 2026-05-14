@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_wabiz/wabiz_store_config",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Guarda o actualiza credenciales WhatsApp Business por empresa_id en wabiz_config (Supabase).",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

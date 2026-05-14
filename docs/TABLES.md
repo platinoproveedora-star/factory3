@@ -29,6 +29,8 @@ Actualizado: 2026-05-11
 | [fb_publicaciones](#fb_publicaciones) | social | Registro de posts publicados en grupos FB |
 | [whatsapp_broadcasts](#whatsapp_broadcasts) | social | Broadcasts enviados o programados por WhatsApp |
 | [cfdi_documentos](#cfdi_documentos) | fiscal | Documentos CFDI timbrados (facturas, notas) |
+| [wabiz_config](#wabiz_config) | vertical_wabiz | Credenciales WhatsApp Business por empresa_id |
+| [wabiz_messages](#wabiz_messages) | vertical_wabiz | Log de mensajes WhatsApp entrantes y salientes |
 
 ## Schema `logplat`
 
@@ -572,3 +574,44 @@ Documentos adjuntos a viajes (cartas porte, permisos, etc.). N documentos por vi
 | `tipo` | text | NO | 'otro' | carta_porte \| permiso \| otro |
 | `nombre` | text | SÍ | — | Nombre original del archivo |
 | `created_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## wabiz_config
+
+Vertical: `vertical_wabiz` | Schema: `public`
+
+Credenciales y configuración WhatsApp Business Cloud API por empresa. Una fila por empresa_id.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `empresa_id` | text | NO | — | UNIQUE — identificador de empresa |
+| `phone_number_id` | text | NO | — | ID del número en Meta (WABA) |
+| `business_account_id` | text | NO | '' | WhatsApp Business Account ID |
+| `access_token` | text | NO | — | Token de acceso permanente Meta |
+| `verify_token` | text | NO | — | Token secreto para verificación de webhook |
+| `graph_version` | text | NO | 'v24.0' | Versión Graph API a usar |
+| `created_at` | timestamptz | NO | now() | — |
+| `updated_at` | timestamptz | NO | now() | Se actualiza en cada upsert |
+
+---
+
+## wabiz_messages
+
+Vertical: `vertical_wabiz` | Schema: `public`
+
+Log de todos los mensajes WhatsApp entrantes y salientes por empresa. Sirve como memoria de conversación para el router de IA.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `empresa_id` | text | NO | — | Empresa dueña del número |
+| `from_phone` | text | NO | — | Número del usuario (dirección in) o destino (out) |
+| `direction` | text | NO | — | `in` (recibido) o `out` (enviado) |
+| `type` | text | NO | 'text' | text, image, audio, video, document, location… |
+| `body` | text | SÍ | — | Texto del mensaje o media_id si es archivo |
+| `wa_message_id` | text | SÍ | — | ID de mensaje Meta (para dedup y status tracking) |
+| `timestamp` | timestamptz | NO | now() | Timestamp original del evento Meta |
+
+Índice: `(empresa_id, from_phone, timestamp DESC)` para cargar historial de conversación.
