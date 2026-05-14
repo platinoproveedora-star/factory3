@@ -31,13 +31,50 @@ st.markdown(
     <style>
     [data-testid="stAppViewContainer"] { background: #0f1115; }
     [data-testid="stSidebar"] { background: #151821; }
+    [data-testid="stAppViewContainer"],
+    [data-testid="stAppViewContainer"] p,
+    [data-testid="stAppViewContainer"] li,
+    [data-testid="stAppViewContainer"] label,
+    [data-testid="stAppViewContainer"] span,
+    [data-testid="stAppViewContainer"] div {
+        color: #eef2fb;
+    }
+    [data-testid="stSidebar"],
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] li,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] div {
+        color: #f5f7fc;
+    }
+    [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] p {
+        color: #cbd5e1;
+    }
     [data-testid="metric-container"] {
         background: #1b2030;
         border: 1px solid #2a3145;
         border-radius: 8px;
         padding: 12px;
     }
-    h1, h2, h3 { color: #f3f5fb; }
+    [data-testid="stMetricLabel"] p,
+    [data-testid="stMetricValue"] div {
+        color: #ffffff;
+    }
+    h1, h2, h3, h4 { color: #ffffff; }
+    code, pre {
+        color: #f8fafc;
+        background: #171b26;
+    }
+    a { color: #8ec5ff; }
+    [data-testid="stDataFrame"] {
+        color: #f8fafc;
+    }
+    div[data-baseweb="input"] input,
+    div[data-baseweb="select"] div,
+    textarea {
+        color: #ffffff;
+    }
     </style>
     """,
     unsafe_allow_html=True,
