@@ -89,10 +89,28 @@ st.markdown(
     [data-testid="stDataFrame"] {
         color: #f8fafc;
     }
+    div[data-baseweb="input"],
+    div[data-baseweb="textarea"],
+    div[data-baseweb="select"] > div {
+        background: #ffffff;
+        border-color: #cbd5e1;
+    }
     div[data-baseweb="input"] input,
-    div[data-baseweb="select"] div,
-    textarea {
-        color: #ffffff;
+    div[data-baseweb="textarea"] textarea,
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] input {
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827 !important;
+    }
+    div[data-baseweb="input"] input::placeholder,
+    div[data-baseweb="textarea"] textarea::placeholder {
+        color: #64748b !important;
+        -webkit-text-fill-color: #64748b !important;
+    }
+    [role="listbox"],
+    [role="option"] {
+        background: #ffffff;
+        color: #111827 !important;
     }
     </style>
     """,
