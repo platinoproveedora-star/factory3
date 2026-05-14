@@ -66,6 +66,25 @@ st.markdown(
         color: #f8fafc;
         background: #171b26;
     }
+    [data-testid="stJson"],
+    [data-testid="stJson"] *,
+    [data-testid="stCodeBlock"],
+    [data-testid="stCodeBlock"] *,
+    [data-testid="stExpander"],
+    [data-testid="stExpander"] * {
+        color: #f8fafc;
+    }
+    [data-testid="stJson"] pre,
+    [data-testid="stCodeBlock"] pre {
+        background: #111827;
+        border: 1px solid #334155;
+        border-radius: 8px;
+    }
+    [data-testid="stExpander"] details {
+        background: #151b28;
+        border: 1px solid #334155;
+        border-radius: 8px;
+    }
     a { color: #8ec5ff; }
     [data-testid="stDataFrame"] {
         color: #f8fafc;
