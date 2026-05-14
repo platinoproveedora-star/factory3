@@ -1,6 +1,7 @@
 services:
   - type: web
     name: emp-camp-rstate-landing
-    runtime: static
-    staticPublishPath: .
+    runtime: python
+    buildCommand: python --version
+    startCommand: python -m http.server $PORT --bind 0.0.0.0 --directory companies/EMP_CAMP_RSTATE/landing
     pullRequestPreviewsEnabled: false

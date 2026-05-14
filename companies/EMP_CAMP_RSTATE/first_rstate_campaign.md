@@ -260,6 +260,16 @@ Pendientes para publicarla:
 - Agregar `image_url` o foto principal.
 - Revisar aviso de privacidad antes de usarlo como definitivo.
 
+Configuracion actual:
+
+| Campo | Valor |
+| --- | --- |
+| `image_url` | `https://ddcwdtqiupwtyltdpakm.supabase.co/storage/v1/object/public/campaign-assets/EMP_CAMP_RSTATE/first_rstate_campaign/captura-de-pantalla-2025-12-09-074959.png` |
+| `whatsapp_number` | `+5219616576475` |
+| `whatsapp_url` | `https://wa.me/5219616576475?text=Hola%2C%20quiero%20informacion%20de%20Oficina%20en%20venta%20en%20Merida.` |
+| `link` | `https://emp-camp-rstate-landing.onrender.com` |
+| `privacy_url` | `https://emp-camp-rstate-landing.onrender.com/privacy.html` |
+
 Documentacion:
 
 - `companies/EMP_CAMP_RSTATE/DASHBOARD_BRANCH.md`
