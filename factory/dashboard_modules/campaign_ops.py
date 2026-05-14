@@ -105,12 +105,14 @@ def render_campaign_ops(
             accept_multiple_files=True,
             key=f"{state_key}_uploader",
         )
+        st.caption(f"Destino: {bucket}/{folder.rstrip('/')}")
         if uploaded:
             st.caption(f"{len(uploaded)} file(s) selected")
             for file in uploaded:
-                st.write(file.name)
+                st.write(f"{file.name} ({file.type or 'application/octet-stream'}, {file.size} bytes)")
         if st.button("Upload to storage", key=f"{state_key}_upload_btn", disabled=not uploaded):
             urls = []
+            upload_results = []
             for file in uploaded or []:
                 content = file.getvalue()
                 path = f"{folder.rstrip('/')}/{_safe_filename(file.name)}"
@@ -125,6 +127,7 @@ def render_campaign_ops(
                     },
                     "internos",
                 )
+                upload_results.append({"file": file.name, **result})
                 if result.get("ok"):
                     data = result.get("data", {})
                     url = data.get("public_url") or data.get("url")
@@ -132,7 +135,11 @@ def render_campaign_ops(
                     st.success(f"Uploaded: {file.name}")
                 else:
                     st.error(f"{file.name}: {result.get('error', 'upload failed')}")
+            state["upload_results"] = upload_results
             state["asset_urls"] = [url for url in urls if url]
+        if state.get("upload_results"):
+            with st.expander("Upload diagnostics", expanded=False):
+                st.json(state["upload_results"], expanded=False)
         if state.get("asset_urls"):
             st.markdown("Asset URLs")
             st.json(state["asset_urls"], expanded=False)
