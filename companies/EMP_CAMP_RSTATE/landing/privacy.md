@@ -28,7 +28,7 @@ La persona titular puede solicitar acceso, rectificacion, cancelacion u oposicio
 
 ## Contacto
 
-- Contacto pendiente de definir.
+- Telefono/WhatsApp: +5219616576475
 
 ## Pais de operacion
 
