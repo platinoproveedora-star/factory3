@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import sys
 from datetime import datetime
+from html import escape
 from pathlib import Path
 
 import streamlit as st
@@ -112,6 +113,47 @@ st.markdown(
         background: #ffffff;
         color: #111827 !important;
     }
+    .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin: 18px 0 24px;
+    }
+    .overview-card {
+        background: #1b2030;
+        border: 1px solid #34405a;
+        border-radius: 8px;
+        padding: 16px;
+        min-height: 104px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    }
+    .overview-card span {
+        display: block;
+        color: #cbd5e1 !important;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+    .overview-card strong {
+        display: block;
+        color: #ffffff !important;
+        font-size: 22px;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+    .overview-panel {
+        background: #151b28;
+        border: 1px solid #34405a;
+        border-radius: 8px;
+        padding: 18px;
+        margin-top: 12px;
+    }
+    .overview-panel p {
+        color: #e5edf8 !important;
+        margin: 0;
+    }
+    @media (max-width: 900px) {
+        .overview-grid { grid-template-columns: 1fr; }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -152,10 +194,28 @@ if page == "Overview":
     if config.get("ok"):
         data = config.get("data", {})
         cfg = data.get("config", {})
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Empresa", cfg.get("company_id", COMPANY_ID))
-        c2.metric("Industria", cfg.get("industry", "n/a"))
-        c3.metric("Tipo", cfg.get("company_type", "n/a"))
+        cards = [
+            ("Empresa", cfg.get("company_id", COMPANY_ID)),
+            ("Industria", cfg.get("industry", "n/a")),
+            ("Tipo", cfg.get("company_type", "n/a")),
+        ]
+        st.markdown(
+            '<div class="overview-grid">'
+            + "".join(
+                f'<div class="overview-card"><span>{escape(label)}</span><strong>{escape(str(value))}</strong></div>'
+                for label, value in cards
+            )
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            """
+            <div class="overview-panel">
+              <p>Esta vista resume la empresa y deja el control operativo en Campaign Ops: preflight, uploads, leads y resultados.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         with st.expander("Config", expanded=False):
             st.json(cfg)
     else:
