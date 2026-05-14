@@ -30,88 +30,59 @@ st.set_page_config(page_title="RSTATE Campaign Dashboard", page_icon="F3", layou
 st.markdown(
     """
     <style>
-    [data-testid="stAppViewContainer"] { background: #0f1115; }
-    [data-testid="stSidebar"] { background: #151821; }
-    [data-testid="stAppViewContainer"],
-    [data-testid="stAppViewContainer"] p,
-    [data-testid="stAppViewContainer"] li,
-    [data-testid="stAppViewContainer"] label,
-    [data-testid="stAppViewContainer"] span,
-    [data-testid="stAppViewContainer"] div {
-        color: #eef2fb;
+    :root {
+        --page: #f4f7fb;
+        --surface: #ffffff;
+        --surface-soft: #eef3f8;
+        --ink: #111827;
+        --muted: #5b677a;
+        --line: #d6dee9;
+        --accent: #0f766e;
+        --accent-soft: #d9f3ee;
     }
-    [data-testid="stSidebar"],
-    [data-testid="stSidebar"] p,
-    [data-testid="stSidebar"] li,
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] div {
-        color: #f5f7fc;
+    [data-testid="stAppViewContainer"] {
+        background: var(--page);
     }
-    [data-testid="stCaptionContainer"],
+    [data-testid="stSidebar"] {
+        background: var(--surface);
+        border-right: 1px solid var(--line);
+    }
+    [data-testid="stHeader"] {
+        background: rgba(244, 247, 251, 0.9);
+    }
+    h1, h2, h3, h4, p, li, label {
+        color: var(--ink);
+        letter-spacing: 0;
+    }
     [data-testid="stCaptionContainer"] p {
-        color: #cbd5e1;
+        color: var(--muted);
+    }
+    a {
+        color: #0b6fbd;
     }
     [data-testid="metric-container"] {
-        background: #1b2030;
-        border: 1px solid #2a3145;
+        background: var(--surface);
+        border: 1px solid var(--line);
         border-radius: 8px;
         padding: 12px;
-    }
-    [data-testid="stMetricLabel"] p,
-    [data-testid="stMetricValue"] div {
-        color: #ffffff;
-    }
-    h1, h2, h3, h4 { color: #ffffff; }
-    code, pre {
-        color: #f8fafc;
-        background: #171b26;
-    }
-    [data-testid="stJson"],
-    [data-testid="stJson"] *,
-    [data-testid="stCodeBlock"],
-    [data-testid="stCodeBlock"] *,
-    [data-testid="stExpander"],
-    [data-testid="stExpander"] * {
-        color: #f8fafc;
-    }
-    [data-testid="stJson"] pre,
-    [data-testid="stCodeBlock"] pre {
-        background: #111827;
-        border: 1px solid #334155;
-        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
     }
     [data-testid="stExpander"] details {
-        background: #151b28;
-        border: 1px solid #334155;
+        background: var(--surface);
+        border: 1px solid var(--line);
         border-radius: 8px;
     }
-    a { color: #8ec5ff; }
-    [data-testid="stDataFrame"] {
-        color: #f8fafc;
+    code, pre,
+    [data-testid="stJson"] pre,
+    [data-testid="stCodeBlock"] pre {
+        color: var(--ink);
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        border-radius: 8px;
     }
-    div[data-baseweb="input"],
-    div[data-baseweb="textarea"],
-    div[data-baseweb="select"] > div {
-        background: #ffffff;
-        border-color: #cbd5e1;
-    }
-    div[data-baseweb="input"] input,
-    div[data-baseweb="textarea"] textarea,
-    div[data-baseweb="select"] span,
-    div[data-baseweb="select"] input {
-        color: #111827 !important;
-        -webkit-text-fill-color: #111827 !important;
-    }
-    div[data-baseweb="input"] input::placeholder,
-    div[data-baseweb="textarea"] textarea::placeholder {
-        color: #64748b !important;
-        -webkit-text-fill-color: #64748b !important;
-    }
-    [role="listbox"],
-    [role="option"] {
-        background: #ffffff;
-        color: #111827 !important;
+    input, textarea, [role="combobox"] {
+        color: var(--ink) !important;
+        -webkit-text-fill-color: var(--ink) !important;
     }
     .overview-grid {
         display: grid;
@@ -120,35 +91,55 @@ st.markdown(
         margin: 18px 0 24px;
     }
     .overview-card {
-        background: #1b2030;
-        border: 1px solid #34405a;
+        background: var(--surface);
+        border: 1px solid var(--line);
         border-radius: 8px;
         padding: 16px;
         min-height: 104px;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+        box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
     }
     .overview-card span {
         display: block;
-        color: #cbd5e1 !important;
+        color: var(--muted);
         font-size: 13px;
         margin-bottom: 10px;
     }
     .overview-card strong {
         display: block;
-        color: #ffffff !important;
+        color: var(--ink);
         font-size: 22px;
         line-height: 1.2;
         overflow-wrap: anywhere;
     }
+    .overview-hero {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--accent);
+        border-radius: 8px;
+        padding: 22px;
+        margin: 0 0 18px;
+        box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
+    }
+    .overview-hero h1 {
+        margin: 0 0 8px;
+        color: var(--ink);
+        font-size: 34px;
+        line-height: 1.15;
+    }
+    .overview-hero p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+    }
     .overview-panel {
-        background: #151b28;
-        border: 1px solid #34405a;
+        background: var(--accent-soft);
+        border: 1px solid #9bd7cc;
         border-radius: 8px;
         padding: 18px;
         margin-top: 12px;
     }
     .overview-panel p {
-        color: #e5edf8 !important;
+        color: #134e4a;
         margin: 0;
     }
     @media (max-width: 900px) {
@@ -188,8 +179,15 @@ with st.sidebar:
 
 
 if page == "Overview":
-    st.title("RSTATE Campaign Dashboard")
-    st.caption("Dashboard de empresa para operar campanas, assets, preflight, leads y resultados.")
+    st.markdown(
+        """
+        <div class="overview-hero">
+          <h1>RSTATE Campaign Dashboard</h1>
+          <p>Centro operativo para campanas, assets, preflight, leads y resultados.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     config = _run_skill("vertical_companies/company_config_loader", {"company_id": COMPANY_ID})
     if config.get("ok"):
         data = config.get("data", {})
