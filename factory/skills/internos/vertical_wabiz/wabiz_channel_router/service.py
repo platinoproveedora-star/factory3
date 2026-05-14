@@ -101,11 +101,13 @@ class WabizChannelRouterService:
 
     def _send_text(self, empresa_id: str, to: str, body: str) -> dict:
         try:
-            skill_dir = str(__import__("pathlib").Path(__file__).parent.parent / "wabiz_send_text")
-            import sys
-            sys.path.insert(0, skill_dir)
-            from service import WabizSendTextService
-            return WabizSendTextService().ejecutar({
+            import importlib.util
+            from pathlib import Path
+            svc_path = Path(__file__).parent.parent / "wabiz_send_text" / "service.py"
+            spec = importlib.util.spec_from_file_location("wabiz_send_text_service", svc_path)
+            mod  = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod.WabizSendTextService().ejecutar({
                 "empresa_id": empresa_id,
                 "to":         to,
                 "body":       body,
