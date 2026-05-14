@@ -32,6 +32,18 @@ factory/dashboard_modules/campaign_ops.py
 | `Results` | Ver resultados Meta Ads despues de crear campana. |
 | `Settings` | Ver config de `EMP_CAMP_RSTATE`. |
 
+## Render
+
+| Campo | Valor |
+| --- | --- |
+| Servicio | `emp-camp-rstate-dashboard` |
+| URL publica | `https://emp-camp-rstate-dashboard.onrender.com` |
+| Render dashboard | `https://dashboard.render.com/web/srv-d830o697oqds739pomo0` |
+| Branch | `main` |
+| Build command | `pip install -r companies/EMP_CAMP_RSTATE/dashboard/requirements.txt` |
+| Start command | `streamlit run companies/EMP_CAMP_RSTATE/dashboard/app.py --server.port=$PORT --server.address=0.0.0.0` |
+| Ultimo estado verificado | `live` |
+
 ## Datos que faltan para usar Uploads
 
 | Dato | Estado |

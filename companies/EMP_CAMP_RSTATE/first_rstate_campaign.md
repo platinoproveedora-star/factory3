@@ -227,6 +227,14 @@ Campaign Ops
   Settings
 ```
 
+### Dashboard en Render
+
+| Campo | Valor |
+| --- | --- |
+| URL publica | `https://emp-camp-rstate-dashboard.onrender.com` |
+| Servicio Render | `emp-camp-rstate-dashboard` |
+| Estado verificado | `live` |
+
 Documentacion:
 
 - `companies/EMP_CAMP_RSTATE/DASHBOARD_BRANCH.md`
