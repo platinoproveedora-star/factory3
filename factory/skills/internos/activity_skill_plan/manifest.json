@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "activity_skill_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Planea skills, herramientas, credenciales y orden de ejecucion para una actividad operativa.",
+  "requires_env": []
+}
