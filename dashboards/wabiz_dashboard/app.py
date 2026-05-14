@@ -41,12 +41,12 @@ def _folio(row: dict, prefix: str) -> str:
 
 @st.cache_data(ttl=30)
 def _load_wabiz_config() -> list[dict]:
-    return select("wabiz_config", empresa_id=_EMPRESA_ID)
+    return select("wabiz_config", "select=*&limit=500")
 
 
 @st.cache_data(ttl=30)
 def _load_wabiz_messages() -> list[dict]:
-    return select("wabiz_messages", empresa_id=_EMPRESA_ID)
+    return select("wabiz_messages", "select=*&order=timestamp.desc&limit=200")
 
 
 def _section_overview() -> None:
