@@ -18,6 +18,10 @@ No debe publicar campanas ni procesar leads. Eso vive en:
 | `vertical_companies/company_context_builder` | Mezcla config de empresa con brief de campana y devuelve contexto normalizado. |
 | `vertical_companies/company_dashboard_scaffold` | Crea dashboard Streamlit base con `Campaign Ops` integrado. |
 
+`company_dashboard_scaffold` debe generar dashboards con tema claro profesional,
+tarjetas solidas e inputs legibles. Evitar CSS oscuro o reglas globales sobre
+todos los `div/span`.
+
 ## Flujo
 
 ```

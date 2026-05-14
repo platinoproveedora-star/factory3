@@ -86,9 +86,21 @@ Descripción de las tablas:
 
 1. Importa `streamlit as st` y `from db import select`
 2. `st.set_page_config(page_title="{titulo}", page_icon="🏭", layout="wide")`
-3. CSS oscuro mínimo igual a este:
+3. CSS claro profesional y estable, evitando reglas globales sobre todos los `div` o `span`:
 ```python
-st.markdown('<style>[data-testid="metric-container"]{{background:#1e1e2e;border-radius:8px;padding:12px;}}[data-testid="stSidebar"]{{background:#12121c;}}h1,h2,h3{{color:#e0e0ff;}}</style>', unsafe_allow_html=True)
+st.markdown('''
+<style>
+:root {{ --page:#f4f7fb; --surface:#ffffff; --ink:#111827; --muted:#5b677a; --line:#d6dee9; --accent:#0f766e; }}
+[data-testid="stAppViewContainer"] {{ background: var(--page); }}
+[data-testid="stSidebar"] {{ background: var(--surface); border-right:1px solid var(--line); }}
+[data-testid="stHeader"] {{ background: rgba(244,247,251,.9); }}
+h1,h2,h3,h4,p,li,label {{ color: var(--ink); letter-spacing:0; }}
+[data-testid="stCaptionContainer"] p {{ color: var(--muted); }}
+[data-testid="metric-container"] {{ background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:12px; box-shadow:0 8px 20px rgba(17,24,39,.06); }}
+[data-testid="stExpander"] details {{ background:var(--surface); border:1px solid var(--line); border-radius:8px; }}
+input, textarea, [role="combobox"] {{ color: var(--ink) !important; -webkit-text-fill-color: var(--ink) !important; }}
+</style>
+''', unsafe_allow_html=True)
 ```
 4. Variable `_EMPRESA_ID = os.getenv("{empresa_env_var}", "empresa_demo")`
 5. Sidebar con `st.radio` para navegar entre: Overview + una sección por tabla
@@ -102,6 +114,8 @@ st.markdown('<style>[data-testid="metric-container"]{{background:#1e1e2e;border-
 
 ## Reglas
 - Código Python limpio, sin comentarios explicativos excesivos
+- No uses tema oscuro por defecto; los dashboards nuevos deben usar superficies claras, bordes visibles y texto oscuro.
+- No fuerces color en todos los `div`, `span` o componentes internos de Streamlit porque rompe inputs, selects y file upload.
 - `import pandas as pd` dentro de los bloques que lo usen
 - Usa `st.expander` para filas con muchos campos
 - No inventes columnas que no existen en las tablas descritas

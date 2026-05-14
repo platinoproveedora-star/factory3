@@ -15,6 +15,19 @@ Dar una rama reutilizable de menu para:
 
 La empresa se adapta por `company_id` y por `company.config.json`.
 
+## Regla visual default
+
+Los dashboards nuevos deben usar tema claro profesional:
+
+- fondo de pagina gris claro
+- sidebar blanco
+- tarjetas solidas con borde visible
+- texto oscuro en contenido, inputs, selects y file upload
+- sin reglas CSS globales sobre todos los `div` o `span`
+
+Evitar tema oscuro por defecto en dashboards operativos, porque Streamlit puede
+mezclar componentes internos con fondos blancos y dejar texto invisible.
+
 ## Menu recomendado
 
 ```text

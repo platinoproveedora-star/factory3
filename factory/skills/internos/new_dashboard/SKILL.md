@@ -45,7 +45,7 @@ Genera un dashboard Streamlit completo para cualquier vertical de Factory3 usand
 - **Sidebar** con navegación: Overview + una sección por tabla
 - **Overview**: métricas `st.metric()` con conteos de cada tabla
 - **Sección por tabla**: filtros + `st.dataframe` con pandas
-- **CSS oscuro**: mismo estilo que dashboard RH existente
+- **CSS claro profesional**: superficies claras, bordes visibles, texto oscuro y sin reglas globales que rompan inputs/selects
 - **Helpers**: `_badge()` con íconos por estado, `_folio()` para folios legibles
 - **`@st.cache_data(ttl=30)`** en todas las funciones de datos
 - **`db.py`**: conexión Supabase via REST sin dependencias externas
