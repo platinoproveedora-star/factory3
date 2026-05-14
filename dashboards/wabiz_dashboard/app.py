@@ -69,7 +69,6 @@ def _section_overview() -> None:
     st.subheader("Actividad reciente — wabiz_messages")
 
     if messages_rows:
-        import pandas as pd as pd_local  # noqa: F811 — scoped import
         df = pd.DataFrame(messages_rows)
         if "created_at" in df.columns:
             df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
