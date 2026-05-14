@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/marketing_mini_landing_scaffold",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea una mini landing page estatica para campanas con oferta, ficha, CTA WhatsApp y aviso de privacidad.",
+  "vertical": "vertical_marketing",
+  "requires_env": []
+}

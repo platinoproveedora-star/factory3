@@ -2020,6 +2020,24 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_marketing/marketing_privacy_notice_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_privacy_notice_builder",
+    "vertical": "vertical_marketing",
+    "descripcion": "Genera un aviso de privacidad base para landing pages de campanas y formularios de leads.",
+    "path": "skills/internos/vertical_marketing/marketing_privacy_notice_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/marketing_mini_landing_scaffold": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/marketing_mini_landing_scaffold",
+    "vertical": "vertical_marketing",
+    "descripcion": "Crea una mini landing page estatica para campanas con oferta, ficha, CTA WhatsApp y aviso de privacidad.",
+    "path": "skills/internos/vertical_marketing/marketing_mini_landing_scaffold",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_ads/ads_budget_planner": {
     "tipo": "interno",
     "nombre": "vertical_ads/ads_budget_planner",

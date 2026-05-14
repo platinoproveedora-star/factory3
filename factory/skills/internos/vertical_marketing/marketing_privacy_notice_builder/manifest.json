@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/marketing_privacy_notice_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera un aviso de privacidad base para landing pages de campanas y formularios de leads.",
+  "vertical": "vertical_marketing",
+  "requires_env": []
+}

@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: emp-camp-rstate-landing
+    runtime: static
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: false

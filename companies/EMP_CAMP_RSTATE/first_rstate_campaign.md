@@ -235,6 +235,31 @@ Campaign Ops
 | Servicio Render | `emp-camp-rstate-dashboard` |
 | Estado verificado | `live` |
 
+## Mini landing
+
+Se agregaron skills genericos en `vertical_marketing` para crear landings
+reusables:
+
+| Skill | Uso |
+| --- | --- |
+| `vertical_marketing/marketing_privacy_notice_builder` | Genera `privacy.html` y `privacy.md`. |
+| `vertical_marketing/marketing_mini_landing_scaffold` | Genera `index.html` y `render.yaml` de landing estatica. |
+
+Artefactos creados para esta campana:
+
+```text
+companies/EMP_CAMP_RSTATE/landing/index.html
+companies/EMP_CAMP_RSTATE/landing/privacy.html
+companies/EMP_CAMP_RSTATE/landing/privacy.md
+companies/EMP_CAMP_RSTATE/landing/render.yaml
+```
+
+Pendientes para publicarla:
+
+- Agregar `whatsapp_number` para activar el boton real.
+- Agregar `image_url` o foto principal.
+- Revisar aviso de privacidad antes de usarlo como definitivo.
+
 Documentacion:
 
 - `companies/EMP_CAMP_RSTATE/DASHBOARD_BRANCH.md`
