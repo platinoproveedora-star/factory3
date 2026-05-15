@@ -23,6 +23,9 @@
     .btn.secondary { border: 1px solid var(--line); color: var(--ink); background: #ffffff; }
     .media img, .placeholder { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #e6ecef; }
     .placeholder { display: grid; place-items: center; color: var(--muted); font-weight: 700; }
+    .photo-rail { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+    .photo-rail button { padding: 0; border: 1px solid var(--line); border-radius: 8px; background: #ffffff; cursor: pointer; overflow: hidden; }
+    .photo-rail img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; border: 0; border-radius: 0; }
     .band { padding: 56px 0; }
     .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
     .facts div { border: 1px solid var(--line); border-radius: 8px; padding: 16px; background: #ffffff; }
@@ -53,7 +56,7 @@
           <a class="btn secondary" href="#detalles">Ver detalles</a>
         </div>
       </div>
-      <div class="media"><img src="https://ddcwdtqiupwtyltdpakm.supabase.co/storage/v1/object/public/campaign-assets/EMP_CAMP_RSTATE/first_rstate_campaign/captura-de-pantalla-2025-12-09-074959.png" alt="Oficina en venta en Merida"></div>
+      <div class="media" id="landing-media"><img id="hero-image" src="https://ddcwdtqiupwtyltdpakm.supabase.co/storage/v1/object/public/campaign-assets/EMP_CAMP_RSTATE/first_rstate_campaign/captura-de-pantalla-2025-12-09-074959.png" alt="Oficina en venta en Merida"></div>
     </div>
   </header>
   <section class="band" id="detalles">
@@ -89,5 +92,44 @@
       <span>EMP_CAMP_RSTATE</span> · <a href="privacy.html">Aviso de privacidad</a>
     </div>
   </footer>
+  <script>
+    const LANDING_CONFIG_URL = "https://ddcwdtqiupwtyltdpakm.supabase.co/storage/v1/object/public/campaign-assets/EMP_CAMP_RSTATE/first_rstate_campaign/landing_config.json";
+    const heroImage = document.getElementById("hero-image");
+    const media = document.getElementById("landing-media");
+
+    function setHero(url) {
+      if (!url || !heroImage) return;
+      heroImage.src = url;
+    }
+
+    function renderRail(urls) {
+      if (!media || !urls || !urls.length) return;
+      const existing = media.querySelector(".photo-rail");
+      if (existing) existing.remove();
+      const rail = document.createElement("div");
+      rail.className = "photo-rail";
+      urls.slice(0, 6).forEach((url, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.setAttribute("aria-label", `Ver foto ${index + 1}`);
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = `Foto ${index + 1} de la oficina`;
+        button.appendChild(img);
+        button.addEventListener("click", () => setHero(url));
+        rail.appendChild(button);
+      });
+      media.appendChild(rail);
+    }
+
+    fetch(LANDING_CONFIG_URL, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((config) => {
+        if (!config) return;
+        setHero(config.main_image_url);
+        renderRail(config.gallery_urls || []);
+      })
+      .catch(() => {});
+  </script>
 </body>
 </html>

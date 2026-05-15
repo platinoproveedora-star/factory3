@@ -1,7 +1,10 @@
 """Streamlit dashboard for EMP_CAMP_RSTATE."""
 from __future__ import annotations
 
+import base64
+import json
 import os
+import re
 import sys
 from datetime import datetime
 from html import escape
@@ -167,10 +170,128 @@ def _run_skill(nombre: str, context: dict, source: str = "internos") -> dict:
 
 COMPANY_ID = os.getenv("EMPRESA_ID", "EMP_CAMP_RSTATE")
 CAMPAIGN_SLUG = os.getenv("CAMPAIGN_SLUG", "first_rstate_campaign")
+ASSETS_BUCKET = os.getenv("CAMPAIGN_ASSETS_BUCKET", "campaign-assets")
+ASSETS_FOLDER = f"{COMPANY_ID}/{CAMPAIGN_SLUG}"
+SUPABASE_PUBLIC_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+
+
+def _safe_filename(name: str) -> str:
+    stem = Path(name).stem.lower()
+    suffix = Path(name).suffix.lower()
+    stem = re.sub(r"[^a-z0-9]+", "-", stem).strip("-") or "asset"
+    return f"{stem}{suffix}"
+
+
+def _storage_url(bucket: str, path: str) -> str:
+    if not SUPABASE_PUBLIC_URL:
+        return path
+    return f"{SUPABASE_PUBLIC_URL}/storage/v1/object/public/{bucket}/{path}"
+
+
+def _upload_bytes(path: str, content: bytes, content_type: str) -> dict:
+    return _run_skill(
+        "supabase_storage_upload",
+        {
+            "bucket": ASSETS_BUCKET,
+            "path": path,
+            "content_b64": base64.b64encode(content).decode("ascii"),
+            "content_type": content_type,
+            "dry_run": False,
+        },
+        "internos",
+    )
+
+
+def _render_landing_page() -> None:
+    st.markdown(
+        """
+        <div class="overview-hero">
+          <h1>Landing Page</h1>
+          <p>Configura la imagen principal y el carrete de fotos que se muestra en la landing publica.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.caption(f"Destino storage: {ASSETS_BUCKET}/{ASSETS_FOLDER}")
+
+    main_image = st.file_uploader(
+        "Imagen principal",
+        type=["jpg", "jpeg", "png", "webp"],
+        key="landing_main_image",
+    )
+    gallery_images = st.file_uploader(
+        "Carrete de fotos del inmueble (1 a 6 imagenes)",
+        type=["jpg", "jpeg", "png", "webp"],
+        accept_multiple_files=True,
+        key="landing_gallery_images",
+    )
+    if gallery_images and len(gallery_images) > 6:
+        st.warning("Solo se usaran las primeras 6 imagenes del carrete.")
+
+    current_config_url = _storage_url(ASSETS_BUCKET, f"{ASSETS_FOLDER}/landing_config.json")
+    st.text_input("Landing config publica", value=current_config_url, disabled=True)
+
+    if st.button("Guardar fotos en landing", type="primary", use_container_width=True):
+        uploaded_main_url = ""
+        gallery_urls = []
+        diagnostics = []
+
+        if main_image:
+            path = f"{ASSETS_FOLDER}/landing/main-{_safe_filename(main_image.name)}"
+            result = _upload_bytes(path, main_image.getvalue(), main_image.type or "application/octet-stream")
+            diagnostics.append({"file": main_image.name, "role": "main", **result})
+            if result.get("ok"):
+                uploaded_main_url = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
+
+        for file in (gallery_images or [])[:6]:
+            path = f"{ASSETS_FOLDER}/landing/gallery-{_safe_filename(file.name)}"
+            result = _upload_bytes(path, file.getvalue(), file.type or "application/octet-stream")
+            diagnostics.append({"file": file.name, "role": "gallery", **result})
+            if result.get("ok"):
+                gallery_urls.append(result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path))
+
+        if not uploaded_main_url and gallery_urls:
+            uploaded_main_url = gallery_urls[0]
+
+        config = {
+            "company_id": COMPANY_ID,
+            "campaign_slug": CAMPAIGN_SLUG,
+            "main_image_url": uploaded_main_url,
+            "gallery_urls": gallery_urls,
+            "updated_at": datetime.utcnow().isoformat() + "Z",
+        }
+        config_result = _upload_bytes(
+            f"{ASSETS_FOLDER}/landing_config.json",
+            json.dumps(config, ensure_ascii=True, indent=2).encode("utf-8"),
+            "application/json",
+        )
+        diagnostics.append({"file": "landing_config.json", "role": "config", **config_result})
+        st.session_state["landing_config"] = config
+        st.session_state["landing_diagnostics"] = diagnostics
+
+        if config_result.get("ok"):
+            st.success("Landing config actualizada. Refresca la landing publica para ver las nuevas fotos.")
+        else:
+            st.error(config_result.get("error", "No se pudo guardar landing_config.json"))
+
+    if st.session_state.get("landing_config"):
+        cfg = st.session_state["landing_config"]
+        st.subheader("Vista rapida")
+        if cfg.get("main_image_url"):
+            st.image(cfg["main_image_url"], caption="Imagen principal", use_container_width=True)
+        if cfg.get("gallery_urls"):
+            cols = st.columns(min(3, len(cfg["gallery_urls"])))
+            for index, url in enumerate(cfg["gallery_urls"]):
+                cols[index % len(cols)].image(url, caption=f"Foto {index + 1}", use_container_width=True)
+        st.json(cfg, expanded=False)
+
+    if st.session_state.get("landing_diagnostics"):
+        with st.expander("Diagnostico de subida", expanded=False):
+            st.json(st.session_state["landing_diagnostics"], expanded=False)
 
 with st.sidebar:
     st.title("EMP_CAMP_RSTATE")
-    page = st.radio("Menu", ["Overview", "Campaign Ops", "Docs"], label_visibility="collapsed")
+    page = st.radio("Menu", ["Overview", "Campaign Ops", "Landing Page", "Docs"], label_visibility="collapsed")
     st.divider()
     if st.button("Actualizar", use_container_width=True):
         st.cache_data.clear()
@@ -226,6 +347,9 @@ elif page == "Campaign Ops":
         campaign_slug=CAMPAIGN_SLUG,
         default_bucket=os.getenv("CAMPAIGN_ASSETS_BUCKET", "campaign-assets"),
     )
+
+elif page == "Landing Page":
+    _render_landing_page()
 
 elif page == "Docs":
     st.title("Docs")
