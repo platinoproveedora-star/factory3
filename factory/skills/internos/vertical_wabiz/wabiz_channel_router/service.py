@@ -43,7 +43,10 @@ class WabizChannelRouterService:
 
         # ── Ayuda ─────────────────────────────────────────────────────────────
         if msg_type == "text" and body_lower in ("ayuda", "/ayuda"):
-            return self._reply(self._txt_ayuda(user), empresa_id, from_phone, dry_run)
+            active_now = state.get("active_mode", "")
+            if not user or not active_now or active_now not in _MODO_HANDLERS:
+                return self._reply(self._txt_ayuda(user), empresa_id, from_phone, dry_run)
+            # con modo activo: delegar al handler para que muestre sus comandos
 
         # ── No registrado → flujo de registro ─────────────────────────────────
         if not user:
@@ -93,6 +96,8 @@ class WabizChannelRouterService:
         })
 
         if not result.get("ok"):
+            if not dry_run:
+                self._send_text(empresa_id, from_phone, "⚠️ Ocurrió un error. Intenta de nuevo.")
             return result
 
         reply = result.get("data", {}).get("reply", "")

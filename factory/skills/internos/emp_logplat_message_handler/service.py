@@ -73,13 +73,13 @@ def _media_dl():
 class LogplatMessageHandlerService:
 
     def ejecutar(self, context: dict) -> dict:
-        from_phone = context.get("from_phone", "")
-        msg_type   = context.get("type", "text")
-        body       = (context.get("body") or "").strip()
-        media_id   = context.get("media_id") or ""
-        empresa_id = context.get("usuario_empresa_id") or context.get("empresa_id", "logplat")
-        chofer     = context.get("usuario_nombre", "")
-        dry_run    = context.get("dry_run", True)
+        from_phone       = context.get("from_phone", "")
+        msg_type         = context.get("type", "text")
+        body             = (context.get("body") or "").strip()
+        media_id         = context.get("media_id") or ""
+        wabiz_empresa_id = context.get("empresa_id", "")   # empresa_id del webhook → wabiz_config
+        chofer           = context.get("usuario_nombre", "")
+        dry_run          = context.get("dry_run", True)
 
         if not from_phone:
             return {"ok": False, "error": "from_phone requerido"}
@@ -112,7 +112,7 @@ class LogplatMessageHandlerService:
         # ── Con hint activo: recibir datos ────────────────────────────────────
         elif hint in ("gasto", "viaje"):
             if msg_type in ("image", "document", "video", "audio") and media_id:
-                reply, new_state = self._handle_media(media_id, empresa_id, hint, state, dry_run, chofer)
+                reply, new_state = self._handle_media(media_id, wabiz_empresa_id, hint, state, dry_run, chofer)
             elif msg_type == "text" and body:
                 reply, new_state = self._handle_text(body, hint, state, dry_run, chofer)
             else:
