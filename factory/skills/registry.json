@@ -1,4 +1,49 @@
 {
+  "qa_campaign_logger": {
+    "tipo": "interno",
+    "nombre": "qa_campaign_logger",
+    "vertical": "qa",
+    "descripcion": "Registra logs estructurados por empresa/campaña/skill con trazabilidad completa",
+    "path": "skills/internos/qa_campaign_logger",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "qa_secrets_check": {
+    "tipo": "interno",
+    "nombre": "qa_secrets_check",
+    "vertical": "qa",
+    "descripcion": "Verifica env vars y secrets requeridos por empresa/campaña (sin exponer valores)",
+    "path": "skills/internos/qa_secrets_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "qa_preflight": {
+    "tipo": "interno",
+    "nombre": "qa_preflight",
+    "vertical": "qa",
+    "descripcion": "Checklist QA completo antes de lanzar campaña: landing, WhatsApp, privacidad, imagen, lead form, presupuesto, copy, approver y tracking",
+    "path": "skills/internos/qa_preflight",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "qa_rollback_campaign": {
+    "tipo": "interno",
+    "nombre": "qa_rollback_campaign",
+    "vertical": "qa",
+    "descripcion": "Pausa campaña Meta, hace backup de config y permite recuperación si falla un deploy",
+    "path": "skills/internos/qa_rollback_campaign",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "qa_skills_test": {
+    "tipo": "interno",
+    "nombre": "qa_skills_test",
+    "vertical": "qa",
+    "descripcion": "Test runner automático para los 6 skills críticos: dashboard, landing, preflight, meta_ads, leads y storage",
+    "path": "skills/internos/qa_skills_test",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "mass_digital_hiring_run": {
     "tipo": "interno",
     "nombre": "mass_digital_hiring_run",
@@ -2134,6 +2179,24 @@
     "vertical": "vertical_ads",
     "descripcion": "Gate pre-lanzamiento: valida brief, config, activos, presupuesto, compliance, approvals, KPIs y flujo de leads antes de publicar.",
     "path": "skills/internos/vertical_ads/ads_campaign_preflight_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/campaign_config_writer": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/campaign_config_writer",
+    "vertical": "vertical_ads",
+    "descripcion": "Actualiza JSON de campana con landing, imagen, privacy, approver, presupuesto y IDs Meta.",
+    "path": "skills/internos/vertical_ads/campaign_config_writer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_ads/campaign_launch_paused": {
+    "tipo": "interno",
+    "nombre": "vertical_ads/campaign_launch_paused",
+    "vertical": "vertical_ads",
+    "descripcion": "Prepara o crea campana Meta Lead Ads siempre en PAUSED despues de preflight y con form_id existente.",
+    "path": "skills/internos/vertical_ads/campaign_launch_paused",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

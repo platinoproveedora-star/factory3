@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "qa_skills_test",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Test runner automático para los 6 skills críticos: dashboard, landing, preflight, meta_ads, leads y storage.",
+  "vertical": "qa",
+  "requires_env": []
+}

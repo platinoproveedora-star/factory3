@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "qa_secrets_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Verifica que todas las env vars y secrets requeridos por empresa/campaña estén presentes y no vacíos.",
+  "vertical": "qa",
+  "requires_env": []
+}

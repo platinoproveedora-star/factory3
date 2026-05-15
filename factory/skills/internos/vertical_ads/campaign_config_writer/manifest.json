@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/campaign_config_writer",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Actualiza archivos JSON de campana con campos operativos validados: landing, imagen, privacy, approver, presupuesto y Meta IDs.",
+  "vertical": "vertical_ads",
+  "requires_env": []
+}

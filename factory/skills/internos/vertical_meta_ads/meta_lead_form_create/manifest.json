@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_lead_form_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un Instant Form de Meta Lead Ads desde preguntas custom o presets reutilizables.",
+  "requires_env": ["META_ACCESS_TOKEN"]
+}

@@ -232,11 +232,16 @@ class WabizChannelRouterService:
 
     def _load_state(self, empresa_id: str, from_phone: str) -> dict:
         chat_id = f"wabiz_{empresa_id}_{from_phone}"
+        base    = os.getenv("SUPABASE_URL", "").rstrip("/")
+        key     = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
         try:
-            qs  = urllib.parse.urlencode({"chat_id": f"eq.{chat_id}", "select": "state", "limit": "1"})
-            url = f"{os.getenv('SUPABASE_URL', '').rstrip('/')}/rest/v1/bot_states?{qs}"
-            key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
-            req = urllib.request.Request(url, headers={
+            qs  = urllib.parse.urlencode({
+                "chat_id": f"eq.{chat_id}",
+                "select":  "state",
+                "order":   "updated_at.desc",
+                "limit":   "1",
+            })
+            req = urllib.request.Request(f"{base}/rest/v1/bot_states?{qs}", headers={
                 "apikey": key, "Authorization": f"Bearer {key}",
                 "Accept": "application/json", "User-Agent": _UA,
             })
@@ -248,17 +253,28 @@ class WabizChannelRouterService:
 
     def _save_state(self, empresa_id: str, from_phone: str, state: dict) -> None:
         chat_id = f"wabiz_{empresa_id}_{from_phone}"
-        payload = json.dumps({"chat_id": chat_id, "state": state}).encode()
-        url     = f"{os.getenv('SUPABASE_URL', '').rstrip('/')}/rest/v1/bot_states"
+        base    = os.getenv("SUPABASE_URL", "").rstrip("/")
         key     = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+        headers = {
+            "apikey": key, "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+            "User-Agent": _UA,
+        }
         try:
-            req = urllib.request.Request(url, data=payload, method="POST", headers={
-                "apikey": key, "Authorization": f"Bearer {key}",
-                "Content-Type": "application/json",
-                "Prefer": "resolution=merge-duplicates,return=minimal",
-                "User-Agent": _UA,
-            })
-            urllib.request.urlopen(req, timeout=10).close()
+            # Intentar PATCH primero
+            patch_url = f"{base}/rest/v1/bot_states?chat_id=eq.{urllib.parse.quote(chat_id)}"
+            patch_payload = json.dumps({"state": state}).encode()
+            req = urllib.request.Request(patch_url, data=patch_payload, method="PATCH", headers=headers)
+            with urllib.request.urlopen(req, timeout=10) as r:
+                content_range = r.headers.get("Content-Range", "0/0")
+                updated = int(content_range.split("/")[-1]) if "/" in content_range else 0
+
+            if updated == 0:
+                # No existía la fila — insertar
+                post_payload = json.dumps({"chat_id": chat_id, "state": state}).encode()
+                req = urllib.request.Request(f"{base}/rest/v1/bot_states", data=post_payload, method="POST", headers=headers)
+                urllib.request.urlopen(req, timeout=10).close()
         except Exception:
             pass
 

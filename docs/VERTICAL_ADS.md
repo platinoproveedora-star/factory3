@@ -18,6 +18,8 @@ vertical_companies/company_context_builder
 -> vertical_marketing/marketing_campaign_planner
 -> vertical_ads/ads_approval_queue_create
 -> vertical_ads/ads_campaign_preflight_check
+-> vertical_ads/campaign_config_writer
+-> vertical_ads/campaign_launch_paused
 -> vertical_meta_ads/meta_lead_form_create
 -> vertical_meta_ads/meta_ads_lead_campaign_flow
 -> vertical_meta_ads/meta_leads_sync_to_sales
@@ -44,3 +46,15 @@ un `company_id + brief`; valida:
 
 Devuelve `ready_to_launch`, `risk_score`, `blockers`, `warnings` y siguientes
 acciones recomendadas.
+
+### `vertical_ads/campaign_config_writer`
+
+Actualiza el JSON de una campana dentro de `companies/<COMPANY_ID>/` con los
+campos operativos que se van confirmando desde dashboard: landing, imagen,
+privacy URL, WhatsApp, approver, presupuesto e IDs de Meta.
+
+### `vertical_ads/campaign_launch_paused`
+
+Wrapper de seguridad para crear o preparar una campana Meta Lead Ads. Requiere
+`form_id`, corre preflight y fuerza `status=PAUSED`. Por defecto hace dry run;
+para crear en Meta debe recibirse `execute=true`.

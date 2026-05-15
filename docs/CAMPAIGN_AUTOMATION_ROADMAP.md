@@ -30,6 +30,8 @@ leads.
 | `vertical_marketing/landing_template_renderer` | Renderizar HTML desde `factory/templates/landing/<template_type>`. |
 | `vertical_ads/ads_campaign_preflight_check` | Validar blockers/warnings antes de lanzar. |
 | `vertical_ads/ads_campaign_run` | Generar payloads de campana en dry run. |
+| `vertical_ads/campaign_config_writer` | Guardar `image_url`, `privacy_url`, `link`, `approver`, presupuesto e IDs Meta. |
+| `vertical_ads/campaign_launch_paused` | Preparar/crear campana real siempre en `PAUSED` despues de preflight. |
 | `vertical_meta_ads/meta_lead_form_create` | Crear formulario de leads Meta. Pendiente real. |
 | `vertical_meta_ads/meta_ads_lead_campaign_flow` | Crear campana Meta Lead Ads. Pendiente real. |
 | `vertical_meta_ads/meta_leads_sync_to_sales` | Sincronizar leads a Sales. Pendiente real. |
@@ -41,9 +43,7 @@ leads.
 | `vertical_marketing/landing_template_registry` | Registrar tipos disponibles: `property_sales`, `hiring`, `service_leads`. |
 | `vertical_marketing/campaign_asset_manager` | Listar, elegir, borrar y marcar imagen principal/galeria. |
 | `vertical_render/render_landing_publish` | Crear o actualizar servicio Render para landing. |
-| `vertical_ads/campaign_config_writer` | Guardar `image_url`, `privacy_url`, `link`, `approver` en JSON de campana. |
 | `vertical_meta_ads/meta_ad_account_finder` | Listar/adivinar/validar `META_AD_ACCOUNT_ID`. |
-| `vertical_ads/campaign_launch_paused` | Crear campana real siempre en `PAUSED` y registrar IDs. |
 | `vertical_sales/lead_intake_from_meta` | Recibir leads Meta y normalizarlos a Sales. |
 
 ## Flujo objetivo

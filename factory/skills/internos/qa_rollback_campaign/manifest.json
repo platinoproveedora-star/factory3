@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "qa_rollback_campaign",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Pausa campaña Meta, hace backup de config y permite recuperación si falla un deploy.",
+  "vertical": "qa",
+  "requires_env": ["META_ACCESS_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

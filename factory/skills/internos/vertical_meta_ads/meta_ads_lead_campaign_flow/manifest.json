@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_ads_lead_campaign_flow",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea campana Meta Lead Ads generica: campaign, adset, creative y ad en PAUSED por defecto.",
+  "requires_env": ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"]
+}

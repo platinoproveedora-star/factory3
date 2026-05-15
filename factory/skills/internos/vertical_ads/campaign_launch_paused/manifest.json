@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_ads/campaign_launch_paused",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea o prepara una campana Meta Lead Ads siempre en PAUSED despues de preflight y con form_id existente.",
+  "vertical": "vertical_ads",
+  "requires_env": ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID", "META_PAGE_ID"]
+}

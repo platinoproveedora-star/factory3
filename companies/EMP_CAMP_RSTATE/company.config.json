@@ -19,6 +19,7 @@
   "skill_stack": {
     "orchestration": [
       "vertical_ads/ads_campaign_run",
+      "vertical_ads/campaign_config_writer",
       "vertical_companies/company_config_loader",
       "vertical_companies/company_context_builder",
       "activity_skill_plan"
@@ -46,6 +47,7 @@
       "vertical_meta_ads/meta_ads_connection_check",
       "vertical_meta_ads/meta_lead_form_create",
       "vertical_meta_ads/meta_ads_lead_campaign_flow",
+      "vertical_ads/campaign_launch_paused",
       "vertical_meta_ads/meta_ads_preview_ad",
       "vertical_meta_ads/meta_ads_update_campaign"
     ],

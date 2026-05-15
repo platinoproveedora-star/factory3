@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_meta_ads/meta_leads_sync_to_rh",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lee leads de un formulario Meta y los guarda como candidatos RH en Supabase.",
+  "requires_env": ["META_ACCESS_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

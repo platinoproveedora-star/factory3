@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "qa_campaign_logger",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Registra logs estructurados por empresa/campaña/skill con trazabilidad completa de ejecuciones.",
+  "vertical": "qa",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
