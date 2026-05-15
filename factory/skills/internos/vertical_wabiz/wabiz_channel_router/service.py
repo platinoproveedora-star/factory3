@@ -255,26 +255,30 @@ class WabizChannelRouterService:
         chat_id = f"wabiz_{empresa_id}_{from_phone}"
         base    = os.getenv("SUPABASE_URL", "").rstrip("/")
         key     = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
-        headers = {
+        hdr     = {
             "apikey": key, "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
             "Prefer": "return=minimal",
             "User-Agent": _UA,
         }
         try:
-            # Intentar PATCH primero
-            patch_url = f"{base}/rest/v1/bot_states?chat_id=eq.{urllib.parse.quote(chat_id)}"
-            patch_payload = json.dumps({"state": state}).encode()
-            req = urllib.request.Request(patch_url, data=patch_payload, method="PATCH", headers=headers)
+            qs  = urllib.parse.urlencode({"chat_id": f"eq.{chat_id}", "select": "id", "limit": "1"})
+            req = urllib.request.Request(f"{base}/rest/v1/bot_states?{qs}",
+                                          headers={**hdr, "Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=10) as r:
-                content_range = r.headers.get("Content-Range", "0/0")
-                updated = int(content_range.split("/")[-1]) if "/" in content_range else 0
+                exists = bool(json.loads(r.read().decode()))
 
-            if updated == 0:
-                # No existía la fila — insertar
-                post_payload = json.dumps({"chat_id": chat_id, "state": state}).encode()
-                req = urllib.request.Request(f"{base}/rest/v1/bot_states", data=post_payload, method="POST", headers=headers)
-                urllib.request.urlopen(req, timeout=10).close()
+            if exists:
+                url = f"{base}/rest/v1/bot_states?chat_id=eq.{urllib.parse.quote(chat_id)}"
+                req = urllib.request.Request(url,
+                                              data=json.dumps({"state": state}).encode(),
+                                              method="PATCH", headers=hdr)
+            else:
+                url = f"{base}/rest/v1/bot_states"
+                req = urllib.request.Request(url,
+                                              data=json.dumps({"chat_id": chat_id, "state": state}).encode(),
+                                              method="POST", headers=hdr)
+            urllib.request.urlopen(req, timeout=10).close()
         except Exception:
             pass
 
