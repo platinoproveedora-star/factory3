@@ -43,10 +43,7 @@ class WabizChannelRouterService:
 
         # ── Ayuda ─────────────────────────────────────────────────────────────
         if msg_type == "text" and body_lower in ("ayuda", "/ayuda"):
-            active_now = state.get("active_mode", "")
-            if not user or not active_now or active_now not in _MODO_HANDLERS:
-                return self._reply(self._txt_ayuda(user), empresa_id, from_phone, dry_run)
-            # con modo activo: delegar al handler para que muestre sus comandos
+            return self._reply(self._txt_ayuda(user), empresa_id, from_phone, dry_run)
 
         # ── No registrado → flujo de registro ─────────────────────────────────
         if not user:
@@ -173,6 +170,14 @@ class WabizChannelRouterService:
         for m in modes:
             lines.append(_MODO_LABELS.get(m, f"• {m}"))
         lines.append("\n*Comandos generales:*\n`salir` — cambiar de módulo\n`ayuda` — ver esta ayuda")
+        if "logplat" in modes:
+            lines.append(
+                "\n*LOGPLAT — Comandos:*\n"
+                "*Gasto:* `gasto` → `cantidad,concepto,dd/mm/yy,viaje`\n"
+                "  ej: `500,gasolina,15/05/26,1`\n"
+                "*Viaje:* `viaje` → `numero,origen,destino,precio`\n"
+                "  ej: `1,merida,cancun,15000`"
+            )
         return "\n".join(lines)
 
     def _txt_menu(self, user: dict) -> str:
