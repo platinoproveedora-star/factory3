@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.request
 from datetime import datetime
 from html import escape
@@ -191,6 +192,45 @@ def _storage_url(bucket: str, path: str) -> str:
     return f"{SUPABASE_PUBLIC_URL}/storage/v1/object/public/{bucket}/{path}"
 
 
+def _asset_name(url: str) -> str:
+    return Path(str(url).split("?", 1)[0]).name or "asset"
+
+
+def _storage_path_from_public_url(url: str) -> str:
+    marker = f"/storage/v1/object/public/{ASSETS_BUCKET}/"
+    if marker not in str(url):
+        return ""
+    return str(url).split(marker, 1)[1]
+
+
+def _delete_storage_url(url: str) -> dict:
+    path = _storage_path_from_public_url(url)
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or ""
+    if not path:
+        return {"ok": False, "error": "URL no pertenece al bucket publico esperado", "url": url}
+    if not SUPABASE_PUBLIC_URL or not key:
+        return {"ok": False, "error": "SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY no configurado", "path": path}
+    req = urllib.request.Request(
+        f"{SUPABASE_PUBLIC_URL}/storage/v1/object/{ASSETS_BUCKET}",
+        data=json.dumps({"prefixes": [path]}).encode("utf-8"),
+        method="DELETE",
+        headers={
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "User-Agent": "FactoryDashboard/0.1",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as response:
+            response.read()
+        return {"ok": True, "path": path, "role": "delete"}
+    except urllib.error.HTTPError as exc:
+        return {"ok": False, "path": path, "role": "delete", "error": f"HTTP {exc.code}: {exc.read().decode()}"}
+    except Exception as exc:
+        return {"ok": False, "path": path, "role": "delete", "error": str(exc)}
+
+
 def _upload_bytes(path: str, content: bytes, content_type: str) -> dict:
     return _run_skill(
         "supabase_storage_upload",
@@ -328,12 +368,146 @@ def _landing_config_payload(fields: dict, media: dict) -> dict:
     return config
 
 
+def _normalized_gallery_media(media: dict) -> list[dict]:
+    items = media.get("gallery_media") or []
+    normalized = []
+    if items:
+        for item in items:
+            if isinstance(item, dict) and item.get("url"):
+                normalized.append({"type": item.get("type") or "image", "url": item["url"]})
+            elif isinstance(item, str):
+                normalized.append({"type": "image", "url": item})
+    else:
+        normalized = [{"type": "image", "url": url} for url in media.get("gallery_urls", []) if url]
+    return normalized[:6]
+
+
+def _sync_media_payload(media: dict) -> dict:
+    result = dict(media)
+    gallery_media = _normalized_gallery_media(result)
+    result["gallery_media"] = gallery_media
+    result["gallery_urls"] = [item["url"] for item in gallery_media if item.get("type") == "image" and item.get("url")]
+    return result
+
+
 def _save_landing_config(config: dict) -> dict:
     return _upload_bytes(
         f"{ASSETS_FOLDER}/landing_config.json",
         json.dumps(config, ensure_ascii=True, indent=2).encode("utf-8"),
         "application/json",
     )
+
+
+def _save_media_state(fields: dict, media: dict, diagnostics: list[dict] | None = None) -> dict:
+    config = _landing_config_payload(fields, _sync_media_payload(media))
+    result = _save_landing_config(config)
+    all_diagnostics = list(diagnostics or [])
+    all_diagnostics.append({"file": "landing_config.json", "role": "config", **result})
+    st.session_state["landing_config"] = config
+    st.session_state["landing_diagnostics"] = all_diagnostics
+    if result.get("ok"):
+        _load_landing_config.clear()
+    return result
+
+
+def _render_media_preview(item_type: str, url: str) -> None:
+    if item_type == "video":
+        st.markdown(
+            f'<video src="{escape(url)}" controls style="width:100%;max-height:150px;border-radius:8px;background:#111827;"></video>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.image(url, use_container_width=True)
+
+
+def _render_media_manager(fields: dict, media_defaults: dict) -> None:
+    st.subheader("Medios actuales")
+    st.caption("Borra, reordena o asigna medios sin tocar la informacion de texto.")
+    media = _sync_media_payload(media_defaults)
+
+    slot_cols = st.columns(3)
+    slots = [
+        ("Imagen principal", "main_image_url", "image"),
+        ("Video principal", "main_video_url", "video"),
+        ("Video detalles", "detail_video_url", "video"),
+    ]
+    for col, (label, key, item_type) in zip(slot_cols, slots):
+        with col:
+            st.caption(label)
+            url = media.get(key)
+            if url:
+                _render_media_preview(item_type, url)
+                st.caption(_asset_name(url))
+                if st.button("Borrar", key=f"delete_{key}", use_container_width=True):
+                    delete_result = _delete_storage_url(url)
+                    media[key] = ""
+                    result = _save_media_state(fields, media, [delete_result])
+                    if result.get("ok"):
+                        st.success(f"{label} borrado")
+                        st.rerun()
+                    st.error(result.get("error", "No se pudo actualizar config"))
+            else:
+                st.info("Vacio")
+
+    gallery = _normalized_gallery_media(media)
+    st.markdown("**Carrete de inmueble**")
+    if not gallery:
+        st.info("Sin medios en el carrete.")
+        return
+
+    cols = st.columns(3)
+    for index, item in enumerate(gallery):
+        url = item.get("url", "")
+        item_type = item.get("type", "image")
+        with cols[index % 3]:
+            st.caption(f"Carrete {index + 1} - {item_type}")
+            _render_media_preview(item_type, url)
+            st.caption(_asset_name(url))
+            c1, c2 = st.columns(2)
+            if c1.button("Subir", key=f"gallery_up_{index}", disabled=index == 0, use_container_width=True):
+                gallery[index - 1], gallery[index] = gallery[index], gallery[index - 1]
+                media["gallery_media"] = gallery
+                result = _save_media_state(fields, media)
+                if result.get("ok"):
+                    st.rerun()
+            if c2.button("Bajar", key=f"gallery_down_{index}", disabled=index >= len(gallery) - 1, use_container_width=True):
+                gallery[index + 1], gallery[index] = gallery[index], gallery[index + 1]
+                media["gallery_media"] = gallery
+                result = _save_media_state(fields, media)
+                if result.get("ok"):
+                    st.rerun()
+            if item_type == "image" and st.button("Usar como principal", key=f"gallery_main_image_{index}", use_container_width=True):
+                media["main_image_url"] = url
+                result = _save_media_state(fields, media)
+                if result.get("ok"):
+                    st.success("Imagen principal actualizada")
+                    st.rerun()
+            if item_type == "video" and st.button("Usar como video principal", key=f"gallery_main_video_{index}", use_container_width=True):
+                media["main_video_url"] = url
+                result = _save_media_state(fields, media)
+                if result.get("ok"):
+                    st.success("Video principal actualizado")
+                    st.rerun()
+            if item_type == "video" and st.button("Usar en detalles", key=f"gallery_detail_video_{index}", use_container_width=True):
+                media["detail_video_url"] = url
+                result = _save_media_state(fields, media)
+                if result.get("ok"):
+                    st.success("Video de detalles actualizado")
+                    st.rerun()
+            if st.button("Eliminar del carrete", key=f"gallery_delete_{index}", use_container_width=True):
+                delete_result = _delete_storage_url(url)
+                media["gallery_media"] = [entry for i, entry in enumerate(gallery) if i != index]
+                if media.get("main_image_url") == url:
+                    media["main_image_url"] = ""
+                if media.get("main_video_url") == url:
+                    media["main_video_url"] = ""
+                if media.get("detail_video_url") == url:
+                    media["detail_video_url"] = ""
+                result = _save_media_state(fields, media, [delete_result])
+                if result.get("ok"):
+                    st.success("Medio eliminado")
+                    st.rerun()
+                st.error(result.get("error", "No se pudo actualizar config"))
 
 
 def _render_landing_page() -> None:
@@ -454,6 +628,7 @@ def _render_landing_page() -> None:
         "gallery_urls": defaults.get("gallery_urls", []),
         "gallery_media": defaults.get("gallery_media", []),
     }
+    media_defaults = _sync_media_payload(media_defaults)
 
     if st.button("Guardar informacion", type="primary", use_container_width=True):
         config = _landing_config_payload(fields, media_defaults)
@@ -465,6 +640,8 @@ def _render_landing_page() -> None:
             st.success("Informacion actualizada sin borrar fotos ni videos.")
         else:
             st.error(config_result.get("error", "No se pudo guardar landing_config.json"))
+
+    _render_media_manager(fields, media_defaults)
 
     st.subheader("Fotos y video")
     st.caption(f"Este boton actualiza solo los medios y conserva la informacion actual. Maximo recomendado: {MAX_LANDING_MEDIA_MB} MB por archivo.")
@@ -516,13 +693,12 @@ def _render_landing_page() -> None:
             if result.get("ok"):
                 media["detail_video_url"] = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
 
-        if gallery_files:
-            gallery_media = []
-            gallery_urls = []
-        else:
-            gallery_media = media.get("gallery_media", [])
-            gallery_urls = media.get("gallery_urls", [])
-        for file in (gallery_files or [])[:6]:
+        gallery_media = _normalized_gallery_media(media)
+        gallery_urls = [item["url"] for item in gallery_media if item.get("type") == "image"]
+        remaining_slots = max(0, 6 - len(gallery_media))
+        if gallery_files and remaining_slots == 0:
+            st.warning("El carrete ya tiene 6 medios. Borra uno antes de agregar mas.")
+        for file in (gallery_files or [])[:remaining_slots]:
             is_video = (file.type or "").startswith("video/")
             prefix = "gallery-video" if is_video else "gallery"
             path = f"{ASSETS_FOLDER}/landing/{prefix}-{_safe_filename(file.name)}"
@@ -536,14 +712,9 @@ def _render_landing_page() -> None:
 
         media["gallery_media"] = gallery_media[:6]
         media["gallery_urls"] = gallery_urls[:6]
-        config = _landing_config_payload(fields, media)
-        config_result = _save_landing_config(config)
-        diagnostics.append({"file": "landing_config.json", "role": "config", **config_result})
-        st.session_state["landing_config"] = config
-        st.session_state["landing_diagnostics"] = diagnostics
+        config_result = _save_media_state(fields, media, diagnostics)
 
         if config_result.get("ok"):
-            _load_landing_config.clear()
             st.success("Fotos/videos actualizados. Refresca la landing publica para ver los cambios.")
         else:
             st.error(config_result.get("error", "No se pudo guardar landing_config.json"))
@@ -552,19 +723,8 @@ def _render_landing_page() -> None:
             st.warning("Algunos archivos no subieron. Abre el diagnostico para ver si fue MIME, tamano o bucket.")
 
     if st.session_state.get("landing_config"):
-        cfg = st.session_state["landing_config"]
-        st.subheader("Vista rapida")
-        if cfg.get("main_image_url"):
-            st.image(cfg["main_image_url"], caption="Imagen principal", use_container_width=True)
-        if cfg.get("gallery_urls"):
-            cols = st.columns(min(3, len(cfg["gallery_urls"])))
-            for index, url in enumerate(cfg["gallery_urls"]):
-                cols[index % len(cols)].image(url, caption=f"Foto {index + 1}", use_container_width=True)
-        if cfg.get("main_video_url"):
-            st.video(cfg["main_video_url"])
-        if cfg.get("detail_video_url"):
-            st.video(cfg["detail_video_url"])
-        st.json(cfg, expanded=False)
+        with st.expander("Config landing actual", expanded=False):
+            st.json(st.session_state["landing_config"], expanded=False)
 
     if st.session_state.get("landing_diagnostics"):
         with st.expander("Diagnostico de subida", expanded=False):
