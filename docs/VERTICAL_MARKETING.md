@@ -18,6 +18,7 @@ reporte.
 | `vertical_marketing/marketing_compliance_checker` | Revisa claims, promesas sensibles y riesgos de politica. |
 | `vertical_marketing/marketing_privacy_notice_builder` | Genera aviso de privacidad base para landings y leads. |
 | `vertical_marketing/marketing_mini_landing_scaffold` | Crea mini landing estatica con CTA, ficha y aviso de privacidad. |
+| `vertical_marketing/property_landing_content_generator` | Genera contenido estructurado para landing inmobiliaria dinamica. |
 | `vertical_marketing/marketing_report_generator` | Genera reporte ejecutivo de resultados y aprendizajes. |
 
 ## Flujo recomendado para una mini landing

@@ -256,6 +256,16 @@ def _campaign_defaults() -> dict:
     }
 
 
+def _campaign_payload() -> dict:
+    path = ROOT / "companies" / COMPANY_ID / f"{CAMPAIGN_SLUG}.json"
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
 def _parse_label_value_lines(text: str, left_key: str, right_key: str) -> list[dict]:
     items = []
     for line in text.splitlines():
@@ -281,7 +291,29 @@ def _render_landing_page() -> None:
         unsafe_allow_html=True,
     )
     st.caption(f"Destino storage: {ASSETS_BUCKET}/{ASSETS_FOLDER}")
-    defaults = _campaign_defaults()
+    base_defaults = _campaign_defaults()
+    defaults = {**base_defaults, **st.session_state.get("landing_ai_content", {})}
+
+    if st.button("Rellenar vacios con IA", use_container_width=True):
+        campaign_payload = _campaign_payload()
+        prop = (campaign_payload.get("brief") or {}).get("property") or {}
+        result = _run_skill(
+            "vertical_marketing/property_landing_content_generator",
+            {
+                "company_id": COMPANY_ID,
+                "campaign": campaign_payload,
+                "property": prop,
+                "dry_run": False,
+            },
+            "internos",
+        )
+        if result.get("ok"):
+            generated = result.get("data") or {}
+            st.session_state["landing_ai_content"] = {**st.session_state.get("landing_ai_content", {}), **generated}
+            st.success("Contenido generado con IA. Revisa los campos y guarda la landing.")
+            st.rerun()
+        else:
+            st.error(result.get("error", "No se pudo generar contenido con IA"))
 
     st.subheader("Contenido de propiedad")
     col_a, col_b = st.columns(2)

@@ -3,7 +3,7 @@
     "tipo": "interno",
     "nombre": "mass_digital_hiring_run",
     "vertical": "mass_digital_hiring",
-    "descripcion": "Orquestador master de contratación masiva digital: campaña, captura, evaluación y distribución",
+    "descripcion": "Orquestador master de contrataciÃ³n masiva digital: campaÃ±a, captura, evaluaciÃ³n y distribuciÃ³n",
     "path": "skills/internos/mass_digital_hiring_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -12,7 +12,7 @@
     "tipo": "interno",
     "nombre": "rh_demand_planner",
     "vertical": "mass_digital_hiring",
-    "descripcion": "Calcula cuántos operadores contratar por puesto, zona y fecha objetivo",
+    "descripcion": "Calcula cuÃ¡ntos operadores contratar por puesto, zona y fecha objetivo",
     "path": "skills/internos/rh_demand_planner",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -21,7 +21,7 @@
     "tipo": "interno",
     "nombre": "rh_qr_entry",
     "vertical": "mass_digital_hiring",
-    "descripcion": "Genera QR con link directo al bot de captura para una vacante específica",
+    "descripcion": "Genera QR con link directo al bot de captura para una vacante especÃ­fica",
     "path": "skills/internos/rh_qr_entry",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -39,7 +39,7 @@
     "tipo": "interno",
     "nombre": "rh_contractor_splitter",
     "vertical": "mass_digital_hiring",
-    "descripcion": "Divide candidatos calificados entre empresas contratantes según cupo y criterios",
+    "descripcion": "Divide candidatos calificados entre empresas contratantes segÃºn cupo y criterios",
     "path": "skills/internos/rh_contractor_splitter",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -48,7 +48,7 @@
     "tipo": "interno",
     "nombre": "rh_channel_publisher",
     "vertical": "mass_digital_hiring",
-    "descripcion": "Orquesta publicación de vacante en múltiples canales: Facebook, WhatsApp y Telegram",
+    "descripcion": "Orquesta publicaciÃ³n de vacante en mÃºltiples canales: Facebook, WhatsApp y Telegram",
     "path": "skills/internos/rh_channel_publisher",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -75,7 +75,7 @@
     "tipo": "interno",
     "nombre": "vertical_fb/fb_groupsearch_engine",
     "vertical": "vertical_fb",
-    "descripcion": "Busca grupos públicos de Facebook por tema. Motor: Meta API → Haiku IA. Extensible para web search y scraping.",
+    "descripcion": "Busca grupos pÃºblicos de Facebook por tema. Motor: Meta API â†’ Haiku IA. Extensible para web search y scraping.",
     "path": "skills/internos/vertical_fb/fb_groupsearch_engine",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -84,7 +84,7 @@
     "tipo": "interno",
     "nombre": "vertical_fb/fb_groupsearch_saver",
     "vertical": "vertical_fb",
-    "descripcion": "Crea search_id, registra búsqueda y guarda grupos en fb_gs_searches/fb_gs_groups con dedup",
+    "descripcion": "Crea search_id, registra bÃºsqueda y guarda grupos en fb_gs_searches/fb_gs_groups con dedup",
     "path": "skills/internos/vertical_fb/fb_groupsearch_saver",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -93,7 +93,7 @@
     "tipo": "interno",
     "nombre": "vertical_fb/fb_groupsearch_delete",
     "vertical": "vertical_fb",
-    "descripcion": "Elimina una búsqueda y todos sus grupos de fb_gs_searches y fb_gs_groups",
+    "descripcion": "Elimina una bÃºsqueda y todos sus grupos de fb_gs_searches y fb_gs_groups",
     "path": "skills/internos/vertical_fb/fb_groupsearch_delete",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -103,7 +103,7 @@
     "nombre": "vertical_fb/fb_groupsearch_list",
     "vertical": "vertical_fb",
     "kind": "data",
-    "descripcion": "Retorna lista de búsquedas de grupos FB para el dashboard",
+    "descripcion": "Retorna lista de bÃºsquedas de grupos FB para el dashboard",
     "path": "skills/internos/vertical_fb/fb_groupsearch_list",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -113,7 +113,7 @@
     "nombre": "vertical_fb/fb_groupsearch_groups",
     "vertical": "vertical_fb",
     "kind": "data",
-    "descripcion": "Retorna grupos encontrados de una búsqueda específica para el dashboard",
+    "descripcion": "Retorna grupos encontrados de una bÃºsqueda especÃ­fica para el dashboard",
     "path": "skills/internos/vertical_fb/fb_groupsearch_groups",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -122,7 +122,7 @@
     "tipo": "interno",
     "nombre": "vertical_fb/fbgroups_run",
     "vertical": "vertical_fb",
-    "descripcion": "Bot mode fbgroups — maneja comandos /buscar /misbusquedas /ver /borrar en Telegram",
+    "descripcion": "Bot mode fbgroups â€” maneja comandos /buscar /misbusquedas /ver /borrar en Telegram",
     "path": "skills/internos/vertical_fb/fbgroups_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -266,7 +266,7 @@
     "tipo": "interno",
     "nombre": "bot_inbox_router",
     "vertical": "vertical_bot",
-    "descripcion": "Router de entrada multicanal — identifica candidato, crea o recupera conversacion y deriva al flujo correcto",
+    "descripcion": "Router de entrada multicanal â€” identifica candidato, crea o recupera conversacion y deriva al flujo correcto",
     "path": "skills/internos/bot_inbox_router",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -275,7 +275,7 @@
     "tipo": "interno",
     "nombre": "bot_form_capture",
     "vertical": "vertical_bot",
-    "descripcion": "Ejecuta cuestionario paso a paso — guarda respuestas en Supabase y devuelve la siguiente pregunta",
+    "descripcion": "Ejecuta cuestionario paso a paso â€” guarda respuestas en Supabase y devuelve la siguiente pregunta",
     "path": "skills/internos/bot_form_capture",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -320,7 +320,7 @@
     "tipo": "interno",
     "nombre": "rh_knockout_filter",
     "vertical": "vertical_rh",
-    "descripcion": "Aplica filtros obligatorios al perfil del candidato — pasa o no pasa",
+    "descripcion": "Aplica filtros obligatorios al perfil del candidato â€” pasa o no pasa",
     "path": "skills/internos/rh_knockout_filter",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1395,7 +1395,7 @@
     "tipo": "interno",
     "nombre": "rh_dimension_analyzer",
     "vertical": "ai_hiring_assessment",
-    "descripcion": "Analiza una dimensi�n del candidato (conducta, fisico, compromiso, maquinaria, rutas, tecnico) usando IA y devuelve score 1-10, se�ales y recomendaci�n",
+    "descripcion": "Analiza una dimensiï¿½n del candidato (conducta, fisico, compromiso, maquinaria, rutas, tecnico) usando IA y devuelve score 1-10, seï¿½ales y recomendaciï¿½n",
     "path": "skills/internos/rh_dimension_analyzer",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1413,7 +1413,7 @@
     "tipo": "interno",
     "nombre": "rh_interview_scheduler",
     "vertical": "ai_hiring_assessment",
-    "descripcion": "Agenda, cancela y lista entrevistas; notifica candidato y reclutador por Telegram; auto-calcula el pr�ximo slot h�bil si no se provee fecha",
+    "descripcion": "Agenda, cancela y lista entrevistas; notifica candidato y reclutador por Telegram; auto-calcula el prï¿½ximo slot hï¿½bil si no se provee fecha",
     "path": "skills/internos/rh_interview_scheduler",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1422,7 +1422,7 @@
     "tipo": "interno",
     "nombre": "rh_shift_zone_validator",
     "vertical": "ai_hiring_assessment",
-    "descripcion": "Valida turno requerido, zona de trabajo y dependencia de transporte del candidato en un solo an�lisis con IA",
+    "descripcion": "Valida turno requerido, zona de trabajo y dependencia de transporte del candidato en un solo anï¿½lisis con IA",
     "path": "skills/internos/rh_shift_zone_validator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1440,7 +1440,7 @@
     "tipo": "interno",
     "nombre": "dashboard_updater",
     "vertical": "factory",
-    "descripcion": "Actualiza un dashboard Streamlit existente con IA: agrega secciones, m�tricas y tablas nuevas sin romper lo existente",
+    "descripcion": "Actualiza un dashboard Streamlit existente con IA: agrega secciones, mï¿½tricas y tablas nuevas sin romper lo existente",
     "path": "skills/internos/dashboard_updater",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1449,7 +1449,7 @@
     "tipo": "interno",
     "nombre": "rh_retention_predictor",
     "vertical": "vertical_retention",
-    "descripcion": "Predice riesgo de desercion temprana del candidato: score 1-10, meses estimados, se�ales y recomendacion",
+    "descripcion": "Predice riesgo de desercion temprana del candidato: score 1-10, meses estimados, seï¿½ales y recomendacion",
     "path": "skills/internos/rh_retention_predictor",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1476,7 +1476,7 @@
     "tipo": "interno",
     "nombre": "supabase_storage_upload",
     "vertical": "factory_infra",
-    "descripcion": "Sube un archivo base64 a Supabase Storage y retorna la URL pública. Input: bucket, path, content_b64, content_type.",
+    "descripcion": "Sube un archivo base64 a Supabase Storage y retorna la URL pÃºblica. Input: bucket, path, content_b64, content_type.",
     "path": "skills/internos/supabase_storage_upload",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1503,7 +1503,7 @@
     "tipo": "meta",
     "nombre": "meta_task_enqueue",
     "vertical": "meta",
-    "descripcion": "Encola una o varias tareas en factory_tasks para ejecución en segundo plano",
+    "descripcion": "Encola una o varias tareas en factory_tasks para ejecuciÃ³n en segundo plano",
     "path": "skills/meta/meta_task_enqueue",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1540,7 +1540,7 @@
     "tipo": "eval",
     "nombre": "skill_schema_eval",
     "vertical": "factory_eval",
-    "descripcion": "Valida que data del resultado contenga los campos requeridos según schema esperado",
+    "descripcion": "Valida que data del resultado contenga los campos requeridos segÃºn schema esperado",
     "path": "skills/eval/skill_schema_eval",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1549,7 +1549,7 @@
     "tipo": "eval",
     "nombre": "skill_cost_eval",
     "vertical": "factory_eval",
-    "descripcion": "Evalúa costo en tokens de una tarea contra umbrales configurables",
+    "descripcion": "EvalÃºa costo en tokens de una tarea contra umbrales configurables",
     "path": "skills/eval/skill_cost_eval",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1558,7 +1558,7 @@
     "tipo": "eval",
     "nombre": "skill_latency_eval",
     "vertical": "factory_eval",
-    "descripcion": "Evalúa tiempo de respuesta de una tarea contra umbrales en ms",
+    "descripcion": "EvalÃºa tiempo de respuesta de una tarea contra umbrales en ms",
     "path": "skills/eval/skill_latency_eval",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1577,7 +1577,7 @@
     "tipo": "meta",
     "nombre": "workflow_capture",
     "vertical": "factory_meta",
-    "descripcion": "Recibe descripción de un proceso humano y lo convierte en pasos estructurados JSON",
+    "descripcion": "Recibe descripciÃ³n de un proceso humano y lo convierte en pasos estructurados JSON",
     "path": "skills/meta/workflow_capture",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1595,7 +1595,7 @@
     "tipo": "meta",
     "nombre": "skill_spec_generator",
     "vertical": "factory_meta",
-    "descripcion": "Convierte un patrón automatizable en spec técnica completa para un skill factory3",
+    "descripcion": "Convierte un patrÃ³n automatizable en spec tÃ©cnica completa para un skill factory3",
     "path": "skills/meta/skill_spec_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1604,7 +1604,7 @@
     "tipo": "eval",
     "nombre": "skill_quality_eval",
     "vertical": "factory_eval",
-    "descripcion": "Ejecuta un skill con input de prueba y evalúa la calidad del output",
+    "descripcion": "Ejecuta un skill con input de prueba y evalÃºa la calidad del output",
     "path": "skills/eval/skill_quality_eval",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1631,7 +1631,7 @@
     "tipo": "meta",
     "nombre": "skill_code_generator",
     "vertical": "factory_meta",
-    "descripcion": "Toma una spec técnica y genera service.py, skill.py y manifest.json con lógica real via IA",
+    "descripcion": "Toma una spec tÃ©cnica y genera service.py, skill.py y manifest.json con lÃ³gica real via IA",
     "path": "skills/meta/skill_code_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1640,7 +1640,7 @@
     "tipo": "meta",
     "nombre": "skill_cases_generator",
     "vertical": "factory_meta",
-    "descripcion": "Genera casos de prueba con input/output esperado a partir de una spec técnica de skill",
+    "descripcion": "Genera casos de prueba con input/output esperado a partir de una spec tÃ©cnica de skill",
     "path": "skills/meta/skill_cases_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1649,7 +1649,7 @@
     "tipo": "meta",
     "nombre": "proceso_to_skill",
     "vertical": "factory_meta",
-    "descripcion": "Orquestador end-to-end: texto de proceso → spec → código → eval → registro → push",
+    "descripcion": "Orquestador end-to-end: texto de proceso â†’ spec â†’ cÃ³digo â†’ eval â†’ registro â†’ push",
     "path": "skills/meta/proceso_to_skill",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1667,7 +1667,7 @@
     "tipo": "eval",
     "nombre": "skill_health_check",
     "vertical": "factory_eval",
-    "descripcion": "Escanea todos los skills y reporta cuáles tienen manifest, service.py, skill.py y entrada en registry",
+    "descripcion": "Escanea todos los skills y reporta cuÃ¡les tienen manifest, service.py, skill.py y entrada en registry",
     "path": "skills/eval/skill_health_check",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1694,7 +1694,7 @@
     "tipo": "meta",
     "nombre": "skill_doc_generator",
     "vertical": "factory_meta",
-    "descripcion": "Lee manifest.json y service.py de un skill y genera documentación markdown sin IA",
+    "descripcion": "Lee manifest.json y service.py de un skill y genera documentaciÃ³n markdown sin IA",
     "path": "skills/meta/skill_doc_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1703,7 +1703,7 @@
     "tipo": "meta",
     "nombre": "skill_registry_sync",
     "vertical": "factory_meta",
-    "descripcion": "Escanea disco y agrega al registry los skills que faltan — dry_run=True por defecto",
+    "descripcion": "Escanea disco y agrega al registry los skills que faltan â€” dry_run=True por defecto",
     "path": "skills/meta/skill_registry_sync",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1713,7 +1713,7 @@
     "nombre": "factory_stats",
     "vertical": "factory_eval",
     "kind": "data",
-    "descripcion": "KPIs globales de la fábrica: total skills, bots, agents, distribución por tipo y vertical",
+    "descripcion": "KPIs globales de la fÃ¡brica: total skills, bots, agents, distribuciÃ³n por tipo y vertical",
     "path": "skills/eval/factory_stats",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1723,7 +1723,7 @@
     "nombre": "meta_eval_kpis",
     "vertical": "eval",
     "kind": "data",
-    "descripcion": "KPIs de meta y eval skills: conteo, cobertura de pipeline y semáforo por skill",
+    "descripcion": "KPIs de meta y eval skills: conteo, cobertura de pipeline y semÃ¡foro por skill",
     "path": "skills/eval/meta_eval_kpis",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1741,7 +1741,7 @@
     "tipo": "eval",
     "nombre": "skill_import_checker",
     "vertical": "factory_eval",
-    "descripcion": "Lee service.py de un skill y verifica que todos los imports estén disponibles",
+    "descripcion": "Lee service.py de un skill y verifica que todos los imports estÃ©n disponibles",
     "path": "skills/eval/skill_import_checker",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1750,7 +1750,7 @@
     "tipo": "interno",
     "nombre": "vertical_sat/sat_auth",
     "vertical": "vertical_sat",
-    "descripcion": "Autenticación SAT Descarga Masiva via e.firma (SOAP + XML-DSig). Retorna token 5 min.",
+    "descripcion": "AutenticaciÃ³n SAT Descarga Masiva via e.firma (SOAP + XML-DSig). Retorna token 5 min.",
     "path": "skills/internos/vertical_sat/sat_auth",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1804,7 +1804,7 @@
     "tipo": "interno",
     "nombre": "vertical_sat/sat_cfdi_sync",
     "vertical": "vertical_sat",
-    "descripcion": "Orquestador SAT completo: auth→solicitud→verificar(poll)→descargar→parsear→guardar.",
+    "descripcion": "Orquestador SAT completo: authâ†’solicitudâ†’verificar(poll)â†’descargarâ†’parsearâ†’guardar.",
     "path": "skills/internos/vertical_sat/sat_cfdi_sync",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1823,7 +1823,7 @@
     "tipo": "interno",
     "nombre": "vertical_sales/communication_router_system",
     "vertical": "vertical_sales",
-    "descripcion": "Normaliza mensajes multicanal, identifica empresa/usuario y clasifica intención comercial con IA",
+    "descripcion": "Normaliza mensajes multicanal, identifica empresa/usuario y clasifica intenciÃ³n comercial con IA",
     "path": "skills/internos/vertical_sales/communication_router_system",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1841,7 +1841,7 @@
     "tipo": "interno",
     "nombre": "vertical_sales/lead_score_system",
     "vertical": "vertical_sales",
-    "descripcion": "Puntúa lead 0-100 según intención, canal y señales del mensaje con IA. Actualiza score en tabla leads.",
+    "descripcion": "PuntÃºa lead 0-100 segÃºn intenciÃ³n, canal y seÃ±ales del mensaje con IA. Actualiza score en tabla leads.",
     "path": "skills/internos/vertical_sales/lead_score_system",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1850,7 +1850,7 @@
     "tipo": "interno",
     "nombre": "vertical_sales/automation_orchestrator_system",
     "vertical": "vertical_sales",
-    "descripcion": "Decide siguiente acción post-lead según score e intención, encola tarea y registra en automation_logs",
+    "descripcion": "Decide siguiente acciÃ³n post-lead segÃºn score e intenciÃ³n, encola tarea y registra en automation_logs",
     "path": "skills/internos/vertical_sales/automation_orchestrator_system",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1878,7 +1878,7 @@
     "nombre": "vertical_sales/dashboard_operational_system",
     "vertical": "vertical_sales",
     "kind": "data",
-    "descripcion": "kind=data — retorna leads, tareas y métricas de ventas para dashboard via GET /data/",
+    "descripcion": "kind=data â€” retorna leads, tareas y mÃ©tricas de ventas para dashboard via GET /data/",
     "path": "skills/internos/vertical_sales/dashboard_operational_system",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1887,7 +1887,7 @@
     "tipo": "interno",
     "nombre": "vertical_sales/sales_run",
     "vertical": "vertical_sales",
-    "descripcion": "Bot mode multicanal — recibe webhook y orquesta flujo completo: router → lead → score → followup",
+    "descripcion": "Bot mode multicanal â€” recibe webhook y orquesta flujo completo: router â†’ lead â†’ score â†’ followup",
     "path": "skills/internos/vertical_sales/sales_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1896,7 +1896,7 @@
     "tipo": "interno",
     "nombre": "vertical_sales/sales_lead_update",
     "vertical": "vertical_sales",
-    "descripcion": "Actualiza campos del lead: nombre, teléfono, email, estado. Registra updated_at.",
+    "descripcion": "Actualiza campos del lead: nombre, telÃ©fono, email, estado. Registra updated_at.",
     "path": "skills/internos/vertical_sales/sales_lead_update",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1924,7 +1924,7 @@
     "nombre": "vertical_sales/sales_report",
     "vertical": "vertical_sales",
     "kind": "data",
-    "descripcion": "kind=data — reporte de conversión por período: leads, tasa cierre, score promedio, por canal.",
+    "descripcion": "kind=data â€” reporte de conversiÃ³n por perÃ­odo: leads, tasa cierre, score promedio, por canal.",
     "path": "skills/internos/vertical_sales/sales_report",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1934,7 +1934,7 @@
     "nombre": "vertical_sales/sales_list",
     "vertical": "vertical_sales",
     "kind": "data",
-    "descripcion": "kind=data — lista filtrable de leads por estado, canal, nivel y fecha. Paginado.",
+    "descripcion": "kind=data â€” lista filtrable de leads por estado, canal, nivel y fecha. Paginado.",
     "path": "skills/internos/vertical_sales/sales_list",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1943,7 +1943,7 @@
     "tipo": "interno",
     "nombre": "vertical_marketing/marketing_campaign_planner",
     "vertical": "vertical_marketing",
-    "descripcion": "Planea campaña por objetivo, oferta, audiencia, canales, funnel y KPIs con IA.",
+    "descripcion": "Planea campaÃ±a por objetivo, oferta, audiencia, canales, funnel y KPIs con IA.",
     "path": "skills/internos/vertical_marketing/marketing_campaign_planner",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1979,7 +1979,7 @@
     "tipo": "interno",
     "nombre": "vertical_marketing/marketing_angle_generator",
     "vertical": "vertical_marketing",
-    "descripcion": "Genera ángulos de venta por dolor, deseo, urgencia, autoridad y prueba social.",
+    "descripcion": "Genera Ã¡ngulos de venta por dolor, deseo, urgencia, autoridad y prueba social.",
     "path": "skills/internos/vertical_marketing/marketing_angle_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -1997,7 +1997,7 @@
     "tipo": "interno",
     "nombre": "vertical_marketing/marketing_landing_alignment",
     "vertical": "vertical_marketing",
-    "descripcion": "Revisa coherencia entre anuncio, oferta, landing y conversión. Devuelve score y gaps.",
+    "descripcion": "Revisa coherencia entre anuncio, oferta, landing y conversiÃ³n. Devuelve score y gaps.",
     "path": "skills/internos/vertical_marketing/marketing_landing_alignment",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2006,7 +2006,7 @@
     "tipo": "interno",
     "nombre": "vertical_marketing/marketing_compliance_checker",
     "vertical": "vertical_marketing",
-    "descripcion": "Revisa claims, promesas sensibles y riesgos de política publicitaria por plataforma.",
+    "descripcion": "Revisa claims, promesas sensibles y riesgos de polÃ­tica publicitaria por plataforma.",
     "path": "skills/internos/vertical_marketing/marketing_compliance_checker",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2015,7 +2015,7 @@
     "tipo": "interno",
     "nombre": "vertical_marketing/marketing_report_generator",
     "vertical": "vertical_marketing",
-    "descripcion": "Genera reporte ejecutivo de campaña con resultados, aprendizajes y próximos pasos.",
+    "descripcion": "Genera reporte ejecutivo de campaÃ±a con resultados, aprendizajes y prÃ³ximos pasos.",
     "path": "skills/internos/vertical_marketing/marketing_report_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2038,11 +2038,20 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_marketing/property_landing_content_generator": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/property_landing_content_generator",
+    "vertical": "vertical_marketing",
+    "descripcion": "Genera contenido estructurado para landing inmobiliaria dinamica a partir de un brief de propiedad.",
+    "path": "skills/internos/vertical_marketing/property_landing_content_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_ads/ads_budget_planner": {
     "tipo": "interno",
     "nombre": "vertical_ads/ads_budget_planner",
     "vertical": "vertical_ads",
-    "descripcion": "Distribuye presupuesto por canal, campaña, conjunto, etapa de funnel y prueba con IA.",
+    "descripcion": "Distribuye presupuesto por canal, campaÃ±a, conjunto, etapa de funnel y prueba con IA.",
     "path": "skills/internos/vertical_ads/ads_budget_planner",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2060,7 +2069,7 @@
     "tipo": "interno",
     "nombre": "vertical_ads/ads_experiment_builder",
     "vertical": "vertical_ads",
-    "descripcion": "Diseña experimentos A/B/n con variantes, KPIs, duración y significancia estadística.",
+    "descripcion": "DiseÃ±a experimentos A/B/n con variantes, KPIs, duraciÃ³n y significancia estadÃ­stica.",
     "path": "skills/internos/vertical_ads/ads_experiment_builder",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2069,7 +2078,7 @@
     "tipo": "interno",
     "nombre": "vertical_ads/ads_creative_validator",
     "vertical": "vertical_ads",
-    "descripcion": "Valida formato, dimensiones, duración y peso de creativos contra specs por plataforma (reglas fijas).",
+    "descripcion": "Valida formato, dimensiones, duraciÃ³n y peso de creativos contra specs por plataforma (reglas fijas).",
     "path": "skills/internos/vertical_ads/ads_creative_validator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2078,7 +2087,7 @@
     "tipo": "interno",
     "nombre": "vertical_ads/ads_approval_queue_create",
     "vertical": "vertical_ads",
-    "descripcion": "Crea payload estructurado de aprobación con nivel de riesgo y checklist para revisión humana.",
+    "descripcion": "Crea payload estructurado de aprobaciÃ³n con nivel de riesgo y checklist para revisiÃ³n humana.",
     "path": "skills/internos/vertical_ads/ads_approval_queue_create",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2087,7 +2096,7 @@
     "tipo": "interno",
     "nombre": "vertical_ads/ads_campaign_run",
     "vertical": "vertical_ads",
-    "descripcion": "Orquesta una campaña pagada usando configuración de empresa, planeación, aprobación y Meta Lead Ads.",
+    "descripcion": "Orquesta una campaÃ±a pagada usando configuraciÃ³n de empresa, planeaciÃ³n, aprobaciÃ³n y Meta Lead Ads.",
     "path": "skills/internos/vertical_ads/ads_campaign_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2105,7 +2114,7 @@
     "tipo": "interno",
     "nombre": "vertical_ads/ads_scheduler_run",
     "vertical": "vertical_ads",
-    "descripcion": "Planifica lanzamientos, pausas y cambios programados de campañas con IA.",
+    "descripcion": "Planifica lanzamientos, pausas y cambios programados de campaÃ±as con IA.",
     "path": "skills/internos/vertical_ads/ads_scheduler_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2123,7 +2132,7 @@
     "tipo": "interno",
     "nombre": "vertical_ads/ads_optimizer",
     "vertical": "vertical_ads",
-    "descripcion": "Recomienda pausar, escalar, duplicar o redistribuir presupuesto según performance de campañas.",
+    "descripcion": "Recomienda pausar, escalar, duplicar o redistribuir presupuesto segÃºn performance de campaÃ±as.",
     "path": "skills/internos/vertical_ads/ads_optimizer",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2132,7 +2141,7 @@
     "tipo": "interno",
     "nombre": "vertical_ads/ads_guardrails",
     "vertical": "vertical_ads",
-    "descripcion": "Bloquea gasto excesivo, campañas sin tracking o configuraciones riesgosas. Reglas fijas.",
+    "descripcion": "Bloquea gasto excesivo, campaÃ±as sin tracking o configuraciones riesgosas. Reglas fijas.",
     "path": "skills/internos/vertical_ads/ads_guardrails",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2141,7 +2150,7 @@
     "tipo": "interno",
     "nombre": "vertical_ads/ads_report_generator",
     "vertical": "vertical_ads",
-    "descripcion": "Genera reporte operativo multicanal de inversión, métricas y acciones recomendadas.",
+    "descripcion": "Genera reporte operativo multicanal de inversiÃ³n, mÃ©tricas y acciones recomendadas.",
     "path": "skills/internos/vertical_ads/ads_report_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2168,7 +2177,7 @@
     "tipo": "interno",
     "nombre": "vertical_meta_ads/meta_ads_get_ad_account",
     "vertical": "vertical_meta_ads",
-    "descripcion": "Obtiene detalles completos de una cuenta publicitaria: balance, límites, negocio y estado.",
+    "descripcion": "Obtiene detalles completos de una cuenta publicitaria: balance, lÃ­mites, negocio y estado.",
     "path": "skills/internos/vertical_meta_ads/meta_ads_get_ad_account",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2177,7 +2186,7 @@
     "tipo": "interno",
     "nombre": "vertical_meta_ads/meta_ads_store_connection",
     "vertical": "vertical_meta_ads",
-    "descripcion": "Normaliza y devuelve payload portable de conexión Meta Ads (token + ad_account_id + metadata).",
+    "descripcion": "Normaliza y devuelve payload portable de conexiÃ³n Meta Ads (token + ad_account_id + metadata).",
     "path": "skills/internos/vertical_meta_ads/meta_ads_store_connection",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2186,7 +2195,7 @@
     "tipo": "interno",
     "nombre": "vertical_meta_ads/meta_ads_pixel_check",
     "vertical": "vertical_meta_ads",
-    "descripcion": "Lista pixels instalados en la cuenta publicitaria y verifica su último disparo.",
+    "descripcion": "Lista pixels instalados en la cuenta publicitaria y verifica su Ãºltimo disparo.",
     "path": "skills/internos/vertical_meta_ads/meta_ads_pixel_check",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2195,7 +2204,7 @@
     "tipo": "interno",
     "nombre": "vertical_meta_ads/meta_ads_create_campaign",
     "vertical": "vertical_meta_ads",
-    "descripcion": "Crea una campaña en Meta Ads con objetivo, estado y categorías especiales.",
+    "descripcion": "Crea una campaÃ±a en Meta Ads con objetivo, estado y categorÃ­as especiales.",
     "path": "skills/internos/vertical_meta_ads/meta_ads_create_campaign",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2204,7 +2213,7 @@
     "tipo": "interno",
     "nombre": "vertical_meta_ads/meta_ads_update_campaign",
     "vertical": "vertical_meta_ads",
-    "descripcion": "Actualiza nombre, estado o presupuesto de una campaña Meta Ads existente.",
+    "descripcion": "Actualiza nombre, estado o presupuesto de una campaÃ±a Meta Ads existente.",
     "path": "skills/internos/vertical_meta_ads/meta_ads_update_campaign",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2213,7 +2222,7 @@
     "tipo": "interno",
     "nombre": "vertical_meta_ads/meta_ads_create_adset",
     "vertical": "vertical_meta_ads",
-    "descripcion": "Crea un conjunto de anuncios con targeting, presupuesto, optimización y calendario.",
+    "descripcion": "Crea un conjunto de anuncios con targeting, presupuesto, optimizaciÃ³n y calendario.",
     "path": "skills/internos/vertical_meta_ads/meta_ads_create_adset",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2258,7 +2267,7 @@
     "tipo": "interno",
     "nombre": "vertical_meta_ads/meta_ads_get_insights",
     "vertical": "vertical_meta_ads",
-    "descripcion": "Obtiene métricas de performance (impresiones, clics, gasto, ROAS, acciones) por nivel y período.",
+    "descripcion": "Obtiene mÃ©tricas de performance (impresiones, clics, gasto, ROAS, acciones) por nivel y perÃ­odo.",
     "path": "skills/internos/vertical_meta_ads/meta_ads_get_insights",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2267,7 +2276,7 @@
     "tipo": "interno",
     "nombre": "vertical_meta_ads/meta_ads_publish_flow",
     "vertical": "vertical_meta_ads",
-    "descripcion": "Orquestador: crea campaña → conjunto → creativo → anuncio en secuencia con un solo payload.",
+    "descripcion": "Orquestador: crea campaÃ±a â†’ conjunto â†’ creativo â†’ anuncio en secuencia con un solo payload.",
     "path": "skills/internos/vertical_meta_ads/meta_ads_publish_flow",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2277,7 +2286,7 @@
     "nombre": "vertical_meta_ads/meta_ads_dashboard_data",
     "vertical": "vertical_meta_ads",
     "kind": "data",
-    "descripcion": "Devuelve campañas activas con gasto, impresiones y clics para el dashboard.",
+    "descripcion": "Devuelve campaÃ±as activas con gasto, impresiones y clics para el dashboard.",
     "path": "skills/internos/vertical_meta_ads/meta_ads_dashboard_data",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2331,7 +2340,7 @@
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_comment_lead_detect",
     "vertical": "vertical_instagram",
-    "descripcion": "Detecta intención comercial en comentarios de Instagram, genera respuesta sugerida y crea lead si aplica.",
+    "descripcion": "Detecta intenciÃ³n comercial en comentarios de Instagram, genera respuesta sugerida y crea lead si aplica.",
     "path": "skills/internos/vertical_instagram/ig_comment_lead_detect",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2340,7 +2349,7 @@
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_lead_form_create",
     "vertical": "vertical_instagram",
-    "descripcion": "Crea formulario de captación de leads en Meta (leadgen_forms) para una página de Instagram.",
+    "descripcion": "Crea formulario de captaciÃ³n de leads en Meta (leadgen_forms) para una pÃ¡gina de Instagram.",
     "path": "skills/internos/vertical_instagram/ig_lead_form_create",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2349,7 +2358,7 @@
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_lead_form_reads",
     "vertical": "vertical_instagram",
-    "descripcion": "Lee leads de un formulario Meta Ads y los normaliza (nombre, email, teléfono, campos custom).",
+    "descripcion": "Lee leads de un formulario Meta Ads y los normaliza (nombre, email, telÃ©fono, campos custom).",
     "path": "skills/internos/vertical_instagram/ig_lead_form_reads",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2367,7 +2376,7 @@
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_boost_post",
     "vertical": "vertical_instagram",
-    "descripcion": "Impulsa un post existente de Instagram creando campaña Meta Ads (campaign+adset+creative+ad) en un solo paso.",
+    "descripcion": "Impulsa un post existente de Instagram creando campaÃ±a Meta Ads (campaign+adset+creative+ad) en un solo paso.",
     "path": "skills/internos/vertical_instagram/ig_boost_post",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2376,7 +2385,7 @@
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_comment_monitor",
     "vertical": "vertical_instagram",
-    "descripcion": "Monitorea comentarios nuevos en posts de Instagram, detecta leads con IA y responde automáticamente si auto_reply=True.",
+    "descripcion": "Monitorea comentarios nuevos en posts de Instagram, detecta leads con IA y responde automÃ¡ticamente si auto_reply=True.",
     "path": "skills/internos/vertical_instagram/ig_comment_monitor",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2385,7 +2394,7 @@
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_auto_responder",
     "vertical": "vertical_instagram",
-    "descripcion": "Genera respuesta personalizada con Haiku y la envía por DM o reply a comentario de Instagram.",
+    "descripcion": "Genera respuesta personalizada con Haiku y la envÃ­a por DM o reply a comentario de Instagram.",
     "path": "skills/internos/vertical_instagram/ig_auto_responder",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2395,7 +2404,7 @@
     "nombre": "vertical_instagram/ig_list",
     "vertical": "vertical_instagram",
     "kind": "data",
-    "descripcion": "kind=data — lista posts, leads o comentarios de Instagram para dashboard via GET /data/.",
+    "descripcion": "kind=data â€” lista posts, leads o comentarios de Instagram para dashboard via GET /data/.",
     "path": "skills/internos/vertical_instagram/ig_list",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2404,7 +2413,7 @@
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_dm_campaign",
     "vertical": "vertical_instagram",
-    "descripcion": "Envía DM a lista de usuarios de Instagram. Soporta mensaje estático o generado con IA por usuario.",
+    "descripcion": "EnvÃ­a DM a lista de usuarios de Instagram. Soporta mensaje estÃ¡tico o generado con IA por usuario.",
     "path": "skills/internos/vertical_instagram/ig_dm_campaign",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2413,7 +2422,7 @@
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_competitor_analyzer",
     "vertical": "vertical_instagram",
-    "descripcion": "Analiza cuenta competidora de Instagram: perfil, métricas, top posts y patrones con IA.",
+    "descripcion": "Analiza cuenta competidora de Instagram: perfil, mÃ©tricas, top posts y patrones con IA.",
     "path": "skills/internos/vertical_instagram/ig_competitor_analyzer",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2431,7 +2440,7 @@
     "tipo": "interno",
     "nombre": "vertical_instagram/ig_content_orchestrator",
     "vertical": "vertical_instagram",
-    "descripcion": "Orquesta creación de contenido IG: caption + hashtags + alt_text, publica si publicar=True.",
+    "descripcion": "Orquesta creaciÃ³n de contenido IG: caption + hashtags + alt_text, publica si publicar=True.",
     "path": "skills/internos/vertical_instagram/ig_content_orchestrator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2449,7 +2458,7 @@
     "tipo": "interno",
     "nombre": "vertical_companies/company_context_builder",
     "vertical": "vertical_companies",
-    "descripcion": "Construye contexto operativo de campaña mezclando brief, defaults, reglas y stacks de una empresa.",
+    "descripcion": "Construye contexto operativo de campaÃ±a mezclando brief, defaults, reglas y stacks de una empresa.",
     "path": "skills/internos/vertical_companies/company_context_builder",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2494,7 +2503,7 @@
     "tipo": "interno",
     "nombre": "vertical_wabiz/wabiz_send_text",
     "vertical": "vertical_wabiz",
-    "descripcion": "Envía mensaje de texto a WhatsApp vía Graph API Cloud. Registra en wabiz_messages con direction=out.",
+    "descripcion": "EnvÃ­a mensaje de texto a WhatsApp vÃ­a Graph API Cloud. Registra en wabiz_messages con direction=out.",
     "path": "skills/internos/vertical_wabiz/wabiz_send_text",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -2503,8 +2512,26 @@
     "tipo": "interno",
     "nombre": "vertical_wabiz/wabiz_channel_router",
     "vertical": "vertical_wabiz",
-    "descripcion": "Router IA WhatsApp: carga historial de conversación, llama Haiku y envía respuesta vía wabiz_send_text.",
+    "descripcion": "Router IA WhatsApp: carga historial de conversaciÃ³n, llama Haiku y envÃ­a respuesta vÃ­a wabiz_send_text.",
     "path": "skills/internos/vertical_wabiz/wabiz_channel_router",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_wabiz/wabiz_media_downloader": {
+    "tipo": "interno",
+    "nombre": "vertical_wabiz/wabiz_media_downloader",
+    "vertical": "vertical_wabiz",
+    "descripcion": "Descarga archivo media de WhatsApp Cloud API (imagen, doc, audio) y devuelve bytes en base64. Carga access_token de wabiz_config.",
+    "path": "skills/internos/vertical_wabiz/wabiz_media_downloader",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "emp_logplat_message_handler": {
+    "tipo": "interno",
+    "nombre": "emp_logplat_message_handler",
+    "vertical": "vertical_logplat",
+    "descripcion": "Handler WhatsApp canal-agnostic para Platino Logistica. Gestiona estado, registra gastos/viajes, sube documentos. Devuelve {reply}.",
+    "path": "skills/internos/emp_logplat_message_handler",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   }
