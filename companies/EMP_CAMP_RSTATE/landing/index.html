@@ -43,10 +43,12 @@
     .btn.primary { color: #ffffff; background: var(--accent); }
     .btn.secondary { color: var(--ink); background: #ffffff; border-color: var(--line); }
     .media { min-width: 0; }
-    .main-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; border-radius: 8px; border: 1px solid var(--line); background: #e7edf3; box-shadow: 0 20px 46px rgba(15, 23, 42, 0.14); }
+    .main-photo, .main-video { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; border-radius: 8px; border: 1px solid var(--line); background: #e7edf3; box-shadow: 0 20px 46px rgba(15, 23, 42, 0.14); }
     .photo-rail { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
     .photo-rail button { padding: 0; border: 1px solid var(--line); border-radius: 8px; background: #ffffff; cursor: pointer; overflow: hidden; }
     .photo-rail img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+    .video-thumb { width: 100%; aspect-ratio: 1 / 1; display: grid; place-items: center; background: #10201e; color: #ffffff; font-size: 12px; font-weight: 800; }
+    .detail-video { margin-top: 18px; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: none; border-radius: 8px; border: 1px solid var(--line); background: #0f172a; }
     .facts-bar { transform: translateY(50%); margin-top: -34px; }
     .facts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px; box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12); }
     .fact { padding: 14px 12px; border-right: 1px solid var(--line); }
@@ -151,6 +153,7 @@
         <div class="benefit"><strong>Opcion con inquilino</strong><p>Puede conservarse con ocupacion actual o entregarse libre, segun objetivo del comprador.</p></div>
         <div class="benefit"><strong>Formato eficiente</strong><p>28 m2 pensados para equipos pequenos, profesionistas o representacion empresarial.</p></div>
       </div>
+      <video class="detail-video" id="detail-video" controls playsinline></video>
     </div>
   </section>
 
@@ -196,7 +199,6 @@
 
   <script>
     const LANDING_CONFIG_URL = "https://ddcwdtqiupwtyltdpakm.supabase.co/storage/v1/object/public/campaign-assets/EMP_CAMP_RSTATE/first_rstate_campaign/landing_config.json";
-    const heroImage = document.getElementById("hero-image");
     const media = document.getElementById("landing-media");
 
     function setText(id, value) {
@@ -204,9 +206,38 @@
       if (el && value) el.textContent = value;
     }
 
-    function setHero(url) {
-      if (!url || !heroImage) return;
-      heroImage.src = url;
+    function mediaType(item) {
+      if (typeof item === "object" && item.type) return item.type;
+      const url = typeof item === "object" ? item.url : item;
+      return /\.(mp4|webm|mov)(\?|$)/i.test(String(url || "")) ? "video" : "image";
+    }
+
+    function mediaUrl(item) {
+      return typeof item === "object" ? item.url : item;
+    }
+
+    function setHeroImage(url) {
+      if (!url || !media) return;
+      const existingRail = media.querySelector(".photo-rail");
+      media.querySelector(".main-photo, .main-video")?.remove();
+      const img = document.createElement("img");
+      img.className = "main-photo";
+      img.id = "hero-image";
+      img.src = url;
+      img.alt = "Oficina en venta en Orion Business Hub";
+      media.insertBefore(img, existingRail || null);
+    }
+
+    function setHeroVideo(url) {
+      if (!url || !media) return;
+      const existingRail = media.querySelector(".photo-rail");
+      media.querySelector(".main-photo, .main-video")?.remove();
+      const video = document.createElement("video");
+      video.className = "main-video";
+      video.controls = true;
+      video.playsInline = true;
+      video.src = url;
+      media.insertBefore(video, existingRail || null);
     }
 
     function whatsappUrl(number, message) {
@@ -256,24 +287,41 @@
       });
     }
 
-    function renderRail(urls) {
-      if (!media || !urls || !urls.length) return;
+    function renderRail(items) {
+      if (!media || !items || !items.length) return;
       const existing = media.querySelector(".photo-rail");
       if (existing) existing.remove();
       const rail = document.createElement("div");
       rail.className = "photo-rail";
-      urls.slice(0, 6).forEach((url, index) => {
+      items.slice(0, 6).forEach((item, index) => {
+        const url = mediaUrl(item);
+        const type = mediaType(item);
         const button = document.createElement("button");
         button.type = "button";
-        button.setAttribute("aria-label", `Ver foto ${index + 1}`);
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = `Foto ${index + 1} de la propiedad`;
-        button.appendChild(img);
-        button.addEventListener("click", () => setHero(url));
+        button.setAttribute("aria-label", `Ver medio ${index + 1}`);
+        if (type === "video") {
+          const thumb = document.createElement("div");
+          thumb.className = "video-thumb";
+          thumb.textContent = "VIDEO";
+          button.appendChild(thumb);
+          button.addEventListener("click", () => setHeroVideo(url));
+        } else {
+          const img = document.createElement("img");
+          img.src = url;
+          img.alt = `Foto ${index + 1} de la propiedad`;
+          button.appendChild(img);
+          button.addEventListener("click", () => setHeroImage(url));
+        }
         rail.appendChild(button);
       });
       media.appendChild(rail);
+    }
+
+    function setDetailVideo(url) {
+      const video = document.getElementById("detail-video");
+      if (!video || !url) return;
+      video.src = url;
+      video.style.display = "block";
     }
 
     function applyConfig(config) {
@@ -295,8 +343,10 @@
       setText("contact-title", config.contact_title);
       setText("contact-copy", config.contact_copy);
       setText("footer-text", config.footer_text);
-      setHero(config.main_image_url);
-      renderRail(config.gallery_urls || []);
+      if (config.main_video_url) setHeroVideo(config.main_video_url);
+      else setHeroImage(config.main_image_url);
+      renderRail(config.gallery_media || (config.gallery_urls || []).map((url) => ({ type: "image", url })));
+      setDetailVideo(config.detail_video_url);
       renderFacts(config.facts || []);
       renderBenefits(config.benefits || []);
       renderInvestmentFacts(config.investment_facts || []);

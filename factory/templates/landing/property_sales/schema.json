@@ -28,7 +28,10 @@
     "footer_text": "string",
     "privacy_url": "string",
     "main_image_url": "url",
-    "gallery_urls": "list[url]"
+    "main_video_url": "url",
+    "detail_video_url": "url",
+    "gallery_urls": "list[url]",
+    "gallery_media": "list[type,url]"
   },
   "required": [
     "page_title",

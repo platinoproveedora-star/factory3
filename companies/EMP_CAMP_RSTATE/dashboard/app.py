@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sys
+import urllib.request
 from datetime import datetime
 from html import escape
 from pathlib import Path
@@ -202,6 +203,19 @@ def _upload_bytes(path: str, content: bytes, content_type: str) -> dict:
     )
 
 
+@st.cache_data(ttl=60)
+def _load_landing_config() -> dict:
+    url = _storage_url(ASSETS_BUCKET, f"{ASSETS_FOLDER}/landing_config.json")
+    if not url.startswith("http"):
+        return {}
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "FactoryDashboard/0.1"})
+        with urllib.request.urlopen(req, timeout=8) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return {}
+
+
 def _campaign_defaults() -> dict:
     path = ROOT / "companies" / COMPANY_ID / f"{CAMPAIGN_SLUG}.json"
     if not path.exists():
@@ -280,6 +294,29 @@ def _parse_label_value_lines(text: str, left_key: str, right_key: str) -> list[d
     return items
 
 
+def _landing_config_payload(fields: dict, media: dict) -> dict:
+    config = {
+        "company_id": COMPANY_ID,
+        "campaign_slug": CAMPAIGN_SLUG,
+        **fields,
+        **media,
+        "updated_at": datetime.utcnow().isoformat() + "Z",
+    }
+    if not config.get("gallery_media") and config.get("gallery_urls"):
+        config["gallery_media"] = [{"type": "image", "url": url} for url in config["gallery_urls"]]
+    if not config.get("main_image_url") and config.get("gallery_urls"):
+        config["main_image_url"] = config["gallery_urls"][0]
+    return config
+
+
+def _save_landing_config(config: dict) -> dict:
+    return _upload_bytes(
+        f"{ASSETS_FOLDER}/landing_config.json",
+        json.dumps(config, ensure_ascii=True, indent=2).encode("utf-8"),
+        "application/json",
+    )
+
+
 def _render_landing_page() -> None:
     st.markdown(
         """
@@ -292,7 +329,8 @@ def _render_landing_page() -> None:
     )
     st.caption(f"Destino storage: {ASSETS_BUCKET}/{ASSETS_FOLDER}")
     base_defaults = _campaign_defaults()
-    defaults = {**base_defaults, **st.session_state.get("landing_ai_content", {})}
+    remote_config = _load_landing_config()
+    defaults = {**base_defaults, **remote_config, **st.session_state.get("landing_ai_content", {})}
 
     if st.button("Rellenar vacios con IA", use_container_width=True):
         campaign_payload = _campaign_payload()
@@ -361,89 +399,133 @@ def _render_landing_page() -> None:
     footer_text = st.text_input("Footer", value=defaults.get("footer_text", ""))
     privacy_url = st.text_input("Privacy URL", value=defaults.get("privacy_url", "privacy.html"))
 
+    current_config_url = _storage_url(ASSETS_BUCKET, f"{ASSETS_FOLDER}/landing_config.json")
+    st.text_input("Landing config publica", value=current_config_url, disabled=True)
+
+    fields = {
+        "page_title": page_title,
+        "meta_description": meta_description,
+        "brand": brand,
+        "eyebrow": eyebrow,
+        "headline_accent": headline_accent,
+        "headline_main": headline_main,
+        "subtitle": subtitle,
+        "price_label": price_label,
+        "price_note": price_note,
+        "cta_label": cta_label,
+        "secondary_cta_label": secondary_cta_label,
+        "whatsapp_number": whatsapp_number,
+        "whatsapp_message": whatsapp_message,
+        "section_title": section_title,
+        "section_copy": section_copy,
+        "facts": _parse_label_value_lines(facts_text, "label", "value"),
+        "benefits": _parse_label_value_lines(benefits_text, "title", "text"),
+        "investment_title": investment_title,
+        "investment_copy": investment_copy,
+        "investment_facts": _parse_label_value_lines(investment_facts_text, "label", "value"),
+        "contact_title": contact_title,
+        "contact_copy": contact_copy,
+        "footer_text": footer_text,
+        "privacy_url": privacy_url,
+    }
+    media_defaults = {
+        "main_image_url": defaults.get("main_image_url", ""),
+        "main_video_url": defaults.get("main_video_url", ""),
+        "detail_video_url": defaults.get("detail_video_url", ""),
+        "gallery_urls": defaults.get("gallery_urls", []),
+        "gallery_media": defaults.get("gallery_media", []),
+    }
+
+    if st.button("Guardar informacion", type="primary", use_container_width=True):
+        config = _landing_config_payload(fields, media_defaults)
+        config_result = _save_landing_config(config)
+        st.session_state["landing_config"] = config
+        st.session_state["landing_diagnostics"] = [{"file": "landing_config.json", "role": "config", **config_result}]
+        if config_result.get("ok"):
+            _load_landing_config.clear()
+            st.success("Informacion actualizada sin borrar fotos ni videos.")
+        else:
+            st.error(config_result.get("error", "No se pudo guardar landing_config.json"))
+
+    st.subheader("Fotos y video")
+    st.caption("Este boton actualiza solo los medios y conserva la informacion actual.")
     main_image = st.file_uploader(
         "Imagen principal",
         type=["jpg", "jpeg", "png", "webp"],
         key="landing_main_image",
     )
-    gallery_images = st.file_uploader(
-        "Carrete de fotos del inmueble (1 a 6 imagenes)",
-        type=["jpg", "jpeg", "png", "webp"],
-        accept_multiple_files=True,
-        key="landing_gallery_images",
+    main_video = st.file_uploader(
+        "Video principal opcional (reemplaza visualmente la imagen principal)",
+        type=["mp4", "webm", "mov"],
+        key="landing_main_video",
     )
-    if gallery_images and len(gallery_images) > 6:
-        st.warning("Solo se usaran las primeras 6 imagenes del carrete.")
+    detail_video = st.file_uploader(
+        "Video adicional opcional para la seccion de detalles",
+        type=["mp4", "webm", "mov"],
+        key="landing_detail_video",
+    )
+    gallery_files = st.file_uploader(
+        "Carrete del inmueble (1 a 6 fotos o videos)",
+        type=["jpg", "jpeg", "png", "webp", "mp4", "webm", "mov"],
+        accept_multiple_files=True,
+        key="landing_gallery_media",
+    )
+    if gallery_files and len(gallery_files) > 6:
+        st.warning("Solo se usaran los primeros 6 archivos del carrete.")
 
-    current_config_url = _storage_url(ASSETS_BUCKET, f"{ASSETS_FOLDER}/landing_config.json")
-    st.text_input("Landing config publica", value=current_config_url, disabled=True)
-
-    if st.button("Guardar landing", type="primary", use_container_width=True):
-        uploaded_main_url = ""
-        gallery_urls = []
+    if st.button("Guardar fotos y video", use_container_width=True):
         diagnostics = []
-
+        media = dict(media_defaults)
         if main_image:
             path = f"{ASSETS_FOLDER}/landing/main-{_safe_filename(main_image.name)}"
             result = _upload_bytes(path, main_image.getvalue(), main_image.type or "application/octet-stream")
             diagnostics.append({"file": main_image.name, "role": "main", **result})
             if result.get("ok"):
-                uploaded_main_url = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
+                media["main_image_url"] = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
 
-        for file in (gallery_images or [])[:6]:
-            path = f"{ASSETS_FOLDER}/landing/gallery-{_safe_filename(file.name)}"
+        if main_video:
+            path = f"{ASSETS_FOLDER}/landing/main-video-{_safe_filename(main_video.name)}"
+            result = _upload_bytes(path, main_video.getvalue(), main_video.type or "application/octet-stream")
+            diagnostics.append({"file": main_video.name, "role": "main_video", **result})
+            if result.get("ok"):
+                media["main_video_url"] = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
+
+        if detail_video:
+            path = f"{ASSETS_FOLDER}/landing/detail-video-{_safe_filename(detail_video.name)}"
+            result = _upload_bytes(path, detail_video.getvalue(), detail_video.type or "application/octet-stream")
+            diagnostics.append({"file": detail_video.name, "role": "detail_video", **result})
+            if result.get("ok"):
+                media["detail_video_url"] = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
+
+        if gallery_files:
+            gallery_media = []
+            gallery_urls = []
+        else:
+            gallery_media = media.get("gallery_media", [])
+            gallery_urls = media.get("gallery_urls", [])
+        for file in (gallery_files or [])[:6]:
+            is_video = (file.type or "").startswith("video/")
+            prefix = "gallery-video" if is_video else "gallery"
+            path = f"{ASSETS_FOLDER}/landing/{prefix}-{_safe_filename(file.name)}"
             result = _upload_bytes(path, file.getvalue(), file.type or "application/octet-stream")
             diagnostics.append({"file": file.name, "role": "gallery", **result})
             if result.get("ok"):
-                gallery_urls.append(result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path))
+                url = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
+                gallery_media.append({"type": "video" if is_video else "image", "url": url})
+                if not is_video:
+                    gallery_urls.append(url)
 
-        if not uploaded_main_url and gallery_urls:
-            uploaded_main_url = gallery_urls[0]
-        if not uploaded_main_url:
-            uploaded_main_url = defaults.get("main_image_url", "")
-
-        config = {
-            "company_id": COMPANY_ID,
-            "campaign_slug": CAMPAIGN_SLUG,
-            "page_title": page_title,
-            "meta_description": meta_description,
-            "brand": brand,
-            "eyebrow": eyebrow,
-            "headline_accent": headline_accent,
-            "headline_main": headline_main,
-            "subtitle": subtitle,
-            "price_label": price_label,
-            "price_note": price_note,
-            "cta_label": cta_label,
-            "secondary_cta_label": secondary_cta_label,
-            "whatsapp_number": whatsapp_number,
-            "whatsapp_message": whatsapp_message,
-            "section_title": section_title,
-            "section_copy": section_copy,
-            "facts": _parse_label_value_lines(facts_text, "label", "value"),
-            "benefits": _parse_label_value_lines(benefits_text, "title", "text"),
-            "investment_title": investment_title,
-            "investment_copy": investment_copy,
-            "investment_facts": _parse_label_value_lines(investment_facts_text, "label", "value"),
-            "contact_title": contact_title,
-            "contact_copy": contact_copy,
-            "footer_text": footer_text,
-            "privacy_url": privacy_url,
-            "main_image_url": uploaded_main_url,
-            "gallery_urls": gallery_urls,
-            "updated_at": datetime.utcnow().isoformat() + "Z",
-        }
-        config_result = _upload_bytes(
-            f"{ASSETS_FOLDER}/landing_config.json",
-            json.dumps(config, ensure_ascii=True, indent=2).encode("utf-8"),
-            "application/json",
-        )
+        media["gallery_media"] = gallery_media[:6]
+        media["gallery_urls"] = gallery_urls[:6]
+        config = _landing_config_payload(fields, media)
+        config_result = _save_landing_config(config)
         diagnostics.append({"file": "landing_config.json", "role": "config", **config_result})
         st.session_state["landing_config"] = config
         st.session_state["landing_diagnostics"] = diagnostics
 
         if config_result.get("ok"):
-            st.success("Landing config actualizada. Refresca la landing publica para ver las nuevas fotos.")
+            _load_landing_config.clear()
+            st.success("Fotos/videos actualizados. Refresca la landing publica para ver los cambios.")
         else:
             st.error(config_result.get("error", "No se pudo guardar landing_config.json"))
 
@@ -456,6 +538,10 @@ def _render_landing_page() -> None:
             cols = st.columns(min(3, len(cfg["gallery_urls"])))
             for index, url in enumerate(cfg["gallery_urls"]):
                 cols[index % len(cols)].image(url, caption=f"Foto {index + 1}", use_container_width=True)
+        if cfg.get("main_video_url"):
+            st.video(cfg["main_video_url"])
+        if cfg.get("detail_video_url"):
+            st.video(cfg["detail_video_url"])
         st.json(cfg, expanded=False)
 
     if st.session_state.get("landing_diagnostics"):

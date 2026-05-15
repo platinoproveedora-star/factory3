@@ -37,7 +37,10 @@ class LandingConfigBuilderService:
         rent_label = f"MXN {rent:,.0f}" if isinstance(rent, (int, float)) else (str(rent) if rent else "Por confirmar")
         occupancy = prop.get("occupancy_options") or "Por confirmar"
         main_image = data.get("main_image_url") or campaign.get("image_url") or ""
+        main_video = data.get("main_video_url") or campaign.get("main_video_url") or ""
+        detail_video = data.get("detail_video_url") or campaign.get("detail_video_url") or ""
         gallery = data.get("gallery_urls") or []
+        gallery_media = data.get("gallery_media") or [{"type": "image", "url": url} for url in gallery]
         config = {
             "company_id": company_id,
             "campaign_slug": context.get("campaign_slug") or campaign.get("campaign_slug") or "first_campaign",
@@ -83,6 +86,9 @@ class LandingConfigBuilderService:
             "footer_text": data.get("footer_text") or f"{company_id} - {building}",
             "privacy_url": data.get("privacy_url") or campaign.get("privacy_url") or "privacy.html",
             "main_image_url": main_image,
+            "main_video_url": main_video,
+            "detail_video_url": detail_video,
             "gallery_urls": gallery,
+            "gallery_media": gallery_media,
         }
         return config
