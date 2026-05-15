@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Oficina en Orion Business Hub, piso 8 | Merida</title>
-  <meta name="description" content="Oficina en venta de 28 m2 en Orion Business Hub, Merida. Lista para operar, con opcion con o sin inquilino activo.">
+  <meta id="meta-description" name="description" content="Oficina en venta de 28 m2 en Orion Business Hub, Merida. Lista para operar, con opcion con o sin inquilino activo.">
   <style>
     :root {
       color-scheme: light;
@@ -54,7 +54,6 @@
     .fact span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 7px; }
     .fact strong { display: block; color: var(--ink); font-size: 18px; line-height: 1.2; }
     .band { padding: 92px 0 64px; }
-    .band.compact { padding-top: 56px; }
     .section-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(320px, 1.15fr); gap: 46px; align-items: start; }
     h2 { margin: 0 0 16px; font-size: clamp(28px, 4vw, 42px); line-height: 1.1; letter-spacing: 0; color: var(--ink); }
     .section-copy { margin: 0; color: var(--muted); font-size: 18px; line-height: 1.6; }
@@ -96,7 +95,7 @@
 <body>
   <nav class="topbar">
     <div class="wrap">
-      <div class="brand">EMP_CAMP_RSTATE</div>
+      <div class="brand" id="brand-label">EMP_CAMP_RSTATE</div>
       <div class="topnav">
         <a href="#detalles">Detalles</a>
         <a href="#inversion">Inversion</a>
@@ -108,18 +107,18 @@
   <header class="hero">
     <div class="wrap hero-grid">
       <div>
-        <p class="eyebrow">Orion Business Hub · Merida · Piso 8</p>
+        <p class="eyebrow" id="eyebrow">Orion Business Hub · Merida · Piso 8</p>
         <div class="title-block">
-          <h1><span class="title-accent">Oficina lista para operar</span> en Orion Business Hub</h1>
+          <h1><span class="title-accent" id="headline-accent">Oficina lista para operar</span> <span id="headline-main">en Orion Business Hub</span></h1>
         </div>
-        <p class="lead">Espacio corporativo de 28 m2 para 2 a 6 personas, disponible para uso propio o como inversion patrimonial con opcion de conservar inquilino activo.</p>
+        <p class="lead" id="subtitle">Espacio corporativo de 28 m2 para 2 a 6 personas, disponible para uso propio o como inversion patrimonial con opcion de conservar inquilino activo.</p>
         <div class="price">
-          <strong>MXN 1,950,000</strong>
-          <span>Venta · con o sin inquilino</span>
+          <strong id="price-label">MXN 1,950,000</strong>
+          <span id="price-note">Venta · con o sin inquilino</span>
         </div>
         <div class="actions">
-          <a class="btn primary" href="https://wa.me/5219616576475?text=Hola%2C%20quiero%20informacion%20de%20Oficina%20en%20venta%20en%20Merida.">Agendar visita por WhatsApp</a>
-          <a class="btn secondary" href="#detalles">Ver ficha</a>
+          <a class="btn primary js-whatsapp" href="https://wa.me/5219616576475?text=Hola%2C%20quiero%20informacion%20de%20Oficina%20en%20venta%20en%20Merida.">Agendar visita por WhatsApp</a>
+          <a class="btn secondary" id="secondary-cta" href="#detalles">Ver ficha</a>
         </div>
       </div>
       <div class="media" id="landing-media">
@@ -130,7 +129,7 @@
 
   <section class="facts-bar" aria-label="Datos principales">
     <div class="wrap">
-      <div class="facts">
+      <div class="facts" id="facts">
         <div class="fact"><span>Superficie</span><strong>28 m2</strong></div>
         <div class="fact"><span>Nivel</span><strong>Piso 8</strong></div>
         <div class="fact"><span>Capacidad</span><strong>2 a 6 personas</strong></div>
@@ -143,10 +142,10 @@
   <section class="band" id="detalles">
     <div class="wrap section-grid">
       <div>
-        <h2>Ficha de la propiedad</h2>
-        <p class="section-copy">Una oficina compacta, terminada y lista para operar en un edificio corporativo de Merida. Ideal para despacho profesional, consultorio administrativo, oficina satelite o inversion patrimonial.</p>
+        <h2 id="section-title">Ficha de la propiedad</h2>
+        <p class="section-copy" id="section-copy">Una oficina compacta, terminada y lista para operar en un edificio corporativo de Merida. Ideal para despacho profesional, consultorio administrativo, oficina satelite o inversion patrimonial.</p>
       </div>
-      <div class="benefits">
+      <div class="benefits" id="benefits">
         <div class="benefit"><strong>Lista para ocupar</strong><p>Sin remodelaciones mayores para empezar operacion.</p></div>
         <div class="benefit"><strong>Ubicacion corporativa</strong><p>Presencia profesional dentro de Orion Business Hub.</p></div>
         <div class="benefit"><strong>Opcion con inquilino</strong><p>Puede conservarse con ocupacion actual o entregarse libre, segun objetivo del comprador.</p></div>
@@ -158,11 +157,11 @@
   <section class="band investment" id="inversion">
     <div class="wrap section-grid">
       <div>
-        <h2>Datos para evaluar inversion</h2>
-        <p class="section-copy">La informacion de renta se presenta como dato actual reportado. No representa garantia de rendimiento futuro; debe revisarse con documentacion y condiciones vigentes.</p>
+        <h2 id="investment-title">Datos para evaluar inversion</h2>
+        <p class="section-copy" id="investment-copy">La informacion de renta se presenta como dato actual reportado. No representa garantia de rendimiento futuro; debe revisarse con documentacion y condiciones vigentes.</p>
       </div>
       <div class="investment-card">
-        <dl>
+        <dl id="investment-facts">
           <div><dt>Precio de venta</dt><dd>MXN 1,950,000</dd></div>
           <div><dt>Renta mensual actual</dt><dd>MXN 17,000</dd></div>
           <div><dt>Operacion</dt><dd>Venta</dd></div>
@@ -176,23 +175,23 @@
     <div class="wrap">
       <div class="contact-box">
         <div>
-          <h2>Solicita ficha o agenda visita</h2>
-          <p>Envia un mensaje para recibir mas informacion de la oficina, revisar disponibilidad y coordinar una visita.</p>
+          <h2 id="contact-title">Solicita ficha o agenda visita</h2>
+          <p id="contact-copy">Envia un mensaje para recibir mas informacion de la oficina, revisar disponibilidad y coordinar una visita.</p>
         </div>
-        <a class="btn primary" href="https://wa.me/5219616576475?text=Hola%2C%20quiero%20informacion%20de%20Oficina%20en%20venta%20en%20Merida.">Contactar por WhatsApp</a>
+        <a class="btn primary js-whatsapp" href="https://wa.me/5219616576475?text=Hola%2C%20quiero%20informacion%20de%20Oficina%20en%20venta%20en%20Merida.">Contactar por WhatsApp</a>
       </div>
     </div>
   </section>
 
   <footer>
     <div class="wrap">
-      <span>EMP_CAMP_RSTATE · Oficina en Orion Business Hub</span>
-      <a href="privacy.html">Aviso de privacidad</a>
+      <span id="footer-text">EMP_CAMP_RSTATE · Oficina en Orion Business Hub</span>
+      <a id="privacy-link" href="privacy.html">Aviso de privacidad</a>
     </div>
   </footer>
 
   <div class="sticky-cta">
-    <a class="btn primary" href="https://wa.me/5219616576475?text=Hola%2C%20quiero%20informacion%20de%20Oficina%20en%20venta%20en%20Merida.">Agendar visita por WhatsApp</a>
+    <a class="btn primary js-whatsapp" href="https://wa.me/5219616576475?text=Hola%2C%20quiero%20informacion%20de%20Oficina%20en%20venta%20en%20Merida.">Agendar visita por WhatsApp</a>
   </div>
 
   <script>
@@ -200,9 +199,61 @@
     const heroImage = document.getElementById("hero-image");
     const media = document.getElementById("landing-media");
 
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el && value) el.textContent = value;
+    }
+
     function setHero(url) {
       if (!url || !heroImage) return;
       heroImage.src = url;
+    }
+
+    function whatsappUrl(number, message) {
+      const digits = String(number || "").replace(/\D/g, "");
+      if (!digits) return "#contacto";
+      return `https://wa.me/${digits}?text=${encodeURIComponent(message || "Hola, quiero informacion de la propiedad.")}`;
+    }
+
+    function renderFacts(items) {
+      const root = document.getElementById("facts");
+      if (!root || !items || !items.length) return;
+      root.innerHTML = "";
+      items.slice(0, 6).forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "fact";
+        card.innerHTML = `<span></span><strong></strong>`;
+        card.querySelector("span").textContent = item.label || "";
+        card.querySelector("strong").textContent = item.value || "";
+        root.appendChild(card);
+      });
+    }
+
+    function renderBenefits(items) {
+      const root = document.getElementById("benefits");
+      if (!root || !items || !items.length) return;
+      root.innerHTML = "";
+      items.slice(0, 6).forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "benefit";
+        card.innerHTML = `<strong></strong><p></p>`;
+        card.querySelector("strong").textContent = item.title || "";
+        card.querySelector("p").textContent = item.text || "";
+        root.appendChild(card);
+      });
+    }
+
+    function renderInvestmentFacts(items) {
+      const root = document.getElementById("investment-facts");
+      if (!root || !items || !items.length) return;
+      root.innerHTML = "";
+      items.slice(0, 8).forEach((item) => {
+        const row = document.createElement("div");
+        row.innerHTML = `<dt></dt><dd></dd>`;
+        row.querySelector("dt").textContent = item.label || "";
+        row.querySelector("dd").textContent = item.value || "";
+        root.appendChild(row);
+      });
     }
 
     function renderRail(urls) {
@@ -217,7 +268,7 @@
         button.setAttribute("aria-label", `Ver foto ${index + 1}`);
         const img = document.createElement("img");
         img.src = url;
-        img.alt = `Foto ${index + 1} de la oficina`;
+        img.alt = `Foto ${index + 1} de la propiedad`;
         button.appendChild(img);
         button.addEventListener("click", () => setHero(url));
         rail.appendChild(button);
@@ -225,13 +276,42 @@
       media.appendChild(rail);
     }
 
+    function applyConfig(config) {
+      document.title = config.page_title || document.title;
+      const meta = document.getElementById("meta-description");
+      if (meta && config.meta_description) meta.setAttribute("content", config.meta_description);
+      setText("brand-label", config.brand);
+      setText("eyebrow", config.eyebrow);
+      setText("headline-accent", config.headline_accent);
+      setText("headline-main", config.headline_main);
+      setText("subtitle", config.subtitle);
+      setText("price-label", config.price_label);
+      setText("price-note", config.price_note);
+      setText("secondary-cta", config.secondary_cta_label);
+      setText("section-title", config.section_title);
+      setText("section-copy", config.section_copy);
+      setText("investment-title", config.investment_title);
+      setText("investment-copy", config.investment_copy);
+      setText("contact-title", config.contact_title);
+      setText("contact-copy", config.contact_copy);
+      setText("footer-text", config.footer_text);
+      setHero(config.main_image_url);
+      renderRail(config.gallery_urls || []);
+      renderFacts(config.facts || []);
+      renderBenefits(config.benefits || []);
+      renderInvestmentFacts(config.investment_facts || []);
+      const privacy = document.getElementById("privacy-link");
+      if (privacy && config.privacy_url) privacy.href = config.privacy_url;
+      const wa = whatsappUrl(config.whatsapp_number, config.whatsapp_message);
+      document.querySelectorAll(".js-whatsapp").forEach((link) => {
+        link.href = wa;
+        if (config.cta_label && link.closest(".actions, .sticky-cta")) link.textContent = config.cta_label;
+      });
+    }
+
     fetch(LANDING_CONFIG_URL, { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((config) => {
-        if (!config) return;
-        setHero(config.main_image_url);
-        renderRail(config.gallery_urls || []);
-      })
+      .then((config) => { if (config) applyConfig(config); })
       .catch(() => {});
   </script>
 </body>
