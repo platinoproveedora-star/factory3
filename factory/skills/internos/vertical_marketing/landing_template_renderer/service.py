@@ -9,7 +9,7 @@ class LandingTemplateRendererService:
     def ejecutar(self, context: dict) -> dict:
         template_type = str(context.get("template_type") or "property_sales").strip()
         root = Path(__file__).resolve().parents[5]
-        template_dir = root / "factory" / "landing_templates" / template_type
+        template_dir = root / "factory" / "templates" / "landing" / template_type
         template_path = template_dir / "index.html"
         if not template_path.exists():
             return {"ok": False, "error": f"template no encontrado: {template_type}"}

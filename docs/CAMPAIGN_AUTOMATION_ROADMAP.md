@@ -27,7 +27,7 @@ leads.
 | `vertical_marketing/marketing_mini_landing_scaffold` | Crear landing inicial. |
 | `vertical_marketing/landing_ai_content_generator` | Generar contenido IA segun `template_type`. |
 | `vertical_marketing/landing_config_builder` | Crear `landing_config.json` normalizado por template. |
-| `vertical_marketing/landing_template_renderer` | Renderizar HTML desde `factory/landing_templates/<template_type>`. |
+| `vertical_marketing/landing_template_renderer` | Renderizar HTML desde `factory/templates/landing/<template_type>`. |
 | `vertical_ads/ads_campaign_preflight_check` | Validar blockers/warnings antes de lanzar. |
 | `vertical_ads/ads_campaign_run` | Generar payloads de campana en dry run. |
 | `vertical_meta_ads/meta_lead_form_create` | Crear formulario de leads Meta. Pendiente real. |

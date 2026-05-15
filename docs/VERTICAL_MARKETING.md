@@ -20,7 +20,7 @@ reporte.
 | `vertical_marketing/marketing_mini_landing_scaffold` | Crea mini landing estatica con CTA, ficha y aviso de privacidad. |
 | `vertical_marketing/property_landing_content_generator` | Genera contenido estructurado para landing inmobiliaria dinamica. |
 | `vertical_marketing/landing_config_builder` | Construye `landing_config.json` por `template_type`. |
-| `vertical_marketing/landing_template_renderer` | Renderiza HTML usando `factory/landing_templates/<template_type>`. |
+| `vertical_marketing/landing_template_renderer` | Renderiza HTML usando `factory/templates/landing/<template_type>`. |
 | `vertical_marketing/landing_ai_content_generator` | Despacha generacion IA segun `template_type`. |
 | `vertical_marketing/marketing_report_generator` | Genera reporte ejecutivo de resultados y aprendizajes. |
 
