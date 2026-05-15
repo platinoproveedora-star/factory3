@@ -2047,6 +2047,33 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_marketing/landing_config_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/landing_config_builder",
+    "vertical": "vertical_marketing",
+    "descripcion": "Construye landing_config.json normalizado para templates de landing por vertical.",
+    "path": "skills/internos/vertical_marketing/landing_config_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/landing_template_renderer": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/landing_template_renderer",
+    "vertical": "vertical_marketing",
+    "descripcion": "Renderiza HTML de landing usando templates internos por template_type.",
+    "path": "skills/internos/vertical_marketing/landing_template_renderer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_marketing/landing_ai_content_generator": {
+    "tipo": "interno",
+    "nombre": "vertical_marketing/landing_ai_content_generator",
+    "vertical": "vertical_marketing",
+    "descripcion": "Genera contenido de landing con IA usando el template_type adecuado.",
+    "path": "skills/internos/vertical_marketing/landing_ai_content_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_ads/ads_budget_planner": {
     "tipo": "interno",
     "nombre": "vertical_ads/ads_budget_planner",

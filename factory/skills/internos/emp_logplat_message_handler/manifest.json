@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "emp_logplat_message_handler",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Handler de mensajes WhatsApp para Platino Logística (LOGPLAT). Canal-agnostic: recibe type/body/media_id, maneja estado de captura, registra gastos y viajes, sube documentos. Devuelve {reply} en texto plano.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

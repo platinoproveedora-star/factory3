@@ -1,117 +1,294 @@
-"""Router IA WhatsApp: historial de conversación + Haiku + wabiz_send_text."""
+"""Router WhatsApp: registro por código + modal por usuario + delegación a handler."""
 from __future__ import annotations
+import importlib.util
 import json
 import os
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
-_HISTORY_LIMIT = 10
 _UA = "FactoryFactory/0.1 (+https://github.com/)"
+
+_MODO_HANDLERS: dict[str, str] = {
+    "logplat": "emp_logplat_message_handler",
+}
+
+_MODO_LABELS: dict[str, str] = {
+    "logplat": "📦 *logplat* — Platino Logística",
+    "rh":      "👥 *rh* — Recursos Humanos",
+    "sat":     "🧾 *sat* — SAT / Fiscal",
+}
+
+_MSG_NO_ACCESO = (
+    "Hola. Para acceder escribe tu *código de acceso*.\n"
+    "Si no tienes uno, contacta al administrador."
+)
 
 
 class WabizChannelRouterService:
 
     def ejecutar(self, context: dict) -> dict:
-        empresa_id   = context.get("empresa_id")
-        from_phone   = context.get("from_phone")
-        msg_type     = context.get("type", "text")
-        body         = context.get("body", "")
-        profile_name = context.get("profile_name") or from_phone
+        empresa_id = context.get("empresa_id", "factory3")
+        from_phone = context.get("from_phone")
+        msg_type   = context.get("type", "text")
+        body       = (context.get("body") or "").strip()
+        dry_run    = context.get("dry_run", True)
 
-        if not empresa_id:
-            return {"ok": False, "error": "empresa_id requerido"}
         if not from_phone:
             return {"ok": False, "error": "from_phone requerido"}
+
+        body_lower = body.lower()
+        state      = self._load_state(empresa_id, from_phone)
+        user       = self._get_user(from_phone)
+
+        # ── Ayuda ─────────────────────────────────────────────────────────────
+        if msg_type == "text" and body_lower in ("ayuda", "/ayuda"):
+            return self._reply(self._txt_ayuda(user), empresa_id, from_phone, dry_run)
+
+        # ── No registrado → flujo de registro ─────────────────────────────────
+        if not user:
+            return self._registro(empresa_id, from_phone, body, msg_type, state, dry_run)
+
+        # ── Salir: limpiar modo activo ─────────────────────────────────────────
+        if msg_type == "text" and body_lower in ("salir", "/salir"):
+            new_state = {k: v for k, v in state.items() if k != "active_mode"}
+            if not dry_run:
+                self._save_state(empresa_id, from_phone, new_state)
+            return self._reply(self._txt_menu(user), empresa_id, from_phone, dry_run)
+
+        # ── Determinar modo activo ────────────────────────────────────────────
+        active_mode = state.get("active_mode", "")
+        user_modes  = user.get("user_mode") or []
+
+        if not active_mode:
+            if len(user_modes) == 1:
+                # Un solo modo: entrar directo sin preguntar
+                active_mode = user_modes[0]
+                if not dry_run:
+                    self._save_state(empresa_id, from_phone, {**state, "active_mode": active_mode})
+            elif msg_type == "text" and body_lower in [m.lower() for m in user_modes]:
+                # El usuario eligió un modo válido
+                active_mode = body_lower
+                if not dry_run:
+                    self._save_state(empresa_id, from_phone, {**state, "active_mode": active_mode})
+                nombre = user.get("nombre", "")
+                return self._reply(
+                    f"Modo *{active_mode}* activado. Hola {nombre}.\nEscribe *ayuda* para ver los comandos.",
+                    empresa_id, from_phone, dry_run,
+                )
+            else:
+                # Varios modos, esperar elección
+                return self._reply(self._txt_menu(user), empresa_id, from_phone, dry_run)
+
+        # ── Delegar al handler ────────────────────────────────────────────────
+        if active_mode not in _MODO_HANDLERS:
+            return self._reply(f"Modo *{active_mode}* no disponible aún.", empresa_id, from_phone, dry_run)
+
+        result = self._run_handler(active_mode, {
+            **context,
+            "usuario_nombre":     user.get("nombre", ""),
+            "usuario_empresa_id": user.get("empresa_id", empresa_id),
+            "active_mode":        active_mode,
+            "dry_run":            dry_run,
+        })
+
+        if not result.get("ok"):
+            return result
+
+        reply = result.get("data", {}).get("reply", "")
+        if reply and not dry_run:
+            self._send_text(empresa_id, from_phone, reply)
+
+        return result
+
+    # ── REGISTRO ──────────────────────────────────────────────────────────────
+
+    def _registro(self, empresa_id, from_phone, body, msg_type, state, dry_run) -> dict:
+        reg_step = state.get("reg_step", "")
+
         if msg_type != "text" or not body:
-            return {"ok": True, "data": {"skipped": True, "reason": "solo se procesa type=text con body"}}
+            if not dry_run:
+                self._save_state(empresa_id, from_phone, {**state, "reg_step": "awaiting_code"})
+            return self._reply(_MSG_NO_ACCESO, empresa_id, from_phone, dry_run)
 
-        history  = self._load_history(empresa_id, from_phone)
-        ai_reply = self._call_haiku(body, history, profile_name, empresa_id)
+        if not reg_step:
+            if not dry_run:
+                self._save_state(empresa_id, from_phone, {**state, "reg_step": "awaiting_code"})
+            return self._reply(_MSG_NO_ACCESO, empresa_id, from_phone, dry_run)
 
-        if not ai_reply:
-            return {"ok": False, "error": "Haiku no devolvió respuesta"}
+        if reg_step == "awaiting_code":
+            code = self._validate_code(body.strip())
+            if not code:
+                return self._reply("Código incorrecto. Intenta de nuevo.", empresa_id, from_phone, dry_run)
+            if not dry_run:
+                self._save_state(empresa_id, from_phone, {**state, "reg_step": "awaiting_name", "reg_codigo": body.strip()})
+            return self._reply("Código válido ✅\n¿Cuál es tu nombre?", empresa_id, from_phone, dry_run)
 
-        if context.get("dry_run", True):
-            return {"ok": True, "data": {"dry_run": True, "reply": ai_reply}}
+        if reg_step == "awaiting_name":
+            codigo = state.get("reg_codigo", "")
+            code   = self._validate_code(codigo)
+            if not code:
+                if not dry_run:
+                    self._save_state(empresa_id, from_phone, {})
+                return self._reply("Sesión expirada. Escribe tu código de nuevo.", empresa_id, from_phone, dry_run)
 
-        send_result = self._send_text(empresa_id, from_phone, ai_reply)
-        return {"ok": True, "data": {"reply": ai_reply, "send": send_result}}
+            nombre    = body.strip()
+            user_mode = code.get("user_mode") or []
+            role      = code.get("role", "user")
+            emp_id    = code.get("empresa_id", empresa_id)
 
-    def _load_history(self, empresa_id: str, from_phone: str) -> list[dict]:
+            if not dry_run:
+                self._create_user(from_phone, nombre, emp_id, role, user_mode)
+
+            active = user_mode[0] if len(user_mode) == 1 else ""
+            if not dry_run:
+                self._save_state(empresa_id, from_phone, {"active_mode": active})
+
+            if len(user_mode) == 1:
+                reply = f"✅ Bienvenido *{nombre}*.\nModo *{active}* activado. Escribe *ayuda* para ver los comandos."
+            else:
+                modos_str = "\n".join(_MODO_LABELS.get(m, f"• {m}") for m in user_mode)
+                reply = f"✅ Bienvenido *{nombre}*.\n\nElige un módulo:\n{modos_str}"
+
+            return self._reply(reply, empresa_id, from_phone, dry_run)
+
+        # Estado inválido → reiniciar
+        if not dry_run:
+            self._save_state(empresa_id, from_phone, {})
+        return self._reply(_MSG_NO_ACCESO, empresa_id, from_phone, dry_run)
+
+    # ── TEXTOS ────────────────────────────────────────────────────────────────
+
+    def _txt_ayuda(self, user: dict | None) -> str:
+        if not user:
+            return _MSG_NO_ACCESO
+        nombre = user.get("nombre", "")
+        modes  = user.get("user_mode") or []
+        lines  = [f"Hola *{nombre}*. Tus módulos:\n"]
+        for m in modes:
+            lines.append(_MODO_LABELS.get(m, f"• {m}"))
+        lines.append("\n*Comandos generales:*\n`salir` — cambiar de módulo\n`ayuda` — ver esta ayuda")
+        return "\n".join(lines)
+
+    def _txt_menu(self, user: dict) -> str:
+        modes  = user.get("user_mode") or []
+        nombre = user.get("nombre", "")
+        if len(modes) == 1:
+            return f"Escribe *{modes[0]}* para continuar."
+        lines = [f"Hola *{nombre}*. ¿Qué módulo quieres usar?\n"]
+        for m in modes:
+            lines.append(_MODO_LABELS.get(m, f"• {m}"))
+        return "\n".join(lines)
+
+    # ── SUPABASE ──────────────────────────────────────────────────────────────
+
+    def _get_user(self, phone: str) -> dict | None:
         try:
-            qs  = urllib.parse.urlencode({
-                "empresa_id": f"eq.{empresa_id}",
-                "from_phone": f"eq.{from_phone}",
-                "select":     "direction,body,timestamp",
-                "order":      "timestamp.desc",
-                "limit":      str(_HISTORY_LIMIT),
-            })
-            url = f"{os.getenv('SUPABASE_URL')}/rest/v1/wabiz_messages?{qs}"
+            qs  = urllib.parse.urlencode({"phone": f"eq.{phone}", "activo": "eq.true", "select": "*", "limit": "1"})
+            url = f"{os.getenv('SUPABASE_URL', '').rstrip('/')}/rest/v1/factory_users?{qs}"
+            key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
             req = urllib.request.Request(url, headers={
-                "apikey":        os.getenv("SUPABASE_SERVICE_ROLE_KEY", ""),
-                "Authorization": f"Bearer {os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')}",
-                "Accept":        "application/json",
+                "apikey": key, "Authorization": f"Bearer {key}",
+                "Accept": "application/json", "User-Agent": _UA,
             })
             with urllib.request.urlopen(req, timeout=10) as r:
                 rows = json.loads(r.read().decode())
-                return list(reversed(rows))
-        except Exception:
-            return []
-
-    def _call_haiku(self, user_msg: str, history: list[dict], profile_name: str, empresa_id: str) -> str | None:
-        messages = []
-        for row in history:
-            role    = "user" if row.get("direction") == "in" else "assistant"
-            content = row.get("body") or ""
-            if content:
-                messages.append({"role": role, "content": content})
-
-        messages.append({"role": "user", "content": user_msg})
-
-        system_prompt = (
-            f"Eres un asistente de WhatsApp para la empresa {empresa_id}. "
-            f"Estás hablando con {profile_name}. "
-            "Responde de forma concisa, amable y en el mismo idioma del usuario. "
-            "Máximo 3 párrafos cortos."
-        )
-
-        payload = {
-            "model":      "claude-haiku-4-5-20251001",
-            "max_tokens": 512,
-            "system":     system_prompt,
-            "messages":   messages,
-        }
-        try:
-            req = urllib.request.Request(
-                "https://api.anthropic.com/v1/messages",
-                data=json.dumps(payload).encode(),
-                headers={
-                    "content-type":      "application/json",
-                    "x-api-key":         os.getenv("ANTHROPIC_API_KEY", ""),
-                    "anthropic-version": "2023-06-01",
-                    "User-Agent":        _UA,
-                },
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=30) as r:
-                data = json.loads(r.read().decode())
-                return data["content"][0]["text"]
+                return rows[0] if rows else None
         except Exception:
             return None
 
-    def _send_text(self, empresa_id: str, to: str, body: str) -> dict:
+    def _validate_code(self, codigo: str) -> dict | None:
         try:
-            import importlib.util
-            from pathlib import Path
-            svc_path = Path(__file__).parent.parent / "wabiz_send_text" / "service.py"
-            spec = importlib.util.spec_from_file_location("wabiz_send_text_service", svc_path)
+            qs  = urllib.parse.urlencode({"codigo": f"eq.{codigo}", "activo": "eq.true", "select": "*", "limit": "1"})
+            url = f"{os.getenv('SUPABASE_URL', '').rstrip('/')}/rest/v1/wabiz_access_codes?{qs}"
+            key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+            req = urllib.request.Request(url, headers={
+                "apikey": key, "Authorization": f"Bearer {key}",
+                "Accept": "application/json", "User-Agent": _UA,
+            })
+            with urllib.request.urlopen(req, timeout=10) as r:
+                rows = json.loads(r.read().decode())
+                return rows[0] if rows else None
+        except Exception:
+            return None
+
+    def _create_user(self, phone, nombre, empresa_id, role, user_mode) -> None:
+        payload = json.dumps({
+            "phone": phone, "nombre": nombre, "empresa_id": empresa_id,
+            "role": role, "user_mode": user_mode, "activo": True,
+        }).encode()
+        url = f"{os.getenv('SUPABASE_URL', '').rstrip('/')}/rest/v1/factory_users"
+        key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+        try:
+            req = urllib.request.Request(url, data=payload, method="POST", headers={
+                "apikey": key, "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates,return=minimal",
+                "User-Agent": _UA,
+            })
+            urllib.request.urlopen(req, timeout=10).close()
+        except Exception:
+            pass
+
+    def _load_state(self, empresa_id: str, from_phone: str) -> dict:
+        chat_id = f"wabiz_{empresa_id}_{from_phone}"
+        try:
+            qs  = urllib.parse.urlencode({"chat_id": f"eq.{chat_id}", "select": "state", "limit": "1"})
+            url = f"{os.getenv('SUPABASE_URL', '').rstrip('/')}/rest/v1/bot_states?{qs}"
+            key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+            req = urllib.request.Request(url, headers={
+                "apikey": key, "Authorization": f"Bearer {key}",
+                "Accept": "application/json", "User-Agent": _UA,
+            })
+            with urllib.request.urlopen(req, timeout=10) as r:
+                rows = json.loads(r.read().decode())
+                return rows[0].get("state") or {} if rows else {}
+        except Exception:
+            return {}
+
+    def _save_state(self, empresa_id: str, from_phone: str, state: dict) -> None:
+        chat_id = f"wabiz_{empresa_id}_{from_phone}"
+        payload = json.dumps({"chat_id": chat_id, "state": state}).encode()
+        url     = f"{os.getenv('SUPABASE_URL', '').rstrip('/')}/rest/v1/bot_states"
+        key     = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+        try:
+            req = urllib.request.Request(url, data=payload, method="POST", headers={
+                "apikey": key, "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates,return=minimal",
+                "User-Agent": _UA,
+            })
+            urllib.request.urlopen(req, timeout=10).close()
+        except Exception:
+            pass
+
+    # ── HANDLER + SEND ────────────────────────────────────────────────────────
+
+    def _run_handler(self, mode: str, context: dict) -> dict:
+        handler_dir = _MODO_HANDLERS[mode]
+        svc_path    = Path(__file__).parent.parent.parent / handler_dir / "service.py"
+        try:
+            spec = importlib.util.spec_from_file_location(f"{handler_dir}_svc", svc_path)
             mod  = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
+            cls  = getattr(mod, next(n for n in dir(mod) if n.endswith("Service") and not n.startswith("_")))
+            return cls().ejecutar(context)
+        except Exception as e:
+            return {"ok": False, "error": f"Error en handler {handler_dir}: {e}"}
+
+    def _reply(self, text: str, empresa_id: str, from_phone: str, dry_run: bool) -> dict:
+        if not dry_run:
+            self._send_text(empresa_id, from_phone, text)
+        return {"ok": True, "data": {"reply": text}}
+
+    def _send_text(self, empresa_id: str, to: str, body: str) -> dict:
+        try:
+            svc_path = Path(__file__).parent.parent / "wabiz_send_text" / "service.py"
+            spec     = importlib.util.spec_from_file_location("wabiz_send_text_service", svc_path)
+            mod      = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
             return mod.WabizSendTextService().ejecutar({
-                "empresa_id": empresa_id,
-                "to":         to,
-                "body":       body,
-                "dry_run":    False,
+                "empresa_id": empresa_id, "to": to, "body": body, "dry_run": False,
             })
         except Exception as e:
             return {"ok": False, "error": str(e)}

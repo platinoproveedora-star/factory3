@@ -35,14 +35,29 @@ EMP_LOGPLAT/
 ```
 Skills de reporte (si se necesitan) van en `factory/skills/internos/emp_logplat_*/` e importan `service.py` desde `EMP_LOGPLAT/`.
 
-## Skills planeados
-| Skill | Descripción |
-|---|---|
-| `supabase_schema_create` | Crea schema en Supabase vía SQL (genérico) |
-| `emp_logplat_viaje_registrar` | Registra viaje en `logplat.viajes` |
-| `emp_logplat_gasto_registrar` | Registra gasto en `logplat.gastos` |
-| `emp_logplat_reporte_gastos` | Resumen gastos por período/chofer |
-| `emp_logplat_reporte_viajes` | Resumen viajes por período/chofer |
+## Skills activos
+| Skill | Canal | Descripción |
+|---|---|---|
+| `logplat_run` | Telegram | Orquestador bot /logplat — gastos, viajes, pagos, docs |
+| `emp_logplat_kpis` | Dashboard | KPIs: utilidad semanal, CXC, viajes |
+| `emp_logplat_message_handler` | WhatsApp | Handler canal-agnostic: gastos, viajes, docs |
+
+## Canal WhatsApp
+
+Integrado vía `vertical_wabiz`. El handler es **canal-agnostic** — recibe
+`{type, body, media_id, from_phone}` y devuelve `{reply}`.
+El router (`wabiz_channel_router`) gestiona registro, modal y envío.
+
+Registro de usuarios:
+- Código chofer: `logplat26` → acceso a modo logplat
+- Código admin: `admin2026` → acceso a modo logplat
+
+El nombre del chofer se toma de `factory_users.nombre` y se guarda automáticamente
+en gastos y viajes.
+
+Estado de sesión en `bot_states`:
+- Router: `wabiz_{empresa_id}_{phone}` → `{active_mode, reg_step…}`
+- Handler: `wabiz_logplat_{phone}` → `{hint, doc_url, doc_name}`
 
 ## Estado
 - [ ] Crear schema `logplat` + tablas en Supabase

@@ -1,6 +1,6 @@
 # Tablas Supabase — Registry
 
-Actualizado: 2026-05-11
+Actualizado: 2026-05-15
 
 ## Schema `public`
 
@@ -31,6 +31,8 @@ Actualizado: 2026-05-11
 | [cfdi_documentos](#cfdi_documentos) | fiscal | Documentos CFDI timbrados (facturas, notas) |
 | [wabiz_config](#wabiz_config) | vertical_wabiz | Credenciales WhatsApp Business por empresa_id |
 | [wabiz_messages](#wabiz_messages) | vertical_wabiz | Log de mensajes WhatsApp entrantes y salientes |
+| [factory_users](#factory_users) | factory | Usuarios globales de la fábrica (todos los canales) |
+| [wabiz_access_codes](#wabiz_access_codes) | vertical_wabiz | Claves de registro de usuarios vía WhatsApp |
 
 ## Schema `logplat`
 
@@ -79,14 +81,22 @@ Alertas y notificaciones enviadas a candidatos.
 
 ## bot_states
 
-Estado de sesión del bot por chat. Persiste el `state` entre mensajes de Telegram.
+Estado de sesión del bot por chat. Persiste el `state` entre mensajes de Telegram y WhatsApp.
 
 | Campo | Tipo | Nulo | Default | Descripción |
 |---|---|---|---|---|
 | `id` | uuid | NO | gen_random_uuid() | PK interno |
-| `chat_id` | text | NO | — | ID del chat de Telegram (externo) |
-| `state` | jsonb | SÍ | {} | Estado actual del bot (modo, vacante_id, etc.) |
+| `chat_id` | text | NO | — | ID único del chat. Telegram: chat_id numérico. WhatsApp: `wabiz_{empresa_id}_{phone}` |
+| `state` | jsonb | SÍ | {} | Estado actual: modo activo, hint de captura, doc_url pendiente, reg_step… |
 | `updated_at` | timestamptz | SÍ | now() | — |
+
+Formato de `chat_id` por canal:
+
+| Canal | Formato | Ejemplo |
+|---|---|---|
+| Telegram | número plano | `123456789` |
+| WhatsApp router | `wabiz_{empresa_id}_{phone}` | `wabiz_factory3_+521234567890` |
+| WhatsApp handler logplat | `wabiz_logplat_{phone}` | `wabiz_logplat_+521234567890` |
 
 ---
 
@@ -574,6 +584,52 @@ Documentos adjuntos a viajes (cartas porte, permisos, etc.). N documentos por vi
 | `tipo` | text | NO | 'otro' | carta_porte \| permiso \| otro |
 | `nombre` | text | SÍ | — | Nombre original del archivo |
 | `created_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## factory_users
+
+Vertical: `factory` | Schema: `public`
+
+Usuarios globales de la fábrica. Todos los canales (WhatsApp, Telegram, futuro) referencian esta tabla.
+Se crea automáticamente cuando el usuario se registra vía WhatsApp con un código de acceso.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `nombre` | text | NO | — | Nombre del usuario |
+| `empresa_id` | text | NO | — | Empresa a la que pertenece (logplat, rh…) |
+| `role` | text | NO | 'user' | chofer, admin, reclutador… |
+| `user_mode` | text[] | NO | '{}' | Modos permitidos: ["logplat"], ["logplat","rh"] |
+| `phone` | text | SÍ | — | UNIQUE — número WhatsApp (+521…) |
+| `telegram_id` | text | SÍ | — | UNIQUE — chat_id de Telegram |
+| `activo` | boolean | NO | true | Si el usuario está habilitado |
+| `created_at` | timestamptz | NO | now() | — |
+
+---
+
+## wabiz_access_codes
+
+Vertical: `vertical_wabiz` | Schema: `public`
+
+Claves de acceso para auto-registro de usuarios vía WhatsApp.
+El admin crea claves; cada clave define qué empresa y modos tendrá el usuario que la use.
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `codigo` | text | NO | — | PK — clave que escribe el usuario (ej: logplat26) |
+| `empresa_id` | text | NO | — | Empresa que se asigna al registrarse |
+| `user_mode` | text[] | NO | '{}' | Modos permitidos para el usuario nuevo |
+| `role` | text | NO | 'user' | Rol que se asigna (chofer, admin…) |
+| `activo` | boolean | NO | true | Si la clave está habilitada |
+| `created_at` | timestamptz | NO | now() | — |
+
+Claves activas:
+
+| Código | empresa_id | user_mode | role |
+|---|---|---|---|
+| `logplat26` | logplat | ["logplat"] | chofer |
+| `admin2026` | logplat | ["logplat"] | admin |
 
 ---
 
