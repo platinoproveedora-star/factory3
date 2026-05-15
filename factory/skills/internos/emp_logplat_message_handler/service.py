@@ -230,17 +230,12 @@ class LogplatMessageHandlerService:
         base    = os.getenv("SUPABASE_URL", "").rstrip("/")
         key     = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
         try:
-            qs  = urllib.parse.urlencode({
-                "chat_id": f"eq.{chat_id}",
-                "select":  "state",
-                "order":   "updated_at.desc",
-                "limit":   "1",
-            })
+            qs  = urllib.parse.urlencode({"chat_id": f"eq.{chat_id}", "select": "state", "limit": "1"})
             req = urllib.request.Request(f"{base}/rest/v1/bot_states?{qs}", headers={
                 "apikey": key, "Authorization": f"Bearer {key}",
                 "Accept": "application/json", "User-Agent": _UA,
             })
-            with urllib.request.urlopen(req, timeout=10) as r:
+            with urllib.request.urlopen(req, timeout=5) as r:
                 rows = json.loads(r.read().decode())
                 return rows[0].get("state") or {} if rows else {}
         except Exception:
@@ -253,27 +248,23 @@ class LogplatMessageHandlerService:
         hdr     = {
             "apikey": key, "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
-            "Prefer": "return=minimal",
             "User-Agent": _UA,
         }
         try:
-            qs  = urllib.parse.urlencode({"chat_id": f"eq.{chat_id}", "select": "id", "limit": "1"})
-            req = urllib.request.Request(f"{base}/rest/v1/bot_states?{qs}",
-                                          headers={**hdr, "Accept": "application/json"})
-            with urllib.request.urlopen(req, timeout=10) as r:
-                exists = bool(json.loads(r.read().decode()))
-
-            if exists:
-                url = f"{base}/rest/v1/bot_states?chat_id=eq.{urllib.parse.quote(chat_id)}"
-                req = urllib.request.Request(url,
-                                              data=json.dumps({"state": state}).encode(),
-                                              method="PATCH", headers=hdr)
-            else:
-                url = f"{base}/rest/v1/bot_states"
-                req = urllib.request.Request(url,
+            patch_url = f"{base}/rest/v1/bot_states?chat_id=eq.{urllib.parse.quote(chat_id)}"
+            req = urllib.request.Request(patch_url,
+                                          data=json.dumps({"state": state}).encode(),
+                                          method="PATCH",
+                                          headers={**hdr, "Prefer": "return=minimal,count=exact"})
+            with urllib.request.urlopen(req, timeout=5) as r:
+                cr = r.headers.get("Content-Range", "*/0")
+            updated = int(cr.split("/")[-1]) if "/" in cr else 0
+            if updated == 0:
+                req = urllib.request.Request(f"{base}/rest/v1/bot_states",
                                               data=json.dumps({"chat_id": chat_id, "state": state}).encode(),
-                                              method="POST", headers=hdr)
-            urllib.request.urlopen(req, timeout=10).close()
+                                              method="POST",
+                                              headers={**hdr, "Prefer": "return=minimal"})
+                urllib.request.urlopen(req, timeout=5).close()
         except Exception:
             pass
 
