@@ -30,7 +30,10 @@
     .hero { background: linear-gradient(180deg, #f8fafc 0%, #eef4f2 100%); border-bottom: 1px solid var(--line); }
     .hero-grid { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr); gap: 42px; align-items: center; padding: 46px 0 34px; }
     .eyebrow { margin: 0 0 16px; color: var(--accent); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0; }
-    h1 { margin: 0; max-width: 660px; font-size: clamp(40px, 6vw, 72px); line-height: 1.02; letter-spacing: 0; color: var(--ink); }
+    .title-block { position: relative; padding-top: 18px; }
+    .title-block::before { content: ""; position: absolute; top: 0; left: 0; width: 72px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--gold)); }
+    h1 { margin: 0; max-width: 620px; font-size: clamp(32px, 4.4vw, 54px); line-height: 1.06; letter-spacing: 0; color: var(--ink); }
+    .title-accent { display: block; color: var(--accent-dark); font-size: 0.82em; font-weight: 800; }
     .lead { margin: 20px 0 0; max-width: 650px; font-size: 19px; line-height: 1.55; color: var(--muted); }
     .price { margin-top: 24px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
     .price strong { font-size: 30px; color: var(--accent-dark); }
@@ -106,7 +109,9 @@
     <div class="wrap hero-grid">
       <div>
         <p class="eyebrow">Orion Business Hub · Merida · Piso 8</p>
-        <h1>Oficina lista para operar en Orion Business Hub</h1>
+        <div class="title-block">
+          <h1><span class="title-accent">Oficina lista para operar</span> en Orion Business Hub</h1>
+        </div>
         <p class="lead">Espacio corporativo de 28 m2 para 2 a 6 personas, disponible para uso propio o como inversion patrimonial con opcion de conservar inquilino activo.</p>
         <div class="price">
           <strong>MXN 1,950,000</strong>
