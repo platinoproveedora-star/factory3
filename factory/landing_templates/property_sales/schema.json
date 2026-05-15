@@ -1,0 +1,41 @@
+{
+  "template_type": "property_sales",
+  "label": "Property Sales Landing",
+  "version": "0.1.0",
+  "fields": {
+    "page_title": "string",
+    "meta_description": "text",
+    "brand": "string",
+    "eyebrow": "string",
+    "headline_accent": "string",
+    "headline_main": "string",
+    "subtitle": "text",
+    "price_label": "string",
+    "price_note": "string",
+    "cta_label": "string",
+    "secondary_cta_label": "string",
+    "whatsapp_number": "string",
+    "whatsapp_message": "string",
+    "section_title": "string",
+    "section_copy": "text",
+    "facts": "list[label,value]",
+    "benefits": "list[title,text]",
+    "investment_title": "string",
+    "investment_copy": "text",
+    "investment_facts": "list[label,value]",
+    "contact_title": "string",
+    "contact_copy": "text",
+    "footer_text": "string",
+    "privacy_url": "string",
+    "main_image_url": "url",
+    "gallery_urls": "list[url]"
+  },
+  "required": [
+    "page_title",
+    "headline_accent",
+    "headline_main",
+    "cta_label",
+    "whatsapp_number",
+    "privacy_url"
+  ]
+}

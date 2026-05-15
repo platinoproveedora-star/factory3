@@ -19,6 +19,9 @@ reporte.
 | `vertical_marketing/marketing_privacy_notice_builder` | Genera aviso de privacidad base para landings y leads. |
 | `vertical_marketing/marketing_mini_landing_scaffold` | Crea mini landing estatica con CTA, ficha y aviso de privacidad. |
 | `vertical_marketing/property_landing_content_generator` | Genera contenido estructurado para landing inmobiliaria dinamica. |
+| `vertical_marketing/landing_config_builder` | Construye `landing_config.json` por `template_type`. |
+| `vertical_marketing/landing_template_renderer` | Renderiza HTML usando `factory/landing_templates/<template_type>`. |
+| `vertical_marketing/landing_ai_content_generator` | Despacha generacion IA segun `template_type`. |
 | `vertical_marketing/marketing_report_generator` | Genera reporte ejecutivo de resultados y aprendizajes. |
 
 ## Flujo recomendado para una mini landing
@@ -28,7 +31,9 @@ company_context_builder
 -> marketing_offer_builder
 -> marketing_copy_generator
 -> marketing_privacy_notice_builder
--> marketing_mini_landing_scaffold
+-> landing_ai_content_generator
+-> landing_config_builder
+-> landing_template_renderer
 -> marketing_landing_alignment
 -> ads_campaign_preflight_check
 ```

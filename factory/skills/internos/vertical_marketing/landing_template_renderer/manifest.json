@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/landing_template_renderer",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Renderiza HTML de landing usando templates internos por template_type.",
+  "vertical": "vertical_marketing",
+  "requires_env": []
+}

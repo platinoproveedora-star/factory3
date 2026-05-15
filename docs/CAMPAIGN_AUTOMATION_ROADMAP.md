@@ -11,7 +11,7 @@ leads.
 | Empresa/config | Funciona | `vertical_companies/company_config_loader` y `company_context_builder`. |
 | Dashboard | Funciona | `company_dashboard_scaffold` y dashboard RSTATE en Render. |
 | Upload assets | Funciona | `supabase_storage_upload` con bucket `campaign-assets`. |
-| Landing dinamica | En progreso | Landing lee `landing_config.json`; dashboard ya puede guardar datos/fotos. |
+| Landing dinamica | Funciona / mejorando | Landing lee `landing_config.json`; dashboard ya puede guardar datos/fotos. |
 | Preflight | Funciona en dry run | `vertical_ads/ads_campaign_preflight_check` ya dio ready. |
 | Meta real | Pendiente | Falta probar create lead form/campaign real en `PAUSED`. |
 | Leads reales | Pendiente | Falta probar sync Meta Leads -> Sales. |
@@ -25,6 +25,9 @@ leads.
 | `vertical_companies/company_dashboard_scaffold` | Crear dashboard base con Campaign Ops. |
 | `vertical_marketing/marketing_privacy_notice_builder` | Generar aviso de privacidad. |
 | `vertical_marketing/marketing_mini_landing_scaffold` | Crear landing inicial. |
+| `vertical_marketing/landing_ai_content_generator` | Generar contenido IA segun `template_type`. |
+| `vertical_marketing/landing_config_builder` | Crear `landing_config.json` normalizado por template. |
+| `vertical_marketing/landing_template_renderer` | Renderizar HTML desde `factory/landing_templates/<template_type>`. |
 | `vertical_ads/ads_campaign_preflight_check` | Validar blockers/warnings antes de lanzar. |
 | `vertical_ads/ads_campaign_run` | Generar payloads de campana en dry run. |
 | `vertical_meta_ads/meta_lead_form_create` | Crear formulario de leads Meta. Pendiente real. |
@@ -35,8 +38,7 @@ leads.
 
 | Skill propuesto | Responsabilidad |
 | --- | --- |
-| `vertical_marketing/property_landing_config_builder` | Crear/actualizar `landing_config.json` desde brief de propiedad. |
-| `vertical_marketing/property_landing_renderer` | Mantener plantilla HTML dinamica para inmuebles. |
+| `vertical_marketing/landing_template_registry` | Registrar tipos disponibles: `property_sales`, `hiring`, `service_leads`. |
 | `vertical_marketing/campaign_asset_manager` | Listar, elegir, borrar y marcar imagen principal/galeria. |
 | `vertical_render/render_landing_publish` | Crear o actualizar servicio Render para landing. |
 | `vertical_ads/campaign_config_writer` | Guardar `image_url`, `privacy_url`, `link`, `approver` en JSON de campana. |

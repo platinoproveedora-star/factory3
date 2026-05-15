@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Propiedad disponible</title>
+  <meta id="meta-description" name="description" content="Propiedad disponible. Solicita informacion y agenda una visita.">
+  <style>
+    :root { color-scheme: light; --ink:#101720; --muted:#5d6876; --line:#d8e0ea; --surface:#fff; --soft:#f5f7fa; --accent:#0f766e; --accent-dark:#0b4f4a; --gold:#b68942; }
+    * { box-sizing: border-box; } html { scroll-behavior: smooth; }
+    body { margin:0; font-family: Arial, sans-serif; color:var(--ink); background:#fff; }
+    a { color: inherit; } .wrap { max-width:1160px; margin:0 auto; padding:0 22px; }
+    .topbar { border-bottom:1px solid var(--line); background:rgba(255,255,255,.94); position:sticky; top:0; z-index:10; }
+    .topbar .wrap { min-height:62px; display:flex; align-items:center; justify-content:space-between; gap:18px; }
+    .brand { font-size:14px; font-weight:800; color:var(--accent-dark); }
+    .topnav { display:flex; gap:18px; font-size:14px; color:var(--muted); } .topnav a { text-decoration:none; }
+    .hero { background:linear-gradient(180deg,#f8fafc 0%,#eef4f2 100%); border-bottom:1px solid var(--line); }
+    .hero-grid { display:grid; grid-template-columns:minmax(0,.95fr) minmax(360px,1.05fr); gap:42px; align-items:center; padding:46px 0 34px; }
+    .eyebrow { margin:0 0 16px; color:var(--accent); font-size:13px; font-weight:800; text-transform:uppercase; }
+    .title-block { position:relative; padding-top:18px; } .title-block::before { content:""; position:absolute; top:0; left:0; width:72px; height:3px; border-radius:999px; background:linear-gradient(90deg,var(--accent),var(--gold)); }
+    h1 { margin:0; max-width:620px; font-size:clamp(32px,4.4vw,54px); line-height:1.06; letter-spacing:0; color:var(--ink); }
+    .title-accent { display:block; color:var(--accent-dark); font-size:.82em; font-weight:800; }
+    .lead { margin:20px 0 0; max-width:650px; font-size:19px; line-height:1.55; color:var(--muted); }
+    .price { margin-top:24px; display:flex; flex-wrap:wrap; align-items:baseline; gap:12px; } .price strong { font-size:30px; color:var(--accent-dark); } .price span { color:var(--muted); }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:28px; }
+    .btn { display:inline-flex; min-height:50px; align-items:center; justify-content:center; padding:0 20px; border-radius:8px; text-decoration:none; font-weight:800; border:1px solid transparent; }
+    .btn.primary { color:#fff; background:var(--accent); } .btn.secondary { color:var(--ink); background:#fff; border-color:var(--line); }
+    .media { min-width:0; } .main-photo { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; border-radius:8px; border:1px solid var(--line); background:#e7edf3; box-shadow:0 20px 46px rgba(15,23,42,.14); }
+    .photo-rail { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; margin-top:10px; } .photo-rail button { padding:0; border:1px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; overflow:hidden; } .photo-rail img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
+    .facts-bar { transform:translateY(50%); margin-top:-34px; } .facts { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:10px; box-shadow:0 18px 38px rgba(15,23,42,.12); }
+    .fact { padding:14px 12px; border-right:1px solid var(--line); } .fact:last-child { border-right:0; } .fact span { display:block; color:var(--muted); font-size:12px; margin-bottom:7px; } .fact strong { display:block; font-size:18px; line-height:1.2; }
+    .band { padding:92px 0 64px; } .section-grid { display:grid; grid-template-columns:minmax(0,.85fr) minmax(320px,1.15fr); gap:46px; align-items:start; }
+    h2 { margin:0 0 16px; font-size:clamp(28px,4vw,42px); line-height:1.1; } .section-copy { margin:0; color:var(--muted); font-size:18px; line-height:1.6; }
+    .benefits { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; } .benefit { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; } .benefit strong { display:block; font-size:17px; margin-bottom:8px; } .benefit p { margin:0; color:var(--muted); line-height:1.5; }
+    .investment { background:#10201e; color:#fff; } .investment h2,.investment p { color:#fff; } .investment .section-copy { color:#c9d9d5; } .investment-card { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:8px; padding:22px; } .investment-card dl { margin:0; display:grid; gap:14px; } .investment-card div { display:flex; justify-content:space-between; gap:20px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,.14); } .investment-card div:last-child { border-bottom:0; padding-bottom:0; } .investment-card dt { color:#c9d9d5; } .investment-card dd { margin:0; font-weight:800; }
+    .contact { background:var(--soft); border-top:1px solid var(--line); } .contact-box { background:#fff; border:1px solid var(--line); border-radius:8px; padding:28px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:24px; align-items:center; } .contact-box p { margin:8px 0 0; color:var(--muted); line-height:1.55; }
+    footer { border-top:1px solid var(--line); padding:28px 0; color:var(--muted); font-size:14px; } footer .wrap { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; } footer a { color:var(--accent-dark); }
+    .sticky-cta { display:none; position:fixed; left:14px; right:14px; bottom:14px; z-index:20; } .sticky-cta .btn { width:100%; box-shadow:0 18px 36px rgba(15,118,110,.28); }
+    @media (max-width:900px) { .topnav{display:none}.hero-grid,.section-grid,.contact-box{grid-template-columns:1fr}.facts-bar{transform:none;margin:0;padding-top:12px}.facts{grid-template-columns:repeat(2,minmax(0,1fr));box-shadow:none}.fact{border-right:0;border-bottom:1px solid var(--line)}.benefits{grid-template-columns:1fr}.photo-rail{grid-template-columns:repeat(3,minmax(0,1fr))}.band{padding:56px 0}.sticky-cta{display:block}body{padding-bottom:82px} }
+  </style>
+</head>
+<body>
+  <nav class="topbar"><div class="wrap"><div class="brand" id="brand-label">Landing</div><div class="topnav"><a href="#detalles">Detalles</a><a href="#inversion">Inversion</a><a href="#contacto">Contacto</a></div></div></nav>
+  <header class="hero"><div class="wrap hero-grid"><div><p class="eyebrow" id="eyebrow">Propiedad disponible</p><div class="title-block"><h1><span class="title-accent" id="headline-accent">Propiedad lista</span> <span id="headline-main">para evaluar</span></h1></div><p class="lead" id="subtitle">Solicita informacion para conocer disponibilidad, condiciones y detalles.</p><div class="price"><strong id="price-label">Precio por confirmar</strong><span id="price-note">Operacion por confirmar</span></div><div class="actions"><a class="btn primary js-whatsapp" href="#contacto">Solicitar informacion</a><a class="btn secondary" id="secondary-cta" href="#detalles">Ver ficha</a></div></div><div class="media" id="landing-media"><img class="main-photo" id="hero-image" src="" alt="Imagen principal de la propiedad"></div></div></header>
+  <section class="facts-bar" aria-label="Datos principales"><div class="wrap"><div class="facts" id="facts"></div></div></section>
+  <section class="band" id="detalles"><div class="wrap section-grid"><div><h2 id="section-title">Ficha de la propiedad</h2><p class="section-copy" id="section-copy">Informacion general de la propiedad.</p></div><div class="benefits" id="benefits"></div></div></section>
+  <section class="band investment" id="inversion"><div class="wrap section-grid"><div><h2 id="investment-title">Datos para evaluar</h2><p class="section-copy" id="investment-copy">La informacion se presenta como dato reportado y debe revisarse documentalmente.</p></div><div class="investment-card"><dl id="investment-facts"></dl></div></div></section>
+  <section class="band contact" id="contacto"><div class="wrap"><div class="contact-box"><div><h2 id="contact-title">Solicita informacion</h2><p id="contact-copy">Envia un mensaje para recibir mas informacion.</p></div><a class="btn primary js-whatsapp" href="#contacto">Contactar</a></div></div></section>
+  <footer><div class="wrap"><span id="footer-text">Landing</span><a id="privacy-link" href="privacy.html">Aviso de privacidad</a></div></footer>
+  <div class="sticky-cta"><a class="btn primary js-whatsapp" href="#contacto">Solicitar informacion</a></div>
+  <script>
+    const LANDING_CONFIG_URL = "__LANDING_CONFIG_URL__";
+    const heroImage = document.getElementById("hero-image");
+    const media = document.getElementById("landing-media");
+    function setText(id,value){ const el=document.getElementById(id); if(el && value) el.textContent=value; }
+    function setHero(url){ if(!url || !heroImage) return; heroImage.src=url; }
+    function whatsappUrl(number,message){ const digits=String(number||"").replace(/\D/g,""); if(!digits) return "#contacto"; return `https://wa.me/${digits}?text=${encodeURIComponent(message||"Hola, quiero informacion de la propiedad.")}`; }
+    function renderFacts(items){ const root=document.getElementById("facts"); if(!root || !items || !items.length) return; root.innerHTML=""; items.slice(0,6).forEach((item)=>{ const card=document.createElement("div"); card.className="fact"; card.innerHTML="<span></span><strong></strong>"; card.querySelector("span").textContent=item.label||""; card.querySelector("strong").textContent=item.value||""; root.appendChild(card); }); }
+    function renderBenefits(items){ const root=document.getElementById("benefits"); if(!root || !items || !items.length) return; root.innerHTML=""; items.slice(0,6).forEach((item)=>{ const card=document.createElement("div"); card.className="benefit"; card.innerHTML="<strong></strong><p></p>"; card.querySelector("strong").textContent=item.title||""; card.querySelector("p").textContent=item.text||""; root.appendChild(card); }); }
+    function renderInvestmentFacts(items){ const root=document.getElementById("investment-facts"); if(!root || !items || !items.length) return; root.innerHTML=""; items.slice(0,8).forEach((item)=>{ const row=document.createElement("div"); row.innerHTML="<dt></dt><dd></dd>"; row.querySelector("dt").textContent=item.label||""; row.querySelector("dd").textContent=item.value||""; root.appendChild(row); }); }
+    function renderRail(urls){ if(!media || !urls || !urls.length) return; const existing=media.querySelector(".photo-rail"); if(existing) existing.remove(); const rail=document.createElement("div"); rail.className="photo-rail"; urls.slice(0,6).forEach((url,index)=>{ const button=document.createElement("button"); button.type="button"; button.setAttribute("aria-label",`Ver foto ${index+1}`); const img=document.createElement("img"); img.src=url; img.alt=`Foto ${index+1} de la propiedad`; button.appendChild(img); button.addEventListener("click",()=>setHero(url)); rail.appendChild(button); }); media.appendChild(rail); }
+    function applyConfig(config){ document.title=config.page_title||document.title; const meta=document.getElementById("meta-description"); if(meta && config.meta_description) meta.setAttribute("content",config.meta_description); setText("brand-label",config.brand); setText("eyebrow",config.eyebrow); setText("headline-accent",config.headline_accent); setText("headline-main",config.headline_main); setText("subtitle",config.subtitle); setText("price-label",config.price_label); setText("price-note",config.price_note); setText("secondary-cta",config.secondary_cta_label); setText("section-title",config.section_title); setText("section-copy",config.section_copy); setText("investment-title",config.investment_title); setText("investment-copy",config.investment_copy); setText("contact-title",config.contact_title); setText("contact-copy",config.contact_copy); setText("footer-text",config.footer_text); setHero(config.main_image_url); renderRail(config.gallery_urls||[]); renderFacts(config.facts||[]); renderBenefits(config.benefits||[]); renderInvestmentFacts(config.investment_facts||[]); const privacy=document.getElementById("privacy-link"); if(privacy && config.privacy_url) privacy.href=config.privacy_url; const wa=whatsappUrl(config.whatsapp_number,config.whatsapp_message); document.querySelectorAll(".js-whatsapp").forEach((link)=>{ link.href=wa; if(config.cta_label && link.closest(".actions, .sticky-cta")) link.textContent=config.cta_label; }); }
+    fetch(LANDING_CONFIG_URL,{cache:"no-store"}).then((response)=>response.ok?response.json():null).then((config)=>{ if(config) applyConfig(config); }).catch(()=>{});
+  </script>
+</body>
+</html>

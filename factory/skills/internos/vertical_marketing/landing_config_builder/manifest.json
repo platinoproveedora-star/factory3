@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_marketing/landing_config_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Construye landing_config.json normalizado para templates de landing por vertical.",
+  "vertical": "vertical_marketing",
+  "requires_env": []
+}

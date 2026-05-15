@@ -298,8 +298,9 @@ def _render_landing_page() -> None:
         campaign_payload = _campaign_payload()
         prop = (campaign_payload.get("brief") or {}).get("property") or {}
         result = _run_skill(
-            "vertical_marketing/property_landing_content_generator",
+            "vertical_marketing/landing_ai_content_generator",
             {
+                "template_type": "property_sales",
                 "company_id": COMPANY_ID,
                 "campaign": campaign_payload,
                 "property": prop,
