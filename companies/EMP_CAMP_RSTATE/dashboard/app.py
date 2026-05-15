@@ -174,6 +174,8 @@ CAMPAIGN_SLUG = os.getenv("CAMPAIGN_SLUG", "first_rstate_campaign")
 ASSETS_BUCKET = os.getenv("CAMPAIGN_ASSETS_BUCKET", "campaign-assets")
 ASSETS_FOLDER = f"{COMPANY_ID}/{CAMPAIGN_SLUG}"
 SUPABASE_PUBLIC_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+MAX_LANDING_MEDIA_MB = int(os.getenv("LANDING_MEDIA_MAX_MB", "50"))
+MAX_LANDING_MEDIA_BYTES = MAX_LANDING_MEDIA_MB * 1024 * 1024
 
 
 def _safe_filename(name: str) -> str:
@@ -201,6 +203,23 @@ def _upload_bytes(path: str, content: bytes, content_type: str) -> dict:
         },
         "internos",
     )
+
+
+def _media_too_large(file) -> bool:
+    return getattr(file, "size", 0) > MAX_LANDING_MEDIA_BYTES
+
+
+def _upload_media_file(path: str, file, role: str) -> dict:
+    if _media_too_large(file):
+        return {
+            "ok": False,
+            "error": f"Archivo demasiado grande para landing ({file.size / 1024 / 1024:.1f} MB). Maximo recomendado: {MAX_LANDING_MEDIA_MB} MB.",
+            "file": file.name,
+            "role": role,
+        }
+    content_type = file.type or "application/octet-stream"
+    result = _upload_bytes(path, file.getvalue(), content_type)
+    return {"file": file.name, "role": role, "content_type": content_type, "size_mb": round(file.size / 1024 / 1024, 2), **result}
 
 
 @st.cache_data(ttl=60)
@@ -448,7 +467,7 @@ def _render_landing_page() -> None:
             st.error(config_result.get("error", "No se pudo guardar landing_config.json"))
 
     st.subheader("Fotos y video")
-    st.caption("Este boton actualiza solo los medios y conserva la informacion actual.")
+    st.caption(f"Este boton actualiza solo los medios y conserva la informacion actual. Maximo recomendado: {MAX_LANDING_MEDIA_MB} MB por archivo.")
     main_image = st.file_uploader(
         "Imagen principal",
         type=["jpg", "jpeg", "png", "webp"],
@@ -478,22 +497,22 @@ def _render_landing_page() -> None:
         media = dict(media_defaults)
         if main_image:
             path = f"{ASSETS_FOLDER}/landing/main-{_safe_filename(main_image.name)}"
-            result = _upload_bytes(path, main_image.getvalue(), main_image.type or "application/octet-stream")
-            diagnostics.append({"file": main_image.name, "role": "main", **result})
+            result = _upload_media_file(path, main_image, "main")
+            diagnostics.append(result)
             if result.get("ok"):
                 media["main_image_url"] = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
 
         if main_video:
             path = f"{ASSETS_FOLDER}/landing/main-video-{_safe_filename(main_video.name)}"
-            result = _upload_bytes(path, main_video.getvalue(), main_video.type or "application/octet-stream")
-            diagnostics.append({"file": main_video.name, "role": "main_video", **result})
+            result = _upload_media_file(path, main_video, "main_video")
+            diagnostics.append(result)
             if result.get("ok"):
                 media["main_video_url"] = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
 
         if detail_video:
             path = f"{ASSETS_FOLDER}/landing/detail-video-{_safe_filename(detail_video.name)}"
-            result = _upload_bytes(path, detail_video.getvalue(), detail_video.type or "application/octet-stream")
-            diagnostics.append({"file": detail_video.name, "role": "detail_video", **result})
+            result = _upload_media_file(path, detail_video, "detail_video")
+            diagnostics.append(result)
             if result.get("ok"):
                 media["detail_video_url"] = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
 
@@ -507,8 +526,8 @@ def _render_landing_page() -> None:
             is_video = (file.type or "").startswith("video/")
             prefix = "gallery-video" if is_video else "gallery"
             path = f"{ASSETS_FOLDER}/landing/{prefix}-{_safe_filename(file.name)}"
-            result = _upload_bytes(path, file.getvalue(), file.type or "application/octet-stream")
-            diagnostics.append({"file": file.name, "role": "gallery", **result})
+            result = _upload_media_file(path, file, "gallery")
+            diagnostics.append(result)
             if result.get("ok"):
                 url = result.get("data", {}).get("url") or _storage_url(ASSETS_BUCKET, path)
                 gallery_media.append({"type": "video" if is_video else "image", "url": url})
@@ -528,6 +547,9 @@ def _render_landing_page() -> None:
             st.success("Fotos/videos actualizados. Refresca la landing publica para ver los cambios.")
         else:
             st.error(config_result.get("error", "No se pudo guardar landing_config.json"))
+        failed = [item for item in diagnostics if not item.get("ok")]
+        if failed:
+            st.warning("Algunos archivos no subieron. Abre el diagnostico para ver si fue MIME, tamano o bucket.")
 
     if st.session_state.get("landing_config"):
         cfg = st.session_state["landing_config"]

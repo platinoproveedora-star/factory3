@@ -3,7 +3,7 @@ services:
     name: emp-camp-rstate-dashboard
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0
+    startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.maxUploadSize=512
     envVars:
       - key: EMPRESA_ID
         value: EMP_CAMP_RSTATE
