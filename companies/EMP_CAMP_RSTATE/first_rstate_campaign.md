@@ -269,6 +269,8 @@ Configuracion actual:
 | `whatsapp_url` | `https://wa.me/5219616576475?text=Hola%2C%20quiero%20informacion%20de%20Oficina%20en%20venta%20en%20Merida.` |
 | `link` | `https://emp-camp-rstate-landing.onrender.com` |
 | `privacy_url` | `https://emp-camp-rstate-landing.onrender.com/privacy.html` |
+| `META_AD_ACCOUNT_ID` | `act_1202511635190432` |
+| Cuenta Meta Ads | `platino ads` |
 
 Documentacion:
 
