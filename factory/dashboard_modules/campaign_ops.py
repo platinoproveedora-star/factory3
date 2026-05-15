@@ -42,8 +42,8 @@ def render_campaign_ops(
     st.title("Campaign Ops")
     st.caption(f"{company_id} / {campaign_slug}")
 
-    tab_overview, tab_campaign, tab_uploads, tab_preflight, tab_leads, tab_results, tab_settings = st.tabs(
-        ["Overview", "Campaign", "Uploads", "Preflight", "Leads", "Results", "Settings"]
+    tab_overview, tab_campaign, tab_uploads, tab_preflight, tab_meta, tab_leads, tab_results, tab_settings = st.tabs(
+        ["Overview", "Campaign", "Uploads", "Preflight", "Meta Launch", "Leads", "Results", "Settings"]
     )
 
     state_key = f"campaign_ops_{company_id}_{campaign_slug}"
@@ -165,6 +165,88 @@ def render_campaign_ops(
             else:
                 st.error(result.get("error", "Preflight failed"))
 
+    with tab_meta:
+        st.subheader("Meta Launch")
+        st.caption("Flujo seguro: form primero, campana despues, siempre en PAUSED.")
+        c1, c2 = st.columns(2)
+        with c1:
+            form_name = st.text_input("Form name", value=state.get("form_name", f"{campaign_slug} lead form"), key=f"{state_key}_form_name")
+            form_preset = st.text_input("Form preset", value=state.get("form_preset", "inmobiliaria_venta_propiedades"), key=f"{state_key}_form_preset")
+            form_privacy_url = st.text_input("Privacy URL form", value=state.get("privacy_url", ""), key=f"{state_key}_form_privacy")
+        with c2:
+            form_id = st.text_input("Form ID", value=state.get("form_id", ""), key=f"{state_key}_form_id")
+            follow_up_url = st.text_input("Follow-up URL", value=state.get("link", ""), key=f"{state_key}_follow_up_url")
+            execute_real = st.checkbox("Ejecutar real en Meta", value=False, key=f"{state_key}_execute_real")
+        state.update({
+            "form_name": form_name,
+            "form_preset": form_preset,
+            "privacy_url": form_privacy_url,
+            "form_id": form_id,
+            "link": follow_up_url,
+        })
+
+        col_form_a, col_form_b = st.columns(2)
+        if col_form_a.button("Dry run Lead Form", key=f"{state_key}_form_dry"):
+            state["lead_form_result"] = _run_lead_form(run_skill, company_id, campaign_slug, state, dry_run=True)
+        if col_form_b.button("Crear Lead Form real", key=f"{state_key}_form_real", disabled=not execute_real):
+            state["lead_form_result"] = _run_lead_form(run_skill, company_id, campaign_slug, state, dry_run=False)
+            data = state["lead_form_result"].get("data") or {}
+            if data.get("form_id"):
+                state["form_id"] = data["form_id"]
+                _write_campaign_config(run_skill, company_id, campaign_slug, state, {"form_id": data["form_id"]})
+
+        result = state.get("lead_form_result")
+        if result:
+            if result.get("ok"):
+                data = result.get("data", {})
+                if data.get("form_id"):
+                    st.success(f"Lead Form listo: {data['form_id']}")
+                else:
+                    st.info("Lead Form dry run listo")
+                st.json(data, expanded=False)
+            else:
+                st.error(result.get("error", "Lead Form failed"))
+
+        st.divider()
+        st.subheader("Campana PAUSED")
+        c3, c4, c5 = st.columns(3)
+        with c3:
+            daily_budget = st.number_input("Daily budget MXN", min_value=0.0, value=float(state.get("daily_budget") or 150), step=50.0, key=f"{state_key}_daily_budget")
+        with c4:
+            days = st.number_input("Days", min_value=1, value=int(state.get("days") or 7), step=1, key=f"{state_key}_days")
+        with c5:
+            require_ready = st.checkbox("Requerir preflight ready", value=True, key=f"{state_key}_require_ready")
+        ad_message = st.text_area("Ad message", value=state.get("message", ""), height=80, key=f"{state_key}_ad_message")
+        ad_title = st.text_input("Ad title", value=state.get("title", "Solicita informacion"), key=f"{state_key}_ad_title")
+        ad_description = st.text_input("Ad description", value=state.get("description", ""), key=f"{state_key}_ad_description")
+        state.update({
+            "daily_budget": daily_budget,
+            "days": days,
+            "message": ad_message,
+            "title": ad_title,
+            "description": ad_description,
+        })
+
+        col_launch_a, col_launch_b = st.columns(2)
+        if col_launch_a.button("Preparar launch PAUSED", key=f"{state_key}_launch_dry", disabled=not state.get("form_id")):
+            state["launch_result"] = _run_launch_paused(run_skill, company_id, campaign_slug, state, execute=False, require_ready=require_ready)
+        if col_launch_b.button("Crear campana PAUSED real", key=f"{state_key}_launch_real", disabled=not execute_real or not state.get("form_id")):
+            state["launch_result"] = _run_launch_paused(run_skill, company_id, campaign_slug, state, execute=True, require_ready=require_ready)
+            launch_data = ((state["launch_result"].get("data") or {}).get("launch_result") or {})
+            ids = {key: launch_data.get(key) for key in ("campaign_id", "adset_id", "creative_id", "ad_id") if launch_data.get(key)}
+            if ids:
+                _write_campaign_config(run_skill, company_id, campaign_slug, state, ids)
+
+        result = state.get("launch_result")
+        if result:
+            if result.get("ok"):
+                st.success("Campana preparada/creada en PAUSED")
+                st.json(result.get("data", {}), expanded=False)
+            else:
+                st.error(result.get("error", "Launch failed"))
+                if result.get("data"):
+                    st.json(result.get("data", {}), expanded=False)
+
     with tab_leads:
         st.subheader("Leads")
         if st.button("Load sales report", key=f"{state_key}_sales_report"):
@@ -229,6 +311,8 @@ def _run_campaign(run_skill: RunSkill, company_id: str, campaign_slug: str, stat
             "message": state.get("message"),
             "title": state.get("title"),
             "description": state.get("description"),
+            "daily_budget": state.get("daily_budget"),
+            "days": state.get("days"),
             "brief": state.get("brief") or {},
             "campaign_slug": campaign_slug,
         },
@@ -250,11 +334,87 @@ def _run_preflight(run_skill: RunSkill, company_id: str, campaign_slug: str, sta
             "message": state.get("message"),
             "title": state.get("title"),
             "description": state.get("description"),
+            "daily_budget": state.get("daily_budget"),
+            "days": state.get("days"),
             "brief": state.get("brief") or {},
             "campaign_slug": campaign_slug,
         },
         "internos",
     )
+
+
+def _run_lead_form(run_skill: RunSkill, company_id: str, campaign_slug: str, state: dict, dry_run: bool) -> dict:
+    return run_skill(
+        "vertical_meta_ads/meta_lead_form_create",
+        {
+            "preset": state.get("form_preset") or "inmobiliaria_venta_propiedades",
+            "form_name": state.get("form_name") or campaign_slug,
+            "privacy_url": state.get("privacy_url"),
+            "follow_up_action_url": state.get("link"),
+            "dry_run": dry_run,
+            "empresa_id": company_id,
+            "campaign_slug": campaign_slug,
+        },
+        "internos",
+    )
+
+
+def _run_launch_paused(
+    run_skill: RunSkill,
+    company_id: str,
+    campaign_slug: str,
+    state: dict,
+    execute: bool,
+    require_ready: bool,
+) -> dict:
+    return run_skill(
+        "vertical_ads/campaign_launch_paused",
+        {
+            "company_id": company_id,
+            "campaign_slug": campaign_slug,
+            "form_id": state.get("form_id"),
+            "privacy_url": state.get("privacy_url"),
+            "image_url": state.get("image_url"),
+            "link": state.get("link"),
+            "approver": state.get("approver") or "pendiente",
+            "message": state.get("message"),
+            "title": state.get("title"),
+            "description": state.get("description"),
+            "daily_budget": state.get("daily_budget"),
+            "days": state.get("days"),
+            "brief": state.get("brief") or {},
+            "require_ready": require_ready,
+            "execute": execute,
+            "dry_run": not execute,
+        },
+        "internos",
+    )
+
+
+def _write_campaign_config(
+    run_skill: RunSkill,
+    company_id: str,
+    campaign_slug: str,
+    state: dict,
+    updates: dict,
+) -> dict:
+    payload = {
+        "company_id": company_id,
+        "campaign_slug": campaign_slug,
+        "updates": {
+            **updates,
+            "landing_url": state.get("link"),
+            "image_url": state.get("image_url"),
+            "privacy_url": state.get("privacy_url"),
+            "approver": state.get("approver"),
+            "daily_budget": state.get("daily_budget"),
+            "days": state.get("days"),
+        },
+        "dry_run": False,
+    }
+    result = run_skill("vertical_ads/campaign_config_writer", payload, "internos")
+    state.setdefault("config_write_results", []).append(result)
+    return result
 
 
 def _safe_filename(name: str) -> str:
@@ -289,6 +449,16 @@ def _hydrate_state_from_campaign_file(state: dict, company_id: str, campaign_slu
             state.setdefault("image_url", payload.get("image_url") or "")
             state.setdefault("link", payload.get("link") or "")
             state.setdefault("approver", payload.get("approver") or "pendiente")
+            meta = payload.get("meta") or {}
+            campaign = payload.get("campaign") or {}
+            links = payload.get("links") or {}
+            assets = payload.get("assets") or {}
+            state.setdefault("privacy_url", links.get("privacy_url") or campaign.get("privacy_url") or state.get("privacy_url", ""))
+            state.setdefault("image_url", assets.get("image_url") or campaign.get("image_url") or state.get("image_url", ""))
+            state.setdefault("link", links.get("landing_url") or campaign.get("link") or state.get("link", ""))
+            state.setdefault("form_id", meta.get("form_id") or "")
+            state.setdefault("daily_budget", (campaign.get("budget") or {}).get("daily") if isinstance(campaign.get("budget"), dict) else "")
+            state.setdefault("days", campaign.get("days") or "")
             state["_campaign_file_loaded"] = str(path)
             return
     state["_campaign_file_loaded"] = "missing"

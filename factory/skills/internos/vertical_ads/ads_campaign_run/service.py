@@ -117,7 +117,7 @@ class AdsCampaignRunService:
     def _planned_payloads(self, data: dict, context: dict) -> dict:
         campaign = data["campaign"]
         product = data["product"]
-        daily_budget = self._daily_budget(campaign)
+        daily_budget = float(context.get("daily_budget") or context.get("presupuesto_diario") or self._daily_budget(campaign))
         return {
             "lead_form": {
                 "preset": campaign.get("lead_form_preset") or "custom",

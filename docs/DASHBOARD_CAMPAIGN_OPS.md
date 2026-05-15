@@ -36,6 +36,7 @@ Campaign Ops
   Campaign 1
   Uploads
   Preflight
+  Meta Launch
   Leads
   Results
   Settings
@@ -49,6 +50,7 @@ Campaign Ops
 | `Campaign 1` | Ficha de campana, payloads, copy, status, presupuesto. | `vertical_ads/ads_campaign_run` |
 | `Uploads` | Subir fotos/renders/assets y obtener URLs publicas. | `supabase_storage_upload` |
 | `Preflight` | Gate antes de lanzar: blockers, warnings, riesgo. | `vertical_ads/ads_campaign_preflight_check` |
+| `Meta Launch` | Probar/crear Lead Form, guardar `form_id` y preparar campana en `PAUSED`. | `vertical_meta_ads/meta_lead_form_create`, `vertical_ads/campaign_launch_paused` |
 | `Leads` | Leads recibidos, score, pipeline y tareas. | `vertical_sales/sales_list`, `vertical_sales/sales_report` |
 | `Results` | Gasto, impresiones, clicks, CPL, CTR, recomendaciones. | `vertical_meta_ads/meta_ads_get_insights`, `vertical_ads/ads_performance_analyzer` |
 | `Settings` | Empresa, campana, presupuesto, links, privacy URL, contacto. | `vertical_companies/company_config_loader` |
