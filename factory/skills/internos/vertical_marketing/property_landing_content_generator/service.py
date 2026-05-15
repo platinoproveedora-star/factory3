@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.request
 
 
@@ -131,9 +132,29 @@ class PropertyLandingContentGeneratorService:
             )
             with urllib.request.urlopen(req, timeout=45) as response:
                 raw = json.loads(response.read().decode())["content"][0]["text"].strip()
-            try:
-                return {"ok": True, "data": json.loads(raw)}
-            except Exception:
-                return {"ok": False, "error": "respuesta IA no fue JSON valido", "raw": raw}
+            parsed = self._parse_json(raw)
+            if parsed is None:
+                return {"ok": False, "error": "respuesta IA no fue JSON valido", "raw_preview": raw[:1000]}
+            return {"ok": True, "data": parsed}
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
+
+    def _parse_json(self, raw: str) -> dict | None:
+        text = raw.strip()
+        if text.startswith("```"):
+            text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+            text = re.sub(r"\s*```$", "", text).strip()
+        try:
+            data = json.loads(text)
+            return data if isinstance(data, dict) else None
+        except Exception:
+            pass
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            return None
+        try:
+            data = json.loads(text[start : end + 1])
+            return data if isinstance(data, dict) else None
+        except Exception:
+            return None
