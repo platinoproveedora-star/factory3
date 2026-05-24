@@ -643,7 +643,7 @@ elif seccion == "Pagos":
     dff = _date_filter(dff, "fecha_pago", f_desde, f_hasta)
 
     st.caption(f"{len(dff)} pago(s)")
-    cols_show = [c for c in ["folio","numero_viaje","fecha_pago","cliente","factura","monto_pago",
+    cols_show = [c for c in ["folio","numero_viaje","factura","fecha_pago","cliente","monto_pago",
                               "metodo_pago","observaciones","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_pagos", num_rows="fixed",
