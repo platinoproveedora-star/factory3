@@ -294,7 +294,7 @@
     "nombre": "supabase_sql_execute",
     "vertical": "factory_supabase",
     "descripcion": "Ejecuta SQL arbitrario en Supabase via Management API (CREATE, ALTER, INDEX, etc.)",
-    "path": "skills/internos/supabase_sql_execute",
+    "path": "skills/internos/vertical_supabase/supabase_sql_execute",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -483,7 +483,7 @@
     "nombre": "supabase_insert_row",
     "vertical": "factory_supabase",
     "descripcion": "Inserta filas en Supabase via REST",
-    "path": "skills/internos/supabase_insert_row",
+    "path": "skills/internos/vertical_supabase/supabase_insert_row",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -493,7 +493,7 @@
     "vertical": "factory_supabase",
     "kind": "data",
     "descripcion": "Consulta filas en Supabase via REST. kind=data: expuesto en GET /data/supabase_query_table",
-    "path": "skills/internos/supabase_query_table",
+    "path": "skills/internos/vertical_supabase/supabase_query_table",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -502,7 +502,7 @@
     "nombre": "supabase_update_row",
     "vertical": "factory_supabase",
     "descripcion": "Actualiza filas en Supabase via REST",
-    "path": "skills/internos/supabase_update_row",
+    "path": "skills/internos/vertical_supabase/supabase_update_row",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -511,7 +511,7 @@
     "nombre": "supabase_delete_row",
     "vertical": "factory_supabase",
     "descripcion": "Elimina filas en Supabase via REST",
-    "path": "skills/internos/supabase_delete_row",
+    "path": "skills/internos/vertical_supabase/supabase_delete_row",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -529,7 +529,7 @@
     "nombre": "supabase_schema_inspect",
     "vertical": "factory_supabase",
     "descripcion": "Inspecciona tablas y columnas de Supabase",
-    "path": "skills/internos/supabase_schema_inspect",
+    "path": "skills/internos/vertical_supabase/supabase_schema_inspect",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -538,7 +538,7 @@
     "nombre": "supabase_rpc",
     "vertical": "factory_supabase",
     "descripcion": "Llama funciones RPC de Supabase",
-    "path": "skills/internos/supabase_rpc",
+    "path": "skills/internos/vertical_supabase/supabase_rpc",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1495,7 +1495,7 @@
     "nombre": "supabase_storage_upload",
     "vertical": "factory_infra",
     "descripcion": "Sube un archivo base64 a Supabase Storage y retorna la URL pÃºblica. Input: bucket, path, content_b64, content_type.",
-    "path": "skills/internos/supabase_storage_upload",
+    "path": "skills/internos/vertical_supabase/supabase_storage_upload",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1504,7 +1504,7 @@
     "nombre": "supabase_run_sql",
     "vertical": "factory_infra",
     "descripcion": "Ejecuta SQL arbitrario en Supabase via Management API. Input: sql, dry_run (default true).",
-    "path": "skills/internos/supabase_run_sql",
+    "path": "skills/internos/vertical_supabase/supabase_run_sql",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

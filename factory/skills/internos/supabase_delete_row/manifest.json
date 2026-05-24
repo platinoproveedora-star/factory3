@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "supabase_delete_row",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Elimina filas en Supabase via REST.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
-}

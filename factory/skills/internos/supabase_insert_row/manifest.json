@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "supabase_insert_row",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Inserta una o varias filas en una tabla Supabase via REST.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
-}

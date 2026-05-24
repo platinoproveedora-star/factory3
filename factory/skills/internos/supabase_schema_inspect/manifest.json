@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "supabase_schema_inspect",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Inspecciona tablas y columnas de Supabase via Management API.",
-  "requires_env": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_URL"]
-}
