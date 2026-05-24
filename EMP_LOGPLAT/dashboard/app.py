@@ -429,9 +429,9 @@ elif seccion == "Viajes":
     dff = _date_filter(dff, "fecha_salida", f_desde, f_hasta)
 
     st.caption(f"{len(dff)} viaje(s)")
-    cols_show = [c for c in ["folio","cliente","origen","destino","fecha_salida","fecha_llegada",
+    cols_show = [c for c in ["folio","factura","cliente","origen","destino","fecha_salida","fecha_llegada",
                               "chofer","costo_viaje","precio_venta_viaje","utilidad_viaje",
-                              "factura","estatus_pago","estatus_viaje","id_doc"] if c in dff.columns]
+                              "estatus_pago","estatus_viaje","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_viajes", num_rows="fixed",
                           disabled=["folio","costo_viaje","utilidad_viaje"],
