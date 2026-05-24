@@ -22,7 +22,8 @@ _WELCOME = (
     "Hola, soy <b>Aria Estoiko</b>.\n\n"
     "Te ayudo a crear agentes de IA para empresas: atencion, ventas, FAQs, "
     "captura de leads y demos para tus clientes.\n\n"
-    "Para empezar, comparteme nombre, telefono y email."
+    "Para empezar, comparteme nombre, telefono y email.\n\n"
+    "Comandos: /hotel para probar el agente de recepcion y ventas de hoteles."
 )
 
 
@@ -73,6 +74,17 @@ def handle_update(update: dict, state: dict) -> dict:
         return {
             "response": f"Agente activo: <b>{agent_id}</b> - Aria Estoiko",
             "state": state,
+        }
+
+    if text == "/hotel":
+        hotel_agent = "AGT-HOTEL-001"
+        return {
+            "response": (
+                "Activamos el demo de hotel: <b>Sofia Concierge</b>.\n\n"
+                "Primero comparteme nombre, telefono y email para guardar tu solicitud. "
+                "Despues podras probarlo como si fueras huesped de un hotel boutique."
+            ),
+            "state": {"agent_id": hotel_agent, "history": [], "contact_requested": True},
         }
 
     if not text:

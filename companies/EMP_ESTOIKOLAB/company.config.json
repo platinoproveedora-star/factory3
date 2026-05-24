@@ -6,7 +6,8 @@
   "description": "Agencia de marketing que diseña, configura y opera agentes de chat con IA para sus clientes. Cada agente vive en la web del cliente y puede atender, vender, capturar leads o agendar citas.",
   "agent_stack": {
     "chat_runtime": "vertical_chat_agents/chat_agent_run",
-    "conversation_orchestrator": "vertical_chat_agents/chat_agent_conversation_orchestrator"
+    "conversation_orchestrator": "vertical_chat_agents/chat_agent_conversation_orchestrator",
+    "hotel_demo_agent": "AGT-HOTEL-001"
   },
   "skill_stack": {
     "runtime": [
@@ -52,5 +53,13 @@
       "escalations",
       "avg_turns"
     ]
+  },
+  "demo_agents": {
+    "hotel_boutique": {
+      "agent_id": "AGT-HOTEL-001",
+      "name": "Sofia Concierge",
+      "industry": "hospitality",
+      "use_case": "recepcion, ventas y captacion de reservas para hoteles boutique"
+    }
   }
 }
