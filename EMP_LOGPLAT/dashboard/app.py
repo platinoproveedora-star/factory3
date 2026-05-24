@@ -269,14 +269,18 @@ def _guardar(tabla: str, df_orig: pd.DataFrame, df_edit: pd.DataFrame):
                 elif tabla == "pagos":
                     pago_actualizado = orig.to_dict()
                     pago_actualizado.update(cambios)
-                    viajes = {
+                    viajes_set = {
                         str(orig.get("numero_viaje") or "").strip(),
                         str(pago_actualizado.get("numero_viaje") or "").strip(),
                     }
-                    for numero_viaje in viajes:
+                    for numero_viaje in viajes_set:
                         if numero_viaje and numero_viaje.lower() not in ("nan", "none"):
                             if not _sync_cxc_by_numero(numero_viaje):
                                 sync_errores += 1
+                    if "factura" in cambios:
+                        nv = str(pago_actualizado.get("numero_viaje") or "").strip()
+                        if nv and nv.lower() not in ("nan", "none"):
+                            update("viajes", nv, {"factura": cambios["factura"]})
                 elif tabla == "gastos":
                     gasto_actualizado = orig.to_dict()
                     gasto_actualizado.update(cambios)
