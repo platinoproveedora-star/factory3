@@ -91,6 +91,7 @@ def crear_viaje(data: dict) -> dict:
         "precio_venta_viaje": venta,
         "utilidad_viaje":     venta - costo,
         "chofer":             data.get("chofer") or "",
+        "factura":            data.get("factura") or None,
         "estatus_viaje":      "activo",
         "estatus_pago":       data.get("estatus_pago") or "por_cobrar",
         "id_doc":             data.get("id_doc") or None,
