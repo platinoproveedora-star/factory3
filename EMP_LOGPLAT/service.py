@@ -12,7 +12,7 @@ from pathlib import Path
 
 import importlib.util as _ilu
 
-_AI_DIR  = Path(__file__).parent.parent / "factory" / "skills" / "internos" / "ai_interpreter"
+_AI_DIR  = Path(__file__).parent.parent / "factory" / "skills" / "internos" / "vertical_factory_utils" / "ai_interpreter"
 _ai_spec = _ilu.spec_from_file_location("ai_interpreter_svc", _AI_DIR / "service.py")
 _ai      = _ilu.module_from_spec(_ai_spec)
 _ai_spec.loader.exec_module(_ai)
