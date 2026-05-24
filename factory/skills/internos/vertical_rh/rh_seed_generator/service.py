@@ -171,7 +171,7 @@ class RhSeedGeneratorService:
         zona  = vacante_data.get("zona")
         if resp_pares and (turno or zona):
             try:
-                from factory.skills.internos.rh_shift_zone_validator.service import RhShiftZoneValidatorService
+                from factory.skills.internos.vertical_rh.rh_shift_zone_validator.service import RhShiftZoneValidatorService
                 r = RhShiftZoneValidatorService().ejecutar({
                     "turno_requerido": turno or "no especificado",
                     "zona_trabajo":    zona or "no especificada",
@@ -183,7 +183,7 @@ class RhSeedGeneratorService:
                 pass
         if resp_pares:
             try:
-                from factory.skills.internos.rh_dimension_analyzer.service import RhDimensionAnalyzerService
+                from factory.skills.internos.vertical_rh.rh_dimension_analyzer.service import RhDimensionAnalyzerService
                 svc = RhDimensionAnalyzerService()
                 for dim in ("compromiso", "conducta"):
                     r = svc.ejecutar({

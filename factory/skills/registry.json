@@ -49,7 +49,7 @@
     "nombre": "rh_demand_planner",
     "vertical": "mass_digital_hiring",
     "descripcion": "Calcula cuÃ¡ntos operadores contratar por puesto, zona y fecha objetivo",
-    "path": "skills/internos/rh_demand_planner",
+    "path": "skills/internos/vertical_rh/rh_demand_planner",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -58,7 +58,7 @@
     "nombre": "rh_qr_entry",
     "vertical": "mass_digital_hiring",
     "descripcion": "Genera QR con link directo al bot de captura para una vacante especÃ­fica",
-    "path": "skills/internos/rh_qr_entry",
+    "path": "skills/internos/vertical_rh/rh_qr_entry",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -67,7 +67,7 @@
     "nombre": "rh_offer_builder",
     "vertical": "mass_digital_hiring",
     "descripcion": "Arma la oferta laboral completa: puesto, salario, ruta, condiciones y beneficios",
-    "path": "skills/internos/rh_offer_builder",
+    "path": "skills/internos/vertical_rh/rh_offer_builder",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -76,7 +76,7 @@
     "nombre": "rh_contractor_splitter",
     "vertical": "mass_digital_hiring",
     "descripcion": "Divide candidatos calificados entre empresas contratantes segÃºn cupo y criterios",
-    "path": "skills/internos/rh_contractor_splitter",
+    "path": "skills/internos/vertical_rh/rh_contractor_splitter",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -85,7 +85,7 @@
     "nombre": "rh_channel_publisher",
     "vertical": "mass_digital_hiring",
     "descripcion": "Orquesta publicaciÃ³n de vacante en mÃºltiples canales: Facebook, WhatsApp y Telegram",
-    "path": "skills/internos/rh_channel_publisher",
+    "path": "skills/internos/vertical_rh/rh_channel_publisher",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -94,7 +94,7 @@
     "nombre": "rh_ad_copy_generator",
     "vertical": "mass_digital_hiring",
     "descripcion": "Genera copy de anuncio de reclutamiento con tono operativo/industrial para redes sociales",
-    "path": "skills/internos/rh_ad_copy_generator",
+    "path": "skills/internos/vertical_rh/rh_ad_copy_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -103,7 +103,7 @@
     "nombre": "rh_recruiter_router",
     "vertical": "mass_digital_hiring",
     "descripcion": "Asigna candidato calificado al reclutador correspondiente y notifica por Telegram",
-    "path": "skills/internos/rh_recruiter_router",
+    "path": "skills/internos/vertical_rh/rh_recruiter_router",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -321,7 +321,7 @@
     "nombre": "rh_vacante_store",
     "vertical": "vertical_rh",
     "descripcion": "Crea, lee, lista y actualiza vacantes en Supabase",
-    "path": "skills/internos/rh_vacante_store",
+    "path": "skills/internos/vertical_rh/rh_vacante_store",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -330,7 +330,7 @@
     "nombre": "rh_candidate_profile_builder",
     "vertical": "vertical_rh",
     "descripcion": "Construye perfil estructurado del candidato desde sus respuestas al cuestionario",
-    "path": "skills/internos/rh_candidate_profile_builder",
+    "path": "skills/internos/vertical_rh/rh_candidate_profile_builder",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -339,7 +339,7 @@
     "nombre": "rh_basic_validation",
     "vertical": "vertical_rh",
     "descripcion": "Valida datos minimos del candidato: nombre, contacto y disponibilidad",
-    "path": "skills/internos/rh_basic_validation",
+    "path": "skills/internos/vertical_rh/rh_basic_validation",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -348,7 +348,7 @@
     "nombre": "rh_duplicate_detector",
     "vertical": "vertical_rh",
     "descripcion": "Detecta candidatos duplicados por telefono, email o canal_user_id",
-    "path": "skills/internos/rh_duplicate_detector",
+    "path": "skills/internos/vertical_rh/rh_duplicate_detector",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -357,7 +357,7 @@
     "nombre": "rh_knockout_filter",
     "vertical": "vertical_rh",
     "descripcion": "Aplica filtros obligatorios al perfil del candidato â€” pasa o no pasa",
-    "path": "skills/internos/rh_knockout_filter",
+    "path": "skills/internos/vertical_rh/rh_knockout_filter",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -366,7 +366,7 @@
     "nombre": "rh_candidate_scoring",
     "vertical": "vertical_rh",
     "descripcion": "Puntua al candidato (0-100) con IA segun requisitos, experiencia, ubicacion y disponibilidad",
-    "path": "skills/internos/rh_candidate_scoring",
+    "path": "skills/internos/vertical_rh/rh_candidate_scoring",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -375,7 +375,7 @@
     "nombre": "rh_pipeline_manager",
     "vertical": "vertical_rh",
     "descripcion": "Maneja etapas y estatus del candidato en pipeline. Registra historial.",
-    "path": "skills/internos/rh_pipeline_manager",
+    "path": "skills/internos/vertical_rh/rh_pipeline_manager",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -384,7 +384,7 @@
     "nombre": "rh_candidate_ranking",
     "vertical": "vertical_rh",
     "descripcion": "Ordena candidatos de una vacante por score descendente",
-    "path": "skills/internos/rh_candidate_ranking",
+    "path": "skills/internos/vertical_rh/rh_candidate_ranking",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -393,7 +393,7 @@
     "nombre": "rh_candidate_search",
     "vertical": "vertical_rh",
     "descripcion": "Busca candidatos por filtros: vacante, estado, canal, empresa, nombre",
-    "path": "skills/internos/rh_candidate_search",
+    "path": "skills/internos/vertical_rh/rh_candidate_search",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -402,7 +402,7 @@
     "nombre": "rh_candidate_history",
     "vertical": "vertical_rh",
     "descripcion": "Historial completo de un candidato: perfil, respuestas, scores, pipeline y eventos",
-    "path": "skills/internos/rh_candidate_history",
+    "path": "skills/internos/vertical_rh/rh_candidate_history",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -411,7 +411,7 @@
     "nombre": "rh_conversation_manager",
     "vertical": "vertical_rh",
     "descripcion": "Gestiona estado de conversacion activa: obtener, actualizar o reiniciar",
-    "path": "skills/internos/rh_conversation_manager",
+    "path": "skills/internos/vertical_rh/rh_conversation_manager",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -420,7 +420,7 @@
     "nombre": "rh_report_generator",
     "vertical": "vertical_rh",
     "descripcion": "Genera reportes de pipeline, scores y conversion por vacante o empresa",
-    "path": "skills/internos/rh_report_generator",
+    "path": "skills/internos/vertical_rh/rh_report_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -429,7 +429,7 @@
     "nombre": "rh_job_post_generator",
     "vertical": "vertical_rh",
     "descripcion": "Genera texto de vacante listo para publicar usando IA",
-    "path": "skills/internos/rh_job_post_generator",
+    "path": "skills/internos/vertical_rh/rh_job_post_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -438,7 +438,7 @@
     "nombre": "rh_questionnaire_generator",
     "vertical": "vertical_rh",
     "descripcion": "Genera cuestionario de candidato segun profundidad, canal y vacante usando IA",
-    "path": "skills/internos/rh_questionnaire_generator",
+    "path": "skills/internos/vertical_rh/rh_questionnaire_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -447,7 +447,7 @@
     "nombre": "rh_seed_generator",
     "vertical": "vertical_rh",
     "descripcion": "Genera datos de prueba RH en batch usando IA. Registra IDs en test_seeds.",
-    "path": "skills/internos/rh_seed_generator",
+    "path": "skills/internos/vertical_rh/rh_seed_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -456,7 +456,7 @@
     "nombre": "rh_seed_cleaner",
     "vertical": "vertical_rh",
     "descripcion": "Borra todos los registros de prueba de un seed_label en orden FK.",
-    "path": "skills/internos/rh_seed_cleaner",
+    "path": "skills/internos/vertical_rh/rh_seed_cleaner",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -465,7 +465,7 @@
     "nombre": "rh_1_run",
     "vertical": "vertical_rh",
     "descripcion": "Orquestador master del modo RH-1: comandos de manager y flujo completo de candidatos.",
-    "path": "skills/internos/rh_1_run",
+    "path": "skills/internos/vertical_rh/rh_1_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1340,7 +1340,7 @@
     "vertical": "vertical_rh",
     "kind": "data",
     "descripcion": "KPIs generales del sistema RH: vacantes, candidatos, scores, seeds.",
-    "path": "skills/internos/rh_stats",
+    "path": "skills/internos/vertical_rh/rh_stats",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1350,7 +1350,7 @@
     "vertical": "vertical_rh",
     "kind": "data",
     "descripcion": "Lista filtrable de vacantes (empresa_id, estado, tipo, buscar, limit).",
-    "path": "skills/internos/rh_list_vacantes",
+    "path": "skills/internos/vertical_rh/rh_list_vacantes",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1395,7 +1395,7 @@
     "nombre": "rh_post_score_orchestrator",
     "vertical": "vertical_rh",
     "descripcion": "Pipeline automatico post-captura: profile_builder, validation, duplicate, knockout, scoring, pipeline_manager y notificacion Telegram.",
-    "path": "skills/internos/rh_post_score_orchestrator",
+    "path": "skills/internos/vertical_rh/rh_post_score_orchestrator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1405,7 +1405,7 @@
     "vertical": "vertical_rh",
     "kind": "data",
     "descripcion": "Pipeline RH agrupado por etapa. Acepta empresa_id y vacante_id opcional.",
-    "path": "skills/internos/rh_pipeline_view",
+    "path": "skills/internos/vertical_rh/rh_pipeline_view",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1414,7 +1414,7 @@
     "nombre": "rh_dimension_analyzer",
     "vertical": "ai_hiring_assessment",
     "descripcion": "Analiza una dimensiï¿½n del candidato (conducta, fisico, compromiso, maquinaria, rutas, tecnico) usando IA y devuelve score 1-10, seï¿½ales y recomendaciï¿½n",
-    "path": "skills/internos/rh_dimension_analyzer",
+    "path": "skills/internos/vertical_rh/rh_dimension_analyzer",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1423,7 +1423,7 @@
     "nombre": "rh_contractor_interview",
     "vertical": "ai_hiring_assessment",
     "descripcion": "Genera cuestionario de entrevista personalizado por contratista, puesto y canal (Telegram, WhatsApp, presencial)",
-    "path": "skills/internos/rh_contractor_interview",
+    "path": "skills/internos/vertical_rh/rh_contractor_interview",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1432,7 +1432,7 @@
     "nombre": "rh_interview_scheduler",
     "vertical": "ai_hiring_assessment",
     "descripcion": "Agenda, cancela y lista entrevistas; notifica candidato y reclutador por Telegram; auto-calcula el prï¿½ximo slot hï¿½bil si no se provee fecha",
-    "path": "skills/internos/rh_interview_scheduler",
+    "path": "skills/internos/vertical_rh/rh_interview_scheduler",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1441,7 +1441,7 @@
     "nombre": "rh_shift_zone_validator",
     "vertical": "ai_hiring_assessment",
     "descripcion": "Valida turno requerido, zona de trabajo y dependencia de transporte del candidato en un solo anï¿½lisis con IA",
-    "path": "skills/internos/rh_shift_zone_validator",
+    "path": "skills/internos/vertical_rh/rh_shift_zone_validator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1468,7 +1468,7 @@
     "nombre": "rh_retention_predictor",
     "vertical": "vertical_retention",
     "descripcion": "Predice riesgo de desercion temprana del candidato: score 1-10, meses estimados, seï¿½ales y recomendacion",
-    "path": "skills/internos/rh_retention_predictor",
+    "path": "skills/internos/vertical_rh/rh_retention_predictor",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1477,7 +1477,7 @@
     "nombre": "rh_offer_sender",
     "vertical": "vertical_retention",
     "descripcion": "Genera y envia carta oferta laboral al candidato por Telegram. Registra estado en alertas.",
-    "path": "skills/internos/rh_offer_sender",
+    "path": "skills/internos/vertical_rh/rh_offer_sender",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
