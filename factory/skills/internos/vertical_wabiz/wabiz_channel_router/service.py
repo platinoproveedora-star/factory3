@@ -43,17 +43,20 @@ class WabizChannelRouterService:
 
         # ── Ayuda ─────────────────────────────────────────────────────────────
         if msg_type == "text" and body_lower in ("ayuda", "/ayuda"):
-            return self._reply(self._txt_ayuda(user), empresa_id, from_phone, dry_run)
+            return self._reply(self._txt_ayuda(user, state), empresa_id, from_phone, dry_run)
 
         # ── No registrado → flujo de registro ─────────────────────────────────
         if not user:
             return self._registro(empresa_id, from_phone, body, msg_type, state, dry_run)
 
-        # ── Salir: limpiar modo activo ─────────────────────────────────────────
+        # ── Salir: limpiar modo activo + estado del handler ───────────────────
         if msg_type == "text" and body_lower in ("salir", "/salir"):
+            old_mode  = state.get("active_mode", "")
             new_state = {k: v for k, v in state.items() if k != "active_mode"}
             if not dry_run:
                 self._save_state(empresa_id, from_phone, new_state)
+                if old_mode:
+                    self._clear_handler_state(old_mode, from_phone)
             return self._reply(self._txt_menu(user), empresa_id, from_phone, dry_run)
 
         # ── Determinar modo activo ────────────────────────────────────────────
@@ -161,16 +164,17 @@ class WabizChannelRouterService:
 
     # ── TEXTOS ────────────────────────────────────────────────────────────────
 
-    def _txt_ayuda(self, user: dict | None) -> str:
+    def _txt_ayuda(self, user: dict | None, state: dict | None = None) -> str:
         if not user:
             return _MSG_NO_ACCESO
-        nombre = user.get("nombre", "")
-        modes  = user.get("user_mode") or []
-        lines  = [f"Hola *{nombre}*. Tus módulos:\n"]
+        nombre      = user.get("nombre", "")
+        modes       = user.get("user_mode") or []
+        active_mode = (state or {}).get("active_mode", "")
+        lines       = [f"Hola *{nombre}*. Tus módulos:\n"]
         for m in modes:
             lines.append(_MODO_LABELS.get(m, f"• {m}"))
         lines.append("\n*Comandos generales:*\n`salir` — cambiar de módulo\n`ayuda` — ver esta ayuda")
-        if "logplat" in modes:
+        if active_mode == "logplat" and "logplat" in modes:
             lines.append(
                 "\n*LOGPLAT — Comandos:*\n"
                 "*Gasto:* `gasto` → `cantidad,concepto,dd/mm/yy,viaje`\n"

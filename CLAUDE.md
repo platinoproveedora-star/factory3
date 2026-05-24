@@ -209,3 +209,62 @@ RENDER_API_KEY              ← para skills que crean servicios
 - [ ] `service.py` con la lógica
 - [ ] Entrada en `factory/skills/registry.json`
 - [ ] Si es bot mode: entrada en `_MODES` + botón en `/ayuda` + skill `<modo>_run`
+
+## QA Enterprise — skills de operación (vertical: qa)
+
+Cinco skills reutilizables para operar campañas con seguridad:
+
+| Skill | Función | Tablas Supabase |
+| --- | --- | --- |
+| `qa_secrets_check` | Verifica env vars por categoría (core, meta_ads, telegram, render, github) | ninguna |
+| `qa_preflight` | Checklist antes de lanzar (landing, WhatsApp, privacidad, imagen, lead form, presupuesto, copy, approver, pixel, token Meta) | ninguna |
+| `qa_campaign_logger` | Log estructurado empresa/campaña/skill con semáforo | `qa_execution_logs` |
+| `qa_rollback_campaign` | Backup config campaña + pausa Meta + restore | `qa_campaign_backups` |
+| `qa_skills_test` | Test runner automático de 6 skills críticos | ninguna |
+
+### Uso típico antes de lanzar campaña
+
+```python
+# 1. Verificar secrets
+run("qa_secrets_check", {"categories": ["core", "meta_ads"]})
+
+# 2. Preflight completo
+run("qa_preflight", {
+    "company_id": "EMP_ABC", "campaign_id": "camp_001",
+    "landing_url": "https://...", "privacy_url": "https://...",
+    "whatsapp_link": "https://wa.me/521...", "image_url": "https://...",
+    "lead_form_id": "120208...", "daily_budget": 200,
+    "ad_copy": "Texto del anuncio...", "approver": "nombre_aprobador",
+    "pixel_id": "PIXEL_ID", "campaign_status": "PAUSED",
+})
+
+# 3. Log ejecución
+run("qa_campaign_logger", {
+    "action": "log",
+    "company_id": "EMP_ABC", "campaign_id": "camp_001",
+    "skill_name": "meta_ads_publish_flow",
+    "status": "ok", "message": "campaña publicada",
+})
+
+# 4. Si algo falla — rollback
+run("qa_rollback_campaign", {
+    "action": "backup_and_pause",
+    "company_id": "EMP_ABC", "campaign_id": "120208...",
+    "motivo": "error_en_deploy",
+})
+```
+
+### Crear tablas Supabase (una vez por proyecto)
+
+```python
+run("qa_campaign_logger",  {"action": "ensure_table", "dry_run": False})
+run("qa_rollback_campaign", {"action": "ensure_table", "dry_run": False})
+```
+
+### Reglas de modo seguro
+
+- `qa_rollback_campaign` siempre crea backup ANTES de pausar
+- `qa_preflight` bloquea lanzamiento si hay checks `fail` (no `warn`)
+- `qa_secrets_check` nunca expone valores — solo longitud de cada var
+- Campañas siempre se crean en `PAUSED` — `qa_preflight` lo verifica
+- `qa_skills_test` usa `skip_url_checks=True` para tests sin red

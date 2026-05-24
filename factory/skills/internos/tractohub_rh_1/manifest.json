@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "tractohub_rh_1",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Orquestador master vertical TractHub RH. Controla flujo Facebook, captura candidatos por Telegram y pipeline de evaluacion automatica.",
-  "requires_env": ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "FACTORY3_ADMIN_BOT_TOKEN"]
-}

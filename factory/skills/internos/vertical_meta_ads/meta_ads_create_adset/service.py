@@ -56,6 +56,8 @@ class MetaAdsCreateAdsetService:
                 payload["start_time"] = context["start_time"]
             if context.get("end_time"):
                 payload["end_time"] = context["end_time"]
+            if context.get("promoted_object"):
+                payload["promoted_object"] = json.dumps(context["promoted_object"])
 
             data = self._post(f"{ad_account_id}/adsets", payload, token)
             if "error" in data:

@@ -44,15 +44,6 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "mass_digital_hiring_run": {
-    "tipo": "interno",
-    "nombre": "mass_digital_hiring_run",
-    "vertical": "mass_digital_hiring",
-    "descripcion": "Orquestador master de contrataciÃ³n masiva digital: campaÃ±a, captura, evaluaciÃ³n y distribuciÃ³n",
-    "path": "skills/internos/mass_digital_hiring_run",
-    "entrypoint": "skill.py",
-    "version": "0.1.0"
-  },
   "rh_demand_planner": {
     "tipo": "interno",
     "nombre": "rh_demand_planner",
@@ -1343,15 +1334,6 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
-  "tractohub_driver_onboarding": {
-    "tipo": "interno",
-    "nombre": "tractohub_driver_onboarding",
-    "vertical": "vertical_tractohub",
-    "descripcion": "Flow de recopilacion de documentos de operador via Telegram: INE, licencia, IMSS, domicilio, antecedentes, foto.",
-    "path": "skills/internos/tractohub_driver_onboarding",
-    "entrypoint": "skill.py",
-    "version": "0.1.0"
-  },
   "rh_stats": {
     "tipo": "interno",
     "nombre": "rh_stats",
@@ -1414,15 +1396,6 @@
     "vertical": "vertical_rh",
     "descripcion": "Pipeline automatico post-captura: profile_builder, validation, duplicate, knockout, scoring, pipeline_manager y notificacion Telegram.",
     "path": "skills/internos/rh_post_score_orchestrator",
-    "entrypoint": "skill.py",
-    "version": "0.1.0"
-  },
-  "tractohub_rh_1": {
-    "tipo": "interno",
-    "nombre": "tractohub_rh_1",
-    "vertical": "vertical_tractohub",
-    "descripcion": "Orquestador master TractHub RH: Facebook posting, captura candidatos Telegram y evaluacion automatica.",
-    "path": "skills/internos/tractohub_rh_1",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
