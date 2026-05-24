@@ -2597,5 +2597,14 @@
     "path": "skills/internos/vertical_emp_logplat/emp_logplat_message_handler",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_chat_agents/chat_agent_run": {
+    "tipo": "interno",
+    "nombre": "vertical_chat_agents/chat_agent_run",
+    "vertical": "vertical_chat_agents",
+    "descripcion": "Runtime genérico de chat agents. Carga config JSON del agente, construye system prompt con persona/reglas/conocimiento, mantiene historial multi-turno y llama Haiku. Retorna response + action (reply, capture_lead, escalate_human, end_conversation).",
+    "path": "skills/internos/vertical_chat_agents/chat_agent_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

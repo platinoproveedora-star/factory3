@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "chat_agent_run",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Runtime genérico de chat agents. Carga config del agente, construye system prompt, mantiene historial multi-turno y llama a Haiku. Retorna respuesta + acción (reply, capture_lead, escalate_human, end_conversation).",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

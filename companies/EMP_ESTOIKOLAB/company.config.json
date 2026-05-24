@@ -1,0 +1,44 @@
+{
+  "company_id": "EMP_ESTOIKOLAB",
+  "company_name": "Estoiko Lab",
+  "company_type": "chat_agents_agency",
+  "industry": "marketing_agency",
+  "description": "Agencia de marketing que diseña, configura y opera agentes de chat con IA para sus clientes. Cada agente vive en la web del cliente y puede atender, vender, capturar leads o agendar citas.",
+  "agent_stack": {
+    "chat_runtime": "chat_agent_run"
+  },
+  "skill_stack": {
+    "runtime": [
+      "vertical_chat_agents/chat_agent_run"
+    ],
+    "config": [
+      "vertical_chat_agents/chat_agent_config_builder",
+      "vertical_chat_agents/chat_agent_prompt_builder",
+      "vertical_chat_agents/chat_agent_knowledge_ingestor"
+    ],
+    "testing": [
+      "vertical_chat_agents/chat_agent_test_simulator"
+    ]
+  },
+  "channels": [
+    "web_widget"
+  ],
+  "agent_defaults": {
+    "language": "es",
+    "max_turns": 20,
+    "dry_run": true,
+    "initial_status": "draft"
+  },
+  "lead_schema": {
+    "required_fields": ["nombre", "email", "telefono"],
+    "optional_fields": ["empresa", "interes", "notas"]
+  },
+  "reporting": {
+    "kpis": [
+      "conversations",
+      "leads_captured",
+      "escalations",
+      "avg_turns"
+    ]
+  }
+}

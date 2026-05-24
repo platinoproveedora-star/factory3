@@ -1,4 +1,17 @@
 {
+  "estoikolab_bot": {
+    "nombre": "estoikolab_bot",
+    "bot_type": "chat_agent",
+    "path": "bots/estoikolab_bot",
+    "entrypoint": "bot.py",
+    "token_env": "ESTOIKOLAB_BOT_TOKEN",
+    "commands": [
+      "start",
+      "nuevo",
+      "agente"
+    ],
+    "version": "0.1.0"
+  },
   "factory3_admin": {
     "nombre": "factory3_admin",
     "bot_type": "admin",
