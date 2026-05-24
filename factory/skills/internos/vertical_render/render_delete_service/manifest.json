@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "render_delete_service",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Elimina un servicio de Render, requiere confirm:true",
+  "vertical": "factory_render",
+  "permissions": [],
+  "requires_env": ["RENDER_API_KEY"]
+}

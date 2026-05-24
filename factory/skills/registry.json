@@ -4,7 +4,7 @@
     "nombre": "qa_campaign_logger",
     "vertical": "qa",
     "descripcion": "Registra logs estructurados por empresa/campaña/skill con trazabilidad completa",
-    "path": "skills/internos/qa_campaign_logger",
+    "path": "skills/internos/vertical_qa/qa_campaign_logger",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -13,7 +13,7 @@
     "nombre": "qa_secrets_check",
     "vertical": "qa",
     "descripcion": "Verifica env vars y secrets requeridos por empresa/campaña (sin exponer valores)",
-    "path": "skills/internos/qa_secrets_check",
+    "path": "skills/internos/vertical_qa/qa_secrets_check",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -22,7 +22,7 @@
     "nombre": "qa_preflight",
     "vertical": "qa",
     "descripcion": "Checklist QA completo antes de lanzar campaña: landing, WhatsApp, privacidad, imagen, lead form, presupuesto, copy, approver y tracking",
-    "path": "skills/internos/qa_preflight",
+    "path": "skills/internos/vertical_qa/qa_preflight",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -31,7 +31,7 @@
     "nombre": "qa_rollback_campaign",
     "vertical": "qa",
     "descripcion": "Pausa campaña Meta, hace backup de config y permite recuperación si falla un deploy",
-    "path": "skills/internos/qa_rollback_campaign",
+    "path": "skills/internos/vertical_qa/qa_rollback_campaign",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -40,7 +40,7 @@
     "nombre": "qa_skills_test",
     "vertical": "qa",
     "descripcion": "Test runner automático para los 6 skills críticos: dashboard, landing, preflight, meta_ads, leads y storage",
-    "path": "skills/internos/qa_skills_test",
+    "path": "skills/internos/vertical_qa/qa_skills_test",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -276,7 +276,7 @@
     "nombre": "github_push",
     "vertical": "factory",
     "descripcion": "Commitea archivos al repo de GitHub via API",
-    "path": "skills/internos/github_push",
+    "path": "skills/internos/vertical_github/github_push",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -754,7 +754,7 @@
     "nombre": "github_create_repo",
     "vertical": "factory_github",
     "descripcion": "Crea un repositorio en GitHub para usuario u organizacion",
-    "path": "skills/internos/github_create_repo",
+    "path": "skills/internos/vertical_github/github_create_repo",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -763,7 +763,7 @@
     "nombre": "github_get_file",
     "vertical": "factory_github",
     "descripcion": "Obtiene el contenido de un archivo en un repositorio de GitHub",
-    "path": "skills/internos/github_get_file",
+    "path": "skills/internos/vertical_github/github_get_file",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -772,7 +772,7 @@
     "nombre": "github_list_files",
     "vertical": "factory_github",
     "descripcion": "Lista archivos y carpetas en un directorio de un repositorio de GitHub",
-    "path": "skills/internos/github_list_files",
+    "path": "skills/internos/vertical_github/github_list_files",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -781,7 +781,7 @@
     "nombre": "github_delete_file",
     "vertical": "factory_github",
     "descripcion": "Elimina un archivo de un repositorio de GitHub",
-    "path": "skills/internos/github_delete_file",
+    "path": "skills/internos/vertical_github/github_delete_file",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -790,7 +790,7 @@
     "nombre": "github_create_branch",
     "vertical": "factory_github",
     "descripcion": "Crea una rama en un repositorio de GitHub a partir de una rama base",
-    "path": "skills/internos/github_create_branch",
+    "path": "skills/internos/vertical_github/github_create_branch",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -799,7 +799,7 @@
     "nombre": "github_repo_info",
     "vertical": "factory_github",
     "descripcion": "Obtiene informacion de un repositorio de GitHub, incluye exists:false si no existe",
-    "path": "skills/internos/github_repo_info",
+    "path": "skills/internos/vertical_github/github_repo_info",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -808,7 +808,7 @@
     "nombre": "github_create_pr",
     "vertical": "factory_github",
     "descripcion": "Crea un pull request en un repositorio de GitHub",
-    "path": "skills/internos/github_create_pr",
+    "path": "skills/internos/vertical_github/github_create_pr",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -817,7 +817,7 @@
     "nombre": "github_merge_branch",
     "vertical": "factory_github",
     "descripcion": "Mergea una rama en otra dentro de un repositorio de GitHub",
-    "path": "skills/internos/github_merge_branch",
+    "path": "skills/internos/vertical_github/github_merge_branch",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -826,7 +826,7 @@
     "nombre": "github_list_repos",
     "vertical": "factory_github",
     "descripcion": "Lista repositorios de GitHub para un usuario u organizacion",
-    "path": "skills/internos/github_list_repos",
+    "path": "skills/internos/vertical_github/github_list_repos",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -835,7 +835,7 @@
     "nombre": "github_delete_repo",
     "vertical": "factory_github",
     "descripcion": "Elimina un repositorio de GitHub, requiere confirm:true",
-    "path": "skills/internos/github_delete_repo",
+    "path": "skills/internos/vertical_github/github_delete_repo",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -844,7 +844,7 @@
     "nombre": "github_add_secret",
     "vertical": "factory_github",
     "descripcion": "Agrega o actualiza un secret de Actions en un repositorio de GitHub",
-    "path": "skills/internos/github_add_secret",
+    "path": "skills/internos/vertical_github/github_add_secret",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -853,7 +853,7 @@
     "nombre": "github_copy_folder",
     "vertical": "factory_github",
     "descripcion": "Copia una carpeta completa de un repositorio a otro en GitHub",
-    "path": "skills/internos/github_copy_folder",
+    "path": "skills/internos/vertical_github/github_copy_folder",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -862,7 +862,7 @@
     "nombre": "render_create_service",
     "vertical": "factory_render",
     "descripcion": "Crea un web service en Render conectado a un repositorio de GitHub",
-    "path": "skills/internos/render_create_service",
+    "path": "skills/internos/vertical_render/render_create_service",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -871,7 +871,7 @@
     "nombre": "render_set_env_vars",
     "vertical": "factory_render",
     "descripcion": "Configura variables de entorno en un servicio de Render, con merge opcional",
-    "path": "skills/internos/render_set_env_vars",
+    "path": "skills/internos/vertical_render/render_set_env_vars",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -880,7 +880,7 @@
     "nombre": "render_get_service",
     "vertical": "factory_render",
     "descripcion": "Obtiene informacion y URL de un servicio de Render por ID o nombre",
-    "path": "skills/internos/render_get_service",
+    "path": "skills/internos/vertical_render/render_get_service",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -889,7 +889,7 @@
     "nombre": "render_trigger_deploy",
     "vertical": "factory_render",
     "descripcion": "Dispara un deploy manual en un servicio de Render",
-    "path": "skills/internos/render_trigger_deploy",
+    "path": "skills/internos/vertical_render/render_trigger_deploy",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -898,7 +898,7 @@
     "nombre": "render_list_services",
     "vertical": "factory_render",
     "descripcion": "Lista todos los servicios de Render con ID, nombre, URL y estado",
-    "path": "skills/internos/render_list_services",
+    "path": "skills/internos/vertical_render/render_list_services",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -907,7 +907,7 @@
     "nombre": "render_delete_service",
     "vertical": "factory_render",
     "descripcion": "Elimina un servicio de Render, requiere confirm:true",
-    "path": "skills/internos/render_delete_service",
+    "path": "skills/internos/vertical_render/render_delete_service",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -916,7 +916,7 @@
     "nombre": "telegram_get_bot_info",
     "vertical": "factory_telegram",
     "descripcion": "Valida un token de bot Telegram y devuelve id, username y nombre",
-    "path": "skills/internos/telegram_get_bot_info",
+    "path": "skills/internos/vertical_telegram/telegram_get_bot_info",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -925,7 +925,7 @@
     "nombre": "telegram_set_webhook",
     "vertical": "factory_telegram",
     "descripcion": "Configura el webhook de un bot Telegram apuntando a una URL publica",
-    "path": "skills/internos/telegram_set_webhook",
+    "path": "skills/internos/vertical_telegram/telegram_set_webhook",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -934,7 +934,7 @@
     "nombre": "telegram_get_webhook_info",
     "vertical": "factory_telegram",
     "descripcion": "Verifica la configuracion actual del webhook de un bot Telegram",
-    "path": "skills/internos/telegram_get_webhook_info",
+    "path": "skills/internos/vertical_telegram/telegram_get_webhook_info",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -943,7 +943,7 @@
     "nombre": "telegram_send_message",
     "vertical": "factory_telegram",
     "descripcion": "Envia un mensaje via bot Telegram a un chat_id especifico",
-    "path": "skills/internos/telegram_send_message",
+    "path": "skills/internos/vertical_telegram/telegram_send_message",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -952,7 +952,7 @@
     "nombre": "render_deploy_status",
     "vertical": "factory_render",
     "descripcion": "Espera y verifica el estado de un deploy en Render hasta que este live o falle",
-    "path": "skills/internos/render_deploy_status",
+    "path": "skills/internos/vertical_render/render_deploy_status",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -961,7 +961,7 @@
     "nombre": "github_update_file",
     "vertical": "factory_github",
     "descripcion": "Actualiza el contenido de un archivo existente en un repositorio de GitHub",
-    "path": "skills/internos/github_update_file",
+    "path": "skills/internos/vertical_github/github_update_file",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -970,7 +970,7 @@
     "nombre": "github_list_branches",
     "vertical": "factory_github",
     "descripcion": "Lista las ramas de un repositorio de GitHub con su SHA y estado de proteccion",
-    "path": "skills/internos/github_list_branches",
+    "path": "skills/internos/vertical_github/github_list_branches",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

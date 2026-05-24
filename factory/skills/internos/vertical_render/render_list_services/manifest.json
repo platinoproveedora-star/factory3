@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "render_list_services",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista todos los servicios de Render con ID, nombre, URL y estado",
+  "vertical": "factory_render",
+  "permissions": [],
+  "requires_env": ["RENDER_API_KEY"]
+}

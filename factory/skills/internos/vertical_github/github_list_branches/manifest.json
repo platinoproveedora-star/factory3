@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "github_list_branches",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista las ramas de un repositorio de GitHub con su SHA y estado de proteccion",
+  "vertical": "factory_github",
+  "permissions": [],
+  "requires_env": ["GITHUB_TOKEN"]
+}

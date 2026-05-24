@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "telegram_get_webhook_info",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Verifica la configuracion actual del webhook de un bot Telegram",
+  "vertical": "factory_telegram",
+  "permissions": [],
+  "requires_env": ["TELEGRAM_TOKEN"]
+}

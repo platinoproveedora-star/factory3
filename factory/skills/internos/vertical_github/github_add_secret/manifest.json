@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "github_add_secret",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Agrega o actualiza un secret de Actions en un repositorio de GitHub",
+  "vertical": "factory_github",
+  "permissions": [],
+  "requires_env": ["GITHUB_TOKEN"]
+}

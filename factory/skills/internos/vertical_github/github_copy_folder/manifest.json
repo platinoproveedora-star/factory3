@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "github_copy_folder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Copia una carpeta completa de un repositorio a otro en GitHub",
+  "vertical": "factory_github",
+  "permissions": [],
+  "requires_env": ["GITHUB_TOKEN"]
+}
