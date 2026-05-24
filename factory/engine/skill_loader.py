@@ -43,7 +43,23 @@ class SkillLoader:
 
     def resolve_path(self, name: str, source: str = "internos") -> Path:
         if source in ("interno", "internos", "internal"):
-            return self.internal_root / name
+            direct = self.internal_root / name
+            if direct.exists():
+                return direct
+            # Fall back to registry.json for skills in vertical subfolders
+            registry = self.internal_root.parent / "registry.json"
+            if registry.exists():
+                try:
+                    data = json.loads(registry.read_text(encoding="utf-8"))
+                    rel = (data.get(name) or {}).get("path", "")
+                    prefix = "skills/internos/"
+                    if rel.startswith(prefix):
+                        candidate = self.internal_root / rel[len(prefix):]
+                        if candidate.exists():
+                            return candidate
+                except Exception:
+                    pass
+            return direct
 
         if source in self._extra_roots:
             return self._extra_roots[source] / name
