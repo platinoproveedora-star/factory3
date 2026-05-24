@@ -63,6 +63,7 @@ class ChatAgentLeadCaptureService:
                 "nombre": contact.get("nombre", ""),
                 "telefono": contact.get("telefono", ""),
                 "email": contact.get("email", ""),
+                "force_new": bool(context.get("force_new", False)),
                 "dry_run": False,
             },
             source="internos",

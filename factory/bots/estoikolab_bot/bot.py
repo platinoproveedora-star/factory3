@@ -90,6 +90,7 @@ def handle_update(update: dict, state: dict) -> dict:
                 "company_id": _COMPANY_ID,
                 "canal": "telegram",
                 "required_fields": ["nombre", "telefono", "email"],
+                "force_new": True,
                 "dry_run": False,
             },
             source="internos",

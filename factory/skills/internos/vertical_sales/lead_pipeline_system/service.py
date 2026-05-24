@@ -18,6 +18,7 @@ class LeadPipelineService:
         telefono   = context.get("telefono", "")
         email      = context.get("email", "")
         dry_run    = context.get("dry_run", True)
+        force_new  = bool(context.get("force_new", False))
 
         if not empresa_id:
             return {"ok": False, "error": "empresa_id requerido"}
@@ -48,7 +49,7 @@ class LeadPipelineService:
         if not url or not key:
             return {"ok": False, "error": "Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY"}
 
-        existing = self._find_lead(user_id, canal, empresa_id, url, key)
+        existing = None if force_new else self._find_lead(user_id, canal, empresa_id, url, key)
         if existing:
             return {"ok": True, "data": {
                 "lead_id":  existing["id"],
