@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-_LOGPLAT = Path(__file__).parent.parent.parent.parent.parent / "EMP_LOGPLAT"
+_LOGPLAT = Path(__file__).resolve().parents[5] / "EMP_LOGPLAT"
 if str(_LOGPLAT) not in sys.path:
     sys.path.insert(0, str(_LOGPLAT))
 
