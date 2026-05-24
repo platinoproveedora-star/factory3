@@ -51,7 +51,7 @@ st.title("🚛 LOGPLAT — Logística Platino")
 
 @st.cache_data(ttl=30)
 def get_viajes() -> pd.DataFrame:
-    rows = select("viajes", "select=*&order=created_at.desc&limit=1000")
+    rows = select("viajes", "select=*&order=folio.desc&limit=1000")
     return pd.DataFrame(rows) if rows else pd.DataFrame()
 
 @st.cache_data(ttl=30)
