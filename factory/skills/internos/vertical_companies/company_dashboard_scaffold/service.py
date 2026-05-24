@@ -81,7 +81,7 @@ if ENV_PATH.exists():
             key, value = line.split("=", 1)
             os.environ.setdefault(key.strip(), value.strip())
 
-from factory.dashboard_modules.campaign_ops import render_campaign_ops
+from campaign_ops import render_campaign_ops
 
 
 st.set_page_config(page_title="{title}", page_icon="F3", layout="wide", initial_sidebar_state="expanded")
