@@ -34,6 +34,13 @@ empresas/<CODIGO>/
 
 En vez de seguir agregando nuevas carpetas `EMP_<CODIGO>/` en la raiz. Las empresas viejas no se mueven por ahora.
 
+## Deuda LOGPLAT dashboard
+
+- `EMP_LOGPLAT/dashboard/app.py` conecta directo a Supabase via `db.py` (con `SUPABASE_KEY` en env).
+- La arquitectura correcta sería consumir `/data/emp_logplat_kpis` y `POST /run/<skill>` para escrituras.
+- Pendiente: crear skills de escritura (crear/editar viaje, gasto, pago) y reescribir `db.py` para usar factory API.
+- No se migra ahora por riesgo de romper CRUD del dashboard en producción.
+
 ## Deuda raiz factory3
 
 - Revisar archivo raro `CUsersalfieCorfactory3requirements.txt`; parece salida accidental de una ruta mal escrita.
