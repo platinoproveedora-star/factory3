@@ -1486,7 +1486,7 @@
     "nombre": "logplat_run",
     "vertical": "vertical_logplat",
     "descripcion": "Orquestador modo /logplat: comandos /+viaje, /+gasto, /+pago con captura manual o por imagen/PDF.",
-    "path": "skills/internos/logplat_run",
+    "path": "skills/internos/vertical_emp_logplat/logplat_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1587,7 +1587,7 @@
     "vertical": "vertical_logplat",
     "kind": "data",
     "descripcion": "KPIs de Logistica Platino: utilidad semanal, saldo CXC, viajes. Expuesto en GET /data/emp_logplat_kpis.",
-    "path": "skills/internos/emp_logplat_kpis",
+    "path": "skills/internos/vertical_emp_logplat/emp_logplat_kpis",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -2594,7 +2594,7 @@
     "nombre": "emp_logplat_message_handler",
     "vertical": "vertical_logplat",
     "descripcion": "Handler WhatsApp canal-agnostic para Platino Logistica. Gestiona estado, registra gastos/viajes, sube documentos. Devuelve {reply}.",
-    "path": "skills/internos/emp_logplat_message_handler",
+    "path": "skills/internos/vertical_emp_logplat/emp_logplat_message_handler",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   }
