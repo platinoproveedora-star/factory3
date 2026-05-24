@@ -181,6 +181,7 @@ def crear_pago(data: dict) -> dict:
         "monto_pago":    float(data.get("monto_pago") or 0),
         "metodo_pago":   data.get("metodo_pago") or "transferencia",
         "observaciones": data.get("observaciones") or "",
+        "factura":       data.get("factura") or None,
         "id_doc":        data.get("id_doc") or None,
         "created_at":    now,
         "updated_at":    now,

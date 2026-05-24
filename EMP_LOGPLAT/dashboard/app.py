@@ -625,16 +625,9 @@ elif seccion == "Gastos":
 elif seccion == "Pagos":
     st.header("💰 Pagos")
     df = get_pagos()
-    dv = get_viajes()
     if df.empty:
         st.info("Sin pagos registrados.")
         st.stop()
-
-    if not dv.empty and "folio" in dv.columns and "factura" in dv.columns and not df.empty and "numero_viaje" in df.columns:
-        _factura_map = {str(row.get("folio") or ""): row.get("factura") for _, row in dv.iterrows()}
-        df["factura"] = df["numero_viaje"].apply(lambda x: _factura_map.get(str(x or ""), None))
-    else:
-        df["factura"] = None
 
     c1, c2, c3, c4, c5 = st.columns(5)
     buscar  = c1.text_input("Cliente", key="p_cli")
@@ -654,7 +647,7 @@ elif seccion == "Pagos":
                               "metodo_pago","observaciones","id_doc"] if c in dff.columns]
     orig = dff[cols_show].copy()
     edit = st.data_editor(orig, use_container_width=True, key="edit_pagos", num_rows="fixed",
-                          disabled=["folio","factura"],
+                          disabled=["folio"],
                           column_config={"id_doc": st.column_config.LinkColumn("documento", display_text="📎 ver")})
 
     bc, ac, _ = st.columns(3)
