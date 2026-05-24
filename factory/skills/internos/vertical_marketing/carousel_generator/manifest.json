@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "carousel_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera contenido de carrusel para Instagram y LinkedIn con slides, titulos y CTAs.",
+  "vertical": "marketing",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

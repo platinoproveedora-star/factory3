@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "hook_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera hooks virales para video, post, reel y email agrupados por tipo.",
+  "vertical": "marketing",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

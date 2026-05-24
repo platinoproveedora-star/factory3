@@ -664,7 +664,7 @@
     "nombre": "carousel_generator",
     "vertical": "marketing_ai",
     "descripcion": "Genera contenido de carrusel para Instagram y LinkedIn",
-    "path": "skills/internos/carousel_generator",
+    "path": "skills/internos/vertical_marketing/carousel_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -673,7 +673,7 @@
     "nombre": "campaign_planner",
     "vertical": "marketing_ai",
     "descripcion": "Planea campanas de marketing completas con fases, canales y KPIs",
-    "path": "skills/internos/campaign_planner",
+    "path": "skills/internos/vertical_marketing/campaign_planner",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -682,7 +682,7 @@
     "nombre": "copy_generator",
     "vertical": "marketing_ai",
     "descripcion": "Genera 3 variantes de copy para ads, posts, emails y landing pages",
-    "path": "skills/internos/copy_generator",
+    "path": "skills/internos/vertical_marketing/copy_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -691,7 +691,7 @@
     "nombre": "content_calendar_generator",
     "vertical": "marketing_ai",
     "descripcion": "Genera calendario de contenido mensual por red social",
-    "path": "skills/internos/content_calendar_generator",
+    "path": "skills/internos/vertical_marketing/content_calendar_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -700,7 +700,7 @@
     "nombre": "ad_creator",
     "vertical": "marketing_ai",
     "descripcion": "Crea anuncios para Facebook, Instagram, Google y LinkedIn",
-    "path": "skills/internos/ad_creator",
+    "path": "skills/internos/vertical_marketing/ad_creator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -709,7 +709,7 @@
     "nombre": "email_campaign_generator",
     "vertical": "marketing_ai",
     "descripcion": "Genera secuencias de emails para nurture, onboarding, reactivacion y venta",
-    "path": "skills/internos/email_campaign_generator",
+    "path": "skills/internos/vertical_marketing/email_campaign_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -718,7 +718,7 @@
     "nombre": "hashtag_generator",
     "vertical": "marketing_ai",
     "descripcion": "Genera hashtags estrategicos agrupados por alcance",
-    "path": "skills/internos/hashtag_generator",
+    "path": "skills/internos/vertical_marketing/hashtag_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -727,7 +727,7 @@
     "nombre": "buyer_persona_generator",
     "vertical": "marketing_ai",
     "descripcion": "Crea buyer personas detalladas con demograficos, metas y objeciones",
-    "path": "skills/internos/buyer_persona_generator",
+    "path": "skills/internos/vertical_marketing/buyer_persona_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -736,7 +736,7 @@
     "nombre": "brand_voice_analyzer",
     "vertical": "marketing_ai",
     "descripcion": "Analiza y define la voz de marca: tono, personalidad y vocabulario",
-    "path": "skills/internos/brand_voice_analyzer",
+    "path": "skills/internos/vertical_marketing/brand_voice_analyzer",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -745,7 +745,7 @@
     "nombre": "hook_generator",
     "vertical": "marketing_ai",
     "descripcion": "Genera hooks virales para video, post, reel y email",
-    "path": "skills/internos/hook_generator",
+    "path": "skills/internos/vertical_marketing/hook_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
