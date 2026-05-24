@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: emp-estoikolab-dashboard
+    env: python
+    plan: free
+    buildCommand: pip install -r companies/EMP_ESTOIKOLAB/dashboard/requirements.txt
+    startCommand: streamlit run companies/EMP_ESTOIKOLAB/dashboard/app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false

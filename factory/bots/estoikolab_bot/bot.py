@@ -7,19 +7,22 @@ from pathlib import Path
 
 _BASE = Path(__file__).parent.parent.parent.parent
 _DEFAULT_AGENT = os.getenv("ESTOIKOLAB_DEFAULT_AGENT", "AGT-001")
+_COMPANY_ID = "EMP_ESTOIKOLAB"
+
+_CONTACT_PROMPT = (
+    "Hola, soy <b>Aria Estoiko</b>. Para atenderte bien y guardar tu solicitud, "
+    "primero comparteme por favor:\n\n"
+    "1. Nombre\n"
+    "2. Telefono\n"
+    "3. Email\n\n"
+    "Despues seguimos con el demo o la consulta."
+)
 
 _WELCOME = (
     "Hola, soy <b>Aria Estoiko</b>.\n\n"
-    "Puedo ayudarte a imaginar y vender agentes de IA para empresas: "
-    "agentes que atienden clientes, responden preguntas, capturan leads, "
-    "agendan citas y derivan a un humano cuando el prospecto esta listo.\n\n"
-    "Prueba escribiendo algo como:\n"
-    "<i>Tengo una agencia de marketing y quiero vender agentes a mis clientes</i>\n"
-    "o\n"
-    "<i>Tengo una clinica/inmobiliaria/restaurante y quiero automatizar mensajes</i>\n\n"
-    "<b>Comandos:</b>\n"
-    "/nuevo - reiniciar conversacion\n"
-    "/agente - ver agente activo"
+    "Te ayudo a crear agentes de IA para empresas: atencion, ventas, FAQs, "
+    "captura de leads y demos para tus clientes.\n\n"
+    "Para empezar, comparteme nombre, telefono y email."
 )
 
 
@@ -35,25 +38,35 @@ def _get_runner():
     return SkillRunner(loader)
 
 
+def _missing_label(fields: list[str]) -> str:
+    labels = {"nombre": "nombre", "telefono": "telefono", "email": "email"}
+    return ", ".join(labels.get(field, field) for field in fields)
+
+
+def _append_history(history: list, role: str, content: str) -> list:
+    new_history = list(history)
+    if content:
+        new_history.append({"role": role, "content": content})
+    return new_history
+
+
 def handle_update(update: dict, state: dict) -> dict:
     message = update.get("message", {})
     text = (message.get("text") or "").strip()
+    chat_id = message.get("chat", {}).get("id")
     agent_id = state.get("agent_id", _DEFAULT_AGENT)
     history = state.get("history") or []
 
     if text in ("/start", "/inicio"):
         return {
             "response": _WELCOME,
-            "state": {"agent_id": agent_id, "history": []},
+            "state": {"agent_id": agent_id, "history": [], "contact_requested": True},
         }
 
     if text == "/nuevo":
         return {
-            "response": (
-                "Conversacion reiniciada. Cuentame que negocio quieres convertir "
-                "en un demo de agente IA."
-            ),
-            "state": {"agent_id": agent_id, "history": []},
+            "response": _CONTACT_PROMPT,
+            "state": {"agent_id": agent_id, "history": [], "contact_requested": True},
         }
 
     if text == "/agente":
@@ -63,17 +76,68 @@ def handle_update(update: dict, state: dict) -> dict:
         }
 
     if not text:
-        return {"response": "Escribeme una idea de negocio y armamos el agente.", "state": state}
+        return {"response": _CONTACT_PROMPT, "state": state}
 
     runner = _get_runner()
+
+    if not state.get("lead_id"):
+        lead_result = runner.run(
+            "vertical_chat_agents/chat_agent_lead_capture",
+            {
+                "message": text,
+                "history": history,
+                "chat_id": chat_id,
+                "company_id": _COMPANY_ID,
+                "canal": "telegram",
+                "required_fields": ["nombre", "telefono", "email"],
+                "dry_run": False,
+            },
+            source="internos",
+        )
+        new_history = _append_history(history, "user", text)
+        if not lead_result.get("ok"):
+            return {
+                "response": "No pude guardar tus datos todavia. Puedes mandarme nombre, telefono y email otra vez?",
+                "state": {"agent_id": agent_id, "history": new_history, "contact_requested": True},
+            }
+        lead_data = lead_result.get("data") or {}
+        if not lead_data.get("saved"):
+            missing = lead_data.get("missing_fields") or ["nombre", "telefono", "email"]
+            response = f"Gracias. Me falta tu {_missing_label(missing)} para guardar tu solicitud y continuar."
+            return {
+                "response": response,
+                "state": {"agent_id": agent_id, "history": new_history, "contact_requested": True},
+            }
+        lead = lead_data.get("lead") or {}
+        contact = lead_data.get("contact") or {}
+        lead_id = lead.get("lead_id")
+        folio = lead.get("folio")
+        response = (
+            f"Gracias, {contact.get('nombre') or 'listo'}. Ya guarde tu solicitud"
+            f"{f' con folio {folio}' if folio else ''}.\n\n"
+            "Ahora si, cuentame que agente quieres probar o que negocio quieres automatizar."
+        )
+        return {
+            "response": response,
+            "state": {
+                "agent_id": agent_id,
+                "history": new_history,
+                "contact_requested": True,
+                "contact_captured": True,
+                "lead_id": lead_id,
+                "lead_folio": folio,
+                "contact": contact,
+            },
+        }
+
     result = runner.run(
         "vertical_chat_agents/chat_agent_conversation_orchestrator",
         {
             "agent_id": agent_id,
             "message": text,
             "history": history,
-            "chat_id": message.get("chat", {}).get("id"),
-            "company_id": "EMP_ESTOIKOLAB",
+            "chat_id": chat_id,
+            "company_id": _COMPANY_ID,
             "canal": "telegram",
             "lead_dry_run": True,
             "dry_run": False,
@@ -93,7 +157,11 @@ def handle_update(update: dict, state: dict) -> dict:
     response = data.get("response", "")
     action = data.get("action", "reply")
     new_history = data.get("history") or history
-    new_state = {"agent_id": agent_id, "history": new_history}
+    new_state = {
+        **state,
+        "agent_id": agent_id,
+        "history": new_history,
+    }
 
     if evaluation and not evaluation.get("passed", True):
         response = (
@@ -102,13 +170,9 @@ def handle_update(update: dict, state: dict) -> dict:
         )
 
     if action == "capture_lead":
-        response += (
-            "\n\nPara preparar una demo enfocada en tu caso, comparteme: "
-            "nombre, empresa, telefono o email, y que tipo de negocio quieres automatizar."
-        )
+        response += "\n\nYa tengo tus datos iniciales. Si quieres, ahora dime que tipo de demo preparamos."
     elif action == "escalate_human":
         response += "\n\nUn asesor de Estoiko Lab puede tomar este caso y convertirlo en propuesta."
-        new_state["history"] = []
     elif action == "end_conversation":
         new_state["history"] = []
 
