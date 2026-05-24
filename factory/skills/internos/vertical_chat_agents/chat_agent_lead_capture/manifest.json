@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_chat_agents/chat_agent_lead_capture",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Extrae datos de prospecto desde chat agent y crea/actualiza lead usando vertical_sales.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

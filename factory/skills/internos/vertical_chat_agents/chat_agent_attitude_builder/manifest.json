@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_chat_agents/chat_agent_attitude_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Construye la actitud conversacional de un chat agent: calidez, humildad, estilo humano, venta consultiva y frases guia.",
+  "requires_env": []
+}

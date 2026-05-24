@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_chat_agents/chat_agent_conversation_orchestrator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquesta una conversacion de chat agent: runtime, evaluacion y captura de lead cuando aplica.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

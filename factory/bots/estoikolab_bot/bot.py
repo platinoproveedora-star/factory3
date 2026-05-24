@@ -67,11 +67,15 @@ def handle_update(update: dict, state: dict) -> dict:
 
     runner = _get_runner()
     result = runner.run(
-        "vertical_chat_agents/chat_agent_run",
+        "vertical_chat_agents/chat_agent_conversation_orchestrator",
         {
             "agent_id": agent_id,
             "message": text,
             "history": history,
+            "chat_id": message.get("chat", {}).get("id"),
+            "company_id": "EMP_ESTOIKOLAB",
+            "canal": "telegram",
+            "lead_dry_run": True,
             "dry_run": False,
         },
         source="internos",
@@ -83,11 +87,19 @@ def handle_update(update: dict, state: dict) -> dict:
             "state": state,
         }
 
-    data = result["data"]
+    orchestration = result["data"]
+    data = orchestration.get("runtime", {})
+    evaluation = orchestration.get("evaluation") or {}
     response = data.get("response", "")
     action = data.get("action", "reply")
     new_history = data.get("history") or history
     new_state = {"agent_id": agent_id, "history": new_history}
+
+    if evaluation and not evaluation.get("passed", True):
+        response = (
+            "Te entiendo. Prefiero aterrizarlo bien y sin sonar generica. "
+            "Cuentame en una frase que tipo de negocio quieres automatizar y que resultado buscas."
+        )
 
     if action == "capture_lead":
         response += (

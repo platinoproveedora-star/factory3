@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_chat_agents/chat_agent_config_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera o actualiza la configuracion JSON y knowledge base inicial de un chat agent.",
+  "requires_env": []
+}

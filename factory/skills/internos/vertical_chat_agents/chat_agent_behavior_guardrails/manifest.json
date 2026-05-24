@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_chat_agents/chat_agent_behavior_guardrails",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera reglas de comportamiento para evitar tono grosero, frio, confrontativo o poco humano en chat agents.",
+  "requires_env": []
+}

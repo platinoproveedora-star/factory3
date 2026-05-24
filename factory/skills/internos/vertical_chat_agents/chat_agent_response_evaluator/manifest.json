@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_chat_agents/chat_agent_response_evaluator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Evalua una respuesta de chat agent por tono humano, cortesia, utilidad, claridad, venta consultiva y riesgo.",
+  "requires_env": []
+}

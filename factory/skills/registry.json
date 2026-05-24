@@ -2606,5 +2606,77 @@
     "path": "skills/internos/vertical_chat_agents/chat_agent_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_chat_agents/chat_agent_attitude_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_chat_agents/chat_agent_attitude_builder",
+    "vertical": "vertical_chat_agents",
+    "descripcion": "Construye la actitud conversacional de un chat agent: calidez, humildad, estilo humano, venta consultiva y frases guia.",
+    "path": "skills/internos/vertical_chat_agents/chat_agent_attitude_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_chat_agents/chat_agent_behavior_guardrails": {
+    "tipo": "interno",
+    "nombre": "vertical_chat_agents/chat_agent_behavior_guardrails",
+    "vertical": "vertical_chat_agents",
+    "descripcion": "Genera reglas de comportamiento para evitar tono grosero, frio, confrontativo o poco humano en chat agents.",
+    "path": "skills/internos/vertical_chat_agents/chat_agent_behavior_guardrails",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_chat_agents/chat_agent_prompt_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_chat_agents/chat_agent_prompt_builder",
+    "vertical": "vertical_chat_agents",
+    "descripcion": "Construye el system prompt final del agente desde actitud, negocio, oferta, conocimiento, acciones y guardrails.",
+    "path": "skills/internos/vertical_chat_agents/chat_agent_prompt_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_chat_agents/chat_agent_config_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_chat_agents/chat_agent_config_builder",
+    "vertical": "vertical_chat_agents",
+    "descripcion": "Genera o actualiza la configuracion JSON y knowledge base inicial de un chat agent.",
+    "path": "skills/internos/vertical_chat_agents/chat_agent_config_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_chat_agents/chat_agent_response_evaluator": {
+    "tipo": "interno",
+    "nombre": "vertical_chat_agents/chat_agent_response_evaluator",
+    "vertical": "vertical_chat_agents",
+    "descripcion": "Evalua una respuesta de chat agent por tono humano, cortesia, utilidad, claridad, venta consultiva y riesgo.",
+    "path": "skills/internos/vertical_chat_agents/chat_agent_response_evaluator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_chat_agents/chat_agent_lead_capture": {
+    "tipo": "interno",
+    "nombre": "vertical_chat_agents/chat_agent_lead_capture",
+    "vertical": "vertical_chat_agents",
+    "descripcion": "Extrae datos de prospecto desde chat agent y crea/actualiza lead usando vertical_sales.",
+    "path": "skills/internos/vertical_chat_agents/chat_agent_lead_capture",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_chat_agents/chat_agent_demo_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_chat_agents/chat_agent_demo_builder",
+    "vertical": "vertical_chat_agents",
+    "descripcion": "Genera una demo conceptual del agente: nombre, objetivo, flujo, preguntas, datos capturados y primer mensaje.",
+    "path": "skills/internos/vertical_chat_agents/chat_agent_demo_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_chat_agents/chat_agent_conversation_orchestrator": {
+    "tipo": "interno",
+    "nombre": "vertical_chat_agents/chat_agent_conversation_orchestrator",
+    "vertical": "vertical_chat_agents",
+    "descripcion": "Orquesta una conversacion de chat agent: runtime, evaluacion y captura de lead cuando aplica.",
+    "path": "skills/internos/vertical_chat_agents/chat_agent_conversation_orchestrator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

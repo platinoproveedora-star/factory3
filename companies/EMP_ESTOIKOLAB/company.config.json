@@ -5,22 +5,34 @@
   "industry": "marketing_agency",
   "description": "Agencia de marketing que diseña, configura y opera agentes de chat con IA para sus clientes. Cada agente vive en la web del cliente y puede atender, vender, capturar leads o agendar citas.",
   "agent_stack": {
-    "chat_runtime": "chat_agent_run"
+    "chat_runtime": "vertical_chat_agents/chat_agent_run",
+    "conversation_orchestrator": "vertical_chat_agents/chat_agent_conversation_orchestrator"
   },
   "skill_stack": {
     "runtime": [
-      "vertical_chat_agents/chat_agent_run"
+      "vertical_chat_agents/chat_agent_run",
+      "vertical_chat_agents/chat_agent_conversation_orchestrator"
     ],
     "config": [
+      "vertical_chat_agents/chat_agent_attitude_builder",
+      "vertical_chat_agents/chat_agent_behavior_guardrails",
       "vertical_chat_agents/chat_agent_config_builder",
-      "vertical_chat_agents/chat_agent_prompt_builder",
-      "vertical_chat_agents/chat_agent_knowledge_ingestor"
+      "vertical_chat_agents/chat_agent_prompt_builder"
     ],
     "testing": [
-      "vertical_chat_agents/chat_agent_test_simulator"
+      "vertical_chat_agents/chat_agent_response_evaluator",
+      "vertical_chat_agents/chat_agent_demo_builder"
+    ],
+    "sales": [
+      "vertical_chat_agents/chat_agent_lead_capture",
+      "vertical_sales/lead_pipeline_system",
+      "vertical_sales/lead_score_system",
+      "vertical_sales/ai_followup_system",
+      "vertical_sales/conversation_log_system"
     ]
   },
   "channels": [
+    "telegram",
     "web_widget"
   ],
   "agent_defaults": {

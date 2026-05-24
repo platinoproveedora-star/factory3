@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_chat_agents/chat_agent_demo_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera una demo conceptual de agente: nombre, objetivo, flujo, preguntas, datos capturados y primer mensaje.",
+  "requires_env": []
+}
