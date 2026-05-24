@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "new_supabase_table",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea una tabla en Supabase via Management API. Acepta nombre y columnas, genera CREATE TABLE IF NOT EXISTS.",
+  "requires_env": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_URL"]
+}

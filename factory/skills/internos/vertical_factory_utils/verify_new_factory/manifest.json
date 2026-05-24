@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "verify_new_factory",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Verifica la estructura de una fabrica generada por new_factory.",
+  "vertical": "factory",
+  "requires_env": []
+}

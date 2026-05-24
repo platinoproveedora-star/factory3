@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "date_parser",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Interpreta fechas simples y relativas.",
-  "requires_env": []
-}

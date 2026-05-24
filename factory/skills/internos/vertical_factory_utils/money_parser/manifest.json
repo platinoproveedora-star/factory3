@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "money_parser",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Extrae montos de texto.",
+  "requires_env": []
+}

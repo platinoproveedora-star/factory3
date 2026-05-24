@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "text_cleaner",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Limpia y normaliza texto sin dependencias externas.",
-  "requires_env": []
-}

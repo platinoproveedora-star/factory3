@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "markdown_table",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Convierte listas o diccionarios a tabla Markdown.",
+  "requires_env": []
+}

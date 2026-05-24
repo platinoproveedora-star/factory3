@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "new_factory_render",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea servicio Render desde un repo GitHub y espera que quede live",
+  "vertical": "factory",
+  "permissions": [],
+  "requires_env": ["RENDER_API_KEY"]
+}

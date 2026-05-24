@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "simple_calculator",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Calculadora segura de operaciones basicas.",
-  "requires_env": []
-}

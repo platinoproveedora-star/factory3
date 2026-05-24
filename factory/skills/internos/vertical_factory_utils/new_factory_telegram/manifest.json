@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "new_factory_telegram",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Registra bot admin, sube archivos al repo y configura webhook Telegram",
+  "vertical": "factory",
+  "permissions": [],
+  "requires_env": ["GITHUB_TOKEN"]
+}

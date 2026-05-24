@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "memory_summarizer",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Resume memorias o mensajes en bullets por reglas simples.",
-  "requires_env": []
-}

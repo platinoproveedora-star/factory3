@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "export_skill_pack",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Exporta un paquete de skills por vertical.",
-  "requires_env": []
-}

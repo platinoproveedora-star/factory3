@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "security_gate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Gate de seguridad estatico para revisar skills externos antes de instalarlos.",
+  "vertical": "security",
+  "permissions": [],
+  "requires_env": []
+}

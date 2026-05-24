@@ -168,7 +168,7 @@
     "nombre": "context_loader",
     "vertical": "factory",
     "descripcion": "Carga registries y docs del proyecto para iniciar un nuevo chat con contexto completo",
-    "path": "skills/internos/context_loader",
+    "path": "skills/internos/vertical_factory_utils/context_loader",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -177,7 +177,7 @@
     "nombre": "skill_comparator",
     "vertical": "factory_skills",
     "descripcion": "Compara una caja de skills contra el registry para detectar duplicados y solapamientos",
-    "path": "skills/internos/skill_comparator",
+    "path": "skills/internos/vertical_factory_utils/skill_comparator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -186,7 +186,7 @@
     "nombre": "new_skill",
     "vertical": "factory_skills",
     "descripcion": "Crea skills portables compatibles con Factory",
-    "path": "skills/internos/new_skill",
+    "path": "skills/internos/vertical_factory_utils/new_skill",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -195,7 +195,7 @@
     "nombre": "new_agent",
     "vertical": "factory",
     "descripcion": "Crea agentes portables compatibles con Factory",
-    "path": "skills/internos/new_agent",
+    "path": "skills/internos/vertical_factory_utils/new_agent",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -204,7 +204,7 @@
     "nombre": "add_skill",
     "vertical": "factory_skills",
     "descripcion": "Importa skills externos portables a Factory",
-    "path": "skills/internos/add_skill",
+    "path": "skills/internos/vertical_factory_utils/add_skill",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -213,7 +213,7 @@
     "nombre": "security_gate",
     "vertical": "security",
     "descripcion": "Gate de seguridad basico para revisar skills externos antes de instalarlos",
-    "path": "skills/internos/security_gate",
+    "path": "skills/internos/vertical_factory_utils/security_gate",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -222,7 +222,7 @@
     "nombre": "activity_skill_plan",
     "vertical": "factory",
     "descripcion": "Planea skills, herramientas, credenciales y orden de ejecucion para una actividad operativa.",
-    "path": "skills/internos/activity_skill_plan",
+    "path": "skills/internos/vertical_factory_utils/activity_skill_plan",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -231,7 +231,7 @@
     "nombre": "add_bot",
     "vertical": "factory",
     "descripcion": "Crea bots Telegram configurables para Factory",
-    "path": "skills/internos/add_bot",
+    "path": "skills/internos/vertical_factory_utils/add_bot",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -240,7 +240,7 @@
     "nombre": "verify_factory",
     "vertical": "factory",
     "descripcion": "Verifica localmente la salud de Factory",
-    "path": "skills/internos/verify_factory",
+    "path": "skills/internos/vertical_factory_utils/verify_factory",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -249,7 +249,7 @@
     "nombre": "connect_bot_agent",
     "vertical": "factory",
     "descripcion": "Conecta un bot Factory con un agente por defecto",
-    "path": "skills/internos/connect_bot_agent",
+    "path": "skills/internos/vertical_factory_utils/connect_bot_agent",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -258,7 +258,7 @@
     "nombre": "add_agent_brain",
     "vertical": "factory",
     "descripcion": "Agrega un brain Anthropic a un agente portable",
-    "path": "skills/internos/add_agent_brain",
+    "path": "skills/internos/vertical_factory_utils/add_agent_brain",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -267,7 +267,7 @@
     "nombre": "wizard",
     "vertical": "factory",
     "descripcion": "Maneja flujos conversacionales para bots de Factory",
-    "path": "skills/internos/wizard",
+    "path": "skills/internos/vertical_factory_utils/wizard",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -285,7 +285,7 @@
     "nombre": "new_supabase_table",
     "vertical": "factory_supabase",
     "descripcion": "Crea una tabla en Supabase via Management API",
-    "path": "skills/internos/new_supabase_table",
+    "path": "skills/internos/vertical_factory_utils/new_supabase_table",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -303,7 +303,7 @@
     "nombre": "bot_inbox_router",
     "vertical": "vertical_bot",
     "descripcion": "Router de entrada multicanal â€” identifica candidato, crea o recupera conversacion y deriva al flujo correcto",
-    "path": "skills/internos/bot_inbox_router",
+    "path": "skills/internos/vertical_factory_utils/bot_inbox_router",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -312,7 +312,7 @@
     "nombre": "bot_form_capture",
     "vertical": "vertical_bot",
     "descripcion": "Ejecuta cuestionario paso a paso â€” guarda respuestas en Supabase y devuelve la siguiente pregunta",
-    "path": "skills/internos/bot_form_capture",
+    "path": "skills/internos/vertical_factory_utils/bot_form_capture",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -474,7 +474,7 @@
     "nombre": "connect_supabase",
     "vertical": "factory_supabase",
     "descripcion": "Valida credenciales y conectividad basica de Supabase",
-    "path": "skills/internos/connect_supabase",
+    "path": "skills/internos/vertical_factory_utils/connect_supabase",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -520,7 +520,7 @@
     "nombre": "add_agent_memory_supabase",
     "vertical": "factory_supabase",
     "descripcion": "Agrega memoria persistente Supabase a un agente",
-    "path": "skills/internos/add_agent_memory_supabase",
+    "path": "skills/internos/vertical_factory_utils/add_agent_memory_supabase",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -547,7 +547,7 @@
     "nombre": "text_cleaner",
     "vertical": "utils",
     "descripcion": "Limpia y normaliza texto",
-    "path": "skills/internos/text_cleaner",
+    "path": "skills/internos/vertical_factory_utils/text_cleaner",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -556,7 +556,7 @@
     "nombre": "json_formatter",
     "vertical": "utils",
     "descripcion": "Valida y formatea JSON",
-    "path": "skills/internos/json_formatter",
+    "path": "skills/internos/vertical_factory_utils/json_formatter",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -565,7 +565,7 @@
     "nombre": "csv_parser",
     "vertical": "utils",
     "descripcion": "Convierte CSV a filas o JSON",
-    "path": "skills/internos/csv_parser",
+    "path": "skills/internos/vertical_factory_utils/csv_parser",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -574,7 +574,7 @@
     "nombre": "markdown_table",
     "vertical": "utils",
     "descripcion": "Convierte filas a tabla Markdown",
-    "path": "skills/internos/markdown_table",
+    "path": "skills/internos/vertical_factory_utils/markdown_table",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -583,7 +583,7 @@
     "nombre": "date_parser",
     "vertical": "utils",
     "descripcion": "Interpreta fechas simples",
-    "path": "skills/internos/date_parser",
+    "path": "skills/internos/vertical_factory_utils/date_parser",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -592,7 +592,7 @@
     "nombre": "money_parser",
     "vertical": "utils",
     "descripcion": "Extrae montos de texto",
-    "path": "skills/internos/money_parser",
+    "path": "skills/internos/vertical_factory_utils/money_parser",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -601,7 +601,7 @@
     "nombre": "snake_case_generator",
     "vertical": "utils",
     "descripcion": "Genera identificadores snake_case",
-    "path": "skills/internos/snake_case_generator",
+    "path": "skills/internos/vertical_factory_utils/snake_case_generator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -610,7 +610,7 @@
     "nombre": "list_deduper",
     "vertical": "utils",
     "descripcion": "Quita duplicados preservando orden",
-    "path": "skills/internos/list_deduper",
+    "path": "skills/internos/vertical_factory_utils/list_deduper",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -619,7 +619,7 @@
     "nombre": "simple_calculator",
     "vertical": "utils",
     "descripcion": "Calculadora segura de operaciones basicas",
-    "path": "skills/internos/simple_calculator",
+    "path": "skills/internos/vertical_factory_utils/simple_calculator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -628,7 +628,7 @@
     "nombre": "memory_summarizer",
     "vertical": "utils",
     "descripcion": "Resume memorias en bullets por reglas simples",
-    "path": "skills/internos/memory_summarizer",
+    "path": "skills/internos/vertical_factory_utils/memory_summarizer",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -637,7 +637,7 @@
     "nombre": "list_skills_by_vertical",
     "vertical": "factory_skills",
     "descripcion": "Agrupa los skills registrados por vertical",
-    "path": "skills/internos/list_skills_by_vertical",
+    "path": "skills/internos/vertical_factory_utils/list_skills_by_vertical",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -646,7 +646,7 @@
     "nombre": "export_skill_pack",
     "vertical": "factory_skills",
     "descripcion": "Exporta un paquete de skills por vertical",
-    "path": "skills/internos/export_skill_pack",
+    "path": "skills/internos/vertical_factory_utils/export_skill_pack",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -655,7 +655,7 @@
     "nombre": "verify_skill_pack",
     "vertical": "factory_skills",
     "descripcion": "Verifica la estructura de un skill pack exportado",
-    "path": "skills/internos/verify_skill_pack",
+    "path": "skills/internos/vertical_factory_utils/verify_skill_pack",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -979,7 +979,7 @@
     "nombre": "new_factory",
     "vertical": "factory",
     "descripcion": "Crea una fabrica completa en modo local (carpetas) o cloud (GitHub + Render + Telegram webhook)",
-    "path": "skills/internos/new_factory",
+    "path": "skills/internos/vertical_factory_utils/new_factory",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -988,7 +988,7 @@
     "nombre": "verify_new_factory",
     "vertical": "factory",
     "descripcion": "Verifica la estructura de una fabrica generada por new_factory",
-    "path": "skills/internos/verify_new_factory",
+    "path": "skills/internos/vertical_factory_utils/verify_new_factory",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -997,7 +997,7 @@
     "nombre": "new_factory_cloud",
     "vertical": "factory",
     "descripcion": "Publica una fabrica local limpia en GitHub, Render y Telegram",
-    "path": "skills/internos/new_factory_cloud",
+    "path": "skills/internos/vertical_factory_utils/new_factory_cloud",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1006,7 +1006,7 @@
     "nombre": "new_factory_github",
     "vertical": "factory",
     "descripcion": "Crea repo GitHub y sube todos los archivos de una fabrica local",
-    "path": "skills/internos/new_factory_github",
+    "path": "skills/internos/vertical_factory_utils/new_factory_github",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1015,7 +1015,7 @@
     "nombre": "new_factory_render",
     "vertical": "factory",
     "descripcion": "Crea servicio Render desde un repo GitHub y espera que quede live",
-    "path": "skills/internos/new_factory_render",
+    "path": "skills/internos/vertical_factory_utils/new_factory_render",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1024,7 +1024,7 @@
     "nombre": "new_factory_telegram",
     "vertical": "factory",
     "descripcion": "Registra bot admin, sube archivos al repo y configura webhook Telegram",
-    "path": "skills/internos/new_factory_telegram",
+    "path": "skills/internos/vertical_factory_utils/new_factory_telegram",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1033,7 +1033,7 @@
     "nombre": "new_factory_supabase",
     "vertical": "factory",
     "descripcion": "Crea tablas base de Supabase para una nueva fabrica",
-    "path": "skills/internos/new_factory_supabase",
+    "path": "skills/internos/vertical_factory_utils/new_factory_supabase",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1042,7 +1042,7 @@
     "nombre": "new_factory_cloud_v2",
     "vertical": "factory",
     "descripcion": "Orquestador: crea fabrica completa en cloud (GitHub + Render + Telegram + Supabase)",
-    "path": "skills/internos/new_factory_cloud_v2",
+    "path": "skills/internos/vertical_factory_utils/new_factory_cloud_v2",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1330,7 +1330,7 @@
     "nombre": "whatsapp_group_broadcaster",
     "vertical": "vertical_whatsapp",
     "descripcion": "Envia mensajes a grupos o contactos de WhatsApp. Backends: twilio, meta, playwright, dry_run.",
-    "path": "skills/internos/whatsapp_group_broadcaster",
+    "path": "skills/internos/vertical_factory_utils/whatsapp_group_broadcaster",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1450,7 +1450,7 @@
     "nombre": "new_dashboard",
     "vertical": "factory",
     "descripcion": "Genera un dashboard Streamlit completo con IA: app.py, db.py, requirements, render.yaml para cualquier vertical",
-    "path": "skills/internos/new_dashboard",
+    "path": "skills/internos/vertical_factory_utils/new_dashboard",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1459,7 +1459,7 @@
     "nombre": "dashboard_updater",
     "vertical": "factory",
     "descripcion": "Actualiza un dashboard Streamlit existente con IA: agrega secciones, mï¿½tricas y tablas nuevas sin romper lo existente",
-    "path": "skills/internos/dashboard_updater",
+    "path": "skills/internos/vertical_factory_utils/dashboard_updater",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -1513,7 +1513,7 @@
     "nombre": "ai_interpreter",
     "vertical": "factory_ai",
     "descripcion": "Interpreta texto, imagen o PDF con Claude Haiku. mode=extract: extrae campos segun schema. mode=classify: detecta accion y extrae campos segun actions dict.",
-    "path": "skills/internos/ai_interpreter",
+    "path": "skills/internos/vertical_factory_utils/ai_interpreter",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

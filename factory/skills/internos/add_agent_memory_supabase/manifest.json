@@ -1,9 +1,0 @@
-{
-  "type": "skill",
-  "name": "add_agent_memory_supabase",
-  "version": "0.1.0",
-  "kind": "executable",
-  "entrypoint": "skill.py",
-  "description": "Agrega memoria persistente Supabase a un agente Factory.",
-  "requires_env": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
-}
