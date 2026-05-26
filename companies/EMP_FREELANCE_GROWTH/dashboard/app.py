@@ -487,11 +487,69 @@ def _checklist() -> None:
         st.success("Checklist guardado.")
 
 
+def _audit() -> None:
+    st.subheader("Factory3 Portfolio Audit")
+    st.caption("Detecta empresas, dashboards y skills que pueden convertirse en proyectos vendibles.")
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        if st.button("Auditar Factory3", type="primary"):
+            result = _run_skill("vertical_freelance_growth/factory_portfolio_auditor", {**_portfolio_context(), "root": str(ROOT)})
+            if result.get("ok"):
+                st.success("Auditoria generada.")
+                st.session_state["last_audit"] = result.get("data", {})
+            else:
+                st.error(result.get("error", "Error desconocido"))
+    with c2:
+        if st.button("Analizar gaps"):
+            result = _run_skill("vertical_freelance_growth/portfolio_gap_analyzer", _portfolio_context())
+            if result.get("ok"):
+                st.success("Gaps generados.")
+                st.session_state["last_gaps"] = result.get("data", {})
+            else:
+                st.error(result.get("error", "Error desconocido"))
+
+    audit_data = st.session_state.get("last_audit") or _read_json(PORTFOLIO_DIR / "factory_audit.json")
+    gaps_data = st.session_state.get("last_gaps") or {}
+
+    if audit_data:
+        st.markdown("### Candidatos Detectados")
+        candidates = audit_data.get("portfolio_candidates", [])
+        if not candidates:
+            st.info("No hay candidatos nuevos detectados.")
+        for item in candidates:
+            st.markdown('<div class="fc-panel">', unsafe_allow_html=True)
+            st.markdown(f"### {item.get('name')}")
+            st.caption(f"{item.get('id')} | {item.get('type')} | {item.get('portfolio_value')}")
+            st.write(item.get("problem", ""))
+            st.write(item.get("solution", ""))
+            st.markdown("**Evidencia**")
+            for ev in item.get("evidence", []):
+                if ev:
+                    st.write(f"- {ev}")
+            st.markdown("**Fotos/videos recomendados**")
+            for asset in item.get("asset_recommendations", []):
+                st.write(f"- {asset}")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("### Recomendaciones")
+        for rec in audit_data.get("recommendations", []):
+            st.write(f"- {rec}")
+
+    if gaps_data:
+        st.markdown("### Gaps")
+        st.json(gaps_data)
+
+    audit_md = _read_text(PORTFOLIO_DIR / "factory_audit.md")
+    if audit_md:
+        with st.expander("Ver reporte Markdown"):
+            st.text_area("factory_audit.md", value=audit_md, height=420)
+
+
 def main() -> None:
     _render_hero()
     with st.sidebar:
         st.markdown("## Freelance Center")
-        section = st.radio("Menu", ["Home", "Profile", "Portfolio", "Jobs", "Proposals", "Checklist"])
+        section = st.radio("Menu", ["Home", "Profile", "Portfolio", "Jobs", "Proposals", "Audit", "Checklist"])
         if st.button("Actualizar"):
             st.cache_data.clear()
             st.rerun()
@@ -508,6 +566,8 @@ def main() -> None:
         _jobs()
     elif section == "Proposals":
         _proposals()
+    elif section == "Audit":
+        _audit()
     else:
         _checklist()
 

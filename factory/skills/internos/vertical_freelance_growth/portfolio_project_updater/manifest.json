@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_freelance_growth/portfolio_project_updater",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Agrega o actualiza projects.json usando candidatos detectados por factory_portfolio_auditor.",
+  "requires_env": []
+}

@@ -1,0 +1,576 @@
+{
+  "audited_at": "2026-05-26T22:35:41.037668Z",
+  "companies": [
+    {
+      "id": "EMP_CAMP_RH_TRANS",
+      "path": "companies/EMP_CAMP_RH_TRANS",
+      "has_dashboard": false,
+      "has_readme": false,
+      "has_schema": false,
+      "has_landing": false
+    },
+    {
+      "id": "EMP_CAMP_RSTATE",
+      "path": "companies/EMP_CAMP_RSTATE",
+      "has_dashboard": true,
+      "has_readme": false,
+      "has_schema": false,
+      "has_landing": true
+    },
+    {
+      "id": "EMP_ESTOIKOLAB",
+      "path": "companies/EMP_ESTOIKOLAB",
+      "has_dashboard": true,
+      "has_readme": false,
+      "has_schema": false,
+      "has_landing": false
+    },
+    {
+      "id": "EMP_FB_APPS",
+      "path": "EMP_FB_APPS",
+      "has_dashboard": false,
+      "has_readme": false,
+      "has_schema": false,
+      "has_landing": false
+    },
+    {
+      "id": "EMP_FREELANCE_GROWTH",
+      "path": "companies/EMP_FREELANCE_GROWTH",
+      "has_dashboard": true,
+      "has_readme": true,
+      "has_schema": true,
+      "has_landing": false
+    },
+    {
+      "id": "EMP_LOGPLAT",
+      "path": "EMP_LOGPLAT",
+      "has_dashboard": true,
+      "has_readme": true,
+      "has_schema": true,
+      "has_landing": false
+    },
+    {
+      "id": "EMP_RH1",
+      "path": "EMP_RH1",
+      "has_dashboard": true,
+      "has_readme": false,
+      "has_schema": false,
+      "has_landing": false
+    }
+  ],
+  "dashboards": [
+    {
+      "company_id": "EMP_CAMP_RSTATE",
+      "path": "companies/EMP_CAMP_RSTATE/dashboard/app.py",
+      "render_yaml": "companies/EMP_CAMP_RSTATE/dashboard/render.yaml",
+      "requirements": "companies/EMP_CAMP_RSTATE/dashboard/requirements.txt",
+      "signals": [
+        "streamlit",
+        "supabase",
+        "render",
+        "meta",
+        "landing",
+        "leads",
+        "campaign",
+        "upload"
+      ]
+    },
+    {
+      "company_id": "EMP_ESTOIKOLAB",
+      "path": "companies/EMP_ESTOIKOLAB/dashboard/app.py",
+      "render_yaml": "companies/EMP_ESTOIKOLAB/dashboard/render.yaml",
+      "requirements": "companies/EMP_ESTOIKOLAB/dashboard/requirements.txt",
+      "signals": [
+        "streamlit",
+        "supabase",
+        "render",
+        "leads"
+      ]
+    },
+    {
+      "company_id": "EMP_FREELANCE_GROWTH",
+      "path": "companies/EMP_FREELANCE_GROWTH/dashboard/app.py",
+      "render_yaml": "companies/EMP_FREELANCE_GROWTH/dashboard/render.yaml",
+      "requirements": "companies/EMP_FREELANCE_GROWTH/dashboard/requirements.txt",
+      "signals": [
+        "streamlit",
+        "supabase",
+        "render",
+        "jobs",
+        "proposals",
+        "portfolio"
+      ]
+    },
+    {
+      "company_id": "EMP_LOGPLAT",
+      "path": "EMP_LOGPLAT/dashboard/app.py",
+      "render_yaml": "EMP_LOGPLAT/dashboard/render.yaml",
+      "requirements": "EMP_LOGPLAT/dashboard/requirements.txt",
+      "signals": [
+        "streamlit",
+        "pagos",
+        "gastos",
+        "cxc"
+      ]
+    },
+    {
+      "company_id": "EMP_RH1",
+      "path": "EMP_RH1/dashboard/app.py",
+      "render_yaml": "EMP_RH1/dashboard/render.yaml",
+      "requirements": "EMP_RH1/dashboard/requirements.txt",
+      "signals": [
+        "streamlit",
+        "render",
+        "meta",
+        "upload",
+        "kpi",
+        "gastos"
+      ]
+    }
+  ],
+  "verticals": [
+    {
+      "vertical": "vertical_ads",
+      "path": "factory/skills/internos/vertical_ads",
+      "skills_count": 14,
+      "skills": [
+        "ads_approval_queue_create",
+        "ads_audience_builder",
+        "ads_budget_planner",
+        "ads_campaign_preflight_check",
+        "ads_campaign_run",
+        "ads_creative_validator",
+        "ads_experiment_builder",
+        "ads_guardrails",
+        "ads_optimizer",
+        "ads_performance_analyzer",
+        "ads_report_generator",
+        "ads_scheduler_run",
+        "campaign_config_writer",
+        "campaign_launch_paused"
+      ]
+    },
+    {
+      "vertical": "vertical_chat_agents",
+      "path": "factory/skills/internos/vertical_chat_agents",
+      "skills_count": 9,
+      "skills": [
+        "chat_agent_attitude_builder",
+        "chat_agent_behavior_guardrails",
+        "chat_agent_config_builder",
+        "chat_agent_conversation_orchestrator",
+        "chat_agent_demo_builder",
+        "chat_agent_lead_capture",
+        "chat_agent_prompt_builder",
+        "chat_agent_response_evaluator",
+        "chat_agent_run"
+      ]
+    },
+    {
+      "vertical": "vertical_companies",
+      "path": "factory/skills/internos/vertical_companies",
+      "skills_count": 3,
+      "skills": [
+        "company_config_loader",
+        "company_context_builder",
+        "company_dashboard_scaffold"
+      ]
+    },
+    {
+      "vertical": "vertical_emp_logplat",
+      "path": "factory/skills/internos/vertical_emp_logplat",
+      "skills_count": 3,
+      "skills": [
+        "emp_logplat_kpis",
+        "emp_logplat_message_handler",
+        "logplat_run"
+      ]
+    },
+    {
+      "vertical": "vertical_factory_utils",
+      "path": "factory/skills/internos/vertical_factory_utils",
+      "skills_count": 42,
+      "skills": [
+        "activity_skill_plan",
+        "add_agent_brain",
+        "add_agent_memory_supabase",
+        "add_bot",
+        "add_skill",
+        "ai_interpreter",
+        "bot_form_capture",
+        "bot_inbox_router",
+        "connect_bot_agent",
+        "connect_supabase",
+        "context_loader",
+        "csv_parser",
+        "dashboard_updater",
+        "date_parser",
+        "export_skill_pack",
+        "json_formatter",
+        "list_deduper",
+        "list_skills_by_vertical",
+        "markdown_table",
+        "memory_summarizer"
+      ]
+    },
+    {
+      "vertical": "vertical_fb",
+      "path": "factory/skills/internos/vertical_fb",
+      "skills_count": 11,
+      "skills": [
+        "facebook_group_finder",
+        "facebook_marketplace_poster",
+        "facebook_post_generator",
+        "facebook_post_publisher",
+        "facebook_post_tracker",
+        "fbgroups_run",
+        "fb_groupsearch_delete",
+        "fb_groupsearch_engine",
+        "fb_groupsearch_groups",
+        "fb_groupsearch_list",
+        "fb_groupsearch_saver"
+      ]
+    },
+    {
+      "vertical": "vertical_freelance_growth",
+      "path": "factory/skills/internos/vertical_freelance_growth",
+      "skills_count": 9,
+      "skills": [
+        "factory_portfolio_auditor",
+        "pioneer_profile_builder",
+        "portfolio_gap_analyzer",
+        "portfolio_project_updater",
+        "upwork_case_study_generator",
+        "upwork_job_matcher",
+        "upwork_portfolio_pack_builder",
+        "upwork_profile_builder",
+        "upwork_proposal_generator"
+      ]
+    },
+    {
+      "vertical": "vertical_github",
+      "path": "factory/skills/internos/vertical_github",
+      "skills_count": 15,
+      "skills": [
+        "github_add_secret",
+        "github_copy_folder",
+        "github_create_branch",
+        "github_create_pr",
+        "github_create_repo",
+        "github_delete_file",
+        "github_delete_repo",
+        "github_get_file",
+        "github_list_branches",
+        "github_list_files",
+        "github_list_repos",
+        "github_merge_branch",
+        "github_push",
+        "github_repo_info",
+        "github_update_file"
+      ]
+    },
+    {
+      "vertical": "vertical_instagram",
+      "path": "factory/skills/internos/vertical_instagram",
+      "skills_count": 32,
+      "skills": [
+        "ig_account_audit",
+        "ig_alt_text_generator",
+        "ig_auto_responder",
+        "ig_best_time_selector",
+        "ig_boost_post",
+        "ig_calendar_generator",
+        "ig_caption_generator",
+        "ig_carousel_builder",
+        "ig_comment_lead_detect",
+        "ig_comment_monitor",
+        "ig_competitor_analyzer",
+        "ig_content_brief",
+        "ig_content_orchestrator",
+        "ig_dm_campaign",
+        "ig_dm_lead_qualifier",
+        "ig_get_account_insights",
+        "ig_get_auth_token",
+        "ig_get_post_insights",
+        "ig_hashtag_generator",
+        "ig_leads_sync"
+      ]
+    },
+    {
+      "vertical": "vertical_marketing",
+      "path": "factory/skills/internos/vertical_marketing",
+      "skills_count": 25,
+      "skills": [
+        "ad_creator",
+        "brand_voice_analyzer",
+        "buyer_persona_generator",
+        "campaign_planner",
+        "carousel_generator",
+        "content_calendar_generator",
+        "copy_generator",
+        "email_campaign_generator",
+        "hashtag_generator",
+        "hook_generator",
+        "landing_ai_content_generator",
+        "landing_config_builder",
+        "landing_template_renderer",
+        "marketing_angle_generator",
+        "marketing_campaign_planner",
+        "marketing_compliance_checker",
+        "marketing_copy_generator",
+        "marketing_creative_brief",
+        "marketing_landing_alignment",
+        "marketing_mini_landing_scaffold"
+      ]
+    },
+    {
+      "vertical": "vertical_meta",
+      "path": "factory/skills/internos/vertical_meta",
+      "skills_count": 11,
+      "skills": [
+        "meta_connection_check",
+        "meta_debug_token",
+        "meta_exchange_code",
+        "meta_extend_token",
+        "meta_get_auth_url",
+        "meta_get_instagram_account",
+        "meta_get_permissions",
+        "meta_list_pages",
+        "meta_refresh_connection",
+        "meta_revoke_connection",
+        "meta_store_connection"
+      ]
+    },
+    {
+      "vertical": "vertical_meta_ads",
+      "path": "factory/skills/internos/vertical_meta_ads",
+      "skills_count": 20,
+      "skills": [
+        "meta_ads_connection_check",
+        "meta_ads_create_ad",
+        "meta_ads_create_adset",
+        "meta_ads_create_campaign",
+        "meta_ads_create_creative",
+        "meta_ads_dashboard_data",
+        "meta_ads_get_ad_account",
+        "meta_ads_get_insights",
+        "meta_ads_lead_campaign_flow",
+        "meta_ads_list_ad_accounts",
+        "meta_ads_pixel_check",
+        "meta_ads_preview_ad",
+        "meta_ads_publish_flow",
+        "meta_ads_recruiting_torton_flow",
+        "meta_ads_store_connection",
+        "meta_ads_update_adset",
+        "meta_ads_update_campaign",
+        "meta_leads_sync_to_rh",
+        "meta_leads_sync_to_sales",
+        "meta_lead_form_create"
+      ]
+    },
+    {
+      "vertical": "vertical_qa",
+      "path": "factory/skills/internos/vertical_qa",
+      "skills_count": 5,
+      "skills": [
+        "qa_campaign_logger",
+        "qa_preflight",
+        "qa_rollback_campaign",
+        "qa_secrets_check",
+        "qa_skills_test"
+      ]
+    },
+    {
+      "vertical": "vertical_render",
+      "path": "factory/skills/internos/vertical_render",
+      "skills_count": 7,
+      "skills": [
+        "render_create_service",
+        "render_delete_service",
+        "render_deploy_status",
+        "render_get_service",
+        "render_list_services",
+        "render_set_env_vars",
+        "render_trigger_deploy"
+      ]
+    },
+    {
+      "vertical": "vertical_rh",
+      "path": "factory/skills/internos/vertical_rh",
+      "skills_count": 35,
+      "skills": [
+        "rh_1_run",
+        "rh_ad_copy_generator",
+        "rh_basic_validation",
+        "rh_candidate_history",
+        "rh_candidate_profile_builder",
+        "rh_candidate_ranking",
+        "rh_candidate_scoring",
+        "rh_candidate_search",
+        "rh_channel_publisher",
+        "rh_contractor_interview",
+        "rh_contractor_splitter",
+        "rh_conversation_manager",
+        "rh_demand_planner",
+        "rh_dimension_analyzer",
+        "rh_duplicate_detector",
+        "rh_interview_scheduler",
+        "rh_interview_simulator",
+        "rh_job_post_generator",
+        "rh_knockout_filter",
+        "rh_list_vacantes"
+      ]
+    },
+    {
+      "vertical": "vertical_sales",
+      "path": "factory/skills/internos/vertical_sales",
+      "skills_count": 13,
+      "skills": [
+        "ai_followup_system",
+        "automation_orchestrator_system",
+        "communication_router_system",
+        "conversation_log_system",
+        "dashboard_operational_system",
+        "lead_pipeline_system",
+        "lead_score_system",
+        "sales_lead_update",
+        "sales_list",
+        "sales_notify_agent",
+        "sales_report",
+        "sales_run",
+        "sales_task_complete"
+      ]
+    },
+    {
+      "vertical": "vertical_sat",
+      "path": "factory/skills/internos/vertical_sat",
+      "skills_count": 8,
+      "skills": [
+        "sat_auth",
+        "sat_cfdi_descargar",
+        "sat_cfdi_list",
+        "sat_cfdi_parser",
+        "sat_cfdi_solicitud",
+        "sat_cfdi_store",
+        "sat_cfdi_sync",
+        "sat_cfdi_verificar"
+      ]
+    },
+    {
+      "vertical": "vertical_supabase",
+      "path": "factory/skills/internos/vertical_supabase",
+      "skills_count": 9,
+      "skills": [
+        "supabase_delete_row",
+        "supabase_insert_row",
+        "supabase_query_table",
+        "supabase_rpc",
+        "supabase_run_sql",
+        "supabase_schema_inspect",
+        "supabase_sql_execute",
+        "supabase_storage_upload",
+        "supabase_update_row"
+      ]
+    },
+    {
+      "vertical": "vertical_telegram",
+      "path": "factory/skills/internos/vertical_telegram",
+      "skills_count": 4,
+      "skills": [
+        "telegram_get_bot_info",
+        "telegram_get_webhook_info",
+        "telegram_send_message",
+        "telegram_set_webhook"
+      ]
+    },
+    {
+      "vertical": "vertical_wabiz",
+      "path": "factory/skills/internos/vertical_wabiz",
+      "skills_count": 6,
+      "skills": [
+        "wabiz_channel_router",
+        "wabiz_connection_check",
+        "wabiz_media_downloader",
+        "wabiz_send_text",
+        "wabiz_store_config",
+        "wabiz_webhook_parse"
+      ]
+    }
+  ],
+  "docs": {
+    "docs_count": 22,
+    "vertical_docs": [
+      "docs/VERTICAL_ADS.md",
+      "docs/VERTICAL_AI_HIRING_ASSESSMENT.md",
+      "docs/VERTICAL_BOT.md",
+      "docs/VERTICAL_CHAT_AGENTS.md",
+      "docs/VERTICAL_COMPANIES.md",
+      "docs/VERTICAL_FREELANCE_GROWTH.md",
+      "docs/VERTICAL_IG.md",
+      "docs/VERTICAL_MARKETING.md",
+      "docs/VERTICAL_META.md",
+      "docs/VERTICAL_META_ADS.md",
+      "docs/VERTICAL_RH.md",
+      "docs/VERTICAL_SAT.md",
+      "docs/VERTICAL_TRACTOHUB.md",
+      "docs/VERTICAL_WABIZ.md"
+    ],
+    "registries": [
+      "docs/DASHBOARDS.md",
+      "docs/DOCS.md",
+      "docs/TABLES.md"
+    ]
+  },
+  "portfolio_candidates": [
+    {
+      "id": "freelance_growth_system",
+      "name": "Freelance Growth Operating System",
+      "source": "vertical",
+      "company_id": "EMP_FREELANCE_GROWTH",
+      "evidence": [
+        "factory/skills/internos/vertical_freelance_growth",
+        "companies/EMP_FREELANCE_GROWTH/dashboard/app.py"
+      ],
+      "type": "freelance sales operations system",
+      "problem": "A new Upwork/Pioneer seller needs a repeatable way to turn real projects into profile copy, case studies, job analysis and proposals.",
+      "solution": "Built a Freelance Center dashboard and reusable skills for profile generation, portfolio packaging, job scoring and proposal generation.",
+      "stack": [
+        "Python",
+        "Streamlit",
+        "Supabase",
+        "Render",
+        "GitHub",
+        "Factory3 skills"
+      ],
+      "outcomes": [
+        "Live Freelance Center dashboard",
+        "Reusable freelance_growth skills",
+        "Supabase-backed jobs/proposals",
+        "Portfolio generated from real Factory3 projects"
+      ],
+      "portfolio_value": "Very high: it demonstrates a business automation product built to sell and operate freelance acquisition.",
+      "asset_recommendations": [
+        "1 screenshot of Home",
+        "1 screenshot of Jobs analysis",
+        "1 screenshot of generated proposal",
+        "1 short video showing job-to-proposal flow"
+      ]
+    }
+  ],
+  "recommendations": [
+    "Agregar 1 proyecto(s) detectado(s) al portafolio, empezando por los de mayor valor comercial.",
+    "Grabar videos cortos de 45-90 segundos para los proyectos con dashboard vivo.",
+    "Tomar screenshots con datos sensibles ocultos: overview, flujo principal y resultado final.",
+    "Mantener un job diario a las 23:00 para auditar nuevas empresas/dashboards y generar pendientes.",
+    "Documentar Freelance Center como proyecto propio: es evidencia directa de sistema de ventas automatizado."
+  ],
+  "daily_agent_plan": {
+    "time_local": "23:00",
+    "actions": [
+      "Run factory_portfolio_auditor",
+      "Run portfolio_gap_analyzer",
+      "Open/update documentation tasks",
+      "Prepare projects.json update suggestions"
+    ]
+  }
+}

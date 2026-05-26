@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_freelance_growth/portfolio_gap_analyzer",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Analiza proyectos del portafolio y auditoria Factory3 para recomendar screenshots, videos, case studies y pendientes comerciales.",
+  "requires_env": []
+}

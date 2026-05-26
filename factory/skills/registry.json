@@ -2732,5 +2732,32 @@
     "path": "skills/internos/vertical_freelance_growth/pioneer_profile_builder",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_freelance_growth/factory_portfolio_auditor": {
+    "tipo": "interno",
+    "nombre": "vertical_freelance_growth/factory_portfolio_auditor",
+    "vertical": "vertical_freelance_growth",
+    "descripcion": "Audita Factory3 para detectar empresas, dashboards, skills y proyectos documentables para portafolio freelance.",
+    "path": "skills/internos/vertical_freelance_growth/factory_portfolio_auditor",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_freelance_growth/portfolio_gap_analyzer": {
+    "tipo": "interno",
+    "nombre": "vertical_freelance_growth/portfolio_gap_analyzer",
+    "vertical": "vertical_freelance_growth",
+    "descripcion": "Analiza proyectos del portafolio y auditoria Factory3 para recomendar screenshots, videos, case studies y pendientes comerciales.",
+    "path": "skills/internos/vertical_freelance_growth/portfolio_gap_analyzer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_freelance_growth/portfolio_project_updater": {
+    "tipo": "interno",
+    "nombre": "vertical_freelance_growth/portfolio_project_updater",
+    "vertical": "vertical_freelance_growth",
+    "descripcion": "Agrega o actualiza projects.json usando candidatos detectados por factory_portfolio_auditor.",
+    "path": "skills/internos/vertical_freelance_growth/portfolio_project_updater",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }
