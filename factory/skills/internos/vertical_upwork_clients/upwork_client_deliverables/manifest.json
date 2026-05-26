@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_upwork_clients/upwork_client_deliverables",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Regenera deliverables.md y README de entrega para un cliente/proyecto Upwork.",
+  "requires_env": []
+}

@@ -2759,5 +2759,77 @@
     "path": "skills/internos/vertical_freelance_growth/portfolio_project_updater",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_upwork_clients/upwork_client_init": {
+    "tipo": "interno",
+    "nombre": "vertical_upwork_clients/upwork_client_init",
+    "vertical": "vertical_upwork_clients",
+    "descripcion": "Crea cliente Upwork/Freelance con consecutivo UC-###, carpeta, client.json y registry.json.",
+    "path": "skills/internos/vertical_upwork_clients/upwork_client_init",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_upwork_clients/upwork_client_project_init": {
+    "tipo": "interno",
+    "nombre": "vertical_upwork_clients/upwork_client_project_init",
+    "vertical": "vertical_upwork_clients",
+    "descripcion": "Crea project.json, deliverables.md y closeout.md inicial para un cliente UC-###.",
+    "path": "skills/internos/vertical_upwork_clients/upwork_client_project_init",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_upwork_clients/upwork_client_status": {
+    "tipo": "interno",
+    "nombre": "vertical_upwork_clients/upwork_client_status",
+    "vertical": "vertical_upwork_clients",
+    "descripcion": "Lista clientes UC, proyectos y estados desde companies/EMP_FREELANCE_GROWTH/clients.",
+    "path": "skills/internos/vertical_upwork_clients/upwork_client_status",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_upwork_clients/upwork_client_deliverables": {
+    "tipo": "interno",
+    "nombre": "vertical_upwork_clients/upwork_client_deliverables",
+    "vertical": "vertical_upwork_clients",
+    "descripcion": "Regenera deliverables.md y README de entrega para un cliente/proyecto Upwork.",
+    "path": "skills/internos/vertical_upwork_clients/upwork_client_deliverables",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_upwork_clients/upwork_client_close": {
+    "tipo": "interno",
+    "nombre": "vertical_upwork_clients/upwork_client_close",
+    "vertical": "vertical_upwork_clients",
+    "descripcion": "Cierra cliente/proyecto: marca entregado, genera closeout.md y opcionalmente documenta transfer de repo.",
+    "path": "skills/internos/vertical_upwork_clients/upwork_client_close",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_upwork_clients/upwork_client_orchestrator": {
+    "tipo": "interno",
+    "nombre": "vertical_upwork_clients/upwork_client_orchestrator",
+    "vertical": "vertical_upwork_clients",
+    "descripcion": "Orquesta alta completa de cliente/proyecto desde brief o vacante ganada: crea UC, project.json, deliverables y opcionalmente repo GitHub.",
+    "path": "skills/internos/vertical_upwork_clients/upwork_client_orchestrator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_repo_delivery_check": {
+    "tipo": "interno",
+    "nombre": "github_repo_delivery_check",
+    "vertical": "factory_github",
+    "descripcion": "Revisa un repo GitHub antes de entrega/transfer: detecta archivos sensibles, .env, secretos probables y faltantes de README.",
+    "path": "skills/internos/vertical_github/github_repo_delivery_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "github_repo_transfer": {
+    "tipo": "interno",
+    "nombre": "github_repo_transfer",
+    "vertical": "factory_github",
+    "descripcion": "Inicia transferencia de un repositorio GitHub a usuario u organizacion cliente. Requiere confirm:true.",
+    "path": "skills/internos/vertical_github/github_repo_transfer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_upwork_clients/upwork_client_orchestrator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquesta alta completa de cliente/proyecto desde brief o vacante ganada: crea UC, project.json, deliverables y opcionalmente repo GitHub.",
+  "requires_env": []
+}

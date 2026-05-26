@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[3]
 COMPANY_DIR = ROOT / "companies" / "EMP_FREELANCE_GROWTH"
 PORTFOLIO_DIR = COMPANY_DIR / "portfolio"
 UPWORK_DIR = PORTFOLIO_DIR / "upwork"
+CLIENTS_DIR = COMPANY_DIR / "clients"
 
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -467,6 +468,93 @@ def _proposals() -> None:
                 st.text_area(str(path), value=_read_text(path), height=320)
 
 
+def _clients() -> None:
+    st.subheader("Clients")
+    st.caption("Orquesta alta de cliente, proyecto, entregables y repo opcional desde una vacante ganada o brief.")
+
+    uploaded = st.file_uploader("Subir brief del cliente", type=["txt", "md"])
+    uploaded_text = ""
+    if uploaded is not None:
+        uploaded_text = uploaded.getvalue().decode("utf-8", errors="replace")
+
+    if "client_brief_input" not in st.session_state:
+        st.session_state["client_brief_input"] = uploaded_text
+    elif uploaded_text:
+        st.session_state["client_brief_input"] = uploaded_text
+
+    c1, c2, c3 = st.columns([1, 1, 2])
+    with c1:
+        if st.button("Limpiar brief"):
+            st.session_state["client_brief_input"] = ""
+            st.rerun()
+    with c2:
+        dry_run = st.checkbox("Dry run", value=False)
+    with c3:
+        create_repo = st.checkbox("Crear repo GitHub privado", value=False)
+
+    brief = st.text_area(
+        "Brief / vacante ganada / notas del cliente",
+        key="client_brief_input",
+        height=220,
+        placeholder="Cliente, objetivo, alcance, presupuesto, deadline, entregables...",
+    )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        client_name = st.text_input("Nombre del cliente", placeholder="Cliente Upwork")
+        platform = st.selectbox("Origen", ["upwork", "pioneer", "direct", "referral"])
+    with col2:
+        budget = st.text_input("Presupuesto", placeholder="$500")
+        deadline = st.text_input("Deadline", placeholder="2 semanas")
+
+    project_name = st.text_input("Nombre del proyecto", placeholder="AI chatbot / dashboard / automation")
+
+    if st.button("Orquestar cliente", type="primary", disabled=not brief.strip()):
+        result = _run_skill("vertical_upwork_clients/upwork_client_orchestrator", {
+            "clients_root": str(CLIENTS_DIR),
+            "brief": brief,
+            "client_name": client_name.strip(),
+            "project_name": project_name.strip(),
+            "platform": platform,
+            "budget": budget.strip(),
+            "deadline": deadline.strip(),
+            "create_repo": create_repo,
+            "repo_private": True,
+            "dry_run": dry_run,
+        })
+        if result.get("ok"):
+            data = result.get("data", {})
+            client = data.get("client", {})
+            project = data.get("project", {})
+            st.success(f"Cliente preparado: {client.get('client_id')} | {project.get('project_name')}")
+            st.json(data)
+        else:
+            st.error(result.get("error", "Error desconocido"))
+
+    st.markdown("### Registro de clientes")
+    status = _run_skill("vertical_upwork_clients/upwork_client_status", {"clients_root": str(CLIENTS_DIR)})
+    if not status.get("ok"):
+        st.error(status.get("error", "No se pudo leer el registro."))
+        return
+
+    rows = (status.get("data") or {}).get("clients", [])
+    if not rows:
+        st.info("Todavia no hay clientes registrados.")
+        return
+
+    st.dataframe(rows, use_container_width=True)
+    for row in rows:
+        client_id = row.get("client_id")
+        with st.expander(f"{client_id} | {row.get('client_name', '')} | {row.get('project_status', '')}"):
+            client_dir = CLIENTS_DIR / str(client_id)
+            st.markdown("**client.json**")
+            st.json(_read_json(client_dir / "client.json"))
+            st.markdown("**project.json**")
+            st.json(_read_json(client_dir / "project.json"))
+            st.markdown("**deliverables.md**")
+            st.text_area(f"deliverables-{client_id}", value=_read_text(client_dir / "deliverables.md"), height=220)
+
+
 def _checklist() -> None:
     st.subheader("Registration Checklist")
     checklist_path = UPWORK_DIR / "registration_checklist.md"
@@ -624,7 +712,7 @@ def main() -> None:
     _render_hero()
     with st.sidebar:
         st.markdown("## Freelance Center")
-        section = st.radio("Menu", ["Home", "Profile", "Portfolio", "Jobs", "Proposals", "Audit", "Checklist"])
+        section = st.radio("Menu", ["Home", "Profile", "Portfolio", "Jobs", "Proposals", "Clients", "Audit", "Checklist"])
         if st.button("Actualizar"):
             st.cache_data.clear()
             st.rerun()
@@ -641,6 +729,8 @@ def main() -> None:
         _jobs()
     elif section == "Proposals":
         _proposals()
+    elif section == "Clients":
+        _clients()
     elif section == "Audit":
         _audit()
     else:

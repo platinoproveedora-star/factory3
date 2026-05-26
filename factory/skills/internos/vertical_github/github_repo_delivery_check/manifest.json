@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "github_repo_delivery_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Revisa un repo GitHub antes de entrega/transfer: detecta archivos sensibles, .env, secretos probables y faltantes de README.",
+  "requires_env": ["GITHUB_TOKEN"]
+}

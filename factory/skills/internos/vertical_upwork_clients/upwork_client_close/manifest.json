@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_upwork_clients/upwork_client_close",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Cierra cliente/proyecto: marca entregado, genera closeout.md y opcionalmente documenta transfer de repo.",
+  "requires_env": []
+}

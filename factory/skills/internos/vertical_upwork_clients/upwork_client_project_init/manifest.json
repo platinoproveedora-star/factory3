@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_upwork_clients/upwork_client_project_init",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea project.json, deliverables.md y closeout.md inicial para un cliente UC-###.",
+  "requires_env": []
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "github_repo_transfer",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Inicia transferencia de un repositorio GitHub a usuario u organizacion cliente. Requiere confirm:true.",
+  "requires_env": ["GITHUB_TOKEN"]
+}
