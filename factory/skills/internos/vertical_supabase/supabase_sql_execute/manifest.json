@@ -4,6 +4,6 @@
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
-  "description": "Ejecuta SQL arbitrario en Supabase via Management API (CREATE, ALTER, INDEX, etc.).",
-  "requires_env": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_URL"]
+  "description": "Ejecuta SQL en Supabase via Management API. Puede exponer schemas REST con grants y reload usando expose_schemas.",
+  "requires_env": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"]
 }

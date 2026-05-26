@@ -62,6 +62,29 @@ En vez de seguir agregando nuevas carpetas `EMP_<CODIGO>/` en la raiz. Las empre
 - Cada vertical nueva debe tener `docs/VERTICAL_<NOMBRE>.md`.
 - `docs/WORK_LOG.md` queda para bitacora diaria; este archivo queda para decisiones estructurales.
 
+## Decision: exposicion REST de schemas Supabase (2026-05-26)
+
+No depender de clicks manuales en Supabase Data API para schemas nuevos.
+Usar `supabase_sql_execute` con `expose_schemas` para agregar:
+
+- grants a `anon`, `authenticated`, `service_role`
+- `pgrst.db_schemas` en el rol `authenticator`
+- `notify pgrst, 'reload config'`
+- `notify pgrst, 'reload schema'`
+
+Ejemplo:
+
+```json
+{
+  "sql": "create schema if not exists freelance;",
+  "expose_schemas": ["freelance"],
+  "base_schemas": ["public", "storage", "graphql_public", "estoikolab", "logplat"],
+  "dry_run": false
+}
+```
+
+Esto evita errores como `permission denied for schema` o `Could not find table in schema cache` en dashboards Streamlit.
+
 ## Decision: factory_users como tabla global de usuarios (2026-05-15)
 
 `public.factory_users` es el registro centralizado de usuarios para todos los canales.
