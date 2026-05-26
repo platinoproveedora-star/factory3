@@ -61,3 +61,13 @@ create index if not exists freelance_jobs_score_idx on freelance.jobs (score des
 create index if not exists freelance_proposals_created_idx on freelance.proposals (created_at desc);
 create index if not exists freelance_tasks_area_idx on freelance.tasks (area, done);
 create index if not exists freelance_assets_project_idx on freelance.assets (project_id);
+
+grant usage on schema freelance to anon, authenticated, service_role;
+grant all on all tables in schema freelance to anon, authenticated, service_role;
+grant all on all sequences in schema freelance to anon, authenticated, service_role;
+alter default privileges in schema freelance grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema freelance grant all on sequences to anon, authenticated, service_role;
+
+alter role authenticator set pgrst.db_schemas = 'public,storage,graphql_public,estoikolab,logplat,freelance';
+notify pgrst, 'reload config';
+notify pgrst, 'reload schema';
