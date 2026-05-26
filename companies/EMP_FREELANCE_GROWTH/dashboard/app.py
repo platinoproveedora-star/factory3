@@ -512,28 +512,103 @@ def _audit() -> None:
     gaps_data = st.session_state.get("last_gaps") or {}
 
     if audit_data:
-        st.markdown("### Candidatos Detectados")
+        companies = audit_data.get("companies", [])
+        dashboards = audit_data.get("dashboards", [])
+        verticals = audit_data.get("verticals", [])
         candidates = audit_data.get("portfolio_candidates", [])
-        if not candidates:
-            st.info("No hay candidatos nuevos detectados.")
-        for item in candidates:
-            st.markdown('<div class="fc-panel">', unsafe_allow_html=True)
-            st.markdown(f"### {item.get('name')}")
-            st.caption(f"{item.get('id')} | {item.get('type')} | {item.get('portfolio_value')}")
-            st.write(item.get("problem", ""))
-            st.write(item.get("solution", ""))
-            st.markdown("**Evidencia**")
-            for ev in item.get("evidence", []):
-                if ev:
-                    st.write(f"- {ev}")
-            st.markdown("**Fotos/videos recomendados**")
-            for asset in item.get("asset_recommendations", []):
-                st.write(f"- {asset}")
-            st.markdown("</div>", unsafe_allow_html=True)
+        projects = _read_json(PORTFOLIO_DIR / "projects.json").get("projects", [])
 
-        st.markdown("### Recomendaciones")
+        st.markdown(
+            '<div class="fc-grid">'
+            + _stat("Empresas Detectadas", str(len(companies)))
+            + _stat("Dashboards", str(len(dashboards)))
+            + _stat("Verticales", str(len(verticals)))
+            + _stat("Candidatos Nuevos", str(len(candidates)))
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("### Resumen de Empresas")
+        for company in companies:
+            tags = []
+            if company.get("has_dashboard"):
+                tags.append("dashboard")
+            if company.get("has_schema"):
+                tags.append("schema")
+            if company.get("has_landing"):
+                tags.append("landing")
+            if company.get("has_readme"):
+                tags.append("docs")
+            st.markdown(
+                f'<span class="fc-chip">{escape(company.get("id", ""))}</span> '
+                f'<span class="fc-muted">{escape(company.get("path", ""))} | {escape(", ".join(tags) or "sin artefactos fuertes")}</span>',
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("### Proyectos Para Portafolio")
+        portfolio_items = []
+        for project in projects:
+            portfolio_items.append({
+                "id": project.get("id"),
+                "name": project.get("name"),
+                "kind": "Ya en portafolio",
+                "type": project.get("type"),
+                "problem": project.get("problem"),
+                "solution": project.get("solution"),
+                "stack": project.get("stack", []),
+                "outcomes": project.get("outcomes", []),
+                "assets": ["2 screenshots limpios", "1 video demo corto", "link publico o nota de demo privada"],
+                "value": "Proyecto base ya registrado.",
+            })
+        for candidate in candidates:
+            portfolio_items.append({
+                "id": candidate.get("id"),
+                "name": candidate.get("name"),
+                "kind": "Candidato nuevo",
+                "type": candidate.get("type"),
+                "problem": candidate.get("problem"),
+                "solution": candidate.get("solution"),
+                "stack": candidate.get("stack", []),
+                "outcomes": candidate.get("outcomes", []),
+                "assets": candidate.get("asset_recommendations", []),
+                "value": candidate.get("portfolio_value"),
+                "evidence": candidate.get("evidence", []),
+            })
+
+        if portfolio_items:
+            tabs = st.tabs([str(item.get("name") or item.get("id"))[:28] for item in portfolio_items])
+            for tab, item in zip(tabs, portfolio_items):
+                with tab:
+                    st.markdown(f"### {item.get('name')}")
+                    st.caption(f"{item.get('kind')} | {item.get('type')} | {item.get('id')}")
+                    st.write(item.get("problem", ""))
+                    st.write(item.get("solution", ""))
+                    if item.get("value"):
+                        st.info(item.get("value"))
+                    left, right = st.columns([1, 1])
+                    with left:
+                        st.markdown("**Stack / Skills comerciales**")
+                        st.markdown("".join(f'<span class="fc-chip">{escape(str(s))}</span>' for s in item.get("stack", [])), unsafe_allow_html=True)
+                        st.markdown("**Resultados / puntos para anunciar**")
+                        for outcome in item.get("outcomes", []):
+                            st.write(f"- {outcome}")
+                    with right:
+                        st.markdown("**Fotos/videos recomendados**")
+                        for asset in item.get("assets", []):
+                            st.write(f"- {asset}")
+                        if item.get("evidence"):
+                            st.markdown("**Evidencia en repo**")
+                            for ev in item.get("evidence", []):
+                                if ev:
+                                    st.write(f"- {ev}")
+        else:
+            st.info("No hay proyectos/candidatos para mostrar.")
+
+        st.markdown("### Recomendaciones Generales")
+        st.markdown('<div class="fc-panel">', unsafe_allow_html=True)
         for rec in audit_data.get("recommendations", []):
             st.write(f"- {rec}")
+        st.markdown("</div>", unsafe_allow_html=True)
 
     if gaps_data:
         st.markdown("### Gaps")
