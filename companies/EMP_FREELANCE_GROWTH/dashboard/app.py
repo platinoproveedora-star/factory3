@@ -379,7 +379,21 @@ def _portfolio() -> None:
 
 def _jobs() -> None:
     st.subheader("Jobs")
-    job = st.text_area("Pega aqui la vacante de Upwork", height=240, placeholder="Job title, description, budget, requirements...")
+    if "job_text_input" not in st.session_state:
+        st.session_state["job_text_input"] = ""
+    c1, c2 = st.columns([1, 4])
+    with c1:
+        if st.button("Limpiar vacante"):
+            st.session_state["job_text_input"] = ""
+            st.rerun()
+    with c2:
+        st.caption("Pega una vacante nueva y analiza si conviene aplicar.")
+    job = st.text_area(
+        "Pega aqui la vacante de Upwork",
+        key="job_text_input",
+        height=240,
+        placeholder="Job title, description, budget, requirements...",
+    )
     if st.button("Analizar vacante", type="primary", disabled=not job.strip()):
         result = _run_skill("vertical_freelance_growth/upwork_job_matcher", {**_portfolio_context(), "job_description": job})
         if result.get("ok"):
