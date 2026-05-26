@@ -25,3 +25,14 @@ CREATE TABLE IF NOT EXISTS estoikolab.chat_leads (
 CREATE INDEX IF NOT EXISTS idx_estoikolab_leads_agent  ON estoikolab.chat_leads (agent_id);
 CREATE INDEX IF NOT EXISTS idx_estoikolab_leads_status ON estoikolab.chat_leads (status);
 CREATE INDEX IF NOT EXISTS idx_estoikolab_leads_date   ON estoikolab.chat_leads (created_at DESC);
+
+-- Permisos REST y exposicion PostgREST para dashboard/bot.
+GRANT USAGE ON SCHEMA estoikolab TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA estoikolab TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA estoikolab TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA estoikolab GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA estoikolab GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+
+ALTER ROLE authenticator SET pgrst.db_schemas = 'public,storage,graphql_public,estoikolab,logplat,freelance';
+NOTIFY pgrst, 'reload config';
+NOTIFY pgrst, 'reload schema';
