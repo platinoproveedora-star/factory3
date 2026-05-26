@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_chat_agents/chat_agent_conversation_orchestrator",
+  "name": "chat_agent_conversation_orchestrator",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

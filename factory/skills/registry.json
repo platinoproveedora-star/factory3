@@ -2678,5 +2678,59 @@
     "path": "skills/internos/vertical_chat_agents/chat_agent_conversation_orchestrator",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_freelance_growth/upwork_profile_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_freelance_growth/upwork_profile_builder",
+    "vertical": "vertical_freelance_growth",
+    "descripcion": "Genera un perfil Upwork optimizado desde portfolio/profile.json y portfolio/projects.json.",
+    "path": "skills/internos/vertical_freelance_growth/upwork_profile_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_freelance_growth/upwork_case_study_generator": {
+    "tipo": "interno",
+    "nombre": "vertical_freelance_growth/upwork_case_study_generator",
+    "vertical": "vertical_freelance_growth",
+    "descripcion": "Convierte proyectos del portafolio Factory3 en case studies de Upwork con formato cliente-problema-solucion-resultado.",
+    "path": "skills/internos/vertical_freelance_growth/upwork_case_study_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_freelance_growth/upwork_proposal_generator": {
+    "tipo": "interno",
+    "nombre": "vertical_freelance_growth/upwork_proposal_generator",
+    "vertical": "vertical_freelance_growth",
+    "descripcion": "Genera una propuesta Upwork personalizada desde una descripcion de job y el portafolio Factory3.",
+    "path": "skills/internos/vertical_freelance_growth/upwork_proposal_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_freelance_growth/upwork_job_matcher": {
+    "tipo": "interno",
+    "nombre": "vertical_freelance_growth/upwork_job_matcher",
+    "vertical": "vertical_freelance_growth",
+    "descripcion": "Evalua una vacante de Upwork contra el perfil y proyectos del portafolio. Devuelve score 0-100, decision, riesgos, fortalezas y angulo de propuesta.",
+    "path": "skills/internos/vertical_freelance_growth/upwork_job_matcher",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_freelance_growth/upwork_portfolio_pack_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_freelance_growth/upwork_portfolio_pack_builder",
+    "vertical": "vertical_freelance_growth",
+    "descripcion": "Genera un paquete de portafolio Upwork listo para copiar por cada proyecto: titulo, descripcion corta, descripcion completa, stack, resultados y assets faltantes.",
+    "path": "skills/internos/vertical_freelance_growth/upwork_portfolio_pack_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_freelance_growth/pioneer_profile_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_freelance_growth/pioneer_profile_builder",
+    "vertical": "vertical_freelance_growth",
+    "descripcion": "Genera perfil y respuestas para aplicacion Pioneer (YC Fellowship) a partir de profile.json y projects.json.",
+    "path": "skills/internos/vertical_freelance_growth/pioneer_profile_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

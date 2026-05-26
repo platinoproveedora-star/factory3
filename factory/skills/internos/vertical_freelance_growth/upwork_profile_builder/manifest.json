@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_freelance_growth/upwork_profile_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera un perfil Upwork optimizado desde portfolio/profile.json y portfolio/projects.json.",
+  "requires_env": []
+}

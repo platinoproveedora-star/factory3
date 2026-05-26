@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_chat_agents/chat_agent_prompt_builder",
+  "name": "chat_agent_prompt_builder",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

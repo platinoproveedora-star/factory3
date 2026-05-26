@@ -8,9 +8,7 @@ import urllib.request
 from pathlib import Path
 
 # factory3 root (6 niveles desde service.py en vertical_chat_agents/chat_agent_run/)
-_ROOT      = Path(__file__).parent.parent.parent.parent.parent.parent
-_ESTOIKO   = _ROOT / "companies" / "EMP_ESTOIKOLAB"
-_AGENTS    = _ESTOIKO / "agents"
+_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent
 
 _VALID_ACTIONS = {"reply", "capture_lead", "escalate_human", "end_conversation"}
 _ACTION_RE     = re.compile(r'\[ACCION:([a-z_]+)\]', re.IGNORECASE)
@@ -27,16 +25,21 @@ class ChatAgentRunService:
         history    = context.get("history") or []
         dry_run    = context.get("dry_run", True)
 
+        # Ruta de agentes: context > company_id > default EMP_ESTOIKOLAB
+        company_id  = context.get("company_id", "EMP_ESTOIKOLAB")
+        agents_root = Path(context.get("agents_root") or (_ROOT / "companies" / company_id / "agents"))
+        company_root = agents_root.parent
+
         if not message:
             return {"ok": False, "error": "message requerido"}
 
         # 1. Cargar config del agente
-        config = self._load_config(agent_id)
+        config = self._load_config(agent_id, agents_root)
         if not config:
             return {"ok": False, "error": f"Agente no encontrado: {agent_id}"}
 
         # 2. Cargar base de conocimiento
-        knowledge = self._load_knowledge(config)
+        knowledge = self._load_knowledge(config, company_root)
 
         # 3. Verificar límite de turnos
         max_turns   = config.get("max_turns", 20)
@@ -92,8 +95,8 @@ class ChatAgentRunService:
 
     # ── helpers ───────────────────────────────────────────────────────────────
 
-    def _load_config(self, agent_id: str) -> dict | None:
-        path = _AGENTS / f"{agent_id}.json"
+    def _load_config(self, agent_id: str, agents_root: Path) -> dict | None:
+        path = agents_root / f"{agent_id}.json"
         if not path.exists():
             return None
         try:
@@ -101,11 +104,11 @@ class ChatAgentRunService:
         except Exception:
             return None
 
-    def _load_knowledge(self, config: dict) -> str:
+    def _load_knowledge(self, config: dict, company_root: Path) -> str:
         kf = config.get("knowledge_file")
         if not kf:
             return ""
-        path = _ESTOIKO / kf
+        path = company_root / kf
         if path.exists():
             return path.read_text(encoding="utf-8").strip()
         return ""

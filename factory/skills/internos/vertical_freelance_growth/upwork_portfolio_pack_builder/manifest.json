@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_freelance_growth/upwork_portfolio_pack_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera un paquete de portafolio Upwork listo para copiar por cada proyecto: titulo, descripcion corta, descripcion completa, stack, resultados y assets faltantes.",
+  "requires_env": []
+}

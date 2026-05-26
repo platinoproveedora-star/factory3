@@ -1,0 +1,41 @@
+{
+  "profile_id": "alfie_factory3_freelance",
+  "name": "Alfie Correa",
+  "positioning": "AI automation builder focused on chat agents, lead capture systems, dashboards, business workflows and campaign automation.",
+  "primary_platforms": ["Upwork", "Pioneer", "LinkedIn"],
+  "target_clients": [
+    "marketing agencies",
+    "real estate teams",
+    "local service businesses",
+    "recruiting and HR operations",
+    "small companies that need automation fast"
+  ],
+  "core_services": [
+    "AI chat agents for websites and Telegram/WhatsApp workflows",
+    "lead capture and qualification systems",
+    "Streamlit dashboards connected to Supabase",
+    "campaign landing pages and campaign operations dashboards",
+    "business process automation with Python APIs"
+  ],
+  "technical_stack": [
+    "Python",
+    "FastAPI",
+    "Streamlit",
+    "Supabase",
+    "Render",
+    "Telegram bots",
+    "Meta/Instagram APIs",
+    "AI prompt and workflow design"
+  ],
+  "proof_points": [
+    "Built Factory 3, a modular system of companies, skills, bots and dashboards.",
+    "Created Estoiko Lab chat agent system with Telegram webhook, lead capture and dashboard.",
+    "Built RSTATE real estate campaign landing/dashboard flow.",
+    "Built RH1 recruiting dashboard and automation structure."
+  ],
+  "tone": "clear, confident, practical, honest and business-focused",
+  "pricing_notes": {
+    "starter_hourly_usd": 25,
+    "preferred_model": "fixed-scope packages for MVPs, dashboards and agent demos"
+  }
+}

@@ -62,26 +62,25 @@ def _rest_get(table: str, params: dict, schema: str | None = None) -> list[dict]
 
 def _leads() -> list[dict]:
     return _rest_get(
-        "leads",
+        "chat_leads",
         {
-            "select": "id,folio,empresa_id,canal,user_id,nombre,telefono,email,estado,score,created_at",
-            "empresa_id": f"eq.{COMPANY_ID}",
+            "select": "id,folio,agent_id,canal,user_id,nombre,telefono,email,empresa,tipo_negocio,objetivo,status,created_at",
             "order": "created_at.desc",
             "limit": "500",
         },
-        schema="sales",
+        schema="estoikolab",
     )
 
 
 def _all_recent_leads() -> list[dict]:
     return _rest_get(
-        "leads",
+        "chat_leads",
         {
-            "select": "id,folio,empresa_id,canal,user_id,nombre,telefono,email,estado,score,created_at",
+            "select": "id,folio,agent_id,canal,user_id,nombre,telefono,email,status,created_at",
             "order": "created_at.desc",
             "limit": "50",
         },
-        schema="sales",
+        schema="estoikolab",
     )
 
 
@@ -147,7 +146,7 @@ with tab_leads:
     else:
         st.info("Todavia no hay leads reales para EMP_ESTOIKOLAB.")
 
-    with st.expander("Ultimos leads de sales.leads, todas las empresas"):
+    with st.expander("Ultimos 50 leads — estoikolab.chat_leads"):
         all_df = pd.DataFrame(_all_recent_leads())
         if not all_df.empty:
             st.dataframe(all_df, use_container_width=True, hide_index=True)

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_freelance_growth/upwork_job_matcher",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Evalua una vacante de Upwork contra el perfil y proyectos del portafolio. Devuelve score 0-100, decision, riesgos, fortalezas y angulo de propuesta.",
+  "requires_env": []
+}

@@ -1,0 +1,50 @@
+{
+  "score": 100,
+  "decision": "apply_now",
+  "decision_es": "Aplicar ahora",
+  "matched_terms": [
+    "chatbot",
+    "chat",
+    "ai",
+    "dashboard",
+    "lead",
+    "supabase",
+    "streamlit",
+    "python",
+    "business"
+  ],
+  "risk_terms": [
+    "descripcion corta/poco clara"
+  ],
+  "relevant_projects": [
+    {
+      "id": "estoiko_chat_agents",
+      "name": "Estoiko Lab Chat Agents",
+      "score": 8,
+      "type": "AI chat agents and lead capture"
+    },
+    {
+      "id": "emp_logplat_fleet_ops",
+      "name": "EMP_LOGPLAT Fleet Operations System",
+      "score": 7,
+      "type": "logistics operations bot and dashboard"
+    },
+    {
+      "id": "rstate_campaign",
+      "name": "RSTATE Real Estate Campaign System",
+      "score": 6,
+      "type": "campaign landing page and operations dashboard"
+    }
+  ],
+  "strengths": [
+    "La vacante toca capacidades que ya estan en el portafolio: chatbot, chat, ai, dashboard, lead, supabase, streamlit, python.",
+    "Hay proyectos reales que se pueden usar como prueba: Estoiko Lab Chat Agents, EMP_LOGPLAT Fleet Operations System, RSTATE Real Estate Campaign System.",
+    "Se puede proponer un MVP claro con alcance corto: flujo, captura de datos, dashboard y deploy."
+  ],
+  "risks": [
+    "Revisar estos focos antes de aplicar: descripcion corta/poco clara.",
+    "No se detecto presupuesto claro; conviene validar alcance y pago antes de invertir mucho tiempo."
+  ],
+  "proposal_angle": "Abrir con experiencia construyendo agentes conversacionales que capturan leads y guardan datos en dashboard.",
+  "next_step": "Si score >= 58, usar upwork_proposal_generator con esta vacante."
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "pioneer_profile_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera perfil y respuestas para aplicacion Pioneer (YC Fellowship) a partir de profile.json y projects.json.",
+  "requires_env": []
+}

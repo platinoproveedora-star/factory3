@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_freelance_growth/upwork_case_study_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Convierte proyectos del portafolio Factory3 en case studies de Upwork con formato cliente-problema-solucion-resultado.",
+  "requires_env": []
+}

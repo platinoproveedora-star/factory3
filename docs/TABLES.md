@@ -34,6 +34,12 @@ Actualizado: 2026-05-15
 | [factory_users](#factory_users) | factory | Usuarios globales de la fábrica (todos los canales) |
 | [wabiz_access_codes](#wabiz_access_codes) | vertical_wabiz | Claves de registro de usuarios vía WhatsApp |
 
+## Schema `estoikolab`
+
+| Tabla | Descripción |
+|---|---|
+| [estoikolab.chat_leads](#estoikolabchat_leads) | Leads capturados por agentes de chat. Folio LEAD-001… |
+
 ## Schema `logplat`
 
 | Tabla | Descripción |
