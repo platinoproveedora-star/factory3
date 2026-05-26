@@ -15,11 +15,13 @@ class UpworkClientProjectInitService:
         folder = clients_root / client_id
         if not folder.exists() and not context.get("dry_run", False):
             return {"ok": False, "error": f"cliente no existe: {client_id}"}
-        project_name = (context.get("project_name") or "Proyecto por definir").strip()
-        repo_name = context.get("repo_name") or f"{client_id.lower()}-{self._slug(project_name)}"
+        project_code = (context.get("project_code") or self._next_project_code(folder)).strip().upper()
+        project_name = (context.get("project_name") or project_code).strip()
+        repo_name = context.get("repo_name") or self._repo_name(client_id, project_code)
         now = datetime.utcnow().isoformat() + "Z"
         project = {
             "client_id": client_id,
+            "project_code": project_code,
             "project_name": project_name,
             "status": context.get("status", "planned"),
             "scope": context.get("scope", ""),
@@ -41,8 +43,32 @@ class UpworkClientProjectInitService:
                 closeout.write_text(self._closeout_md(project), encoding="utf-8")
         return {"ok": True, "data": {"project": project, "folder": str(folder)}}
 
-    def _slug(self, text: str) -> str:
-        return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:50] or "project"
+    def _next_project_code(self, folder: Path) -> str:
+        if not folder.exists():
+            return "PROY-001"
+        existing = []
+        project = self._read_json(folder / "project.json")
+        if project.get("project_code"):
+            existing.append(project["project_code"])
+        for path in folder.glob("PROY-*.json"):
+            existing.append(path.stem)
+        numbers = []
+        for code in existing:
+            match = re.search(r"(\d+)$", str(code))
+            if match:
+                numbers.append(int(match.group(1)))
+        return f"PROY-{(max(numbers) + 1 if numbers else 1):03d}"
+
+    def _repo_name(self, client_id: str, project_code: str) -> str:
+        client = re.sub(r"[^a-z0-9]+", "", client_id.lower())
+        project = re.sub(r"[^a-z0-9]+", "", project_code.lower())
+        return f"{client}-{project}"
+
+    def _read_json(self, path: Path) -> dict:
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
 
     def _deliverables_from_scope(self, scope: str) -> list[str]:
         base = ["Working MVP", "README / usage notes", "Deployment notes", "Final handoff checklist"]
@@ -57,7 +83,7 @@ class UpworkClientProjectInitService:
 
     def _deliverables_md(self, project: dict) -> str:
         items = "\n".join(f"- [ ] {item}" for item in project.get("deliverables", []))
-        return f"# Deliverables - {project['project_name']}\n\nClient: `{project['client_id']}`\n\n## Scope\n{project.get('scope') or 'Por definir'}\n\n## Checklist\n{items}\n"
+        return f"# Deliverables - {project['project_code']} - {project['project_name']}\n\nClient: `{project['client_id']}`\nRepo: `{project.get('repo_name', '')}`\n\n## Scope\n{project.get('scope') or 'Por definir'}\n\n## Checklist\n{items}\n"
 
     def _closeout_md(self, project: dict) -> str:
-        return f"# Closeout - {project['project_name']}\n\n- [ ] Deliverables accepted\n- [ ] Secrets removed from repo\n- [ ] README updated\n- [ ] Deploy URL shared\n- [ ] Repo transfer requested if applicable\n"
+        return f"# Closeout - {project['project_code']} - {project['project_name']}\n\n- [ ] Deliverables accepted\n- [ ] Secrets removed from repo\n- [ ] README updated\n- [ ] Deploy URL shared\n- [ ] Repo transfer requested if applicable\n"

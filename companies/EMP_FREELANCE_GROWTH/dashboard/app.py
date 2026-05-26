@@ -507,7 +507,7 @@ def _clients() -> None:
         budget = st.text_input("Presupuesto", placeholder="$500")
         deadline = st.text_input("Deadline", placeholder="2 semanas")
 
-    project_name = st.text_input("Nombre del proyecto", placeholder="AI chatbot / dashboard / automation")
+    project_name = st.text_input("Descripcion del proyecto", placeholder="AI chatbot / dashboard / automation")
 
     if st.button("Orquestar cliente", type="primary", disabled=not brief.strip()):
         result = _run_skill("vertical_upwork_clients/upwork_client_orchestrator", {
@@ -526,7 +526,7 @@ def _clients() -> None:
             data = result.get("data", {})
             client = data.get("client", {})
             project = data.get("project", {})
-            st.success(f"Cliente preparado: {client.get('client_id')} | {project.get('project_name')}")
+            st.success(f"Cliente preparado: {client.get('client_id')} | {project.get('project_code', 'PROY-001')} | {project.get('repo_name', '')}")
             st.json(data)
         else:
             st.error(result.get("error", "Error desconocido"))

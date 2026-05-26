@@ -17,6 +17,7 @@ class UpworkClientStatusService:
                 "client_id": item.get("client_id"),
                 "client_name": client.get("client_name") or item.get("client_name"),
                 "client_status": client.get("status") or item.get("status"),
+                "project_code": project.get("project_code", ""),
                 "project_name": project.get("project_name", ""),
                 "project_status": project.get("status", ""),
                 "budget": project.get("budget", ""),

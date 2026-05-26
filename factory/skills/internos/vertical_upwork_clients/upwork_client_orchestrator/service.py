@@ -38,7 +38,8 @@ class UpworkClientOrchestratorService:
         if not client_res.get("ok"):
             return client_res
         client_id = client_res["data"]["client_id"]
-        repo_name = context.get("repo_name") or f"{client_id.lower()}-{self._slug(project_name)}"
+        project_code = (context.get("project_code") or "PROY-001").upper()
+        repo_name = context.get("repo_name") or self._repo_name(client_id, project_code)
         repo_result = None
         repo_full = ""
         if context.get("create_repo"):
@@ -55,6 +56,7 @@ class UpworkClientOrchestratorService:
         project_res = runner.run("vertical_upwork_clients/upwork_client_project_init", {
             "clients_root": clients_root,
             "client_id": client_id,
+            "project_code": project_code,
             "project_name": project_name,
             "scope": scope,
             "budget": budget,
@@ -70,7 +72,8 @@ class UpworkClientOrchestratorService:
 
         return {"ok": True, "data": {
             "client": client_res.get("data"),
-            "project": project_res.get("data"),
+            "project": (project_res.get("data") or {}).get("project", {}),
+            "project_folder": (project_res.get("data") or {}).get("folder", ""),
             "repo": repo_result,
             "parsed": parsed,
             "next_steps": [
@@ -86,7 +89,16 @@ class UpworkClientOrchestratorService:
         budget = self._first(r"(?i)(?:budget|presupuesto)[:\s]*([$]?\s?[0-9,]+(?:\s?-\s?[$]?\s?[0-9,]+)?)", text)
         deadline = self._first(r"(?i)(?:timeline|deadline|fecha|entrega)[:\s]*([^\n]{3,80})", text)
         lines = [line.strip("-* \t") for line in text.splitlines() if line.strip()]
-        project_name = lines[0][:80] if lines else "Proyecto Upwork"
+        project_name = "Proyecto Upwork"
+        for line in lines:
+            if re.search(r"(?i)^(project|proyecto)[:\s]", line):
+                project_name = re.sub(r"(?i)^(project|proyecto)[:\s]*", "", line).strip()[:80] or project_name
+                break
+        if project_name == "Proyecto Upwork":
+            for line in lines:
+                if not re.search(r"(?i)^(client|cliente|company|empresa|budget|presupuesto|deadline|timeline|fecha|entrega)[:\s]", line):
+                    project_name = line[:80]
+                    break
         client_name = "Cliente Upwork"
         for line in lines:
             if re.search(r"(?i)(client|cliente|company|empresa)", line):
@@ -99,5 +111,7 @@ class UpworkClientOrchestratorService:
         m = re.search(pattern, text or "")
         return m.group(1).strip() if m else ""
 
-    def _slug(self, text: str) -> str:
-        return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:50] or "project"
+    def _repo_name(self, client_id: str, project_code: str) -> str:
+        client = re.sub(r"[^a-z0-9]+", "", client_id.lower())
+        project = re.sub(r"[^a-z0-9]+", "", project_code.lower())
+        return f"{client}-{project}"
