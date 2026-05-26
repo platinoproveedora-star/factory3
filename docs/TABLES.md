@@ -50,6 +50,15 @@ Actualizado: 2026-05-15
 | [logplat.cuentas_por_cobrar](#logplatcuentas_por_cobrar) | CXC derivada de viajes. Folio CXC-001… |
 | [logplat.viaje_docs](#logplatviaje_docs) | Documentos adjuntos a viajes. Folio DOC-001… |
 
+## Schema `freelance`
+
+| Tabla | Descripcion |
+|---|---|
+| [freelance.jobs](#freelancejobs) | Vacantes pegadas/analizadas para Upwork y otros canales. |
+| [freelance.proposals](#freelanceproposals) | Propuestas generadas para vacantes freelance. |
+| [freelance.tasks](#freelancetasks) | Checklist operativo del registro, portafolio y seguimiento. |
+| [freelance.assets](#freelanceassets) | Assets de portafolio por proyecto: screenshots, videos, links. |
+
 ---
 
 ## agent_memory
@@ -590,6 +599,94 @@ Documentos adjuntos a viajes (cartas porte, permisos, etc.). N documentos por vi
 | `tipo` | text | NO | 'otro' | carta_porte \| permiso \| otro |
 | `nombre` | text | SÍ | — | Nombre original del archivo |
 | `created_at` | timestamptz | SÍ | now() | — |
+
+---
+
+## freelance.jobs
+
+Schema: `freelance` | Empresa: EMP_FREELANCE_GROWTH
+
+Vacantes freelance copiadas desde Upwork u otros canales y analizadas por `vertical_freelance_growth/upwork_job_matcher`.
+
+| Campo | Tipo | Nulo | Default | Descripcion |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `company_id` | text | NO | 'EMP_FREELANCE_GROWTH' | Empresa dueña del flujo |
+| `source` | text | NO | 'upwork' | Canal de origen |
+| `job_text` | text | NO | — | Texto completo de la vacante |
+| `score` | integer | SI | — | Score 0-100 calculado por el matcher |
+| `decision` | text | SI | — | apply_now, apply_if_budget_ok, skip_or_low_priority |
+| `decision_es` | text | SI | — | Decision legible en espanol |
+| `matched_terms` | jsonb | NO | [] | Terminos detectados a favor |
+| `risk_terms` | jsonb | NO | [] | Terminos o señales de riesgo |
+| `relevant_projects` | jsonb | NO | [] | Proyectos del portafolio relacionados |
+| `strengths` | jsonb | NO | [] | Fortalezas para aplicar |
+| `risks` | jsonb | NO | [] | Riesgos antes de aplicar |
+| `proposal_angle` | text | SI | — | Angulo sugerido para la propuesta |
+| `saved_file` | text | SI | — | Archivo local generado como respaldo |
+| `status` | text | NO | 'analyzed' | analyzed, applied, won, lost, archived |
+| `created_at` | timestamptz | NO | now() | — |
+| `updated_at` | timestamptz | NO | now() | — |
+
+---
+
+## freelance.proposals
+
+Schema: `freelance` | Empresa: EMP_FREELANCE_GROWTH
+
+Propuestas generadas por `vertical_freelance_growth/upwork_proposal_generator`.
+
+| Campo | Tipo | Nulo | Default | Descripcion |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `company_id` | text | NO | 'EMP_FREELANCE_GROWTH' | Empresa dueña del flujo |
+| `source` | text | NO | 'upwork' | Canal de origen |
+| `job_id` | uuid | SI | — | FK opcional a freelance.jobs.id |
+| `job_text` | text | SI | — | Texto de la vacante usada |
+| `proposal_text` | text | NO | — | Propuesta lista para copiar |
+| `matched_projects` | jsonb | NO | [] | Proyectos usados como prueba |
+| `saved_file` | text | SI | — | Archivo local generado como respaldo |
+| `status` | text | NO | 'draft' | draft, sent, won, lost, archived |
+| `created_at` | timestamptz | NO | now() | — |
+| `updated_at` | timestamptz | NO | now() | — |
+
+---
+
+## freelance.tasks
+
+Schema: `freelance` | Empresa: EMP_FREELANCE_GROWTH
+
+Checklist operativo del proceso freelance: registro, portafolio, screenshots, aplicaciones y seguimiento.
+
+| Campo | Tipo | Nulo | Default | Descripcion |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `company_id` | text | NO | 'EMP_FREELANCE_GROWTH' | Empresa dueña del flujo |
+| `area` | text | NO | 'upwork_registration' | Area operativa |
+| `title` | text | NO | — | Tarea |
+| `done` | boolean | NO | false | Si ya se completo |
+| `notes` | text | SI | — | Notas |
+| `created_at` | timestamptz | NO | now() | — |
+| `updated_at` | timestamptz | NO | now() | — |
+
+---
+
+## freelance.assets
+
+Schema: `freelance` | Empresa: EMP_FREELANCE_GROWTH
+
+Assets asociados al portafolio freelance: screenshots, videos, links publicos y notas por proyecto.
+
+| Campo | Tipo | Nulo | Default | Descripcion |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `company_id` | text | NO | 'EMP_FREELANCE_GROWTH' | Empresa dueña del flujo |
+| `project_id` | text | NO | — | ID del proyecto en projects.json |
+| `asset_type` | text | NO | — | screenshot, video, link, doc |
+| `title` | text | SI | — | Nombre legible del asset |
+| `url` | text | SI | — | URL publica o privada |
+| `notes` | text | SI | — | Notas del asset |
+| `created_at` | timestamptz | NO | now() | — |
 
 ---
 
