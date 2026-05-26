@@ -492,6 +492,9 @@ def main() -> None:
     with st.sidebar:
         st.markdown("## Freelance Center")
         section = st.radio("Menu", ["Home", "Profile", "Portfolio", "Jobs", "Proposals", "Checklist"])
+        if st.button("Actualizar"):
+            st.cache_data.clear()
+            st.rerun()
         st.divider()
         st.caption(f"Actualizado: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
