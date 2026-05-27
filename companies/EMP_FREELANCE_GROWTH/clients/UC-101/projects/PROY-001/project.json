@@ -1,9 +1,9 @@
 {
   "client_id": "UC-101",
   "project_code": "PROY-001",
-  "project_name": "Diagnostico y mejora de procesos internos con AI",
+  "project_name": "Telegram bot de gastos y dashboard empresarial",
   "status": "planned",
-  "scope": "Proyecto inicial para diagnosticar procesos internos de COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV, detectar oportunidades de automatizacion con AI y preparar el primer plan de implementacion.",
+  "scope": "Crear un Telegram bot para registrar gastos de COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV. El bot debe permitir captura de gastos desde tickets e imagenes usando AI/OCR, y tambien captura manual sin AI mediante formulario guiado. El proyecto incluye un dashboard completo para analisis de gastos y una base modular donde posteriormente se integraran otros proyectos/procesos de la empresa, iniciando con el modulo de gastos.",
   "budget": "pendiente",
   "deadline": "pendiente",
   "platform": "interno",
@@ -11,13 +11,17 @@
   "repo_name": "uc101-proy001",
   "folder": "companies/EMP_FREELANCE_GROWTH/clients/UC-101/projects/PROY-001",
   "deliverables": [
-    "Mapa inicial de procesos internos",
-    "Lista priorizada de oportunidades de automatizacion con AI",
-    "Recomendacion de primer MVP",
-    "Plan de implementacion por fases",
-    "Checklist de datos/accesos necesarios"
+    "Telegram bot de captura de gastos",
+    "Flujo de lectura de tickets e imagenes con AI/OCR",
+    "Formulario de captura manual sin AI",
+    "Dashboard empresarial modular",
+    "Modulo de analisis de gastos",
+    "Base de datos para gastos, categorias, usuarios y documentos",
+    "Checklist de informacion que debe entregar el cliente",
+    "README de uso y operacion",
+    "Deploy inicial si se confirma Render necesario"
   ],
-  "source_brief": "",
+  "source_brief": "Primer proyecto del cliente: crear Telegram bot de gastos con dashboard completo de analisis. Debe leer tickets e imagenes de gastos y tener formato de captura manual sin AI. El dashboard no sera solo de gastos: sera la base para meter todos los proyectos de la empresa, empezando por gastos y analisis principal de informacion que posteriormente pasara el cliente.",
   "created_at": "2026-05-27T16:39:25.125162Z",
-  "updated_at": "2026-05-27T16:39:25.125162Z"
+  "updated_at": "2026-05-27T17:00:00Z"
 }

@@ -1,4 +1,4 @@
-# Closeout - PROY-001 - Diagnostico y mejora de procesos internos con AI
+# Closeout - PROY-001 - Telegram bot de gastos y dashboard empresarial
 
 - [ ] Deliverables accepted
 - [ ] Secrets removed from repo
