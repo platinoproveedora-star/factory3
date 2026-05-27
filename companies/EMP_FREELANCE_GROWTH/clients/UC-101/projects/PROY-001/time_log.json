@@ -6,6 +6,8 @@
   "hourly_rate_usd": 40,
   "estimated_hours": 16,
   "estimated_cost_usd": 640,
+  "total_hours": 0.0,
+  "last_alert_at_hours": 0.0,
   "hour_blocks": [],
   "alerts": {
     "every_hours": 10,
