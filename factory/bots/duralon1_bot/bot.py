@@ -391,6 +391,12 @@ def handle_update(update: dict, state: dict) -> dict:
     state = state or {}
     text  = _text(update)
 
+    # ── FOTO — prioridad máxima, rompe cualquier flujo ──────────────────────
+    # Se detecta ANTES de los flujos para que una foto siempre vaya a OCR
+    # aunque el usuario estuviera en mitad de una captura manual.
+    if (update.get("message") or {}).get("photo"):
+        return _handle_photo(update, {})
+
     # Cancelar siempre
     if text.lower() in {"/cancelar", "cancelar", "/4", "4"}:
         return {"response": f"Hasta luego!\n\n{_MENU}", "state": {}, "command": "salir"}
@@ -403,12 +409,9 @@ def handle_update(update: dict, state: dict) -> dict:
     if state.get("flow") == "fast_expense" and state.get("step") == "category" and not text.startswith("/"):
         return _handle_fast_category(update, state)
 
-    # Esperando foto (/1)
-    if state.get("flow") == "waiting_photo":
-        if (update.get("message") or {}).get("photo"):
-            return _handle_photo(update, {**state, "flow": None})
-        if not text.startswith("/"):
-            return {"response": "Manda la foto del ticket, o /4 para salir.", "state": state}
+    # Esperando foto (/1) pero mandaron texto
+    if state.get("flow") == "waiting_photo" and not text.startswith("/"):
+        return {"response": "Manda la foto del ticket, o /4 para salir.", "state": state}
 
     # Comandos de menu
     if text in {"/start", "start"}:
@@ -425,10 +428,6 @@ def handle_update(update: dict, state: dict) -> dict:
         return _summary(state)
     if text in {"/mis_gastos", "mis_gastos"}:
         return _my_expenses(update, state)
-
-    # Foto directa (sin /1)
-    if (update.get("message") or {}).get("photo"):
-        return _handle_photo(update, state)
 
     # Forma rapida: detectar cantidad,fecha,concepto
     if "," in text:
