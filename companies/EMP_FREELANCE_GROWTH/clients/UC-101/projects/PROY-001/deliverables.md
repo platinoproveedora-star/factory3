@@ -9,12 +9,12 @@ Crear un Telegram bot para registrar gastos de COMERCIALIZADORA DURALON DE CHIAP
 El dashboard sera una base empresarial modular: inicia con gastos y analisis, pero debe quedar preparado para agregar futuros proyectos/procesos de la empresa.
 
 ## Checklist
-- [ ] Telegram bot de captura de gastos (@Duralon1_bot)
-- [ ] Flujo de lectura de tickets e imagenes con AI/OCR
-- [ ] Formulario de captura manual sin AI
+- [x] Telegram bot de captura de gastos (@Duralon1_bot) — corriendo en factory3
+- [ ] Flujo de lectura de tickets e imagenes con AI/OCR — siguiente sprint
+- [x] Formulario de captura manual sin AI — forma 1 (cantidad,fecha,concepto) + forma 2 (/nuevo paso a paso)
 - [ ] Dashboard empresarial modular (Streamlit, repo uc101-proy001)
 - [ ] Modulo de analisis de gastos
-- [ ] Base de datos — schema uc101_proy001 creado en Supabase
+- [x] Base de datos — schema uc101_proy001 creado y expuesto en Supabase (5 tablas + 12 categorias seed)
 - [x] Informacion del cliente recopilada (categorias, usuarios, politica, exportaciones)
 - [ ] README de uso y operacion
 - [ ] Deploy dashboard en Render (uc101-proy001)
