@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "timelog_run",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Handler de comandos /timelog y /pomodoro para el bot admin. Lista proyectos, registra horas y maneja pomodoro.",
+  "requires_env": ["FACTORY3_ADMIN_BOT_TOKEN", "TELEGRAM_OWNER_CHAT_ID"]
+}

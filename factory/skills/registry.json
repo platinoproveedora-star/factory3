@@ -2840,5 +2840,14 @@
     "path": "skills/internos/vertical_upwork_clients/upwork_client_time_log",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_upwork_clients/timelog_run": {
+    "tipo": "interno",
+    "nombre": "vertical_upwork_clients/timelog_run",
+    "vertical": "vertical_upwork_clients",
+    "descripcion": "Handler bot admin: /timelog lista proyectos, /tiempo registra horas, /pomodoro 20min work+5min break.",
+    "path": "skills/internos/vertical_upwork_clients/timelog_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }
