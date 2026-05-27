@@ -4,7 +4,7 @@
     "bot_type": "client_expenses",
     "path": "bots/duralon1_bot",
     "entrypoint": "bot.py",
-    "token_env": "DURALON1_BOT_TOKEN",
+    "token_env": "UC101_PROY001_BOT_TOKEN",
     "client_id": "UC-101",
     "project_code": "PROY-001",
     "schema": "uc101_proy001",
