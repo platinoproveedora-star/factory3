@@ -55,7 +55,7 @@ El dashboard no debe quedar limitado a gastos. Debe ser la base para futuros pro
 - Usuarios iniciales: Tania, Luis y ACH.
 - Captura: sin aprobacion de gastos; solo registro por usuario.
 - Identificacion: por `telegram_chat_id`/numero de Telegram que envia el gasto.
-- Usuario de pruebas inicial: ACH.
+- Usuario de pruebas inicial: ACH (`8739777586`).
 - Exportacion a Excel: requerida.
 - Categorias: combustible, gastos varios, taller mecanico, papeleria, telmex, gas, internet, recargas celulares, nomina, gps, imss, sat.
 

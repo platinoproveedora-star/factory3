@@ -59,7 +59,7 @@ Mapeo inicial:
 |---|---|---|
 | Luis | pendiente | captura |
 | Tania | pendiente | captura |
-| ACH | pendiente | pruebas iniciales |
+| ACH | `8739777586` | pruebas iniciales |
 
 ## Categorias de Gastos
 

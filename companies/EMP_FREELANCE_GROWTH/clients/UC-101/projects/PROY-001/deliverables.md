@@ -34,6 +34,6 @@ El dashboard sera una base empresarial modular: inicia con gastos y analisis, pe
 - Usuarios iniciales: Tania, Luis, ACH
 - Identificacion de usuario: por `telegram_chat_id`
 - Aprobacion de gastos: no aplica en MVP
-- Usuario de pruebas inicial: ACH
+- Usuario de pruebas inicial: ACH (`8739777586`)
 - Exportacion Excel: si
 - Categorias: combustible, gastos varios, taller mecanico, papeleria, telmex, gas, internet, recargas celulares, nomina, gps, imss, sat
