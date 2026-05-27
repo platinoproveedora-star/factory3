@@ -36,7 +36,8 @@ El proyecto inicia con un modulo de gastos, pero el dashboard debe quedar prepar
 
 - Cliente: `UC-101`
 - Proyecto: `PROY-001`
-- Repo sugerido: `uc101-proy001`
+- Repo: `platinoproveedora-star/uc101-proy001`
+- Repo URL: `https://github.com/platinoproveedora-star/uc101-proy001`
 - Render sugerido: `uc101-proy001`
 
 ## Datos Que Debe Pasar El Cliente
