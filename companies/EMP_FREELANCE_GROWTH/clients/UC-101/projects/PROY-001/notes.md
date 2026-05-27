@@ -34,8 +34,6 @@ El dashboard no debe quedar limitado a gastos. Debe ser la base para futuros pro
 
 ## Pendientes por Confirmar
 
-- Deadline.
-- Presupuesto interno.
 - Categorias de gastos.
 - Campos obligatorios para captura manual.
 - Quien capturara gastos por Telegram.
@@ -45,4 +43,12 @@ El dashboard no debe quedar limitado a gastos. Debe ser la base para futuros pro
 - Si requiere exportacion a Excel/PDF.
 - Si el proyecto requiere repo propio desde el inicio: recomendado si.
 - Si el proyecto requiere deploy en Render desde el inicio: recomendado si.
+
+## Tiempo y Costo
+
+- Tarifa acordada/base: 40 USD/hora.
+- Estimacion inicial: 16 horas.
+- Costo estimado: 640 USD.
+- Deadline: 2026-05-29.
+- Prioridad: alta, liberar MVP rapido porque ya existe un siguiente proyecto del cliente listo para iniciar.
 

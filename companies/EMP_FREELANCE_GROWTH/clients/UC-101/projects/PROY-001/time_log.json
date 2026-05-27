@@ -2,7 +2,10 @@
   "client_id": "UC-101",
   "project_code": "PROY-001",
   "started_at": "2026-05-27T16:39:25Z",
-  "deadline": "pendiente",
+  "deadline": "2026-05-29",
+  "hourly_rate_usd": 40,
+  "estimated_hours": 16,
+  "estimated_cost_usd": 640,
   "hour_blocks": [],
   "alerts": {
     "every_hours": 10,

@@ -24,6 +24,14 @@ El proyecto inicia con un modulo de gastos, pero el dashboard debe quedar prepar
 4. Dashboard de gastos con analisis principal.
 5. Base modular para futuros procesos/proyectos.
 
+## Tiempo y Costo
+
+- Tarifa: 40 USD/hora.
+- Estimacion inicial: 16 horas.
+- Costo estimado: 640 USD.
+- Deadline operativo: 2026-05-29.
+- Ritmo esperado: avance rapido en 2 dias para liberar MVP inicial y continuar con el siguiente proyecto.
+
 ## Nombre Tecnico
 
 - Cliente: `UC-101`
