@@ -31,7 +31,7 @@ class TimelogRunService:
         if pom_alert:
             result["response"] = pom_alert + "\n\n" + result.get("response", "")
 
-        return result
+        return {"ok": True, "data": result}
 
     # ── pomodoro ─────────────────────────────────────────────────────────────
 
