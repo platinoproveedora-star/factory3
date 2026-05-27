@@ -4,6 +4,10 @@
 
 ## General
 - [README](../README.md) — Arquitectura, patrones de código y cómo arrancar
+- [FACTORY_ARCHITECTURE.md](FACTORY_ARCHITECTURE.md) — Estructura general de Factory3 y reglas de ubicacion
+- [COMPANIES_STANDARD.md](COMPANIES_STANDARD.md) — Estandar para crear y ordenar empresas en `companies/`
+- [CLIENTS_WORKFLOW.md](CLIENTS_WORKFLOW.md) — Flujo de clientes, proyectos, entregables, repos y cierre
+- [REGISTRIES.md](REGISTRIES.md) — Registries obligatorios: skills, dashboards, tablas, clientes y portafolio
 
 ## Seguridad
 - [SEGURIDAD.md](SEGURIDAD.md) — Variables de entorno, reglas de git, rotación de credenciales, checklist de deploy y skills para crear una nueva fábrica

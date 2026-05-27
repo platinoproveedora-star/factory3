@@ -10,9 +10,14 @@ companies/EMP_FREELANCE_GROWTH/clients/
   registry.json
   UC-101/
     client.json
-    project.json
-    deliverables.md
-    closeout.md
+    projects/
+      PROY-001/
+        project.json
+        deliverables.md
+        closeout.md
+        notes.md
+        assets/
+        time_log.json
 ```
 
 ## Skills
