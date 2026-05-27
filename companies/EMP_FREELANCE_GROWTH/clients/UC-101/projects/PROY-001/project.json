@@ -42,7 +42,27 @@
     "excel": true,
     "pdf": false
   },
-  "approval_required": "pendiente",
+  "approval_required": false,
+  "capture_policy": "solo captura por usuario; sin flujo de aprobacion",
+  "user_identification": {
+    "method": "telegram_chat_id",
+    "description": "El bot identifica al usuario por el chat_id/numero de Telegram que envia el gasto.",
+    "initial_mapping": [
+      {
+        "name": "Luis",
+        "telegram_chat_id": "pendiente"
+      },
+      {
+        "name": "Tania",
+        "telegram_chat_id": "pendiente"
+      },
+      {
+        "name": "ACH",
+        "telegram_chat_id": "pendiente",
+        "role": "test_user"
+      }
+    ]
+  },
   "folder": "companies/EMP_FREELANCE_GROWTH/clients/UC-101/projects/PROY-001",
   "deliverables": [
     "Telegram bot de captura de gastos",

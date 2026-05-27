@@ -37,7 +37,6 @@ El dashboard no debe quedar limitado a gastos. Debe ser la base para futuros pro
 - Campos obligatorios para captura manual.
 - Chat IDs de Telegram de Tania, Luis y ACH.
 - Si habra roles/permisos por usuario.
-- Si requiere aprobacion de gastos.
 - Si requiere exportacion a PDF.
 - Si el proyecto requiere repo propio desde el inicio: recomendado si.
 - Si el proyecto requiere deploy en Render desde el inicio: recomendado si.
@@ -54,6 +53,9 @@ El dashboard no debe quedar limitado a gastos. Debe ser la base para futuros pro
 
 - Bot Telegram dedicado: `@Duralon1_bot`.
 - Usuarios iniciales: Tania, Luis y ACH.
+- Captura: sin aprobacion de gastos; solo registro por usuario.
+- Identificacion: por `telegram_chat_id`/numero de Telegram que envia el gasto.
+- Usuario de pruebas inicial: ACH.
 - Exportacion a Excel: requerida.
 - Categorias: combustible, gastos varios, taller mecanico, papeleria, telmex, gas, internet, recargas celulares, nomina, gps, imss, sat.
 

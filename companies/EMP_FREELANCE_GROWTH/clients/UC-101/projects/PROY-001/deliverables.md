@@ -23,7 +23,7 @@ El dashboard sera una base empresarial modular: inicia con gastos y analisis, pe
 
 - [ ] Campos obligatorios de captura manual.
 - [ ] Chat IDs de Telegram para Tania, Luis y ACH.
-- [ ] Si requiere aprobacion de gastos o solo registro.
+- [x] Si requiere aprobacion de gastos o solo registro: solo registro por usuario.
 - [x] Si requiere exportar Excel.
 - [ ] Si requiere exportar PDF.
 - [ ] Si los tickets se guardaran en Supabase Storage.
@@ -32,5 +32,8 @@ El dashboard sera una base empresarial modular: inicia con gastos y analisis, pe
 
 - Bot: `@Duralon1_bot`
 - Usuarios iniciales: Tania, Luis, ACH
+- Identificacion de usuario: por `telegram_chat_id`
+- Aprobacion de gastos: no aplica en MVP
+- Usuario de pruebas inicial: ACH
 - Exportacion Excel: si
 - Categorias: combustible, gastos varios, taller mecanico, papeleria, telmex, gas, internet, recargas celulares, nomina, gps, imss, sat

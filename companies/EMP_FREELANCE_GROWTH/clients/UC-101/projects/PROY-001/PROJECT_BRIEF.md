@@ -47,7 +47,19 @@ El proyecto inicia con un modulo de gastos, pero el dashboard debe quedar prepar
 
 - Tania
 - Luis
-- ACH
+- ACH (usuario inicial de pruebas)
+
+## Identificacion de Usuarios
+
+El bot debe identificar al usuario por el `telegram_chat_id` que envia el gasto.
+
+Mapeo inicial:
+
+| Usuario | Telegram chat_id | Uso |
+|---|---|---|
+| Luis | pendiente | captura |
+| Tania | pendiente | captura |
+| ACH | pendiente | pruebas iniciales |
 
 ## Categorias de Gastos
 
@@ -73,7 +85,6 @@ El proyecto inicia con un modulo de gastos, pero el dashboard debe quedar prepar
 
 - Campos requeridos por gasto.
 - Ejemplos de tickets/fotos.
-- Reglas de aprobacion si existen.
 - Reportes esperados.
 - Chat IDs de Telegram para Tania, Luis y ACH.
 
@@ -86,4 +97,4 @@ El proyecto inicia con un modulo de gastos, pero el dashboard debe quedar prepar
 
 ## Siguiente Paso
 
-Confirmar campos del gasto, chat IDs de Telegram y si habra aprobacion de gastos o solo registro.
+Confirmar campos del gasto y chat IDs de Telegram. No habra aprobacion de gastos en el MVP; solo captura por usuario.
