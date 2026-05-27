@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "client_expenses_run",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Runtime generico para bot de gastos por cliente. CRUD en schema Supabase dedicado. Acciones: get_categories, get_user, register_user, save_expense, list_expenses, get_stats, get_schema_sql.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

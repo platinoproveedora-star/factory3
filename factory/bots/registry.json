@@ -1,4 +1,17 @@
 {
+  "duralon1_bot": {
+    "nombre": "duralon1_bot",
+    "bot_type": "client_expenses",
+    "path": "bots/duralon1_bot",
+    "entrypoint": "bot.py",
+    "token_env": "DURALON1_BOT_TOKEN",
+    "client_id": "UC-101",
+    "project_code": "PROY-001",
+    "schema": "uc101_proy001",
+    "skill": "client_expenses_run",
+    "commands": ["start", "nuevo", "mis_gastos", "resumen", "ayuda"],
+    "version": "0.1.0"
+  },
   "estoikolab_bot": {
     "nombre": "estoikolab_bot",
     "bot_type": "chat_agent",

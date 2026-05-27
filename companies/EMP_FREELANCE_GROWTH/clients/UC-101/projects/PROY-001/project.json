@@ -2,7 +2,7 @@
   "client_id": "UC-101",
   "project_code": "PROY-001",
   "project_name": "Telegram bot de gastos y dashboard empresarial",
-  "status": "planned",
+  "status": "in_progress",
   "scope": "Crear un Telegram bot para registrar gastos de COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV. El bot debe permitir captura de gastos desde tickets e imagenes usando AI/OCR, y tambien captura manual sin AI mediante formulario guiado. El proyecto incluye un dashboard completo para analisis de gastos y una base modular donde posteriormente se integraran otros proyectos/procesos de la empresa, iniciando con el modulo de gastos.",
   "budget": "640 USD estimado",
   "hourly_rate_usd": 40,
