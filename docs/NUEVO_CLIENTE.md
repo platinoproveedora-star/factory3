@@ -66,6 +66,16 @@ runner.run("vertical_github/github_create_repo", {
 
 Formato de nombre de repo: `uc###-proy###` — siempre corto, sin nombre largo de vacante.
 
+Usar el mismo nombre tecnico corto para GitHub, Render y URLs:
+
+```text
+Repo: uc101-proy001
+Render service: uc101-proy001
+URL esperada: https://uc101-proy001.onrender.com
+```
+
+El nombre descriptivo del proyecto vive en `project.json`, `README.md` y `deliverables.md`, no en el repo ni en la URL.
+
 ## Paso 5 — Arrancar el tiempo
 
 Registrar inicio en `time_log.json` dentro de `projects/PROY-001/`:
@@ -102,6 +112,7 @@ companies/EMP_FREELANCE_GROWTH/clients/
 ## Reglas que no se rompen
 
 - El código del cliente va en su repo GitHub, NO dentro de factory3
+- Los nombres tecnicos de repo/Render/URL usan solo cliente y proyecto: `uc###-proy###`
 - Nunca guardar `.env` o secretos en el repo del cliente
 - Antes de transferir repo: correr `github_repo_delivery_check`
 - Todo proyecto necesita `deliverables.md` y `closeout.md` antes de cerrar

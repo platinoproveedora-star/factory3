@@ -41,7 +41,7 @@ La version inicial puede crear archivos directamente en `UC-101/`, pero la estru
 
 ## Repos GitHub
 
-Formato recomendado:
+Formato obligatorio para nombres tecnicos:
 
 ```text
 uc101-proy001
@@ -49,7 +49,20 @@ uc102-proy001
 uc102-proy002
 ```
 
-No usar nombres largos de vacante como repo. El nombre largo vive en `project_name`.
+No usar nombres largos de vacante como repo, servicio Render, URL, carpeta tecnica o bucket. El nombre largo vive en `project_name`, `README.md`, `deliverables.md` y piezas de portafolio.
+
+## Nombres Tecnicos
+
+| Elemento | Formato | Ejemplo |
+|---|---|---|
+| Cliente | `UC-###` | `UC-101` |
+| Proyecto | `PROY-###` | `PROY-001` |
+| Repo GitHub | `uc###-proy###` | `uc101-proy001` |
+| Servicio Render | `uc###-proy###` | `uc101-proy001` |
+| URL Render | `https://uc###-proy###.onrender.com` | `https://uc101-proy001.onrender.com` |
+| Carpeta Factory3 | `clients/UC-###/projects/PROY-###/` | `clients/UC-101/projects/PROY-001/` |
+
+Regla: los sistemas usan codigos cortos; los humanos ven nombres descriptivos dentro de los documentos.
 
 ## Estados
 
@@ -96,12 +109,13 @@ Campos recomendados:
 
 ## Persistencia
 
-Para clientes reales, no basta con disco local de Render. Regla:
+Para clientes reales, no basta con disco local de Render. La decision operativa es GitHub primero, Supabase despues.
 
-1. Crear/actualizar archivos de cliente.
-2. Guardarlos en GitHub o Supabase.
-3. Registrar assets grandes en Storage.
-4. Documentar cierre antes de transferir repo.
+1. Crear/actualizar archivos de cliente en `companies/EMP_FREELANCE_GROWTH/clients/`.
+2. Guardarlos en GitHub automaticamente para historial y recuperacion.
+3. Usar Supabase para operacion viva: tiempo, estados, alertas, metricas y busqueda.
+4. Registrar assets grandes en Storage.
+5. Documentar cierre antes de transferir repo.
 
 ## Skills Actuales
 

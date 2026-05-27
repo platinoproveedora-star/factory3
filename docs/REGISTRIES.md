@@ -55,6 +55,8 @@ Debe guardar:
 - `status`
 - `folder`
 
+Los proyectos dentro de clientes deben usar `PROY-###` y los repos/servicios asociados deben usar el formato tecnico `uc###-proy###`.
+
 ## Portfolio Registry
 
 `companies/EMP_FREELANCE_GROWTH/portfolio/projects.json` registra proyectos vendibles. No todo cliente va automaticamente al portafolio; primero debe tener valor comercial y evidencias.

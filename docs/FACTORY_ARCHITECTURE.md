@@ -76,10 +76,12 @@ Cada dashboard debe:
 
 Orden recomendado:
 
-1. Supabase para datos operativos vivos.
-2. GitHub para configuracion, documentacion y entregables.
+1. GitHub para configuracion, documentacion y entregables de clientes.
+2. Supabase para datos operativos vivos.
 3. Storage para archivos grandes: imagenes, videos, documentos.
 4. Disco local solo para desarrollo o cache temporal.
+
+Para clientes externos, GitHub es la primera fuente de verdad. Supabase complementa con operacion viva como estados, tiempo trabajado, alertas y metricas.
 
 ## Decision Rapida
 
