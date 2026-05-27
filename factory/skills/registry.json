@@ -2858,14 +2858,5 @@
     "path": "skills/internos/vertical_upwork_clients/timelog_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
-  },
-  "client_expenses_run": {
-    "tipo": "interno",
-    "nombre": "client_expenses_run",
-    "vertical": "vertical_client_expenses",
-    "descripcion": "Runtime generico para bot de gastos por cliente. CRUD en schema Supabase dedicado. Acciones: get_categories, get_user, register_user, save_expense, list_expenses, get_stats, get_schema_sql.",
-    "path": "skills/internos/vertical_client_expenses/client_expenses_run",
-    "entrypoint": "skill.py",
-    "version": "0.1.0"
   }
 }
