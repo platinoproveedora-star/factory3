@@ -21,10 +21,16 @@ El dashboard sera una base empresarial modular: inicia con gastos y analisis, pe
 
 ## Preguntas Pendientes
 
-- [ ] Categorias de gastos que usa la empresa.
 - [ ] Campos obligatorios de captura manual.
-- [ ] Usuarios que capturan gastos por Telegram.
-- [ ] Usuarios que tendran acceso al dashboard.
+- [ ] Chat IDs de Telegram para Tania, Luis y ACH.
 - [ ] Si requiere aprobacion de gastos o solo registro.
-- [ ] Si requiere exportar Excel/PDF.
+- [x] Si requiere exportar Excel.
+- [ ] Si requiere exportar PDF.
 - [ ] Si los tickets se guardaran en Supabase Storage.
+
+## Datos Confirmados
+
+- Bot: `@Duralon1_bot`
+- Usuarios iniciales: Tania, Luis, ACH
+- Exportacion Excel: si
+- Categorias: combustible, gastos varios, taller mecanico, papeleria, telmex, gas, internet, recargas celulares, nomina, gps, imss, sat

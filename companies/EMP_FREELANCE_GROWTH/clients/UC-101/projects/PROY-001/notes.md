@@ -34,13 +34,11 @@ El dashboard no debe quedar limitado a gastos. Debe ser la base para futuros pro
 
 ## Pendientes por Confirmar
 
-- Categorias de gastos.
 - Campos obligatorios para captura manual.
-- Quien capturara gastos por Telegram.
-- Quien revisara informacion en dashboard.
+- Chat IDs de Telegram de Tania, Luis y ACH.
 - Si habra roles/permisos por usuario.
 - Si requiere aprobacion de gastos.
-- Si requiere exportacion a Excel/PDF.
+- Si requiere exportacion a PDF.
 - Si el proyecto requiere repo propio desde el inicio: recomendado si.
 - Si el proyecto requiere deploy en Render desde el inicio: recomendado si.
 
@@ -51,4 +49,11 @@ El dashboard no debe quedar limitado a gastos. Debe ser la base para futuros pro
 - Costo estimado: 640 USD.
 - Deadline: 2026-05-29.
 - Prioridad: alta, liberar MVP rapido porque ya existe un siguiente proyecto del cliente listo para iniciar.
+
+## Datos Confirmados
+
+- Bot Telegram dedicado: `@Duralon1_bot`.
+- Usuarios iniciales: Tania, Luis y ACH.
+- Exportacion a Excel: requerida.
+- Categorias: combustible, gastos varios, taller mecanico, papeleria, telmex, gas, internet, recargas celulares, nomina, gps, imss, sat.
 

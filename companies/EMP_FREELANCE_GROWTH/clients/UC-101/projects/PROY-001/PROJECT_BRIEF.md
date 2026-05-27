@@ -39,17 +39,43 @@ El proyecto inicia con un modulo de gastos, pero el dashboard debe quedar prepar
 - Repo: `platinoproveedora-star/uc101-proy001`
 - Repo URL: `https://github.com/platinoproveedora-star/uc101-proy001`
 - Render sugerido: `uc101-proy001`
+- Bot Telegram: `@Duralon1_bot`
+- Schema Supabase: `uc101_proy001`
+- Bucket Storage: `uc101-proy001-assets`
+
+## Usuarios Iniciales
+
+- Tania
+- Luis
+- ACH
+
+## Categorias de Gastos
+
+- combustible
+- gastos varios
+- taller mecanico
+- papeleria
+- telmex
+- gas
+- internet
+- recargas celulares
+- nomina
+- gps
+- imss
+- sat
+
+## Exportaciones
+
+- Excel: requerido.
+- PDF: pendiente/no confirmado.
 
 ## Datos Que Debe Pasar El Cliente
 
-- Categorias de gastos.
 - Campos requeridos por gasto.
 - Ejemplos de tickets/fotos.
-- Usuarios que capturaran gastos.
-- Usuarios que revisaran dashboard.
 - Reglas de aprobacion si existen.
 - Reportes esperados.
-- Exportaciones necesarias.
+- Chat IDs de Telegram para Tania, Luis y ACH.
 
 ## Riesgos
 
@@ -60,4 +86,4 @@ El proyecto inicia con un modulo de gastos, pero el dashboard debe quedar prepar
 
 ## Siguiente Paso
 
-Confirmar campos del gasto y decidir si se crea de inmediato el repo `uc101-proy001`.
+Confirmar campos del gasto, chat IDs de Telegram y si habra aprobacion de gastos o solo registro.

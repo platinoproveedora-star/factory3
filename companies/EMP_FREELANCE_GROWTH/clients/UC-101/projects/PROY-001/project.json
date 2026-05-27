@@ -16,6 +16,33 @@
   "repo_name": "uc101-proy001",
   "closed_at": "",
   "delivered_urls": [],
+  "bot_username": "@Duralon1_bot",
+  "supabase_schema": "uc101_proy001",
+  "storage_bucket": "uc101-proy001-assets",
+  "initial_users": [
+    "Tania",
+    "Luis",
+    "ACH"
+  ],
+  "expense_categories": [
+    "combustible",
+    "gastos varios",
+    "taller mecanico",
+    "papeleria",
+    "telmex",
+    "gas",
+    "internet",
+    "recargas celulares",
+    "nomina",
+    "gps",
+    "imss",
+    "sat"
+  ],
+  "export_requirements": {
+    "excel": true,
+    "pdf": false
+  },
+  "approval_required": "pendiente",
   "folder": "companies/EMP_FREELANCE_GROWTH/clients/UC-101/projects/PROY-001",
   "deliverables": [
     "Telegram bot de captura de gastos",
