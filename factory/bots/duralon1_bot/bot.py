@@ -28,7 +28,9 @@ _CATEGORIES = [
 ]
 
 _KNOWN_USERS = {
-    "8739777586": {"name": "ACH", "role": "test_user"},
+    "8739777586": {"name": "ACH",   "role": "admin"},
+    # Tania: USR-002 pre-registrada en Supabase. Chat ID se vincula en su primer /start.
+    # Luis: pendiente — agregar cuando se tenga su chat ID.
 }
 
 _FACTORY_DIR = Path(__file__).resolve().parents[2]

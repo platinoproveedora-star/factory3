@@ -118,20 +118,38 @@ def _get_user(schema: str, ctx: dict) -> dict:
 
 
 def _register_user(schema: str, ctx: dict, dry_run: bool) -> dict:
-    """Registra usuario nuevo por nombre y telegram_chat_id."""
-    nombre = ctx.get("nombre", "").strip()
+    """
+    Registra usuario nuevo por nombre y telegram_chat_id.
+    Si ya existe un registro con ese nombre pero sin chat_id, vincula el chat_id.
+    """
+    nombre  = ctx.get("nombre", "").strip()
     chat_id = str(ctx.get("telegram_chat_id", "")).strip()
     if not nombre or not chat_id:
         return {"ok": False, "error": "nombre y telegram_chat_id requeridos"}
     if dry_run:
         return {"ok": True, "data": {"dry_run": True, "nombre": nombre, "chat_id": chat_id}}
     try:
+        # Buscar si existe usuario con mismo nombre y sin chat_id (pre-registrado)
+        rows_preexist = _rest_get(
+            schema, "usuarios",
+            f"nombre=ilike.{urllib.parse.quote(nombre)}&telegram_chat_id=is.null&activo=eq.true"
+        )
+        if rows_preexist:
+            # Vincular chat_id al registro pre-existente
+            updated = _rest_patch(
+                schema, "usuarios",
+                {"telegram_chat_id": chat_id},
+                f"id=eq.{rows_preexist[0]['id']}"
+            )
+            user = updated[0] if updated else rows_preexist[0]
+            return {"ok": True, "data": {"user": user, "folio": user.get("folio"), "linked": True}}
+        # Si no existe pre-registro, crear nuevo
         folio = _next_folio(schema, "usuarios", "USR")
-        row = _rest_post(schema, "usuarios", {
-            "folio": folio,
-            "nombre": nombre,
-            "telegram_chat_id": chat_id,
-            "rol": ctx.get("rol", "capturista"),
+        row   = _rest_post(schema, "usuarios", {
+            "folio":             folio,
+            "nombre":            nombre,
+            "telegram_chat_id":  chat_id,
+            "rol":               ctx.get("rol", "capturista"),
         })
         return {"ok": True, "data": {"user": row[0] if row else None, "folio": folio}}
     except Exception as e:
