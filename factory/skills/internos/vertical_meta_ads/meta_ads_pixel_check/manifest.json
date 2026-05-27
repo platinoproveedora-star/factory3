@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_meta_ads/meta_ads_pixel_check",
+  "name": "meta_ads_pixel_check",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Lista pixels instalados en la cuenta publicitaria y verifica su último disparo.",
-  "requires_env": ["META_ACCESS_TOKEN"]
+  "requires_env": [
+    "META_ACCESS_TOKEN"
+  ]
 }

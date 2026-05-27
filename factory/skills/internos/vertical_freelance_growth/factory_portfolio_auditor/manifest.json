@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_freelance_growth/factory_portfolio_auditor",
+  "name": "factory_portfolio_auditor",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

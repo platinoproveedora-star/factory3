@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_companies/company_config_loader",
+  "name": "company_config_loader",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

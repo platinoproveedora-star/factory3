@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_meta_ads/meta_ads_create_adset",
+  "name": "meta_ads_create_adset",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Crea un conjunto de anuncios con targeting, presupuesto, optimización y calendario.",
-  "requires_env": ["META_ACCESS_TOKEN"]
+  "requires_env": [
+    "META_ACCESS_TOKEN"
+  ]
 }

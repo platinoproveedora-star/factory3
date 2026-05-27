@@ -1,9 +1,13 @@
 {
   "type": "skill",
-  "name": "vertical_wabiz/wabiz_channel_router",
+  "name": "wabiz_channel_router",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Router IA para WhatsApp: carga historial de conversación, llama Haiku con contexto y envía respuesta vía wabiz_send_text.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "ANTHROPIC_API_KEY"
+  ]
 }

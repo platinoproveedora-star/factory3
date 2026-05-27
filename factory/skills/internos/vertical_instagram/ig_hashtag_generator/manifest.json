@@ -1,12 +1,12 @@
 {
-    "type":  "skill",
-    "name":  "vertical_instagram/ig_hashtag_generator",
-    "version":  "0.1.0",
-    "kind":  "executable",
-    "entrypoint":  "skill.py",
-    "description":  "Genera sets de hashtags estrategicos para Instagram agrupados por alcance.",
-    "vertical":  "vertical_instagram",
-    "requires_env":  [
-                         "ANTHROPIC_API_KEY"
-                     ]
+  "type": "skill",
+  "name": "ig_hashtag_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera sets de hashtags estrategicos para Instagram agrupados por alcance.",
+  "vertical": "vertical_instagram",
+  "requires_env": [
+    "ANTHROPIC_API_KEY"
+  ]
 }

@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_ads/ads_campaign_preflight_check",
+  "name": "ads_campaign_preflight_check",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

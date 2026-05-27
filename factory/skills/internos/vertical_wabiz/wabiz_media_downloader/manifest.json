@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_wabiz/wabiz_media_downloader",
+  "name": "wabiz_media_downloader",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Descarga un archivo media de WhatsApp Cloud API (imagen, documento, audio, video) y devuelve el contenido en base64. Carga el access_token desde wabiz_config.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

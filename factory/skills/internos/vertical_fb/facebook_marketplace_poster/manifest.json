@@ -1,12 +1,12 @@
-﻿{
-    "type":  "skill",
-    "name":  "vertical_fb/facebook_marketplace_poster",
-    "version":  "0.1.0",
-    "kind":  "executable",
-    "entrypoint":  "skill.py",
-    "description":  "Publica una oferta de trabajo en Facebook Marketplace seccion Empleos via Playwright. Soporta dry_run.",
-    "requires_env":  [
-                         "FB_EMAIL",
-                         "FB_PASSWORD"
-                     ]
+{
+  "type": "skill",
+  "name": "facebook_marketplace_poster",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Publica una oferta de trabajo en Facebook Marketplace seccion Empleos via Playwright. Soporta dry_run.",
+  "requires_env": [
+    "FB_EMAIL",
+    "FB_PASSWORD"
+  ]
 }

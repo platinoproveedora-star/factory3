@@ -1,12 +1,10 @@
-﻿{
-    "type":  "skill",
-    "name":  "vertical_meta/meta_connection_check",
-    "version":  "0.1.0",
-    "kind":  "executable",
-    "entrypoint":  "skill.py",
-    "description":  "Valida una conexion Meta basica y calcula readiness para publishing, insights, comments y messages.",
-    "vertical":  "vertical_meta",
-    "requires_env":  [
-
-                     ]
+{
+  "type": "skill",
+  "name": "meta_connection_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida una conexion Meta basica y calcula readiness para publishing, insights, comments y messages.",
+  "vertical": "vertical_meta",
+  "requires_env": []
 }

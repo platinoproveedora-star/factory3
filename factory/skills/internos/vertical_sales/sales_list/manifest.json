@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_sales/sales_list",
+  "name": "sales_list",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "kind=data — lista filtrable de leads por estado, canal, nivel y fecha. Paginado.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_sales/sales_notify_agent",
+  "name": "sales_notify_agent",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Notifica al agente de ventas por Telegram cuando llega lead caliente (score >= 70).",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

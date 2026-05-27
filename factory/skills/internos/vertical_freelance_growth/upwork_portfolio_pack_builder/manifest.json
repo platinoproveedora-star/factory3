@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_freelance_growth/upwork_portfolio_pack_builder",
+  "name": "upwork_portfolio_pack_builder",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

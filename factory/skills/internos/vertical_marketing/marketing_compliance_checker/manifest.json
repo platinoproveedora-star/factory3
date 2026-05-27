@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_marketing/marketing_compliance_checker",
+  "name": "marketing_compliance_checker",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Revisa claims, promesas sensibles y riesgos de política publicitaria por plataforma.",
-  "requires_env": ["ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "ANTHROPIC_API_KEY"
+  ]
 }

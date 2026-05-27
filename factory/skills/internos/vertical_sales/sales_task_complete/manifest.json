@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_sales/sales_task_complete",
+  "name": "sales_task_complete",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Marca tarea de seguimiento como completada o la reprograma con nueva fecha.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

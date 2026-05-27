@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_wabiz/wabiz_send_text",
+  "name": "wabiz_send_text",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Envía mensaje de texto a un número WhatsApp vía Graph API Cloud. Registra en wabiz_messages con direction=out.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

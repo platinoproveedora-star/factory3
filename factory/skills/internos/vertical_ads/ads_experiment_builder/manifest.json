@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_ads/ads_experiment_builder",
+  "name": "ads_experiment_builder",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Diseña pruebas A/B de copy, creative, audiencia, placement o presupuesto.",
-  "requires_env": ["ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "ANTHROPIC_API_KEY"
+  ]
 }

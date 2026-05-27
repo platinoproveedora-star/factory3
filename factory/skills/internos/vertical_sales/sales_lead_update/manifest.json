@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_sales/sales_lead_update",
+  "name": "sales_lead_update",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Actualiza datos del lead: nombre, teléfono, email, estado y etapa. Registra updated_at.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

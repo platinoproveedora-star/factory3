@@ -1,12 +1,12 @@
 {
-    "type":  "skill",
-    "name":  "vertical_instagram/ig_schedule_post",
-    "version":  "0.1.0",
-    "kind":  "executable",
-    "entrypoint":  "skill.py",
-    "description":  "Programa una publicacion de Instagram para una fecha y hora futura via Meta Graph API.",
-    "vertical":  "vertical_instagram",
-    "requires_env":  [
-                         "IG_ACCESS_TOKEN"
-                     ]
+  "type": "skill",
+  "name": "ig_schedule_post",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Programa una publicacion de Instagram para una fecha y hora futura via Meta Graph API.",
+  "vertical": "vertical_instagram",
+  "requires_env": [
+    "IG_ACCESS_TOKEN"
+  ]
 }

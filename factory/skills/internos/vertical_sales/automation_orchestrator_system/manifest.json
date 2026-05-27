@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_sales/automation_orchestrator_system",
+  "name": "automation_orchestrator_system",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Decide siguiente acción post-lead según score e intención, encola tarea en factory_tasks y registra en automation_logs",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_instagram/ig_leads_sync",
+  "name": "ig_leads_sync",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Sincroniza leads de un formulario Lead Ads con vertical_sales. Push masivo o incremental.",
-  "requires_env": ["META_ACCESS_TOKEN", "ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "META_ACCESS_TOKEN",
+    "ANTHROPIC_API_KEY"
+  ]
 }

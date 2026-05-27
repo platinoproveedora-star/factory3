@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_meta_ads/meta_ads_update_adset",
+  "name": "meta_ads_update_adset",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Actualiza presupuesto, estado, bid o fechas de un conjunto de anuncios existente.",
-  "requires_env": ["META_ACCESS_TOKEN"]
+  "requires_env": [
+    "META_ACCESS_TOKEN"
+  ]
 }

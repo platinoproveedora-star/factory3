@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_sales/conversation_log_system",
+  "name": "conversation_log_system",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Guarda historial de mensajes (in/out) por lead en conversation_messages para contexto de seguimiento",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

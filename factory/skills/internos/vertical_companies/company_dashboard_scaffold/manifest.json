@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_companies/company_dashboard_scaffold",
+  "name": "company_dashboard_scaffold",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

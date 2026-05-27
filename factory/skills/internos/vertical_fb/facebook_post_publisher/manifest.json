@@ -1,12 +1,12 @@
-﻿{
-    "type":  "skill",
-    "name":  "vertical_fb/facebook_post_publisher",
-    "version":  "0.1.0",
-    "kind":  "executable",
-    "entrypoint":  "skill.py",
-    "description":  "Publica un post en un grupo de Facebook usando Playwright. Un grupo por llamada. Soporta dry_run y modo headless/headful.",
-    "requires_env":  [
-                         "FB_EMAIL",
-                         "FB_PASSWORD"
-                     ]
+{
+  "type": "skill",
+  "name": "facebook_post_publisher",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Publica un post en un grupo de Facebook usando Playwright. Un grupo por llamada. Soporta dry_run y modo headless/headful.",
+  "requires_env": [
+    "FB_EMAIL",
+    "FB_PASSWORD"
+  ]
 }

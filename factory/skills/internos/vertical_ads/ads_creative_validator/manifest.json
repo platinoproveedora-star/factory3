@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_ads/ads_creative_validator",
+  "name": "ads_creative_validator",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

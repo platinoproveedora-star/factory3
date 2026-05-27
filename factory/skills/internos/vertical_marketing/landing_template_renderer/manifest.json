@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_marketing/landing_template_renderer",
+  "name": "landing_template_renderer",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

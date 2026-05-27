@@ -1,12 +1,12 @@
-﻿{
-    "type":  "skill",
-    "name":  "vertical_fb/facebook_post_tracker",
-    "version":  "0.1.0",
-    "kind":  "executable",
-    "entrypoint":  "skill.py",
-    "description":  "Registra publicaciones de Facebook en Supabase (tabla fb_publicaciones). Controla cooldowns por grupo.",
-    "requires_env":  [
-                         "SUPABASE_URL",
-                         "SUPABASE_SERVICE_ROLE_KEY"
-                     ]
+{
+  "type": "skill",
+  "name": "facebook_post_tracker",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Registra publicaciones de Facebook en Supabase (tabla fb_publicaciones). Controla cooldowns por grupo.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

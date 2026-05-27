@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_marketing/landing_config_builder",
+  "name": "landing_config_builder",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

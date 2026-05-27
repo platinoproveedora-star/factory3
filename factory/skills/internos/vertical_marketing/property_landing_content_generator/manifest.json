@@ -1,10 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_marketing/property_landing_content_generator",
+  "name": "property_landing_content_generator",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Genera contenido estructurado para landing inmobiliaria dinamica a partir de un brief de propiedad.",
   "vertical": "vertical_marketing",
-  "requires_env": ["ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "ANTHROPIC_API_KEY"
+  ]
 }

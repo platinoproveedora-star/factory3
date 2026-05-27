@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_ads/campaign_config_writer",
+  "name": "campaign_config_writer",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

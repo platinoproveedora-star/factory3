@@ -1,9 +1,13 @@
 {
   "type": "skill",
-  "name": "vertical_sales/sales_run",
+  "name": "sales_run",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Bot mode multicanal — recibe webhook y orquesta el flujo completo: router → lead → score → followup",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "ANTHROPIC_API_KEY"
+  ]
 }

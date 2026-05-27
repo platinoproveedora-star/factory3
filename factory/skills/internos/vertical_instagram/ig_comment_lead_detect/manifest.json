@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_instagram/ig_comment_lead_detect",
+  "name": "ig_comment_lead_detect",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Detecta intent comercial en comentarios de IG y crea lead si aplica. Genera respuesta sugerida.",
-  "requires_env": ["ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "ANTHROPIC_API_KEY"
+  ]
 }

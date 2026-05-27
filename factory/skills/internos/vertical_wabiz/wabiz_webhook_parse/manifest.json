@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_wabiz/wabiz_webhook_parse",
+  "name": "wabiz_webhook_parse",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Normaliza payload de webhook Meta WhatsApp al formato interno {empresa_id, from_phone, type, body}. Registra mensajes en wabiz_messages si dry_run=False.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

@@ -1,9 +1,13 @@
 {
   "type": "skill",
-  "name": "vertical_instagram/ig_list",
+  "name": "ig_list",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "kind=data — lista posts, leads o comentarios de Instagram. Para dashboard via GET /data/.",
-  "requires_env": ["IG_ACCESS_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "IG_ACCESS_TOKEN",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

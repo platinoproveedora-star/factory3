@@ -1,12 +1,10 @@
 {
-    "type":  "skill",
-    "name":  "vertical_instagram/ig_best_time_selector",
-    "version":  "0.1.0",
-    "kind":  "executable",
-    "entrypoint":  "skill.py",
-    "description":  "Calcula los mejores horarios de publicacion en Instagram segun formato y region de audiencia.",
-    "vertical":  "vertical_instagram",
-    "requires_env":  [
-
-                     ]
+  "type": "skill",
+  "name": "ig_best_time_selector",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Calcula los mejores horarios de publicacion en Instagram segun formato y region de audiencia.",
+  "vertical": "vertical_instagram",
+  "requires_env": []
 }

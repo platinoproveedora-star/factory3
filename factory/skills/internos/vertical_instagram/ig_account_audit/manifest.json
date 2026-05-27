@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_instagram/ig_account_audit",
+  "name": "ig_account_audit",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Audita tu cuenta de Instagram: bio, consistencia de contenido, engagement, hashtags y recomendaciones con IA.",
-  "requires_env": ["IG_ACCESS_TOKEN", "ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "IG_ACCESS_TOKEN",
+    "ANTHROPIC_API_KEY"
+  ]
 }

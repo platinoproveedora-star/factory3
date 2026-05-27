@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_marketing/marketing_angle_generator",
+  "name": "marketing_angle_generator",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Genera ángulos de venta por dolor, deseo, urgencia, autoridad y prueba social.",
-  "requires_env": ["ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "ANTHROPIC_API_KEY"
+  ]
 }

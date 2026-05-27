@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_ads/ads_guardrails",
+  "name": "ads_guardrails",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

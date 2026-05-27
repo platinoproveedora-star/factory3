@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_meta_ads/meta_ads_publish_flow",
+  "name": "meta_ads_publish_flow",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Orquestador: crea campaña → conjunto → creativo → anuncio en secuencia con un solo payload.",
-  "requires_env": ["META_ACCESS_TOKEN"]
+  "requires_env": [
+    "META_ACCESS_TOKEN"
+  ]
 }

@@ -1,6 +1,6 @@
 {
   "type": "skill",
-  "name": "vertical_freelance_growth/portfolio_project_updater",
+  "name": "portfolio_project_updater",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",

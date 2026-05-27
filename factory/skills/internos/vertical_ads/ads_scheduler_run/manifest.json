@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_ads/ads_scheduler_run",
+  "name": "ads_scheduler_run",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Planifica lanzamientos, pausas y cambios programados de campañas. Valida condiciones y genera plan.",
-  "requires_env": ["ANTHROPIC_API_KEY"]
+  "requires_env": [
+    "ANTHROPIC_API_KEY"
+  ]
 }

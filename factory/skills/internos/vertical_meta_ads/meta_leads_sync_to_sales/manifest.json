@@ -1,10 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_meta_ads/meta_leads_sync_to_sales",
+  "name": "meta_leads_sync_to_sales",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Lee leads de un formulario Meta y los enruta a vertical_sales/sales_run para pipeline, score y follow-up.",
   "vertical": "vertical_meta_ads",
-  "requires_env": ["META_ACCESS_TOKEN"]
+  "requires_env": [
+    "META_ACCESS_TOKEN"
+  ]
 }

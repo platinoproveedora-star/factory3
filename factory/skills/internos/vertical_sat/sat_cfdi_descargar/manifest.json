@@ -1,14 +1,14 @@
-﻿{
-    "type":  "skill",
-    "name":  "vertical_sat/sat_cfdi_descargar",
-    "version":  "0.1.0",
-    "kind":  "executable",
-    "entrypoint":  "skill.py",
-    "description":  "Descarga un paquete ZIP del SAT por id_paquete y extrae la lista de strings XML de CFDIs.",
-    "requires_env":  [
-                         "SAT_RFC",
-                         "SAT_EFIRMA_CER_B64",
-                         "SAT_EFIRMA_KEY_B64",
-                         "SAT_EFIRMA_PASSWORD"
-                     ]
+{
+  "type": "skill",
+  "name": "sat_cfdi_descargar",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Descarga un paquete ZIP del SAT por id_paquete y extrae la lista de strings XML de CFDIs.",
+  "requires_env": [
+    "SAT_RFC",
+    "SAT_EFIRMA_CER_B64",
+    "SAT_EFIRMA_KEY_B64",
+    "SAT_EFIRMA_PASSWORD"
+  ]
 }

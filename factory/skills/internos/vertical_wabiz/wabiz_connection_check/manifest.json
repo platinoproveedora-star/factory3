@@ -1,9 +1,12 @@
 {
   "type": "skill",
-  "name": "vertical_wabiz/wabiz_connection_check",
+  "name": "wabiz_connection_check",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Valida token y phone_number_id WhatsApp contra Graph API v24.0. Carga config de Supabase si se pasa empresa_id.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
 }

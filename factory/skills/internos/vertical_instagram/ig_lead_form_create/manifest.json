@@ -1,9 +1,11 @@
 {
   "type": "skill",
-  "name": "vertical_instagram/ig_lead_form_create",
+  "name": "ig_lead_form_create",
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Crea un formulario de Lead Ads nativo en Meta para capturar leads desde Instagram/Facebook.",
-  "requires_env": ["META_ACCESS_TOKEN"]
+  "requires_env": [
+    "META_ACCESS_TOKEN"
+  ]
 }

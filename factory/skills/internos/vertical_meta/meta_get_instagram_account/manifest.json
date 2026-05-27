@@ -1,15 +1,11 @@
-﻿{
-    "type":  "skill",
-    "name":  "vertical_meta/meta_get_instagram_account",
-    "version":  "0.1.0",
-    "kind":  "executable",
-    "entrypoint":  "skill.py",
-    "description":  "Obtiene la cuenta Instagram Business conectada a una pagina Meta.",
-    "vertical":  "vertical_meta",
-    "permissions":  [
-
-                    ],
-    "requires_env":  [
-
-                     ]
+{
+  "type": "skill",
+  "name": "meta_get_instagram_account",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Obtiene la cuenta Instagram Business conectada a una pagina Meta.",
+  "vertical": "vertical_meta",
+  "permissions": [],
+  "requires_env": []
 }
