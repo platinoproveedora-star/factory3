@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import base64
+import json
+import os
+import urllib.request
 from datetime import datetime, date
 from pathlib import Path
 
@@ -148,7 +152,125 @@ def _do_save(update: dict, draft: dict) -> dict:
         "fecha":         draft.get("fecha") or date.today().isoformat(),
         "metodo_captura": draft.get("metodo_captura", "manual"),
     })
+
+    # Si hay foto de ticket, subirla a Storage y ligarla al gasto
+    if save.get("ok") and draft.get("photo_b64"):
+        gasto_id  = (save.get("data", {}).get("gasto") or {}).get("id", "")
+        file_id   = draft.get("photo_file_id", "ticket")
+        _run_expenses("upload_document", {
+            "content_b64": draft["photo_b64"],
+            "media_type":  "image/jpeg",
+            "gasto_id":    gasto_id,
+            "filename":    f"{file_id}.jpg",
+        })
+
     return save
+
+
+# ---------------------------------------------------------------------------
+# OCR helpers
+# ---------------------------------------------------------------------------
+
+def _download_telegram_photo(file_id: str) -> tuple[bytes | None, str | None]:
+    """Descarga foto de Telegram por file_id. Retorna (bytes, None) o (None, error)."""
+    token = os.getenv("UC101_PROY001_BOT_TOKEN", "")
+    if not token:
+        return None, "Token no configurado"
+    try:
+        with urllib.request.urlopen(
+            f"https://api.telegram.org/bot{token}/getFile?file_id={file_id}", timeout=10
+        ) as r:
+            data = json.loads(r.read())
+        if not data.get("ok"):
+            return None, "getFile falló"
+        file_path = data["result"]["file_path"]
+        with urllib.request.urlopen(
+            f"https://api.telegram.org/file/bot{token}/{file_path}", timeout=30
+        ) as r:
+            return r.read(), None
+    except Exception as e:
+        return None, str(e)
+
+
+def _handle_photo(update: dict, state: dict) -> dict:
+    """Maneja foto/ticket: descarga → OCR con Haiku → flujo de categoria."""
+    photos = (update.get("message") or {}).get("photo", [])
+    if not photos:
+        return {"response": "No se recibio la foto.", "state": state}
+
+    # Mayor resolución = último elemento de la lista
+    best   = photos[-1]
+    file_id = best["file_id"]
+
+    # Descarga
+    file_bytes, err = _download_telegram_photo(file_id)
+    if err or not file_bytes:
+        return {
+            "response": f"No pude descargar la foto ({err}).\nUsa /nuevo o el formato rapido.",
+            "state":   state, "command": "photo_download_error",
+        }
+
+    content_b64 = base64.b64encode(file_bytes).decode()
+
+    # OCR con Haiku Vision
+    ocr = _run_expenses("ocr_ticket", {
+        "content_b64": content_b64,
+        "media_type":  "image/jpeg",
+        "categories":  _CATEGORIES,
+    })
+
+    if not ocr.get("ok"):
+        return {
+            "response": (
+                f"No pude leer el ticket: {ocr.get('error','error desconocido')}\n"
+                "Usa /nuevo o el formato rapido: cantidad,dd/mm/aa,concepto"
+            ),
+            "state": state, "command": "ocr_failed",
+        }
+
+    data     = ocr.get("data", {})
+    monto    = data.get("monto")
+    fecha    = data.get("fecha") or date.today().isoformat()
+    desc     = data.get("descripcion", "")
+    cat_sug  = data.get("categoria_sugerida", "")
+
+    if not monto:
+        return {
+            "response": (
+                "No detecto el monto en el ticket.\n"
+                "Usa /nuevo o formato rapido: cantidad,dd/mm/aa,concepto"
+            ),
+            "state": state, "command": "ocr_no_monto",
+        }
+
+    draft = {
+        "monto":          float(monto),
+        "fecha":          fecha,
+        "descripcion":    desc,
+        "metodo_captura": "ai_ocr",
+        "photo_b64":      content_b64,   # para subirlo al guardar
+        "photo_file_id":  file_id,
+    }
+
+    # Menu de categorias con sugerida marcada
+    lines = []
+    for i, c in enumerate(_CATEGORIES):
+        mark = " <-" if c == cat_sug else ""
+        lines.append(f"{i+1}. {c}{mark}")
+
+    resumen = (
+        f"Ticket detectado:\n"
+        f"Monto: ${draft['monto']:,.0f}\n"
+        f"Fecha: {fecha}\n"
+        f"Descripcion: {desc or '(no detectada)'}\n\n"
+        "Elige la categoria:\n" + "\n".join(lines)
+    )
+
+    return {
+        "response": resumen,
+        "state":    {**state, "flow": "fast_expense", "step": "category", "draft": draft},
+        "command":  "ocr_ok",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -330,13 +452,9 @@ def handle_update(update: dict, state: dict) -> dict:
         if parsed:
             return _handle_forma1(update, state, parsed)
 
-    # Foto — placeholder OCR
+    # Foto — OCR con Haiku Vision
     if (update.get("message") or {}).get("photo"):
-        return {
-            "response": "Foto recibida. OCR/AI va en el siguiente sprint; usa /nuevo o el formato rapido por ahora.",
-            "state":    state,
-            "command":  "photo_received",
-        }
+        return _handle_photo(update, state)
 
     return {
         "response": "Forma rapida: cantidad,dd/mm/aa,concepto\nO usa /nuevo  |  /ayuda",

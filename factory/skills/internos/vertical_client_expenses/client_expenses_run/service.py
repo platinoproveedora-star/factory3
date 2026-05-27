@@ -1,9 +1,18 @@
 from __future__ import annotations
 import os
+import base64
 import json
+import importlib.util as _ilu
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone, date
+from pathlib import Path
+
+# ── ai_interpreter (Haiku Vision) ──────────────────────────────────────────
+_AI_PATH = Path(__file__).parent.parent.parent / "vertical_factory_utils" / "ai_interpreter" / "service.py"
+_ai_spec = _ilu.spec_from_file_location("ai_interpreter_svc", _AI_PATH)
+_ai      = _ilu.module_from_spec(_ai_spec)
+_ai_spec.loader.exec_module(_ai)
 
 
 # ---------------------------------------------------------------------------
@@ -350,6 +359,136 @@ ON CONFLICT (nombre) DO NOTHING;
 
 
 # ---------------------------------------------------------------------------
+# OCR — extrae datos de ticket/imagen con Haiku Vision
+# ---------------------------------------------------------------------------
+
+def _ocr_ticket(schema: str, ctx: dict) -> dict:
+    """Extrae monto/fecha/descripcion/categoria de una imagen de ticket."""
+    content_b64 = ctx.get("content_b64", "")
+    media_type  = ctx.get("media_type", "image/jpeg")
+    categories  = ctx.get("categories", [])
+
+    if not content_b64:
+        return {"ok": False, "error": "content_b64 requerido"}
+
+    cat_list = "|".join(categories) if categories else "combustible|gastos varios|taller mecanico|papeleria|gas|internet|nomina|gps|imss|sat"
+
+    schema_ai = {
+        "monto":              None,   # número decimal, sin símbolo
+        "fecha":              None,   # formato YYYY-MM-DD
+        "descripcion":        None,   # concepto corto del gasto
+        "categoria_sugerida": None,   # debe ser exactamente una de: cat_list
+        "establecimiento":    None,   # nombre del negocio en el ticket
+    }
+
+    r = _ai.run({
+        "mode":        "extract",
+        "schema":      schema_ai,
+        "content_b64": content_b64,
+        "media_type":  media_type,
+        "context":     (
+            "Eres un asistente de captura de gastos empresariales. "
+            "Analiza el ticket o comprobante y extrae los datos. "
+            f"Para categoria_sugerida usa SOLO una de: {cat_list}. "
+            "Para fecha usa formato YYYY-MM-DD. "
+            "Para monto usa numero decimal sin simbolos ni comas."
+        ),
+    })
+
+    if not r.get("ok"):
+        err = str(r.get("error", ""))
+        if "credit" in err.lower() or "billing" in err.lower() or "400" in err:
+            return {"ok": False, "error": "Sin creditos de IA — recarga en console.anthropic.com"}
+        return r
+
+    extracted = r.get("data", {}).get("extracted", {})
+
+    # Normalizar fecha a YYYY-MM-DD
+    fecha = extracted.get("fecha")
+    if fecha:
+        for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d", "%d-%m-%Y"):
+            try:
+                fecha = datetime.strptime(str(fecha).strip(), fmt).date().isoformat()
+                break
+            except (ValueError, AttributeError):
+                pass
+
+    # Normalizar monto
+    monto = extracted.get("monto")
+    if monto is not None:
+        try:
+            monto = float(str(monto).replace(",", "").replace("$", "").strip())
+        except (ValueError, TypeError):
+            monto = None
+
+    return {"ok": True, "data": {
+        "monto":              monto,
+        "fecha":              fecha,
+        "descripcion":        extracted.get("descripcion") or extracted.get("establecimiento", ""),
+        "categoria_sugerida": extracted.get("categoria_sugerida"),
+        "establecimiento":    extracted.get("establecimiento"),
+    }}
+
+
+# ---------------------------------------------------------------------------
+# Upload documento — sube imagen a Storage y registra en gasto_documentos
+# ---------------------------------------------------------------------------
+
+def _upload_document(schema: str, ctx: dict, dry_run: bool) -> dict:
+    """Sube imagen de ticket a Supabase Storage y lo liga al gasto."""
+    content_b64 = ctx.get("content_b64", "")
+    media_type  = ctx.get("media_type", "image/jpeg")
+    gasto_id    = ctx.get("gasto_id", "")
+    filename    = ctx.get("filename", "ticket.jpg")
+    bucket      = ctx.get("bucket", "")
+
+    if not content_b64:
+        return {"ok": False, "error": "content_b64 requerido"}
+    if not bucket:
+        return {"ok": False, "error": "bucket requerido"}
+    if dry_run:
+        return {"ok": True, "data": {"dry_run": True}}
+
+    file_bytes = base64.b64decode(content_b64)
+    ts   = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    path = f"tickets/{ts}_{filename}"
+
+    req = urllib.request.Request(
+        f"{_url()}/storage/v1/object/{bucket}/{path}",
+        data=file_bytes, method="POST",
+        headers={
+            "apikey":        _key(),
+            "Authorization": f"Bearer {_key()}",
+            "Content-Type":  media_type,
+            "x-upsert":      "true",
+            "User-Agent":    "FactoryFactory/0.1 (+https://github.com/)",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            r.read()
+        doc_url = f"{_url()}/storage/v1/object/public/{bucket}/{path}"
+    except Exception as e:
+        return {"ok": False, "error": f"Storage upload: {e}"}
+
+    # Registrar en gasto_documentos si tenemos gasto_id
+    if gasto_id:
+        try:
+            folio = _next_folio(schema, "gasto_documentos", "DOC")
+            _rest_post(schema, "gasto_documentos", {
+                "folio":        folio,
+                "gasto_id":     gasto_id,
+                "url":          doc_url,
+                "tipo":         "ticket",
+                "storage_path": path,
+            })
+        except Exception:
+            pass  # No fatal — el archivo ya está subido
+
+    return {"ok": True, "data": {"url": doc_url, "path": path}}
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -372,6 +511,8 @@ class ClientExpensesService:
             "list_expenses":   lambda: _list_expenses(schema, context),
             "get_stats":       lambda: _get_stats(schema, context),
             "get_schema_sql":  lambda: _get_schema_sql(schema, context),
+            "ocr_ticket":      lambda: _ocr_ticket(schema, context),
+            "upload_document": lambda: _upload_document(schema, context, dry_run),
         }
 
         if action not in actions:
