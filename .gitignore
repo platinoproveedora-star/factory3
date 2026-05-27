@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 venv/
 tmp/
+logs/
 ctx*.json
 run_dashboard.py
 SESION_ACTUAL.md
