@@ -12,12 +12,12 @@ El dashboard sera una base empresarial modular: inicia con gastos y analisis, pe
 - [x] Telegram bot de captura de gastos (@Duralon1_bot) — corriendo en factory3
 - [ ] Flujo de lectura de tickets e imagenes con AI/OCR — siguiente sprint
 - [x] Formulario de captura manual sin AI — forma 1 (cantidad,fecha,concepto) + forma 2 (/nuevo paso a paso)
-- [ ] Dashboard empresarial modular (Streamlit, repo uc101-proy001)
-- [ ] Modulo de analisis de gastos
+- [x] Dashboard empresarial modular (Streamlit) — https://uc101-proy001.onrender.com
+- [x] Modulo de analisis de gastos — KPIs, barras por categoria, pastel por usuario, tendencia mensual, tabla filtrable, export Excel
 - [x] Base de datos — schema uc101_proy001 creado y expuesto en Supabase (5 tablas + 12 categorias seed)
 - [x] Informacion del cliente recopilada (categorias, usuarios, politica, exportaciones)
-- [ ] README de uso y operacion
-- [ ] Deploy dashboard en Render (uc101-proy001)
+- [x] README de uso y operacion — repo platinoproveedora-star/uc101-proy001
+- [x] Deploy dashboard en Render — srv-d8bjgbel51nc73db9t30 (uc101-proy001, auto-deploy ON)
 
 ## Preguntas Pendientes
 
