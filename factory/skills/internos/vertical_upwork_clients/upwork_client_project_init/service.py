@@ -16,6 +16,7 @@ class UpworkClientProjectInitService:
         if not folder.exists() and not context.get("dry_run", False):
             return {"ok": False, "error": f"cliente no existe: {client_id}"}
         project_code = (context.get("project_code") or self._next_project_code(folder)).strip().upper()
+        project_folder = folder / "projects" / project_code
         project_name = (context.get("project_name") or project_code).strip()
         repo_name = context.get("repo_name") or self._repo_name(client_id, project_code)
         now = datetime.utcnow().isoformat() + "Z"
@@ -30,18 +31,27 @@ class UpworkClientProjectInitService:
             "platform": context.get("platform", "upwork"),
             "repo": context.get("repo", ""),
             "repo_name": repo_name,
+            "folder": str(project_folder).replace("\\", "/"),
             "deliverables": context.get("deliverables") or self._deliverables_from_scope(context.get("scope", "")),
             "source_brief": context.get("source_brief", ""),
             "created_at": now,
             "updated_at": now,
         }
         if not context.get("dry_run", False):
-            (folder / "project.json").write_text(json.dumps(project, ensure_ascii=False, indent=2), encoding="utf-8")
-            (folder / "deliverables.md").write_text(self._deliverables_md(project), encoding="utf-8")
-            closeout = folder / "closeout.md"
+            project_folder.mkdir(parents=True, exist_ok=True)
+            (project_folder / "project.json").write_text(json.dumps(project, ensure_ascii=False, indent=2), encoding="utf-8")
+            (project_folder / "deliverables.md").write_text(self._deliverables_md(project), encoding="utf-8")
+            notes = project_folder / "notes.md"
+            if not notes.exists():
+                notes.write_text(f"# Notes - {project_code}\n\n", encoding="utf-8")
+            (project_folder / "assets").mkdir(exist_ok=True)
+            time_log = project_folder / "time_log.json"
+            if not time_log.exists():
+                time_log.write_text(json.dumps(self._time_log(project), ensure_ascii=False, indent=2), encoding="utf-8")
+            closeout = project_folder / "closeout.md"
             if not closeout.exists():
                 closeout.write_text(self._closeout_md(project), encoding="utf-8")
-        return {"ok": True, "data": {"project": project, "folder": str(folder)}}
+        return {"ok": True, "data": {"project": project, "folder": str(project_folder)}}
 
     def _next_project_code(self, folder: Path) -> str:
         if not folder.exists():
@@ -50,8 +60,10 @@ class UpworkClientProjectInitService:
         project = self._read_json(folder / "project.json")
         if project.get("project_code"):
             existing.append(project["project_code"])
-        for path in folder.glob("PROY-*.json"):
-            existing.append(path.stem)
+        projects_root = folder / "projects"
+        for path in projects_root.glob("PROY-*"):
+            if path.is_dir():
+                existing.append(path.name)
         numbers = []
         for code in existing:
             match = re.search(r"(\d+)$", str(code))
@@ -87,3 +99,13 @@ class UpworkClientProjectInitService:
 
     def _closeout_md(self, project: dict) -> str:
         return f"# Closeout - {project['project_code']} - {project['project_name']}\n\n- [ ] Deliverables accepted\n- [ ] Secrets removed from repo\n- [ ] README updated\n- [ ] Deploy URL shared\n- [ ] Repo transfer requested if applicable\n"
+
+    def _time_log(self, project: dict) -> dict:
+        return {
+            "client_id": project.get("client_id", ""),
+            "project_code": project.get("project_code", ""),
+            "started_at": "",
+            "deadline": project.get("deadline", ""),
+            "hour_blocks": [],
+            "alerts": {"every_hours": 10, "enabled": True},
+        }

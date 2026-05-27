@@ -12,8 +12,24 @@ class UpworkClientStatusService:
         for item in registry.get("clients", []):
             folder = root / item.get("client_id", "")
             client = self._read_json(folder / "client.json")
-            project = self._read_json(folder / "project.json")
-            rows.append({
+            projects = self._projects(folder)
+            if not projects:
+                rows.append({
+                    "client_id": item.get("client_id"),
+                    "client_name": client.get("client_name") or item.get("client_name"),
+                    "client_status": client.get("status") or item.get("status"),
+                    "project_code": "",
+                    "project_name": "",
+                    "project_status": "",
+                    "budget": "",
+                    "deadline": "",
+                    "repo": "",
+                    "folder": str(folder).replace("\\", "/"),
+                    "project_folder": "",
+                })
+                continue
+            for project, project_folder in projects:
+                rows.append({
                 "client_id": item.get("client_id"),
                 "client_name": client.get("client_name") or item.get("client_name"),
                 "client_status": client.get("status") or item.get("status"),
@@ -24,8 +40,22 @@ class UpworkClientStatusService:
                 "deadline": project.get("deadline", ""),
                 "repo": project.get("repo") or project.get("repo_name", ""),
                 "folder": str(folder).replace("\\", "/"),
-            })
+                "project_folder": str(project_folder).replace("\\", "/"),
+                })
         return {"ok": True, "data": {"clients": rows, "count": len(rows), "registry": registry}}
+
+    def _projects(self, folder: Path) -> list[tuple[dict, Path]]:
+        projects = []
+        legacy = self._read_json(folder / "project.json")
+        if legacy:
+            projects.append((legacy, folder))
+        projects_root = folder / "projects"
+        if projects_root.exists():
+            for project_folder in sorted([p for p in projects_root.iterdir() if p.is_dir()]):
+                project = self._read_json(project_folder / "project.json")
+                if project:
+                    projects.append((project, project_folder))
+        return projects
 
     def _read_json(self, path: Path) -> dict:
         try:

@@ -13,7 +13,8 @@ class UpworkClientCloseService:
             return {"ok": False, "error": "client_id requerido"}
         folder = root / client_id
         client = self._read_json(folder / "client.json")
-        project = self._read_json(folder / "project.json")
+        project_folder = self._project_folder(folder, context.get("project_code"))
+        project = self._read_json(project_folder / "project.json")
         if not client:
             return {"ok": False, "error": "client.json no encontrado"}
         now = datetime.utcnow().isoformat() + "Z"
@@ -25,10 +26,10 @@ class UpworkClientCloseService:
         if not context.get("dry_run", False):
             (folder / "client.json").write_text(json.dumps(client, ensure_ascii=False, indent=2), encoding="utf-8")
             if project:
-                (folder / "project.json").write_text(json.dumps(project, ensure_ascii=False, indent=2), encoding="utf-8")
-            (folder / "closeout.md").write_text(closeout, encoding="utf-8")
+                (project_folder / "project.json").write_text(json.dumps(project, ensure_ascii=False, indent=2), encoding="utf-8")
+            (project_folder / "closeout.md").write_text(closeout, encoding="utf-8")
             self._update_registry(root / "registry.json", client)
-        return {"ok": True, "data": {"client": client, "project": project, "closeout_md": closeout, "path": str(folder / "closeout.md")}}
+        return {"ok": True, "data": {"client": client, "project": project, "closeout_md": closeout, "path": str(project_folder / "closeout.md")}}
 
     def _read_json(self, path: Path) -> dict:
         try:
@@ -56,3 +57,13 @@ class UpworkClientCloseService:
             "- [ ] Client confirmed GitHub owner if transfer applies\n\n"
             f"## Notes\n{context.get('notes', '')}\n"
         )
+
+    def _project_folder(self, client_folder: Path, project_code: str | None) -> Path:
+        if project_code:
+            return client_folder / "projects" / project_code
+        projects_root = client_folder / "projects"
+        if projects_root.exists():
+            projects = sorted([p for p in projects_root.iterdir() if p.is_dir()])
+            if projects:
+                return projects[0]
+        return client_folder

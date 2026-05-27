@@ -545,14 +545,17 @@ def _clients() -> None:
     st.dataframe(rows, use_container_width=True)
     for row in rows:
         client_id = row.get("client_id")
-        with st.expander(f"{client_id} | {row.get('client_name', '')} | {row.get('project_status', '')}"):
+        project_code = row.get("project_code") or "sin proyecto"
+        with st.expander(f"{client_id} | {project_code} | {row.get('client_name', '')} | {row.get('project_status', '')}"):
             client_dir = CLIENTS_DIR / str(client_id)
+            project_folder_value = row.get("project_folder") or row.get("folder") or ""
+            project_dir = Path(project_folder_value) if project_folder_value else client_dir
             st.markdown("**client.json**")
             st.json(_read_json(client_dir / "client.json"))
             st.markdown("**project.json**")
-            st.json(_read_json(client_dir / "project.json"))
+            st.json(_read_json(project_dir / "project.json"))
             st.markdown("**deliverables.md**")
-            st.text_area(f"deliverables-{client_id}", value=_read_text(client_dir / "deliverables.md"), height=220)
+            st.text_area(f"deliverables-{client_id}-{project_code}", value=_read_text(project_dir / "deliverables.md"), height=220)
 
 
 def _checklist() -> None:
