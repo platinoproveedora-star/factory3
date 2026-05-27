@@ -21,6 +21,8 @@ class UpworkClientCloseService:
         client["status"] = context.get("client_status", "delivered")
         client["updated_at"] = now
         project["status"] = context.get("project_status", "delivered")
+        project["closed_at"] = now
+        project["delivered_urls"] = context.get("delivered_urls", project.get("delivered_urls", []))
         project["updated_at"] = now
         closeout = self._render(client, project, context)
         if not context.get("dry_run", False):
@@ -48,7 +50,10 @@ class UpworkClientCloseService:
         return (
             f"# Closeout - {project.get('project_name', client.get('client_name'))}\n\n"
             f"Client: {client.get('client_name')} (`{client.get('client_id')}`)\n"
-            f"Closed at: {datetime.utcnow().isoformat()}Z\n\n"
+            f"Closed at: {project.get('closed_at') or datetime.utcnow().isoformat() + 'Z'}\n\n"
+            "## Delivered URLs\n"
+            + ("".join(f"- {url}\n" for url in project.get("delivered_urls", [])) if project.get("delivered_urls") else "- pendiente\n")
+            + "\n"
             "## Final Checklist\n"
             "- [ ] Deliverables accepted\n"
             "- [ ] README updated\n"

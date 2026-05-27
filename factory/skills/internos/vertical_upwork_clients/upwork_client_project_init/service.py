@@ -31,6 +31,8 @@ class UpworkClientProjectInitService:
             "platform": context.get("platform", "upwork"),
             "repo": context.get("repo", ""),
             "repo_name": repo_name,
+            "closed_at": "",
+            "delivered_urls": [],
             "folder": str(project_folder).replace("\\", "/"),
             "deliverables": context.get("deliverables") or self._deliverables_from_scope(context.get("scope", "")),
             "source_brief": context.get("source_brief", ""),
@@ -106,6 +108,8 @@ class UpworkClientProjectInitService:
             "project_code": project.get("project_code", ""),
             "started_at": "",
             "deadline": project.get("deadline", ""),
+            "total_hours": 0.0,
+            "last_alert_at_hours": 0.0,
             "hour_blocks": [],
             "alerts": {"every_hours": 10, "enabled": True},
         }
