@@ -1,0 +1,23 @@
+{
+  "client_id": "UC-101",
+  "project_code": "PROY-001",
+  "project_name": "Diagnostico y mejora de procesos internos con AI",
+  "status": "planned",
+  "scope": "Proyecto inicial para diagnosticar procesos internos de COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV, detectar oportunidades de automatizacion con AI y preparar el primer plan de implementacion.",
+  "budget": "pendiente",
+  "deadline": "pendiente",
+  "platform": "interno",
+  "repo": "",
+  "repo_name": "uc101-proy001",
+  "folder": "companies/EMP_FREELANCE_GROWTH/clients/UC-101/projects/PROY-001",
+  "deliverables": [
+    "Mapa inicial de procesos internos",
+    "Lista priorizada de oportunidades de automatizacion con AI",
+    "Recomendacion de primer MVP",
+    "Plan de implementacion por fases",
+    "Checklist de datos/accesos necesarios"
+  ],
+  "source_brief": "",
+  "created_at": "2026-05-27T16:39:25.125162Z",
+  "updated_at": "2026-05-27T16:39:25.125162Z"
+}

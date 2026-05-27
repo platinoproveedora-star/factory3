@@ -1,0 +1,11 @@
+{
+  "client_id": "UC-101",
+  "project_code": "PROY-001",
+  "started_at": "2026-05-27T16:39:25Z",
+  "deadline": "pendiente",
+  "hour_blocks": [],
+  "alerts": {
+    "every_hours": 10,
+    "enabled": true
+  }
+}
