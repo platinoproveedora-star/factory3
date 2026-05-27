@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "upwork_client_time_log",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Registra horas por proyecto UC-###/PROY-###. Avisa por Telegram cada 10 horas y muestra dias restantes al deadline.",
+  "requires_env": ["FACTORY3_ADMIN_BOT_TOKEN", "TELEGRAM_OWNER_CHAT_ID"]
+}

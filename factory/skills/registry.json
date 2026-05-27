@@ -2831,5 +2831,14 @@
     "path": "skills/internos/vertical_github/github_repo_transfer",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_upwork_clients/upwork_client_time_log": {
+    "tipo": "interno",
+    "nombre": "vertical_upwork_clients/upwork_client_time_log",
+    "vertical": "vertical_upwork_clients",
+    "descripcion": "Registra horas por proyecto UC-###/PROY-###. Avisa por Telegram cada 10 horas y muestra dias restantes.",
+    "path": "skills/internos/vertical_upwork_clients/upwork_client_time_log",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }
