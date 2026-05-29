@@ -19,3 +19,11 @@ Este archivo registra dashboards operativos de Factory3. Cada dashboard debe ten
 - Si crea tablas nuevas, tambien debe actualizar `docs/TABLES.md`.
 - Si usa skills nuevos, debe actualizar `factory/skills/registry.json` y la doc de su vertical.
 - Preferir tema claro profesional para evitar texto invisible en componentes Streamlit.
+- Dashboards nuevos de cliente deben vivir en Vercel por default.
+- Render queda reservado para Factory API central (`factory3`) y backends necesarios.
+- Antes de desplegar o probar muchos servicios, auditar Render y limpiar/suspender dashboards o servicios de prueba para no agotar pipeline minutes.
+
+## Pendientes
+
+- Auditar servicios Render existentes y clasificar: mantener, migrar a Vercel, suspender o borrar.
+- Actualizar esta tabla indicando si cada dashboard es Vercel, Render legado o local.

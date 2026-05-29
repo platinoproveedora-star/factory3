@@ -58,11 +58,21 @@ No usar nombres largos de vacante como repo, servicio Render, URL, carpeta tecni
 | Cliente | `UC-###` | `UC-101` |
 | Proyecto | `PROY-###` | `PROY-001` |
 | Repo GitHub | `uc###-proy###` | `uc101-proy001` |
-| Servicio Render | `uc###-proy###` | `uc101-proy001` |
-| URL Render | `https://uc###-proy###.onrender.com` | `https://uc101-proy001.onrender.com` |
+| Dashboard Vercel | `uc###-proy###` | `uc101-proy001` |
+| URL Vercel | `https://uc###-proy###.vercel.app` | `https://uc101-proy001.vercel.app` |
 | Carpeta Factory3 | `clients/UC-###/projects/PROY-###/` | `clients/UC-101/projects/PROY-001/` |
 
 Regla: los sistemas usan codigos cortos; los humanos ven nombres descriptivos dentro de los documentos.
+
+## Deploy Operativo
+
+La division actual de infraestructura es:
+
+- **Render**: solo Factory API central (`factory3`) y servicios backend estrictamente necesarios.
+- **Vercel**: dashboards Next.js, landing pages y frontends de cliente.
+- **Supabase**: datos operativos, storage y schemas por cliente/proyecto.
+
+No desplegar cada dashboard o prueba como servicio Render. Esto quema pipeline minutes y puede bloquear deploys de Factory API. Si un dashboard necesita UI, el destino default es Vercel. Si necesita backend, debe consumir Factory API por `/data/...` o una API route server-side.
 
 ## Estados
 
@@ -135,3 +145,12 @@ Para clientes reales, no basta con disco local de Render. La decision operativa 
 - Confirmar `deliverables.md` y `closeout.md`.
 - Confirmar dashboard `Clients`.
 - Confirmar que no se guardan secretos en el repo.
+- Confirmar que el dashboard va a Vercel, salvo decision explicita.
+- Confirmar que Render solo tenga servicios necesarios para Factory API/backends.
+- Revisar y limpiar servicios Render de prueba antes de hacer deploys masivos.
+
+## Pendientes Operativos
+
+- Auditar Render y eliminar/suspender servicios de prueba o dashboards migrados a Vercel.
+- Dejar `factory3` como servicio Render principal para Factory API.
+- Documentar en `docs/DASHBOARDS.md` si cada dashboard vive en Vercel, Render legado o local.

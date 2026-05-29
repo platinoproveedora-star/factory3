@@ -2850,6 +2850,16 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_client_expenses/client_expenses_dashboard_data": {
+    "tipo": "interno",
+    "nombre": "vertical_client_expenses/client_expenses_dashboard_data",
+    "vertical": "vertical_client_expenses",
+    "kind": "data",
+    "descripcion": "API generica de lectura para dashboards de gastos por cliente/proyecto. action=stats o list.",
+    "path": "skills/internos/vertical_client_expenses/client_expenses_dashboard_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_upwork_clients/timelog_run": {
     "tipo": "interno",
     "nombre": "vertical_upwork_clients/timelog_run",

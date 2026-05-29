@@ -66,13 +66,15 @@ runner.run("vertical_github/github_create_repo", {
 
 Formato de nombre de repo: `uc###-proy###` — siempre corto, sin nombre largo de vacante.
 
-Usar el mismo nombre tecnico corto para GitHub, Render y URLs:
+Usar el mismo nombre tecnico corto para GitHub, Vercel y URLs:
 
 ```text
 Repo: uc101-proy001
-Render service: uc101-proy001
-URL esperada: https://uc101-proy001.onrender.com
+Vercel project: uc101-proy001
+URL esperada: https://uc101-proy001.vercel.app
 ```
+
+Render queda reservado para Factory API central (`factory3`) y backends que realmente lo necesiten. No crear dashboards de prueba en Render si pueden vivir en Vercel.
 
 El nombre descriptivo del proyecto vive en `project.json`, `README.md` y `deliverables.md`, no en el repo ni en la URL.
 
@@ -112,13 +114,20 @@ companies/EMP_FREELANCE_GROWTH/clients/
 ## Reglas que no se rompen
 
 - El código del cliente va en su repo GitHub, NO dentro de factory3
-- Los nombres tecnicos de repo/Render/URL usan solo cliente y proyecto: `uc###-proy###`
+- Los nombres tecnicos de repo/Vercel/URL usan solo cliente y proyecto: `uc###-proy###`
 - Nunca guardar `.env` o secretos en el repo del cliente
 - Antes de transferir repo: correr `github_repo_delivery_check`
 - Todo proyecto necesita `deliverables.md` y `closeout.md` antes de cerrar
 - Registrar horas en `time_log.json` — no en memoria ni en notas sueltas
 
 ## Al cerrar el proyecto
+
+## Deploy y limpieza cloud
+
+- Los dashboards nuevos van a Vercel por default.
+- Render solo debe usarse para `factory3` o backends necesarios.
+- Antes de hacer deploy masivo, limpiar/suspender servicios Render de prueba para no agotar pipeline minutes.
+- Si un dashboard viejo sigue en Render, registrar si es legado o migrarlo a Vercel.
 
 ```python
 runner.run("vertical_upwork_clients/upwork_client_close", {

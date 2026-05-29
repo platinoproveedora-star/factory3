@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "client_expenses_dashboard_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "API generica de lectura para dashboards de gastos por cliente/proyecto. action=stats | list.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

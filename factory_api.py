@@ -271,6 +271,9 @@ def health():
 @app.get("/data/{skill_name:path}")
 def data(skill_name: str, request: Request):
     params = dict(request.query_params)
+    dashboard_key = request.headers.get("x-dashboard-key")
+    if dashboard_key and "dashboard_key" not in params:
+        params["dashboard_key"] = dashboard_key
     try:
         result = _get_data_runner().run(skill_name, params, source="internos")
     except Exception as exc:

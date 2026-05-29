@@ -24,7 +24,7 @@ class SkillRunner:
         source: str = "internos",
     ) -> dict[str, Any]:
         spec = self.loader.inspect(name, source)
-        if spec.kind != "executable":
+        if spec.kind not in ("executable", "data"):
             return {
                 "ok": False,
                 "error": f"Skill '{name}' is instruction-only and cannot be executed",
