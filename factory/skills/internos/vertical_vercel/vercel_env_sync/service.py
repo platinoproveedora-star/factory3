@@ -1,9 +1,11 @@
-from __future__ import annotations
-import sys
+﻿from __future__ import annotations
+import importlib.util as _ilu
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-import _vercel_client as vc
+_VC_PATH = Path(__file__).parent.parent / "_vercel_client.py"
+_vc_spec = _ilu.spec_from_file_location("_vercel_client", _VC_PATH)
+vc       = _ilu.module_from_spec(_vc_spec)
+_vc_spec.loader.exec_module(vc)
 
 
 class VercelEnvSyncService:
@@ -12,12 +14,20 @@ class VercelEnvSyncService:
         envs       = ctx.get("envs", {})
         target     = ctx.get("target", ["production", "preview"])
 
+        dry_run = ctx.get("dry_run", True)
+
         if not project_id:
             return {"ok": False, "error": "project_id o name requerido"}
         if not envs:
             return {"ok": False, "error": "envs dict requerido (KEY: VALUE)"}
         if isinstance(target, str):
             target = [target]
+
+        if dry_run:
+            return {"ok": True, "data": {
+                "dry_run": True,
+                "preview": {"project_id": project_id, "vars": list(envs.keys()), "target": target},
+            }}
 
         # Obtener envs actuales para saber cuáles hacer PATCH vs POST
         r_existing = vc.get(f"/v9/projects/{project_id}/env")
