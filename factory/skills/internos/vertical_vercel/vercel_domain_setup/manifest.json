@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vercel_domain_setup",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Conecta dominio o subdominio a un proyecto Vercel y valida configuración DNS",
+  "requires_env": ["VERCEL_TOKEN"]
+}

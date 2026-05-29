@@ -2858,5 +2858,86 @@
     "path": "skills/internos/vertical_upwork_clients/timelog_run",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_vercel/vercel_project_list": {
+    "tipo": "interno",
+    "nombre": "vertical_vercel/vercel_project_list",
+    "vertical": "vertical_vercel",
+    "descripcion": "Lista proyectos Vercel con URL y estado del último deploy",
+    "path": "skills/internos/vertical_vercel/vercel_project_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_vercel/vercel_project_get": {
+    "tipo": "interno",
+    "nombre": "vertical_vercel/vercel_project_get",
+    "vertical": "vertical_vercel",
+    "descripcion": "Detalle de proyecto Vercel: repo, envs visibles y últimos deploys",
+    "path": "skills/internos/vertical_vercel/vercel_project_get",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_vercel/vercel_project_create": {
+    "tipo": "interno",
+    "nombre": "vertical_vercel/vercel_project_create",
+    "vertical": "vertical_vercel",
+    "descripcion": "Crea proyecto Vercel conectado a repo GitHub",
+    "path": "skills/internos/vertical_vercel/vercel_project_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_vercel/vercel_env_sync": {
+    "tipo": "interno",
+    "nombre": "vertical_vercel/vercel_env_sync",
+    "vertical": "vertical_vercel",
+    "descripcion": "Configura variables de entorno en un proyecto Vercel (crea o sobreescribe)",
+    "path": "skills/internos/vertical_vercel/vercel_env_sync",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_vercel/vercel_deploy_trigger": {
+    "tipo": "interno",
+    "nombre": "vertical_vercel/vercel_deploy_trigger",
+    "vertical": "vertical_vercel",
+    "descripcion": "Dispara deploy production o preview en Vercel",
+    "path": "skills/internos/vertical_vercel/vercel_deploy_trigger",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_vercel/vercel_deploy_status": {
+    "tipo": "interno",
+    "nombre": "vertical_vercel/vercel_deploy_status",
+    "vertical": "vertical_vercel",
+    "descripcion": "Consulta estado de deploy. Con wait:true espera hasta READY o ERROR",
+    "path": "skills/internos/vertical_vercel/vercel_deploy_status",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_vercel/vercel_domain_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_vercel/vercel_domain_setup",
+    "vertical": "vertical_vercel",
+    "descripcion": "Conecta dominio/subdominio a un proyecto Vercel y valida DNS",
+    "path": "skills/internos/vertical_vercel/vercel_domain_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_vercel/vercel_rollback": {
+    "tipo": "interno",
+    "nombre": "vertical_vercel/vercel_rollback",
+    "vertical": "vertical_vercel",
+    "descripcion": "Regresa proyecto al deploy anterior o a deployment_id específico",
+    "path": "skills/internos/vertical_vercel/vercel_rollback",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_vercel/vercel_project_remove": {
+    "tipo": "interno",
+    "nombre": "vertical_vercel/vercel_project_remove",
+    "vertical": "vertical_vercel",
+    "descripcion": "Elimina proyecto Vercel y todos sus deploys. Requiere confirm:true",
+    "path": "skills/internos/vertical_vercel/vercel_project_remove",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

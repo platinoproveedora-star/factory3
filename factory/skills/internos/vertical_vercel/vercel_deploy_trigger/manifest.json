@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vercel_deploy_trigger",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Dispara un deploy production o preview en Vercel",
+  "requires_env": ["VERCEL_TOKEN"]
+}

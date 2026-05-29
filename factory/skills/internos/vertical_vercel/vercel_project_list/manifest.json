@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vercel_project_list",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista proyectos Vercel de la cuenta con URL y estado",
+  "requires_env": ["VERCEL_TOKEN"]
+}

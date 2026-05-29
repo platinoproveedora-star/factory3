@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vercel_rollback",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Regresa el proyecto al deploy anterior o a un deployment_id específico",
+  "requires_env": ["VERCEL_TOKEN"]
+}

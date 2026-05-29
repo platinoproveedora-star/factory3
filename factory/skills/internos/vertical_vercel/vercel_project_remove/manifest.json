@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vercel_project_remove",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Elimina proyecto Vercel y todos sus deploys. Requiere confirm:true",
+  "requires_env": ["VERCEL_TOKEN"]
+}

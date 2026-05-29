@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vercel_deploy_status",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Consulta estado de un deploy. Con wait:true espera hasta READY o ERROR",
+  "requires_env": ["VERCEL_TOKEN"]
+}

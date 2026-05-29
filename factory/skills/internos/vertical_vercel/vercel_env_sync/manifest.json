@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vercel_env_sync",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Configura variables de entorno en un proyecto Vercel (crea o sobreescribe)",
+  "requires_env": ["VERCEL_TOKEN"]
+}

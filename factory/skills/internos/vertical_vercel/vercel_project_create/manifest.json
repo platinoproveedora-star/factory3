@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vercel_project_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea proyecto Vercel conectado a repo GitHub",
+  "requires_env": ["VERCEL_TOKEN"]
+}
