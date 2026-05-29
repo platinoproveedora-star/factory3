@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "dashboard_module_planner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera dashboard_plan con paginas, modulos y componentes.",
+  "requires_env": []
+}

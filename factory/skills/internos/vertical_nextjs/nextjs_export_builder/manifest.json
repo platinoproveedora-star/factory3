@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "nextjs_export_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea utilidades de exportacion CSV/Excel-compatible.",
+  "requires_env": []
+}

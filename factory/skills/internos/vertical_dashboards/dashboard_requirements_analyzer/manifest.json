@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "dashboard_requirements_analyzer",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Convierte objetivo, audiencia y restricciones en requerimientos estructurados para un dashboard.",
+  "requires_env": []
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "nextjs_auth_setup",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Agrega base de login/control de acceso cuando aplique.",
+  "requires_env": []
+}

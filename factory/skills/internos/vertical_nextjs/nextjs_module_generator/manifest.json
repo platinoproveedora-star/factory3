@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "nextjs_module_generator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera paginas y modulos Next.js desde dashboard_plan.",
+  "requires_env": []
+}

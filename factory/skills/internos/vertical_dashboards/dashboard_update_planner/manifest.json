@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "dashboard_update_planner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Convierte cambios pedidos por cliente en un plan de actualizacion para dashboard existente.",
+  "requires_env": []
+}

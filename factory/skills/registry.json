@@ -2931,6 +2931,132 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_dashboards/dashboard_requirements_analyzer": {
+    "tipo": "interno",
+    "nombre": "vertical_dashboards/dashboard_requirements_analyzer",
+    "vertical": "vertical_dashboards",
+    "descripcion": "Convierte objetivo, audiencia y restricciones en requerimientos estructurados para un dashboard.",
+    "path": "skills/internos/vertical_dashboards/dashboard_requirements_analyzer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_dashboards/dashboard_data_source_mapper": {
+    "tipo": "interno",
+    "nombre": "vertical_dashboards/dashboard_data_source_mapper",
+    "vertical": "vertical_dashboards",
+    "descripcion": "Mapea tablas, campos, relaciones y fuentes disponibles para un dashboard.",
+    "path": "skills/internos/vertical_dashboards/dashboard_data_source_mapper",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_dashboards/dashboard_kpi_designer": {
+    "tipo": "interno",
+    "nombre": "vertical_dashboards/dashboard_kpi_designer",
+    "vertical": "vertical_dashboards",
+    "descripcion": "Propone KPIs, filtros y agrupaciones para un dashboard.",
+    "path": "skills/internos/vertical_dashboards/dashboard_kpi_designer",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_dashboards/dashboard_module_planner": {
+    "tipo": "interno",
+    "nombre": "vertical_dashboards/dashboard_module_planner",
+    "vertical": "vertical_dashboards",
+    "descripcion": "Genera dashboard_plan con paginas, modulos y componentes.",
+    "path": "skills/internos/vertical_dashboards/dashboard_module_planner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_dashboards/dashboard_quality_check": {
+    "tipo": "interno",
+    "nombre": "vertical_dashboards/dashboard_quality_check",
+    "vertical": "vertical_dashboards",
+    "descripcion": "Valida claridad, datos, KPIs, filtros, modulos y acciones utiles de un dashboard_plan.",
+    "path": "skills/internos/vertical_dashboards/dashboard_quality_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_dashboards/dashboard_update_planner": {
+    "tipo": "interno",
+    "nombre": "vertical_dashboards/dashboard_update_planner",
+    "vertical": "vertical_dashboards",
+    "descripcion": "Convierte cambios pedidos por cliente en un plan de actualizacion para dashboard existente.",
+    "path": "skills/internos/vertical_dashboards/dashboard_update_planner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_nextjs/nextjs_dashboard_scaffold": {
+    "tipo": "interno",
+    "nombre": "vertical_nextjs/nextjs_dashboard_scaffold",
+    "vertical": "vertical_nextjs",
+    "descripcion": "Crea estructura base Next.js con layout, rutas, estilos y configuracion para dashboard.",
+    "path": "skills/internos/vertical_nextjs/nextjs_dashboard_scaffold",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_nextjs/nextjs_supabase_connector": {
+    "tipo": "interno",
+    "nombre": "vertical_nextjs/nextjs_supabase_connector",
+    "vertical": "vertical_nextjs",
+    "descripcion": "Genera helper Supabase y soporte para Factory3 data skills en Next.js.",
+    "path": "skills/internos/vertical_nextjs/nextjs_supabase_connector",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_nextjs/nextjs_module_generator": {
+    "tipo": "interno",
+    "nombre": "vertical_nextjs/nextjs_module_generator",
+    "vertical": "vertical_nextjs",
+    "descripcion": "Genera paginas y modulos Next.js desde dashboard_plan.",
+    "path": "skills/internos/vertical_nextjs/nextjs_module_generator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_nextjs/nextjs_chart_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_nextjs/nextjs_chart_builder",
+    "vertical": "vertical_nextjs",
+    "descripcion": "Crea componentes de graficas para KPIs y analisis en Next.js.",
+    "path": "skills/internos/vertical_nextjs/nextjs_chart_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_nextjs/nextjs_table_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_nextjs/nextjs_table_builder",
+    "vertical": "vertical_nextjs",
+    "descripcion": "Crea tabla filtrable con busqueda y export CSV.",
+    "path": "skills/internos/vertical_nextjs/nextjs_table_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_nextjs/nextjs_export_builder": {
+    "tipo": "interno",
+    "nombre": "vertical_nextjs/nextjs_export_builder",
+    "vertical": "vertical_nextjs",
+    "descripcion": "Crea utilidades de exportacion CSV/Excel-compatible.",
+    "path": "skills/internos/vertical_nextjs/nextjs_export_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_nextjs/nextjs_auth_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_nextjs/nextjs_auth_setup",
+    "vertical": "vertical_nextjs",
+    "descripcion": "Agrega base de login/control de acceso cuando aplique.",
+    "path": "skills/internos/vertical_nextjs/nextjs_auth_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_nextjs/nextjs_module_updater": {
+    "tipo": "interno",
+    "nombre": "vertical_nextjs/nextjs_module_updater",
+    "vertical": "vertical_nextjs",
+    "descripcion": "Actualiza modulos existentes desde un plan de cambios.",
+    "path": "skills/internos/vertical_nextjs/nextjs_module_updater",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_vercel/vercel_project_remove": {
     "tipo": "interno",
     "nombre": "vertical_vercel/vercel_project_remove",

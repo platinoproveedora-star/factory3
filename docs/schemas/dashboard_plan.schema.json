@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factory3.local/schemas/dashboard_plan.schema.json",
+  "title": "Factory3 Dashboard Plan",
+  "type": "object",
+  "required": ["version", "project", "data_sources", "kpis", "pages"],
+  "properties": {
+    "version": {"type": "string"},
+    "project": {
+      "type": "object",
+      "required": ["client_id", "project_code", "name", "slug"],
+      "properties": {
+        "client_id": {"type": "string"},
+        "project_code": {"type": "string"},
+        "name": {"type": "string"},
+        "slug": {"type": "string"},
+        "audience": {"type": "array", "items": {"type": "string"}},
+        "business_goal": {"type": "string"}
+      }
+    },
+    "data_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "name"],
+        "properties": {
+          "id": {"type": "string"},
+          "kind": {"enum": ["supabase_table", "factory_data_skill", "api", "static"]},
+          "schema": {"type": "string"},
+          "name": {"type": "string"},
+          "fields": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "kpis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "source", "calculation"],
+        "properties": {
+          "id": {"type": "string"},
+          "label": {"type": "string"},
+          "source": {"type": "string"},
+          "calculation": {"type": "string"},
+          "format": {"type": "string"}
+        }
+      }
+    },
+    "filters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "field", "type"],
+        "properties": {
+          "id": {"type": "string"},
+          "label": {"type": "string"},
+          "field": {"type": "string"},
+          "type": {"enum": ["date_range", "select", "search", "number_range"]}
+        }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "modules"],
+        "properties": {
+          "id": {"type": "string"},
+          "title": {"type": "string"},
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "type", "title"],
+              "properties": {
+                "id": {"type": "string"},
+                "type": {"enum": ["kpi_grid", "chart", "table", "summary", "form", "export"]},
+                "title": {"type": "string"},
+                "source": {"type": "string"},
+                "config": {"type": "object"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

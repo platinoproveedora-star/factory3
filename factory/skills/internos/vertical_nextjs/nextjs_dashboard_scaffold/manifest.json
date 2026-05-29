@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "nextjs_dashboard_scaffold",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea estructura base Next.js con layout, rutas, estilos y configuracion para dashboard.",
+  "requires_env": []
+}

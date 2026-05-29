@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "nextjs_supabase_connector",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera helper Supabase y soporte para Factory3 data skills en Next.js.",
+  "requires_env": []
+}

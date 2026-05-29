@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "nextjs_chart_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea componentes de graficas para KPIs y analisis en Next.js.",
+  "requires_env": []
+}

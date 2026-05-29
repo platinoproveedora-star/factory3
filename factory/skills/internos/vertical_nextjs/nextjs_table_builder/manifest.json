@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "nextjs_table_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea tabla filtrable con busqueda y export CSV.",
+  "requires_env": []
+}

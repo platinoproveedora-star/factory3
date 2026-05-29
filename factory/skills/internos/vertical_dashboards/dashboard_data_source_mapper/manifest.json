@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "dashboard_data_source_mapper",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Mapea tablas, campos, relaciones y fuentes disponibles para un dashboard.",
+  "requires_env": []
+}

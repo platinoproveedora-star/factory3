@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "dashboard_kpi_designer",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Propone KPIs, filtros y agrupaciones para un dashboard.",
+  "requires_env": []
+}

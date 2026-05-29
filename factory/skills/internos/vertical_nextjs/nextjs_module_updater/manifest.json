@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "nextjs_module_updater",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Actualiza modulos existentes desde un plan de cambios.",
+  "requires_env": []
+}

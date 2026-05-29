@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "dashboard_quality_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida claridad, datos, KPIs, filtros, modulos y acciones utiles de un dashboard_plan.",
+  "requires_env": []
+}
