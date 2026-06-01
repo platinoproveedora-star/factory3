@@ -356,7 +356,7 @@ CREATE TABLE IF NOT EXISTS {schema}.gastos (
     sales_order_id    UUID NULL,
     purchase_order_id UUID NULL,
     asset_id          UUID NULL,
-    erp_tags          JSONB NOT NULL DEFAULT '{}',
+    erp_tags          JSONB NOT NULL DEFAULT '{{}}',
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
