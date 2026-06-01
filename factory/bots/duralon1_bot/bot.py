@@ -229,25 +229,36 @@ def _handle_photo(update: dict, state: dict) -> dict:
             "state": state, "command": "ocr_no_monto",
         }
 
+    # Usar categoría sugerida o fallback a "gastos varios"
+    categoria = cat_sug if cat_sug in _CATEGORIES else "gastos varios"
+
     draft = {
         "monto":          float(monto),
         "fecha":          fecha,
         "descripcion":    desc,
+        "categoria":      categoria,
         "metodo_captura": "ai_ocr",
         "photo_b64":      content_b64,
         "photo_file_id":  file_id,
     }
 
+    # Guardar directo — sin esperar confirmación de categoría
+    save = _do_save(update, draft)
+    if not save.get("ok"):
+        return {
+            "response": f"Ticket leído pero error al guardar: {save.get('error','')}\nUsa /3 para captura manual.",
+            "state": {}, "command": "ocr_save_failed",
+        }
+
+    folio = save.get("data", {}).get("folio", "")
     return {
         "response": (
-            f"Ticket detectado:\n"
-            f"Monto: ${draft['monto']:,.0f}\n"
-            f"Fecha: {fecha}\n"
-            f"Descripcion: {desc or '(no detectada)'}\n\n"
-            + _cat_menu(highlight=cat_sug)
-        ),
-        "state":   {**state, "flow": "fast_expense", "step": "category", "draft": draft},
-        "command": "ocr_ok",
+            f"📸 Guardado {folio}\n"
+            f"${draft['monto']:,.0f}  {categoria}  {fecha}\n"
+            f"{desc or ''}"
+        ).strip(),
+        "state":   {},
+        "command": "ocr_saved",
     }
 
 
