@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Platidren - Preguntas frecuentes sobre productos, servicios y entregas.">
+    <meta name="theme-color" content="#003d82">
+    <title>Platidren | FAQ - Preguntas Frecuentes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo">
+                <div class="logo-icon">P</div>
+                Platidren
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="nosotros.html">Nosotros</a></li>
+                <li><a href="productos.html">Catálogo</a></li>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="contacto.html" class="btn btn-primary">Contacto</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <!-- PAGE HEADER -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Preguntas Frecuentes</h1>
+            <p>Resolvemos tus dudas sobre nuestros productos y servicios</p>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section faq-section">
+        <div class="container">
+            <div class="faq-container">
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Cuál es la diferencia entre Platidren y Drenafort?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Platidren es la filial especializada de Drenafort Industries enfocada en soluciones integrales de drenaje e infraestructura hídrica para el sureste mexicano. Compartimos la calidad y catálogo de Drenafort, pero con atención especializada regional y expertos dedicados exclusivamente a sistemas de drenaje y agua.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Realizan envíos a toda la república?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sí, realizamos envíos a toda la república desde plantas productoras ubicadas en más de 6 estados. Los envíos foráneos se coordinan según peso, destino y cantidad. Ofrecemos costos competitivos y tiempos de entrega garantizados.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Qué garantía tienen los productos?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Todos nuestros productos cumplen normas técnicas internacionales (ISO, ASTM, NMX) y ofrecen garantía de durabilidad en condiciones de uso normal. Los detalles específicos varían según el producto. Te recomendamos consultar con nuestro equipo técnico para conocer garantías particulares.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Hacen descuentos por volumen?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sí, contamos con esquemas de compensación y precios especiales por volumen. Ofrecemos descuentos progresivos según cantidad adquirida. Para solicitar una cotización personalizada según tu volumen requerido, contacta con nuestro equipo de ventas.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Cómo realizo un pedido?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Puedes contactarnos por WhatsApp, teléfono o a través de nuestro formulario web. Nuestro equipo de ventas te orientará en la selección de productos, procesará tu pedido y coordinará la entrega. También ofrecemos asesoría técnica sin costo adicional.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Ofrecen asesoría técnica?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sí, contamos con expertos especializados en sistemas hidráulicos y de drenaje. Podemos asesorarte en la selección correcta de productos según las especificaciones técnicas y requerimientos de tu proyecto. La consultoría técnica es sin costo.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Qué métodos de pago aceptan?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Aceptamos transferencias bancarias, depósitos en cuenta, efectivo en sucursal y tarjeta de crédito en casos especiales. Las condiciones de pago varían según el monto de compra y tu historial como cliente. Consulta con nuestro equipo sobre opciones de crédito.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Dónde están ubicadas las sucursales?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Contamos con sucursales en Oaxaca, Chiapas, Tabasco y Mérida (Yucatán). Además de nuestros puntos físicos, realizamos entregas en toda la república desde plantas productoras ubicadas en más de 6 estados. Contacta con la sucursal más cercana a tu zona.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Cuál es el tiempo de entrega estimado?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>El tiempo de entrega depende de tu ubicación y disponibilidad en stock. Para entregas locales (mismo estado) generalmente 2-3 días. Para entregas nacionales 5-10 días. Podemos hacer entregas express en casos especiales. Consulta tiempos específicos en tu cotización.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Ofrecen muestras de productos?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sí, ofrecemos muestras de productos para que puedas verificar calidad. Las muestras pueden tener costo reducido o ser gratuitas según volumen de compra previsto. Contacta con nuestro equipo para solicitar muestras de interés.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Tienen programa de lealtad para clientes recurrentes?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sí, ofrecemos programa de lealtad con beneficios exclusivos: mejores precios, prioridad en entregas, servicios técnicos especiales y acceso a promociones exclusivas. Consulta con nuestro equipo sobre cómo formar parte del programa.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" onclick="toggleFAQ(this)">
+                        <span>¿Tienen horario especial de atención?</span>
+                        <span class="faq-toggle">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Atendemos Lunes-Viernes de 8:00 AM a 6:00 PM y Sábados de 9:00 AM a 2:00 PM. WhatsApp está disponible 24/7 para consultas y urgencias. Contacta cuando necesites, haremos lo posible por asistirte.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACTO DIRECTO -->
+    <section class="section" style="background: var(--gray-100);">
+        <div class="container">
+            <h2 class="section-title">¿Aún tienes dudas?</h2>
+            <p class="section-subtitle">Nuestro equipo está listo para ayudarte</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; max-width: 900px; margin: 0 auto;">
+                <div style="text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: var(--shadow-sm);">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📞</div>
+                    <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Por Teléfono</h4>
+                    <a href="tel:+529515473756" style="color: var(--accent); text-decoration: none; font-weight: 600;">+52 951 547 3756</a>
+                </div>
+                <div style="text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: var(--shadow-sm);">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">💬</div>
+                    <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Por WhatsApp</h4>
+                    <a href="https://api.whatsapp.com/send?phone=529515473756" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">Enviar Mensaje</a>
+                </div>
+                <div style="text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: var(--shadow-sm);">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📧</div>
+                    <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Por Email</h4>
+                    <a href="mailto:gerencia@drenafortmexico.com" style="color: var(--accent); text-decoration: none; font-weight: 600;">gerencia@drenafortmexico.com</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-section">
+                <h4>Platidren</h4>
+                <p>Filial especializada de Drenafort en soluciones de drenaje e infraestructura hídrica.</p>
+                <div class="social-links">
+                    <a href="https://api.whatsapp.com/send?phone=529515473756" target="_blank">💬</a>
+                    <a href="https://www.facebook.com/drenafortmexico" target="_blank">f</a>
+                    <a href="tel:+529515473756">☎️</a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h4>Navegación</h4>
+                <p><a href="index.html">Inicio</a></p>
+                <p><a href="nosotros.html">Nosotros</a></p>
+                <p><a href="productos.html">Catálogo</a></p>
+                <p><a href="contacto.html">Contacto</a></p>
+            </div>
+            <div class="footer-section">
+                <h4>Productos</h4>
+                <p><a href="productos.html">Tuberías y Drenaje</a></p>
+                <p><a href="productos.html">Agua Potable</a></p>
+                <p><a href="productos.html">Accesorios</a></p>
+                <p><a href="productos.html">Especiales</a></p>
+            </div>
+            <div class="footer-section">
+                <h4>Contacto</h4>
+                <p><strong>Tel:</strong> +52 951 547 3756</p>
+                <p><strong>Email:</strong> gerencia@drenafortmexico.com</p>
+                <p>Oaxaca • Chiapas • Tabasco • Mérida</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Platidren. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- WHATSAPP FLOTANTE -->
+    <a href="https://api.whatsapp.com/send?phone=529515473756" class="whatsapp-float" target="_blank">💬</a>
+
+    <script src="script.js"></script>
+</body>
+</html>

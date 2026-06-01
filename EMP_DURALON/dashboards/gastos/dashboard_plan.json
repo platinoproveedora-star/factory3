@@ -1,0 +1,10 @@
+{
+  "version": "0.1.0",
+  "project": {
+    "client_id": "UC-101",
+    "project_code": "PROY-001",
+    "name": "Duralon Gastos",
+    "slug": "duralon-dash",
+    "business_goal": "Control de gastos operativos"
+  }
+}

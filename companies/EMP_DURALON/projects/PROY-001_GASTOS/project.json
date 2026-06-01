@@ -2,81 +2,58 @@
   "company_id": "EMP_DURALON",
   "legacy_client_id": "UC-101",
   "project_code": "PROY-001",
+  "module_code": "gastos",
   "project_name": "Telegram bot de gastos y dashboard empresarial",
   "status": "in_progress",
-  "scope": "Crear un Telegram bot para registrar gastos de COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV. El bot debe permitir captura de gastos desde tickets e imagenes usando AI/OCR, y tambien captura manual sin AI mediante formulario guiado. El proyecto incluye un dashboard completo para analisis de gastos y una base modular donde posteriormente se integraran otros proyectos/procesos de la empresa, iniciando con el modulo de gastos.",
+  "erp_ready": true,
+  "erp_identity": {
+    "empresa_id": "EMP_DURALON",
+    "company_id": "EMP_DURALON",
+    "project_code": "PROY-001",
+    "module_code": "gastos",
+    "legacy_client_id": "UC-101",
+    "supabase_schema": "uc101_proy001",
+    "storage_bucket": "uc101-proy001-assets"
+  },
+  "scope": "Telegram bot para registrar gastos de COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV. Captura desde tickets e imagenes con AI/OCR y captura manual. Dashboard modular para analisis de gastos. Base ERP-ready para futuros modulos (ventas, compras, inventario).",
   "budget": "640 USD estimado",
   "hourly_rate_usd": 40,
   "estimated_hours": 16,
   "estimated_cost_usd": 640,
   "deadline": "2026-05-29",
-  "timeline": "2 dias",
   "platform": "interno",
   "repo": "platinoproveedora-star/uc101-proy001",
   "repo_url": "https://github.com/platinoproveedora-star/uc101-proy001",
-  "repo_name": "uc101-proy001",
-  "closed_at": "",
-  "delivered_urls": [],
   "bot_username": "@Duralon1_bot",
   "supabase_schema": "uc101_proy001",
   "storage_bucket": "uc101-proy001-assets",
-  "initial_users": [
-    "Tania",
-    "Luis",
-    "ACH"
-  ],
+  "dashboard_url": "https://uc101-gastos.onrender.com",
+  "initial_users": ["Tania", "Luis", "ACH"],
   "expense_categories": [
-    "combustible",
-    "gastos varios",
-    "taller mecanico",
-    "papeleria",
-    "telmex",
-    "gas",
-    "internet",
-    "recargas celulares",
-    "nomina",
-    "gps",
-    "imss",
-    "sat"
+    "combustible", "gastos varios", "taller mecanico", "papeleria",
+    "telmex", "gas", "internet", "recargas celulares",
+    "nomina", "gps", "imss", "sat"
   ],
-  "export_requirements": {
-    "excel": true,
-    "pdf": false
-  },
+  "export_requirements": { "excel": true, "pdf": false },
   "approval_required": false,
   "capture_policy": "solo captura por usuario; sin flujo de aprobacion",
   "user_identification": {
     "method": "telegram_chat_id",
-    "description": "El bot identifica al usuario por el chat_id/numero de Telegram que envia el gasto.",
     "initial_mapping": [
-      {
-        "name": "Luis",
-        "telegram_chat_id": "pendiente"
-      },
-      {
-        "name": "Tania",
-        "telegram_chat_id": "pendiente"
-      },
-      {
-        "name": "ACH",
-        "telegram_chat_id": "8739777586",
-        "role": "test_user"
-      }
+      { "name": "Luis",  "telegram_chat_id": "pendiente" },
+      { "name": "Tania", "telegram_chat_id": "8555452219", "status": "pre-registrado" },
+      { "name": "ACH",   "telegram_chat_id": "8739777586", "role": "admin" }
     ]
   },
+  "pendientes": {
+    "ocr_tickets":        "Codigo listo, depende de creditos Anthropic activos",
+    "storage_tickets":    "Bucket nombrado, confirmar si esta activo en Supabase",
+    "chat_id_luis":       "Pendiente que Luis haga /start en @Duralon1_bot",
+    "vinculacion_tania":  "Pre-registrada USR-002, se vincula automaticamente en su primer /start",
+    "pdf_export":         "No requerido en MVP; Excel ya funciona en dashboard",
+    "supabase_sql_erp":   "ALTER TABLE pendiente — ejecutar SQL en Supabase SQL Editor"
+  },
   "folder": "companies/EMP_DURALON/projects/PROY-001_GASTOS",
-  "deliverables": [
-    "Telegram bot de captura de gastos",
-    "Flujo de lectura de tickets e imagenes con AI/OCR",
-    "Formulario de captura manual sin AI",
-    "Dashboard empresarial modular",
-    "Modulo de analisis de gastos",
-    "Base de datos para gastos, categorias, usuarios y documentos",
-    "Checklist de informacion que debe entregar el cliente",
-    "README de uso y operacion",
-    "Deploy dashboard en Vercel y consumo de Factory API"
-  ],
-  "source_brief": "Primer proyecto del cliente: crear Telegram bot de gastos con dashboard completo de analisis. Debe leer tickets e imagenes de gastos y tener formato de captura manual sin AI. El dashboard no sera solo de gastos: sera la base para meter todos los proyectos de la empresa, empezando por gastos y analisis principal de informacion que posteriormente pasara el cliente.",
   "created_at": "2026-05-27T16:39:25.125162Z",
-  "updated_at": "2026-05-27T18:00:00Z"
+  "updated_at": "2026-06-01T00:00:00Z"
 }

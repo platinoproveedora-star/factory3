@@ -50,6 +50,18 @@ Actualizado: 2026-05-15
 | [logplat.cuentas_por_cobrar](#logplatcuentas_por_cobrar) | CXC derivada de viajes. Folio CXC-001… |
 | [logplat.viaje_docs](#logplatviaje_docs) | Documentos adjuntos a viajes. Folio DOC-001… |
 
+## Schema `uc101_proy001` — EMP_DURALON / PROY-001 / gastos
+
+ERP-ready: todas las tablas tienen `empresa_id`, `project_code`, `module_code`.
+
+| Tabla | Descripción |
+|---|---|
+| `uc101_proy001.usuarios` | Usuarios del bot. Folio USR-001… Columnas: telegram_chat_id, rol, modules_allowed, global_user_id |
+| `uc101_proy001.categorias_gasto` | Catálogo de 12 categorías de gasto (combustible, nomina, etc.) |
+| `uc101_proy001.gastos` | Gastos registrados. Folio GAS-001… Campos ERP: cost_center_id, customer_id, supplier_id, erp_tags |
+| `uc101_proy001.gasto_documentos` | Fotos/tickets adjuntos a gastos. Folio DOC-001… URL en Supabase Storage |
+| `uc101_proy001.gasto_eventos` | Auditoría de cambios por gasto y usuario |
+
 ## Schema `freelance`
 
 | Tabla | Descripcion |

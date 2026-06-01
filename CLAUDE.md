@@ -1,5 +1,22 @@
 # Factory3 — Claude Context
 
+## ⚠️ STOP — Lee esto antes de tocar cualquier código
+
+1. Revisa `factory/skills/registry.json` — si el skill existe, úsalo, no lo recrees
+2. Revisa `factory/engine/` — no reimplementes SupabaseClient ni SkillRunner
+3. Todo skill nuevo: `manifest.json` + `skill.py` + `service.py` — sin excepciones
+4. Lee `docs/VERTICAL_<nombre>.md` del área en que vas a trabajar
+5. No crees carpetas ni archivos fuera de la estructura establecida
+6. No agregues dependencias sin agregarlas a `requirements.txt`
+7. Si no encuentras el patrón aquí → **pregunta antes de inventar**
+
+### Mapa de docs por tema
+- Arquitectura general: `docs/FACTORY_ARCHITECTURE.md`, `docs/ARCHITECTURE_NOTES.md`
+- Verticales: `docs/VERTICAL_<nombre>.md`
+- Empresas: `companies/EMP_*/AGENTS_ARCHITECTURE.md`
+- Clientes Upwork: `companies/EMP_FREELANCE_GROWTH/`
+- Skills disponibles: `factory/skills/registry.json`
+
 ## Qué es factory3
 Runtime de skills Python. Expone bots Telegram y endpoints HTTP via FastAPI (`factory_api.py`).
 Todo corre en Render. DB: Supabase. IA: Anthropic Haiku.

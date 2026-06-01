@@ -61,10 +61,19 @@ class ClientExpensesDashboardDataService:
         return config_schemas | configured
 
     def _project_config(self, context: dict) -> dict:
-        client_id = str(context.get("client_id") or "").strip()
+        # Acepta company_id=EMP_DURALON o client_id=UC-101 (legacy)
+        company_id = (
+            str(context.get("company_id") or context.get("empresa_id") or "").strip()
+            or str(context.get("client_id") or "").strip()
+        )
         project_code = str(context.get("project_code") or "").strip()
-        projects = self._client_projects().get(client_id, {})
+        all_projects = self._client_projects()
+        projects = all_projects.get(company_id, {})
+        # Si es un alias, seguir al original
         project = projects.get(project_code, {}) if isinstance(projects, dict) else {}
+        if isinstance(project, dict) and project.get("alias_of"):
+            projects = all_projects.get(project["alias_of"], {})
+            project = projects.get(project_code, {}) if isinstance(projects, dict) else {}
         return project if isinstance(project, dict) else {}
 
     def _client_projects(self) -> dict:

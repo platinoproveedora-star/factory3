@@ -1,6 +1,10 @@
 {
   "EMP_DURALON": {
     "PROY-001": {
+      "company_id": "EMP_DURALON",
+      "legacy_client_id": "UC-101",
+      "project_code": "PROY-001",
+      "module_code": "gastos",
       "company_name": "COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV",
       "project_name": "Dashboard y bot de gastos",
       "schema": "uc101_proy001",
@@ -11,12 +15,12 @@
   },
   "UC-101": {
     "PROY-001": {
-      "company_name": "COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV",
-      "project_name": "Dashboard y bot de gastos",
+      "alias_of": "EMP_DURALON",
+      "project_code": "PROY-001",
+      "module_code": "gastos",
       "schema": "uc101_proy001",
       "type": "client_expenses",
-      "status": "active",
-      "alias_of": "EMP_DURALON"
+      "status": "active"
     }
   }
 }

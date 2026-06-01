@@ -137,6 +137,9 @@ def _register_user(schema: str, ctx: dict, dry_run: bool) -> dict:
         return {"ok": False, "error": "nombre y telegram_chat_id requeridos"}
     if dry_run:
         return {"ok": True, "data": {"dry_run": True, "nombre": nombre, "chat_id": chat_id}}
+    empresa_id   = ctx.get("empresa_id") or ctx.get("company_id") or "EMP_DURALON"
+    project_code = ctx.get("project_code", "PROY-001")
+    module_code  = ctx.get("module_code", "gastos")
     try:
         # Buscar si existe usuario con mismo nombre y sin chat_id (pre-registrado)
         rows_preexist = _rest_get(
@@ -144,7 +147,6 @@ def _register_user(schema: str, ctx: dict, dry_run: bool) -> dict:
             f"nombre=ilike.{urllib.parse.quote(nombre)}&telegram_chat_id=is.null&activo=eq.true"
         )
         if rows_preexist:
-            # Vincular chat_id al registro pre-existente
             updated = _rest_patch(
                 schema, "usuarios",
                 {"telegram_chat_id": chat_id},
@@ -152,13 +154,15 @@ def _register_user(schema: str, ctx: dict, dry_run: bool) -> dict:
             )
             user = updated[0] if updated else rows_preexist[0]
             return {"ok": True, "data": {"user": user, "folio": user.get("folio"), "linked": True}}
-        # Si no existe pre-registro, crear nuevo
         folio = _next_folio(schema, "usuarios", "USR")
         row   = _rest_post(schema, "usuarios", {
-            "folio":             folio,
-            "nombre":            nombre,
-            "telegram_chat_id":  chat_id,
-            "rol":               ctx.get("rol", "capturista"),
+            "folio":            folio,
+            "nombre":           nombre,
+            "telegram_chat_id": chat_id,
+            "rol":              ctx.get("rol", "capturista"),
+            "empresa_id":       empresa_id,
+            "project_code":     project_code,
+            "module_code":      module_code,
         })
         return {"ok": True, "data": {"user": row[0] if row else None, "folio": folio}}
     except Exception as e:
@@ -201,23 +205,39 @@ def _save_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
             return {"ok": False, "error": f"Categoria no encontrada: {ctx['categoria']}"}
         categoria_id = rows[0]["id"]
 
+        empresa_id   = ctx.get("empresa_id") or ctx.get("company_id") or "EMP_DURALON"
+        project_code = ctx.get("project_code", "PROY-001")
+        module_code  = ctx.get("module_code", "gastos")
+
         folio = _next_folio(schema, "gastos", "GAS")
         gasto = _rest_post(schema, "gastos", {
-            "folio": folio,
-            "usuario_id": ctx["usuario_id"],
-            "categoria_id": categoria_id,
-            "monto": monto,
-            "descripcion": ctx.get("descripcion", ""),
-            "fecha": fecha,
-            "metodo_captura": ctx.get("metodo_captura", "manual"),
+            "folio":            folio,
+            "usuario_id":       ctx["usuario_id"],
+            "categoria_id":     categoria_id,
+            "monto":            monto,
+            "descripcion":      ctx.get("descripcion", ""),
+            "fecha":            fecha,
+            "metodo_captura":   ctx.get("metodo_captura", "manual"),
+            "empresa_id":       empresa_id,
+            "project_code":     project_code,
+            "module_code":      module_code,
+            "cost_center_id":   ctx.get("cost_center_id"),
+            "customer_id":      ctx.get("customer_id"),
+            "supplier_id":      ctx.get("supplier_id"),
+            "sales_order_id":   ctx.get("sales_order_id"),
+            "purchase_order_id": ctx.get("purchase_order_id"),
+            "asset_id":         ctx.get("asset_id"),
+            "erp_tags":         ctx.get("erp_tags", {}),
         })
 
-        # Evento de auditoría
         _rest_post(schema, "gasto_eventos", {
-            "gasto_id": gasto[0]["id"],
-            "usuario_id": ctx["usuario_id"],
-            "evento": "creado",
-            "detalle": {"metodo": ctx.get("metodo_captura", "manual")},
+            "gasto_id":    gasto[0]["id"],
+            "usuario_id":  ctx["usuario_id"],
+            "evento":      "creado",
+            "detalle":     {"metodo": ctx.get("metodo_captura", "manual")},
+            "empresa_id":  empresa_id,
+            "project_code": project_code,
+            "module_code": module_code,
         })
 
         return {"ok": True, "data": {"gasto": gasto[0], "folio": folio}}
@@ -276,46 +296,66 @@ def _get_stats(schema: str, ctx: dict) -> dict:
 
 
 def _get_schema_sql(schema: str, ctx: dict) -> dict:
-    """Retorna el SQL DDL para crear todas las tablas del schema."""
+    """Retorna el SQL DDL para crear todas las tablas del schema (ERP-ready)."""
     sql = f"""-- ============================================================
 -- Schema: {schema}
--- Proyecto: UC-101 / PROY-001
--- Generar en Supabase SQL Editor
+-- Empresa: EMP_DURALON (legacy: UC-101) / PROY-001 / gastos
+-- ERP-Ready: empresa_id + project_code + module_code en todas las tablas
 -- ============================================================
 
 CREATE SCHEMA IF NOT EXISTS {schema};
 
 -- Usuarios
 CREATE TABLE IF NOT EXISTS {schema}.usuarios (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    folio           TEXT UNIQUE NOT NULL,
-    nombre          TEXT NOT NULL,
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    folio            TEXT UNIQUE NOT NULL,
+    nombre           TEXT NOT NULL,
     telegram_chat_id TEXT UNIQUE,
-    rol             TEXT NOT NULL DEFAULT 'capturista',
-    activo          BOOLEAN NOT NULL DEFAULT true,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    rol              TEXT NOT NULL DEFAULT 'capturista',
+    activo           BOOLEAN NOT NULL DEFAULT true,
+    empresa_id       TEXT NOT NULL DEFAULT 'EMP_DURALON',
+    project_code     TEXT NOT NULL DEFAULT 'PROY-001',
+    module_code      TEXT NOT NULL DEFAULT 'gastos',
+    global_user_id   UUID NULL,
+    phone            TEXT NULL,
+    email            TEXT NULL,
+    modules_allowed  TEXT[] NOT NULL DEFAULT ARRAY['gastos'],
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Categorias de gasto
 CREATE TABLE IF NOT EXISTS {schema}.categorias_gasto (
-    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nombre     TEXT UNIQUE NOT NULL,
-    activo     BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre       TEXT UNIQUE NOT NULL,
+    activo       BOOLEAN NOT NULL DEFAULT true,
+    empresa_id   TEXT NOT NULL DEFAULT 'EMP_DURALON',
+    project_code TEXT NOT NULL DEFAULT 'PROY-001',
+    module_code  TEXT NOT NULL DEFAULT 'gastos',
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Gastos
 CREATE TABLE IF NOT EXISTS {schema}.gastos (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    folio           TEXT UNIQUE NOT NULL,
-    usuario_id      UUID NOT NULL REFERENCES {schema}.usuarios(id),
-    categoria_id    UUID NOT NULL REFERENCES {schema}.categorias_gasto(id),
-    monto           NUMERIC(12, 2) NOT NULL,
-    descripcion     TEXT,
-    fecha           DATE NOT NULL,
-    metodo_captura  TEXT NOT NULL DEFAULT 'manual',
-    estado          TEXT NOT NULL DEFAULT 'registrado',
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    folio             TEXT UNIQUE NOT NULL,
+    usuario_id        UUID NOT NULL REFERENCES {schema}.usuarios(id),
+    categoria_id      UUID NOT NULL REFERENCES {schema}.categorias_gasto(id),
+    monto             NUMERIC(12, 2) NOT NULL,
+    descripcion       TEXT,
+    fecha             DATE NOT NULL,
+    metodo_captura    TEXT NOT NULL DEFAULT 'manual',
+    estado            TEXT NOT NULL DEFAULT 'registrado',
+    empresa_id        TEXT NOT NULL DEFAULT 'EMP_DURALON',
+    project_code      TEXT NOT NULL DEFAULT 'PROY-001',
+    module_code       TEXT NOT NULL DEFAULT 'gastos',
+    cost_center_id    UUID NULL,
+    customer_id       UUID NULL,
+    supplier_id       UUID NULL,
+    sales_order_id    UUID NULL,
+    purchase_order_id UUID NULL,
+    asset_id          UUID NULL,
+    erp_tags          JSONB NOT NULL DEFAULT '{}',
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Documentos (tickets, fotos, comprobantes)
@@ -326,16 +366,22 @@ CREATE TABLE IF NOT EXISTS {schema}.gasto_documentos (
     url          TEXT NOT NULL,
     tipo         TEXT NOT NULL DEFAULT 'ticket',
     storage_path TEXT,
+    empresa_id   TEXT NOT NULL DEFAULT 'EMP_DURALON',
+    project_code TEXT NOT NULL DEFAULT 'PROY-001',
+    module_code  TEXT NOT NULL DEFAULT 'gastos',
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Eventos de auditoria
 CREATE TABLE IF NOT EXISTS {schema}.gasto_eventos (
-    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    gasto_id   UUID REFERENCES {schema}.gastos(id),
-    usuario_id UUID REFERENCES {schema}.usuarios(id),
-    evento     TEXT NOT NULL,
-    detalle    JSONB,
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    gasto_id     UUID REFERENCES {schema}.gastos(id),
+    usuario_id   UUID REFERENCES {schema}.usuarios(id),
+    evento       TEXT NOT NULL,
+    detalle      JSONB,
+    empresa_id   TEXT NOT NULL DEFAULT 'EMP_DURALON',
+    project_code TEXT NOT NULL DEFAULT 'PROY-001',
+    module_code  TEXT NOT NULL DEFAULT 'gastos',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

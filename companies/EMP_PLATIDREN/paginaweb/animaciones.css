@@ -1,0 +1,645 @@
+/* ANIMACIONES PROFESIONALES - AOS (Animate On Scroll) */
+/* Agregar esto al final del style.css */
+
+/* Animations AOS - Fade Up */
+[data-aos="fade-up"] {
+    opacity: 0;
+    transform: translateY(50px);
+}
+
+[data-aos="fade-up"].aos-animate {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.8s cubic-bezier(0.39, 0.575, 0.565, 1), transform 0.8s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
+/* Fade In */
+[data-aos="fade-in"] {
+    opacity: 0;
+}
+
+[data-aos="fade-in"].aos-animate {
+    opacity: 1;
+    transition: opacity 0.8s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
+/* Zoom In */
+[data-aos="zoom-in"] {
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+[data-aos="zoom-in"].aos-animate {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.8s cubic-bezier(0.39, 0.575, 0.565, 1), transform 0.8s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
+/* Flip In X */
+[data-aos="flip-left"] {
+    opacity: 0;
+    transform: perspective(2500px) rotateY(100deg);
+}
+
+[data-aos="flip-left"].aos-animate {
+    opacity: 1;
+    transform: perspective(2500px) rotateY(0deg);
+    transition: opacity 0.8s cubic-bezier(0.39, 0.575, 0.565, 1), transform 0.8s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
+/* Slide In Right */
+[data-aos="slide-left"] {
+    opacity: 0;
+    transform: translateX(100px);
+}
+
+[data-aos="slide-left"].aos-animate {
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 0.8s cubic-bezier(0.39, 0.575, 0.565, 1), transform 0.8s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
+/* Bounce In */
+[data-aos="bounce-up"] {
+    opacity: 0;
+    transform: translateY(80px);
+}
+
+[data-aos="bounce-up"].aos-animate {
+    animation: bounceInUp 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes bounceInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(80px);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(-10px);
+    }
+    80% {
+        transform: translateY(5px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+/* Counter Animation para números */
+.stat-number {
+    animation: countUp 2s ease-out forwards;
+}
+
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Animación de tarjetas en hover - más sofisticada */
+.service-card,
+.producto-card,
+.testimonio-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.service-card::before,
+.producto-card::before,
+.testimonio-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.service-card:hover::before,
+.producto-card:hover::before,
+.testimonio-card:hover::before {
+    left: 100%;
+}
+
+/* Animación de botones mejorada */
+.btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* Animación de entrada del header */
+header {
+    animation: slideDownHeader 0.6s ease-out;
+}
+
+@keyframes slideDownHeader {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animación del hero */
+.hero h1 {
+    animation: fadeInScale 0.8s ease-out;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Animación de secciones que aparecen */
+.section {
+    opacity: 0;
+    animation: fadeInSection 0.8s ease-out forwards;
+}
+
+.section:nth-of-type(1) {
+    animation-delay: 0s;
+}
+
+.section:nth-of-type(2) {
+    animation-delay: 0.2s;
+}
+
+@keyframes fadeInSection {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animación de línea bajo enlaces */
+.nav-menu a::after {
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animación de icono de WhatsApp */
+.whatsapp-float {
+    animation: popInWhatsApp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popInWhatsApp {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Animación de sombra en hover */
+.service-card,
+.producto-card,
+.reason-card {
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.service-card:hover,
+.producto-card:hover,
+.reason-card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+/* Animación de entrada de texto */
+.page-header h1 {
+    animation: slideInDown 0.7s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animación de elementos en lista (FAQs) */
+.faq-item {
+    animation: slideInUp 0.5s ease-out forwards;
+}
+
+.faq-item:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.faq-item:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.faq-item:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.faq-item:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animación de formulario */
+.form-group {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.form-group:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.form-group:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.form-group:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.form-group:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+.form-group:nth-child(5) {
+    animation-delay: 0.4s;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animación de focus en inputs */
+.form-group input:focus,
+.form-group textarea:focus {
+    animation: inputFocus 0.3s ease-out;
+}
+
+@keyframes inputFocus {
+    from {
+        transform: scale(0.98);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
+/* Animación de gradient en botones */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Animación de carga de página */
+@keyframes pageLoad {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+body {
+    animation: pageLoad 0.6s ease-out;
+}
+
+/* Animación de transición entre páginas */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Animación de elemento "scroll to top" */
+.scroll-indicator {
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Micro-interacciones de texto */
+.section-title {
+    animation: textFade 0.8s ease-out;
+}
+
+@keyframes textFade {
+    from {
+        opacity: 0;
+        letter-spacing: 3px;
+    }
+    to {
+        opacity: 1;
+        letter-spacing: -0.5px;
+    }
+}
+
+/* Animación de statstic numbers */
+@keyframes numberCount {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-card {
+    animation: numberCount 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.stat-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.stat-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.stat-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.stat-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+/* Animación de footer */
+footer {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+/* Animación de tarjetas de producto */
+.producto-card {
+    animation: zoomInCard 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.producto-card:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.producto-card:nth-child(2) {
+    animation-delay: 0.05s;
+}
+
+.producto-card:nth-child(3) {
+    animation-delay: 0.1s;
+}
+
+@keyframes zoomInCard {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Efecto de ripple en botones */
+.btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animación de tab activo */
+.tab-btn.active {
+    animation: tabActive 0.3s ease-out;
+}
+
+@keyframes tabActive {
+    0% {
+        transform: scale(0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Animación de FAQ item abierto */
+.faq-answer.show {
+    animation: expandAnswer 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes expandAnswer {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Animación de enlace en hover */
+.nav-menu a:hover {
+    animation: linkHover 0.4s ease-out forwards;
+}
+
+@keyframes linkHover {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-3px);
+    }
+}
+
+/* Animación de sección destacada */
+.commitment-box {
+    animation: fadeInScale 0.8s ease-out;
+}
+
+/* Animación de proceso paso */
+.process-step {
+    animation: processStepEnter 0.6s ease-out;
+}
+
+.process-step:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.process-step:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.process-step:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+@keyframes processStepEnter {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Animación de contenedor de contacto */
+.contacto-info {
+    animation: slideLeft 0.8s ease-out;
+}
+
+@keyframes slideLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Animación de formulario */
+#contacto-form {
+    animation: slideRight 0.8s ease-out;
+}
+
+@keyframes slideRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Animación de icono en hover */
+.service-icon {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.service-card:hover .service-icon {
+    animation: iconBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes iconBounce {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2) rotate(10deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+/* Animación de borde en hover */
+.mvv-card {
+    position: relative;
+    border-top: 4px solid var(--accent);
+    transition: all 0.3s ease-out;
+}
+
+.mvv-card:hover {
+    animation: cardBorder 0.4s ease-out;
+}
+
+@keyframes cardBorder {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 168, 232, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 0 10px rgba(0, 168, 232, 0);
+    }
+}
+
+/* Reduce animaciones en conexiones lentas */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

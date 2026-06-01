@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 90" width="320" height="90">
+  <defs>
+    <linearGradient id="sg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#F0F5FA"/>
+      <stop offset="45%"  stop-color="#C8D8E8"/>
+      <stop offset="100%" stop-color="#8AADC8"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0057B8"/>
+      <stop offset="100%" stop-color="#002970"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#C8D8E8"/>
+      <stop offset="50%"  stop-color="#F0F5FA"/>
+      <stop offset="100%" stop-color="#C8D8E8"/>
+    </linearGradient>
+    <filter id="sh">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#00000040"/>
+    </filter>
+  </defs>
+
+  <!-- Badge cuadrado -->
+  <rect x="0" y="0" width="90" height="90" rx="14" fill="url(#bg)" filter="url(#sh)"/>
+
+  <!-- Línea plateada superior -->
+  <rect x="8" y="6" width="74" height="3" rx="1.5" fill="url(#accent)"/>
+
+  <!-- Letra P -->
+  <text x="5" y="70"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="60" font-weight="900"
+    fill="url(#sg)">P</text>
+
+  <!-- Letra D — levemente encima de P para efecto monograma -->
+  <text x="36" y="70"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="60" font-weight="900"
+    fill="url(#sg)" opacity="0.82">D</text>
+
+  <!-- Línea plateada inferior -->
+  <rect x="8" y="81" width="74" height="3" rx="1.5" fill="url(#accent)"/>
+
+  <!-- Separador vertical -->
+  <line x1="106" y1="14" x2="106" y2="76"
+    stroke="#B0C8DC" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Nombre empresa -->
+  <text x="120" y="44"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="23" font-weight="700" letter-spacing="3.5"
+    fill="#002970">PLATIDREN</text>
+
+  <!-- Tagline -->
+  <text x="121" y="63"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="9" letter-spacing="4"
+    fill="#4A7AAA">SOLUCIONES EN DRENAJE</text>
+</svg>

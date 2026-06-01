@@ -25,19 +25,24 @@ class RenderCreateServiceService:
 
     def _ejecutar(self, context: dict) -> dict:
         env_vars = context.get("env_vars", {})
+        env = context.get("runtime", "python")
+        build_cmd = context.get("build_command", "pip install -r requirements.txt")
+        start_cmd = context.get("start_command", "uvicorn factory_api:app --host 0.0.0.0 --port $PORT")
         payload = {
             "type": "web_service",
             "name": context["name"],
             "ownerId": context["owner_id"],
             "repo": context["repo"],
+            "branch": context.get("branch", "main"),
             "autoDeploy": "yes",
             "serviceDetails": {
-                "runtime": context.get("runtime", "python"),
-                "buildCommand": context.get("build_command", "pip install -r requirements.txt"),
-                "startCommand": context.get("start_command", "uvicorn factory_api:app --host 0.0.0.0 --port $PORT"),
-                "plan": context.get("plan", "free"),
+                "env": env,
+                "plan": context.get("plan", "starter"),
                 "region": context.get("region", "oregon"),
-                "branch": context.get("branch", "main"),
+                "envSpecificDetails": {
+                    "buildCommand": build_cmd,
+                    "startCommand": start_cmd,
+                },
                 "envVars": [{"key": k, "value": v} for k, v in env_vars.items()],
             },
         }
