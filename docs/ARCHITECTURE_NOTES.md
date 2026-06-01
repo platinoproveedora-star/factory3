@@ -109,6 +109,65 @@ Los handlers son skills independientes en `factory/skills/internos/`:
 
 Se agregan en `_MODO_HANDLERS` dict del router. Sin hard-code en factory_api.py.
 
+## Cómo ejecutar SQL en Supabase desde Claude/Codex (2026-06-01)
+
+### El problema
+`SupabaseClient.management_query()` usa `SUPABASE_ACCESS_TOKEN` (Personal Access Token `sbp_...`).
+Este token expira o se revoca. Cuando está expirado, todas las llamadas de gestión dan **401 Unauthorized**.
+El skill `vertical_supabase/supabase_sql_execute` usa este mismo método — también falla si el token expiró.
+
+### La solución correcta: endpoint `/run/` de factory3
+
+Factory3 en Render tiene el token válido en sus env vars. El endpoint `/run/{skill}` ejecuta skills con el contexto de Render:
+
+```python
+POST https://factory3.onrender.com/run/vertical_supabase/supabase_sql_execute
+Authorization: Bearer <FACTORY_RUN_SECRET>
+Content-Type: application/json
+
+{"sql": "ALTER TABLE ...", "dry_run": false}
+```
+
+`FACTORY_RUN_SECRET` está en Render → Settings → Environment → `FACTORY_RUN_SECRET`.
+
+### Alternativa: token fresco localmente
+
+1. Ir a https://supabase.com/dashboard/account/tokens
+2. Crear nuevo Personal Access Token
+3. Actualizar en `.env`: `SUPABASE_ACCESS_TOKEN=sbp_nuevo...`
+4. Actualizar en Render: Settings → Environment → `SUPABASE_ACCESS_TOKEN`
+5. Ejecutar localmente con el engine de factory3
+
+### Patrón para Claude
+
+```python
+# Opción A: via Render (usa FACTORY_RUN_SECRET)
+import urllib.request, json
+payload = json.dumps({"sql": "...", "dry_run": False}).encode()
+req = urllib.request.Request(
+    "https://factory3.onrender.com/run/vertical_supabase/supabase_sql_execute",
+    data=payload,
+    headers={
+        "Authorization": "Bearer <FACTORY_RUN_SECRET>",
+        "Content-Type": "application/json",
+        "User-Agent": "FactoryFactory/0.1 (+https://github.com/)",
+    },
+    method="POST",
+)
+
+# Opción B: local con token fresco
+cd factory3 && python3 -c "
+import sys, os; sys.path.insert(0, '.')
+os.environ['SUPABASE_ACCESS_TOKEN'] = 'sbp_nuevo...'
+from factory.engine import SupabaseClient
+print(SupabaseClient({}).management_query('ALTER TABLE ...'))
+"
+```
+
+### Regla: renovar token cada 90 días
+El `SUPABASE_ACCESS_TOKEN` en `.env` y en Render debe renovarse antes de expirar.
+Generarlo en: https://supabase.com/dashboard/account/tokens
+
 ## Revision rapida 2026-05-12
 
 - Bot registry: existe `factory3_admin` como unico bot registrado.
