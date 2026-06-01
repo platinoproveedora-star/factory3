@@ -283,6 +283,25 @@ def data(skill_name: str, request: Request):
     return result.get("data", {})
 
 
+@app.post("/data/{skill_name:path}")
+async def data_write(skill_name: str, request: Request):
+    """Escrituras ERP via skills — mismo patrón que GET /data pero acepta body JSON."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    dashboard_key = request.headers.get("x-dashboard-key")
+    if dashboard_key and "dashboard_key" not in body:
+        body["dashboard_key"] = dashboard_key
+    try:
+        result = _get_data_runner().run(skill_name, body, source="internos")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error", "error"))
+    return result.get("data", {})
+
+
 @app.post("/cron/tasks")
 def cron_tasks(request: Request):
     """Render Cron endpoint — ejecuta meta_task_runner cada 5 min."""

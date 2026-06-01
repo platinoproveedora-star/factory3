@@ -535,6 +535,117 @@ def _upload_document(schema: str, ctx: dict, dry_run: bool) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Update expense
+# ---------------------------------------------------------------------------
+
+def _update_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
+    """Actualiza campos editables de un gasto existente."""
+    gasto_id = ctx.get("gasto_id", "").strip()
+    folio    = ctx.get("folio", "").strip()
+
+    if not gasto_id and not folio:
+        return {"ok": False, "error": "gasto_id o folio requerido"}
+
+    updatable = {}
+
+    if ctx.get("monto") is not None:
+        try:
+            updatable["monto"] = float(str(ctx["monto"]).replace(",", "."))
+        except ValueError:
+            return {"ok": False, "error": f"monto invalido: {ctx['monto']}"}
+
+    if ctx.get("fecha"):
+        updatable["fecha"] = ctx["fecha"]
+
+    if ctx.get("descripcion") is not None:
+        updatable["descripcion"] = ctx["descripcion"]
+
+    if ctx.get("categoria"):
+        rows = _rest_get(schema, "categorias_gasto",
+                         f"nombre=eq.{urllib.parse.quote(ctx['categoria'])}")
+        if not rows:
+            return {"ok": False, "error": f"Categoria no encontrada: {ctx['categoria']}"}
+        updatable["categoria_id"] = rows[0]["id"]
+
+    if ctx.get("estado"):
+        updatable["estado"] = ctx["estado"]
+
+    if not updatable:
+        return {"ok": False, "error": "Sin campos para actualizar"}
+
+    if dry_run:
+        return {"ok": True, "data": {"dry_run": True, "preview": updatable}}
+
+    try:
+        filter_param = f"id=eq.{gasto_id}" if gasto_id else f"folio=eq.{folio}"
+        updated = _rest_patch(schema, "gastos", updatable, filter_param)
+
+        empresa_id   = ctx.get("empresa_id") or ctx.get("company_id") or "EMP_DURALON"
+        project_code = ctx.get("project_code", "PROY-001")
+        module_code  = ctx.get("module_code", "gastos")
+        gasto_ref    = updated[0] if updated else {}
+
+        _rest_post(schema, "gasto_eventos", {
+            "gasto_id":    gasto_ref.get("id", gasto_id),
+            "evento":      "editado",
+            "detalle":     {"cambios": list(updatable.keys()), "origen": "dashboard"},
+            "empresa_id":  empresa_id,
+            "project_code": project_code,
+            "module_code": module_code,
+        })
+
+        return {"ok": True, "data": {"gasto": gasto_ref, "updated_fields": list(updatable.keys())}}
+    except Exception as e:
+        return {"ok": False, "error": f"update_expense: {e}"}
+
+
+# ---------------------------------------------------------------------------
+# Delete expense
+# ---------------------------------------------------------------------------
+
+def _delete_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
+    """Elimina un gasto. Registra evento de auditoria antes de borrar."""
+    gasto_id = ctx.get("gasto_id", "").strip()
+    folio    = ctx.get("folio", "").strip()
+
+    if not gasto_id and not folio:
+        return {"ok": False, "error": "gasto_id o folio requerido"}
+
+    if dry_run:
+        return {"ok": True, "data": {"dry_run": True, "gasto_id": gasto_id, "folio": folio}}
+
+    try:
+        filter_param = f"id=eq.{gasto_id}" if gasto_id else f"folio=eq.{folio}"
+
+        rows = _rest_get(schema, "gastos", filter_param.replace("=eq.", "=eq."))
+        if not rows:
+            return {"ok": False, "error": "Gasto no encontrado"}
+
+        gasto = rows[0]
+        empresa_id   = ctx.get("empresa_id") or ctx.get("company_id") or "EMP_DURALON"
+        project_code = ctx.get("project_code", "PROY-001")
+        module_code  = ctx.get("module_code", "gastos")
+
+        _rest_post(schema, "gasto_eventos", {
+            "gasto_id":    gasto["id"],
+            "evento":      "eliminado",
+            "detalle":     {"folio": gasto["folio"], "monto": str(gasto["monto"]), "origen": "dashboard"},
+            "empresa_id":  empresa_id,
+            "project_code": project_code,
+            "module_code": module_code,
+        })
+
+        url = f"{_url()}/rest/v1/gastos?{filter_param}"
+        req = urllib.request.Request(url, headers=_headers_write(schema), method="DELETE")
+        with urllib.request.urlopen(req, timeout=10) as r:
+            r.read()
+
+        return {"ok": True, "data": {"deleted": True, "folio": gasto["folio"]}}
+    except Exception as e:
+        return {"ok": False, "error": f"delete_expense: {e}"}
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -554,6 +665,8 @@ class ClientExpensesService:
             "get_user":        lambda: _get_user(schema, context),
             "register_user":   lambda: _register_user(schema, context, dry_run),
             "save_expense":    lambda: _save_expense(schema, context, dry_run),
+            "update_expense":  lambda: _update_expense(schema, context, dry_run),
+            "delete_expense":  lambda: _delete_expense(schema, context, dry_run),
             "list_expenses":   lambda: _list_expenses(schema, context),
             "get_stats":       lambda: _get_stats(schema, context),
             "get_schema_sql":  lambda: _get_schema_sql(schema, context),
