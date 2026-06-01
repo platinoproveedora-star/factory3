@@ -231,6 +231,7 @@ def _save_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
         })
 
         _rest_post(schema, "gasto_eventos", {
+            "folio":       _next_folio(schema, "gasto_eventos", "EVT"),
             "gasto_id":    gasto[0]["id"],
             "usuario_id":  ctx["usuario_id"],
             "evento":      "creado",
@@ -326,6 +327,7 @@ CREATE TABLE IF NOT EXISTS {schema}.usuarios (
 -- Categorias de gasto
 CREATE TABLE IF NOT EXISTS {schema}.categorias_gasto (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    folio        TEXT UNIQUE NOT NULL,
     nombre       TEXT UNIQUE NOT NULL,
     activo       BOOLEAN NOT NULL DEFAULT true,
     empresa_id   TEXT NOT NULL DEFAULT 'EMP_DURALON',
@@ -375,6 +377,7 @@ CREATE TABLE IF NOT EXISTS {schema}.gasto_documentos (
 -- Eventos de auditoria
 CREATE TABLE IF NOT EXISTS {schema}.gasto_eventos (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    folio        TEXT UNIQUE NOT NULL,
     gasto_id     UUID REFERENCES {schema}.gastos(id),
     usuario_id   UUID REFERENCES {schema}.usuarios(id),
     evento       TEXT NOT NULL,
@@ -586,6 +589,7 @@ def _update_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
         gasto_ref    = updated[0] if updated else {}
 
         _rest_post(schema, "gasto_eventos", {
+            "folio":       _next_folio(schema, "gasto_eventos", "EVT"),
             "gasto_id":    gasto_ref.get("id", gasto_id),
             "evento":      "editado",
             "detalle":     {"cambios": list(updatable.keys()), "origen": "dashboard"},
@@ -627,6 +631,7 @@ def _delete_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
         module_code  = ctx.get("module_code", "gastos")
 
         _rest_post(schema, "gasto_eventos", {
+            "folio":       _next_folio(schema, "gasto_eventos", "EVT"),
             "gasto_id":    gasto["id"],
             "evento":      "eliminado",
             "detalle":     {"folio": gasto["folio"], "monto": str(gasto["monto"]), "origen": "dashboard"},
