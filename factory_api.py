@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
 
@@ -235,6 +236,12 @@ def process_bot_update(bot_name: str, update: dict, background_tasks: Background
 
 load_env_file()
 app = FastAPI(title="Factory API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 _data_runner = None
 
