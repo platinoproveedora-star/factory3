@@ -141,6 +141,14 @@ def _register_user(schema: str, ctx: dict, dry_run: bool) -> dict:
     project_code = ctx.get("project_code", "PROY-001")
     module_code  = ctx.get("module_code", "gastos")
     try:
+        # Si ya existe con ese telegram_chat_id, retornarlo directamente
+        rows_existing = _rest_get(
+            schema, "usuarios",
+            f"telegram_chat_id=eq.{urllib.parse.quote(chat_id)}&activo=eq.true"
+        )
+        if rows_existing:
+            return {"ok": True, "data": {"user": rows_existing[0], "folio": rows_existing[0].get("folio"), "found": True}}
+
         # Buscar si existe usuario con mismo nombre y sin chat_id (pre-registrado)
         rows_preexist = _rest_get(
             schema, "usuarios",
@@ -218,6 +226,7 @@ def _save_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
             "descripcion":      ctx.get("descripcion", ""),
             "fecha":            fecha,
             "metodo_captura":   ctx.get("metodo_captura", "manual"),
+            "vehiculo":         ctx.get("vehiculo") or None,
             "empresa_id":       empresa_id,
             "project_code":     project_code,
             "module_code":      module_code,
@@ -356,6 +365,7 @@ CREATE TABLE IF NOT EXISTS {schema}.gastos (
     sales_order_id    UUID NULL,
     purchase_order_id UUID NULL,
     asset_id          UUID NULL,
+    vehiculo          TEXT NULL,
     erp_tags          JSONB NOT NULL DEFAULT '{{}}',
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -573,6 +583,9 @@ def _update_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
     if ctx.get("estado"):
         updatable["estado"] = ctx["estado"]
 
+    if "vehiculo" in ctx:
+        updatable["vehiculo"] = ctx["vehiculo"] or None
+
     if not updatable:
         return {"ok": False, "error": "Sin campos para actualizar"}
 
@@ -630,9 +643,10 @@ def _delete_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
         project_code = ctx.get("project_code", "PROY-001")
         module_code  = ctx.get("module_code", "gastos")
 
+        # Log auditoría ANTES de borrar (sin gasto_id para evitar FK al borrar el evento después)
         _rest_post(schema, "gasto_eventos", {
             "folio":       _next_folio(schema, "gasto_eventos", "EVT"),
-            "gasto_id":    gasto["id"],
+            "gasto_id":    None,
             "evento":      "eliminado",
             "detalle":     {"folio": gasto["folio"], "monto": str(gasto["monto"]), "origen": "dashboard"},
             "empresa_id":  empresa_id,
@@ -640,6 +654,19 @@ def _delete_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
             "module_code": module_code,
         })
 
+        # Borrar eventos ligados al gasto (FK constraint)
+        eventos_url = f"{_url()}/rest/v1/gasto_eventos?gasto_id=eq.{gasto['id']}"
+        req_evt = urllib.request.Request(eventos_url, headers=_headers_write(schema), method="DELETE")
+        with urllib.request.urlopen(req_evt, timeout=10) as r:
+            r.read()
+
+        # Borrar gasto_documentos ligados
+        docs_url = f"{_url()}/rest/v1/gasto_documentos?gasto_id=eq.{gasto['id']}"
+        req_doc = urllib.request.Request(docs_url, headers=_headers_write(schema), method="DELETE")
+        with urllib.request.urlopen(req_doc, timeout=10) as r:
+            r.read()
+
+        # Borrar el gasto
         url = f"{_url()}/rest/v1/gastos?{filter_param}"
         req = urllib.request.Request(url, headers=_headers_write(schema), method="DELETE")
         with urllib.request.urlopen(req, timeout=10) as r:

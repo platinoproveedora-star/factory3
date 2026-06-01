@@ -107,7 +107,7 @@ class ClientExpensesDashboardDataService:
     def _list(self, schema: str, context: dict) -> dict:
         limit = max(1, min(int(context.get("limit", 200)), 2000))
         params = [
-            "select=folio,fecha,monto,descripcion,metodo_captura,categorias_gasto(nombre),usuarios(nombre)",
+            "select=folio,fecha,monto,descripcion,metodo_captura,vehiculo,categorias_gasto(nombre),usuarios(nombre)",
             "order=fecha.desc",
             f"limit={limit}",
         ]
@@ -179,6 +179,7 @@ class ClientExpensesDashboardDataService:
             "monto": float(row.get("monto") or 0),
             "descripcion": row.get("descripcion") or "",
             "metodo_captura": row.get("metodo_captura") or "manual",
+            "vehiculo": row.get("vehiculo") or None,
             "categoria": (row.get("categorias_gasto") or {}).get("nombre") or "",
             "nombre_usuario": (row.get("usuarios") or {}).get("nombre") or "",
         }
