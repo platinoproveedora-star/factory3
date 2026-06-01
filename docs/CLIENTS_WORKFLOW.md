@@ -4,13 +4,21 @@ Este documento define como Factory3 registra, opera y entrega trabajos para clie
 
 ## Principio
 
-Los clientes viven dentro de la empresa que los opera. Para Freelance Growth:
+Hay dos casos distintos:
+
+- **Clientes freelance temporales**: viven dentro de la empresa que los opera. Para Freelance Growth:
 
 ```text
 companies/EMP_FREELANCE_GROWTH/clients/
 ```
 
-No se recomienda un `clients/` global en la raiz porque mezcla clientes de negocios distintos y rompe la propiedad operativa.
+- **Empresas reales/internas con varios modulos**: viven como empresa propia en `companies/EMP_<NOMBRE>/projects/`.
+
+```text
+companies/EMP_DURALON/projects/PROY-001_GASTOS/
+```
+
+No se recomienda un `clients/` global en la raiz porque mezcla clientes de negocios distintos y rompe la propiedad operativa. Si una cuenta va a tener varios sistemas operativos, crear una empresa dedicada es mas claro que esconderla dentro de `EMP_FREELANCE_GROWTH`.
 
 ## Consecutivos
 
@@ -19,6 +27,7 @@ No se recomienda un `clients/` global en la raiz porque mezcla clientes de negoc
 | `UC-###` | Upwork Client / cliente freelance | `UC-101` |
 | `PROY-###` | Proyecto dentro de un cliente | `PROY-001` |
 | `TASK-###` | Tarea operativa opcional | `TASK-001` |
+| `EMP_<NOMBRE>` | Empresa real/interna con varios modulos | `EMP_DURALON` |
 
 ## Estructura Estandar
 
@@ -63,6 +72,8 @@ No usar nombres largos de vacante como repo, servicio Render, URL, carpeta tecni
 | Carpeta Factory3 | `clients/UC-###/projects/PROY-###/` | `clients/UC-101/projects/PROY-001/` |
 
 Regla: los sistemas usan codigos cortos; los humanos ven nombres descriptivos dentro de los documentos.
+
+Para empresas internas, usar el identificador de empresa (`EMP_DURALON`) como codigo principal. Si el proyecto nacio como cliente freelance (`UC-101`), conservarlo solo como `legacy_client_id` para no romper bot/schema/repo existentes.
 
 ## Deploy Operativo
 
@@ -121,7 +132,7 @@ Campos recomendados:
 
 Para clientes reales, no basta con disco local de Render. La decision operativa es GitHub primero, Supabase despues.
 
-1. Crear/actualizar archivos de cliente en `companies/EMP_FREELANCE_GROWTH/clients/`.
+1. Crear/actualizar archivos del cliente freelance en `companies/EMP_FREELANCE_GROWTH/clients/` o de empresa interna en `companies/EMP_<NOMBRE>/projects/`.
 2. Guardarlos en GitHub automaticamente para historial y recuperacion.
 3. Usar Supabase para operacion viva: tiempo, estados, alertas, metricas y busqueda.
 4. Registrar assets grandes en Storage.

@@ -39,7 +39,7 @@ El dashboard no debe quedar limitado a gastos. Debe ser la base para futuros pro
 - Si habra roles/permisos por usuario.
 - Si requiere exportacion a PDF.
 - Si el proyecto requiere repo propio desde el inicio: recomendado si.
-- Si el proyecto requiere deploy en Render desde el inicio: recomendado si.
+- Dashboard nuevo debe ir a Vercel; Render queda reservado para Factory API central.
 
 ## Tiempo y Costo
 

@@ -25,11 +25,10 @@ Flujo:
 | `vertical_dashboards/dashboard_update_planner` | Convierte cambios pedidos por cliente en un plan de actualizacion. |
 
 ## Duralon MVP
-Para `UC-101 / PROY-001`, el plan base debe leer `uc101_proy001.gastos` y mostrar:
+Para `EMP_DURALON / PROY-001` (legacy `UC-101 / PROY-001`), el plan base debe leer `uc101_proy001.gastos` y mostrar:
 - Total de gastos.
 - Numero de movimientos.
 - Gasto por categoria.
 - Gasto por dia.
 - Tabla filtrable.
 - Exportacion Excel/CSV.
-

@@ -1,5 +1,6 @@
 {
-  "client_id": "UC-101",
+  "company_id": "EMP_DURALON",
+  "legacy_client_id": "UC-101",
   "project_code": "PROY-001",
   "started_at": "2026-05-27T16:39:25Z",
   "deadline": "2026-05-29",

@@ -1,12 +1,4 @@
 {
   "next_number": 102,
-  "clients": [
-    {
-      "client_id": "UC-101",
-      "client_name": "Luis Castillejos",
-      "slug": "luis-castillejos",
-      "status": "active",
-      "folder": "companies/EMP_FREELANCE_GROWTH/clients/UC-101"
-    }
-  ]
+  "clients": []
 }

@@ -34,11 +34,13 @@ El proyecto inicia con un modulo de gastos, pero el dashboard debe quedar prepar
 
 ## Nombre Tecnico
 
-- Cliente: `UC-101`
+- Empresa: `EMP_DURALON`
+- Legacy client: `UC-101`
 - Proyecto: `PROY-001`
 - Repo: `platinoproveedora-star/uc101-proy001`
 - Repo URL: `https://github.com/platinoproveedora-star/uc101-proy001`
-- Render sugerido: `uc101-proy001`
+- Vercel sugerido: `uc101-proy001`
+- Render: reservado para Factory API central, no para dashboard del proyecto.
 - Bot Telegram: `@Duralon1_bot`
 - Schema Supabase: `uc101_proy001`
 - Bucket Storage: `uc101-proy001-assets`

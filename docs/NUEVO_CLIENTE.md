@@ -22,6 +22,13 @@ Necesitas como mínimo:
 - Deadline (fecha de entrega)
 - Presupuesto acordado
 
+Antes de crear carpetas, decide si es:
+
+- **Cliente freelance temporal**: usar `companies/EMP_FREELANCE_GROWTH/clients/UC-###`.
+- **Empresa real/interna con varios modulos**: usar `companies/EMP_<NOMBRE>/projects/PROY-###_<MODULO>/`.
+
+Ejemplo: Duralon vive en `companies/EMP_DURALON/projects/PROY-001_GASTOS/`, no dentro de Freelance Growth.
+
 ## Paso 2 — Crear el cliente en la fábrica
 
 ```python

@@ -1,0 +1,17 @@
+{
+  "company_id": "EMP_DURALON",
+  "company_name": "COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV",
+  "short_name": "Duralon",
+  "status": "active",
+  "relationship": "internal_client",
+  "primary_contact": {
+    "name": "Luis Castillejos",
+    "email": "alfredo82@hotmail.com"
+  },
+  "objective": "Mejorar procesos internos con AI, iniciando con captura y analisis de gastos.",
+  "legacy_ids": {
+    "client_id": "UC-101"
+  },
+  "created_at": "2026-05-27T16:39:25.087322Z",
+  "updated_at": "2026-05-31T00:00:00Z"
+}

@@ -89,6 +89,7 @@ Para clientes externos, GitHub es la primera fuente de verdad. Supabase compleme
 |---|---|
 | Skill reutilizable | `factory/skills/internos/vertical_<dominio>/` |
 | Dashboard de una empresa | `companies/<EMPRESA>/dashboard/` |
+| Empresa real/interna con varios modulos | `companies/EMP_<NOMBRE>/projects/` |
 | Cliente freelance ganado | `companies/EMP_FREELANCE_GROWTH/clients/` |
 | Proyecto para portafolio | `companies/EMP_FREELANCE_GROWTH/portfolio/projects.json` |
 | Tabla nueva Supabase | SQL en empresa o `docs/`, registro en `docs/TABLES.md` |

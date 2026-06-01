@@ -1,5 +1,6 @@
 {
-  "client_id": "UC-101",
+  "company_id": "EMP_DURALON",
+  "legacy_client_id": "UC-101",
   "project_code": "PROY-001",
   "project_name": "Telegram bot de gastos y dashboard empresarial",
   "status": "in_progress",
@@ -63,7 +64,7 @@
       }
     ]
   },
-  "folder": "companies/EMP_FREELANCE_GROWTH/clients/UC-101/projects/PROY-001",
+  "folder": "companies/EMP_DURALON/projects/PROY-001_GASTOS",
   "deliverables": [
     "Telegram bot de captura de gastos",
     "Flujo de lectura de tickets e imagenes con AI/OCR",
@@ -73,7 +74,7 @@
     "Base de datos para gastos, categorias, usuarios y documentos",
     "Checklist de informacion que debe entregar el cliente",
     "README de uso y operacion",
-    "Deploy inicial si se confirma Render necesario"
+    "Deploy dashboard en Vercel y consumo de Factory API"
   ],
   "source_brief": "Primer proyecto del cliente: crear Telegram bot de gastos con dashboard completo de analisis. Debe leer tickets e imagenes de gastos y tener formato de captura manual sin AI. El dashboard no sera solo de gastos: sera la base para meter todos los proyectos de la empresa, empezando por gastos y analisis principal de informacion que posteriormente pasara el cliente.",
   "created_at": "2026-05-27T16:39:25.125162Z",

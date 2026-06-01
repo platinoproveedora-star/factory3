@@ -12,6 +12,7 @@ Este archivo registra dashboards operativos de Factory3. Cada dashboard debe ten
 | Estoiko Lab Agents Dashboard | EMP_ESTOIKOLAB | `companies/EMP_ESTOIKOLAB/dashboard/app.py` | `emp-estoikolab-dashboard` | Ver leads, conversaciones y operacion de agentes chat | Supabase schema `estoikolab` + `public.bot_states` | `vertical_chat_agents/*`, `vertical_sales/*` |
 | LOGPLAT Dashboard | LOGPLAT | `EMP_LOGPLAT/dashboard/app.py` | dashboard externo/logplat | Operacion de fletera: viajes, gastos, pagos, CXC y KPIs | Supabase schema `logplat` | `vertical_emp_logplat/*` |
 | Freelance Center | EMP_FREELANCE_GROWTH | `companies/EMP_FREELANCE_GROWTH/dashboard/app.py` | `emp-freelance-growth-dashboard` | Operar perfil, portafolio, vacantes, propuestas y checklist freelance | Archivos `portfolio/` + Supabase schema `freelance` | `vertical_freelance_growth/*` |
+| Duralon Gastos | EMP_DURALON | `companies/EMP_DURALON/projects/PROY-001_GASTOS/` + repo `uc101-proy001` | Vercel esperado `uc101-proy001` | Analisis de gastos y base operativa modular de Duralon | Supabase schema `uc101_proy001` | `vertical_client_expenses/*`, `vertical_dashboards/*`, `vertical_nextjs/*` |
 
 ## Reglas
 
