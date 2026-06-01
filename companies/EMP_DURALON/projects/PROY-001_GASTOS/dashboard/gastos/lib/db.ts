@@ -29,6 +29,7 @@ export type Gasto = {
   metodo_captura: string;
   categoria: string;
   nombre_usuario: string;
+  vehiculo: string | null;
 };
 
 export type StatCategoria = { categoria: string; total: number; count: number };

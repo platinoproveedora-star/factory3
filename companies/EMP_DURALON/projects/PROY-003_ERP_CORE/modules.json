@@ -1,0 +1,47 @@
+{
+  "company_id": "EMP_DURALON",
+  "version": "0.1.0",
+  "modules": [
+    {
+      "project_code": "PROY-001",
+      "module_code": "gastos",
+      "project_name": "Telegram bot de gastos y dashboard empresarial",
+      "status": "ready",
+      "erp_ready": true,
+      "schema": "uc101_proy001",
+      "folder": "companies/EMP_DURALON/projects/PROY-001_GASTOS",
+      "dashboard_url": "https://uc101-gastos.onrender.com",
+      "depends_on": [],
+      "notes": "Schema legacy UC-101, ya normalizado con empresa_id/project_code/module_code y doble ID."
+    },
+    {
+      "project_code": "PROY-002",
+      "module_code": "ventas",
+      "project_name": "Ventas, documentos comerciales y cobranza",
+      "status": "in_progress",
+      "erp_ready": false,
+      "schema": "uc101_proy002",
+      "folder": "companies/EMP_DURALON/projects/PROY-002_VENTAS",
+      "dashboard_url": null,
+      "depends_on": [
+        "PROY-001"
+      ],
+      "notes": "Scaffold y schema SQL creados. Pendiente ejecutar Supabase y correr health check."
+    },
+    {
+      "project_code": "PROY-003",
+      "module_code": "erp_core",
+      "project_name": "ERP Core Duralon",
+      "status": "planned",
+      "erp_ready": false,
+      "schema": null,
+      "folder": "companies/EMP_DURALON/projects/PROY-003_ERP_CORE",
+      "dashboard_url": null,
+      "depends_on": [
+        "PROY-001",
+        "PROY-002"
+      ],
+      "notes": "Proyecto contenedor: arquitectura, contratos, integracion, dashboard central y handoff del ERP completo."
+    }
+  ]
+}

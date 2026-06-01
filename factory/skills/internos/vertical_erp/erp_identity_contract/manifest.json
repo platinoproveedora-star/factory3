@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_identity_contract",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Devuelve y valida el contrato de identidad ERP para empresa, proyecto, modulo y schema.",
+  "requires_env": []
+}

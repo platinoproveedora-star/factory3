@@ -3075,5 +3075,41 @@
     "path": "skills/internos/vertical_vercel/vercel_project_remove",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_erp/erp_identity_contract": {
+    "tipo": "interno",
+    "nombre": "vertical_erp/erp_identity_contract",
+    "vertical": "vertical_erp",
+    "descripcion": "Devuelve y valida el contrato de identidad ERP para empresa, proyecto, modulo y schema.",
+    "path": "skills/internos/vertical_erp/erp_identity_contract",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp/erp_health_check": {
+    "tipo": "interno",
+    "nombre": "vertical_erp/erp_health_check",
+    "vertical": "vertical_erp",
+    "descripcion": "Audita si un modulo/proyecto cumple el contrato ERP-ready de identidad, tablas y documentacion.",
+    "path": "skills/internos/vertical_erp/erp_health_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp/erp_module_registry": {
+    "tipo": "interno",
+    "nombre": "vertical_erp/erp_module_registry",
+    "vertical": "vertical_erp",
+    "descripcion": "Normaliza y valida el registry de modulos ERP activos, planeados y legacy por empresa.",
+    "path": "skills/internos/vertical_erp/erp_module_registry",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp/erp_schema_planner": {
+    "tipo": "interno",
+    "nombre": "vertical_erp/erp_schema_planner",
+    "vertical": "vertical_erp",
+    "descripcion": "Genera un plan SQL ERP-ready para tablas operativas con identidad, doble ID y folios.",
+    "path": "skills/internos/vertical_erp/erp_schema_planner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

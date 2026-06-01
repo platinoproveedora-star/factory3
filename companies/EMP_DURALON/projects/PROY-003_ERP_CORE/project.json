@@ -1,0 +1,28 @@
+{
+  "company_id": "EMP_DURALON",
+  "legacy_client_id": "UC-101",
+  "project_code": "PROY-003",
+  "module_code": "erp_core",
+  "project_name": "ERP Core Duralon",
+  "status": "planned",
+  "erp_ready": false,
+  "scope": "Proyecto contenedor para arquitectura, contratos, mapa de modulos e integracion del ERP modular de Duralon. No reemplaza los modulos; los coordina y permite mover el ERP completo como unidad.",
+  "platform": "interno",
+  "folder": "companies/EMP_DURALON/projects/PROY-003_ERP_CORE",
+  "modules_file": "modules.json",
+  "architecture_file": "ERP_ARCHITECTURE.md",
+  "data_contracts_file": "data_contracts.md",
+  "integration_plan_file": "integration_plan.md",
+  "depends_on": [
+    "PROY-001"
+  ],
+  "planned_modules": [
+    "gastos",
+    "ventas",
+    "inventario",
+    "compras",
+    "erp_core"
+  ],
+  "created_at": "2026-06-01T00:00:00Z",
+  "updated_at": "2026-06-01T00:00:00Z"
+}

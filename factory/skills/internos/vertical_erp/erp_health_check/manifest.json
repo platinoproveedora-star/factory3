@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_health_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Audita si un modulo/proyecto cumple el contrato ERP-ready de identidad, tablas y documentacion.",
+  "requires_env": []
+}

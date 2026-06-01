@@ -1,0 +1,49 @@
+{
+  "company_id": "EMP_DURALON",
+  "legacy_client_id": "UC-101",
+  "project_code": "PROY-002",
+  "module_code": "ventas",
+  "project_name": "Ventas, documentos comerciales y cobranza",
+  "status": "planned",
+  "erp_ready": false,
+  "erp_identity": {
+    "empresa_id": "EMP_DURALON",
+    "company_id": "EMP_DURALON",
+    "project_code": "PROY-002",
+    "module_code": "ventas",
+    "legacy_client_id": "UC-101",
+    "supabase_schema": "uc101_proy002"
+  },
+  "scope": "Modulo de ventas para Duralon: clientes, productos, documentos comerciales, pagos, cuentas por cobrar y tablero comercial. El flujo documental sera cotizacion -> pedido -> remision -> factura, con folios internos ERP de 5 digitos y folio externo editable solo para pedido/remision/factura.",
+  "platform": "interno",
+  "supabase_schema": "uc101_proy002",
+  "folder": "companies/EMP_DURALON/projects/PROY-002_VENTAS",
+  "document_flow": [
+    "cotizacion",
+    "pedido",
+    "remision",
+    "factura"
+  ],
+  "internal_folio_digits": 5,
+  "document_folio_prefixes": {
+    "cotizacion": "COT",
+    "pedido": "PED",
+    "remision": "REM",
+    "factura": "FAC"
+  },
+  "external_folio_policy": {
+    "cotizacion": "no_aplica",
+    "pedido": "opcional_editable_admin",
+    "remision": "opcional_editable_admin",
+    "factura": "opcional_editable_admin"
+  },
+  "deliverables": [
+    "Schema SQL ERP-ready para ventas",
+    "Modelo de documentos comerciales unificado",
+    "Contratos de datos para conectar ventas con gastos",
+    "Base para dashboard de ventas",
+    "Base para cuentas por cobrar"
+  ],
+  "created_at": "2026-06-01T00:00:00Z",
+  "updated_at": "2026-06-01T00:00:00Z"
+}

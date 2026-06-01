@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_module_registry",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Normaliza y valida el registry de modulos ERP activos, planeados y legacy por empresa.",
+  "requires_env": []
+}

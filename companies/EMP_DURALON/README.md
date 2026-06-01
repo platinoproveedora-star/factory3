@@ -2,52 +2,64 @@
 
 **COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV**
 
-Empresa con varios módulos operativos en construcción. Identidad principal: `EMP_DURALON`. Legacy alias: `UC-101`.
+Empresa con varios modulos operativos en construccion. Identidad principal: `EMP_DURALON`. Legacy alias: `UC-101`.
 
 ## Proyectos
 
-| Código | Módulo | Estado | Dashboard |
+| Codigo | Modulo | Estado | Dashboard |
 |---|---|---|---|
-| PROY-001 | gastos | in_progress | https://uc101-gastos.onrender.com |
-| PROY-002 | ventas | pendiente | — |
+| PROY-001 | gastos | ERP-ready / in_progress | https://uc101-gastos.onrender.com |
+| PROY-002 | ventas | planned | - |
+| PROY-003 | erp_core | planned | - |
 
 ## Infraestructura
 
 | Recurso | Valor |
 |---|---|
 | Bot Telegram | @Duralon1_bot |
-| Schema Supabase | `uc101_proy001` |
+| Schema gastos | `uc101_proy001` |
+| Schema ventas previsto | `uc101_proy002` |
 | Bucket Storage | `uc101-proy001-assets` |
-| Repo dashboard | `platinoproveedora-star/uc101-proy001` |
+| Repo dashboard gastos | `platinoproveedora-star/uc101-proy001` |
 | Factory API | https://factory3.onrender.com |
 
 ## Identidad ERP
 
-```
-empresa_id   = EMP_DURALON
-company_id   = EMP_DURALON
-legacy_id    = UC-101
-PROY-001     = gastos
-PROY-002     = ventas
+```text
+empresa_id = EMP_DURALON
+company_id = EMP_DURALON
+legacy_id = UC-101
+PROY-001 = gastos
+PROY-002 = ventas
+PROY-003 = erp_core
 ```
 
 Todo registro operativo lleva: `empresa_id` + `project_code` + `module_code` + `id uuid` + `folio text unique`.
 
+## ERP Core
+
+La arquitectura movible del ERP vive dentro del proyecto:
+
+```text
+companies/EMP_DURALON/projects/PROY-003_ERP_CORE/
+```
+
+No mantener documentos de arquitectura ERP en la raiz de `EMP_DURALON`; deben ir dentro de `PROY-003_ERP_CORE` para que el ERP completo pueda moverse como paquete.
+
 ## Archivos clave
 
-```
+```text
 companies/EMP_DURALON/
-├── README.md                          ← este archivo
-├── company.json                       ← datos empresa
-├── ERP_ARCHITECTURE.md                ← arquitectura ERP multi-módulo
-└── projects/
-    ├── PROY-001_GASTOS/               ← bot + dashboard gastos
-    └── PROY-002_VENTAS/               ← (próximo)
+  README.md
+  company.json
+  projects/
+    PROY-001_GASTOS/
+    PROY-003_ERP_CORE/
 
 EMP_DURALON/dashboards/
-└── gastos/                            ← Next.js dashboard deployado en Render
+  gastos/
 
-factory/bots/duralon1_bot/             ← bot Telegram
 factory/skills/internos/
-└── vertical_client_expenses/          ← CRUD gastos + dashboard data API
+  vertical_client_expenses/
+  vertical_erp/
 ```

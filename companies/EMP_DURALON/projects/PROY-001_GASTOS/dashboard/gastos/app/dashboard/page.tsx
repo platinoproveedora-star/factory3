@@ -1,9 +1,10 @@
 import { Suspense } from 'react';
 import { getStats, getGastos } from '../../lib/db';
-import KpiGrid       from '../../components/KpiGrid';
-import CategoryTable from '../../components/CategoryTable';
-import MonthlyTable  from '../../components/MonthlyTable';
-import ExpenseTable  from '../../components/ExpenseTable';
+import KpiGrid              from '../../components/KpiGrid';
+import CategoryTable        from '../../components/CategoryTable';
+import MonthlyTable         from '../../components/MonthlyTable';
+import CategoryMonthlyTable from '../../components/CategoryMonthlyTable';
+import ExpenseTable         from '../../components/ExpenseTable';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,9 +99,17 @@ export default async function DashboardPage() {
 
         </div>
 
+        {/* Comparativo mensual por categoría */}
+        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-sm font-semibold text-slate-700 mb-4">Comparativo por categoría y mes</h3>
+          <Suspense fallback={<div className="h-48 animate-pulse rounded bg-slate-100" />}>
+            <CategoryMonthlyTable gastos={gastos} />
+          </Suspense>
+        </div>
+
         {/* Tabla de movimientos */}
         <div id="gastos" className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">Movimientos recientes</h3>
+          <h3 className="text-sm font-semibold text-slate-700 mb-4">Movimientos</h3>
           <Suspense fallback={<div className="h-64 animate-pulse rounded bg-slate-100" />}>
             <ExpenseTable gastos={gastos} />
           </Suspense>

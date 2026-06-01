@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_schema_planner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera un plan SQL ERP-ready para tablas operativas con identidad, doble ID y folios.",
+  "requires_env": []
+}
