@@ -24,6 +24,7 @@ El kardex es la fuente operativa inicial. Una entrada representa una compra. Una
 | `erp_parties` | Clientes y proveedores |
 | `erp_kardex` | Movimientos de entrada/salida/ajuste/devolucion |
 | `erp_recurrence_rules` | Reglas de alerta por producto |
+| `erp_folio_sequences` | Secuencias internas por scope/prefijo para reservar folios |
 
 ## Folios
 
@@ -73,7 +74,8 @@ cemento: alertar diario si lleva 7 dias o mas sin compra
 | `vertical_erp_inventory/erp_inventory_party_store` | Normaliza clientes/proveedores |
 | `vertical_erp_inventory/erp_inventory_product_save` | Crea productos en Supabase con contrato ERP |
 | `vertical_erp_inventory/erp_inventory_party_save` | Crea/actualiza clientes y proveedores en Supabase |
-| `vertical_erp_inventory/erp_inventory_document_folio` | Genera folios de 5 digitos |
+| `vertical_erp/erp_folio_reserve` | Reserva folios internos genericos de 5 digitos |
+| `vertical_erp_inventory/erp_inventory_document_folio` | Normaliza folios de documentos de inventario cuando no hay persistencia |
 | `vertical_erp_inventory/erp_inventory_kardex_validator` | Valida movimientos antes de guardar |
 | `vertical_erp_inventory/erp_inventory_kardex_store` | Normaliza movimientos kardex |
 | `vertical_erp_inventory/erp_inventory_kardex_save` | Crea compras, remisiones y ajustes manuales en Supabase |
@@ -92,3 +94,5 @@ POST /data/vertical_erp_inventory/erp_inventory_kardex_save
 ```
 
 Las API routes del dashboard solo deben adaptar la UI al contrato del skill. La logica de negocio reutilizable vive en `vertical_erp_inventory`.
+
+Los folios internos no deben generarse en la UI. Las escrituras operativas deben reservar folio con `vertical_erp/erp_folio_reserve` desde el skill que guarda el registro.

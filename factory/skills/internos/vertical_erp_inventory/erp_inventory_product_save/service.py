@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
+
 from factory.engine import SupabaseClient
 
 
@@ -10,8 +13,17 @@ class ErpInventoryProductSaveService:
             return {"ok": False, "error": "product_name requerido"}
         schema_context = {**context, "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004"}
         dry_run = context.get("dry_run", True)
+        folio = "PROD-DRYRUN"
+        if not dry_run:
+            if context.get("allow_custom_folio") and context.get("folio"):
+                folio = context.get("folio")
+            else:
+                folio_result = self._reserve_folio(schema_context, "erp_products", "PROD")
+                if not folio_result.get("ok"):
+                    return folio_result
+                folio = folio_result["data"]["folio"]
         row = {
-            "folio": context.get("folio") or ("PROD-DRYRUN" if dry_run else self._next_folio(schema_context, "erp_products", "PROD")),
+            "folio": folio,
             "product_key": self._blank(context.get("product_key")),
             "product_name": name,
             "sku": self._blank(context.get("sku")),
@@ -30,15 +42,24 @@ class ErpInventoryProductSaveService:
         product = data[0] if isinstance(data, list) and data else data
         return {"ok": True, "data": {"product": product}}
 
-    def _next_folio(self, context: dict, table: str, prefix: str) -> str:
-        result = SupabaseClient(context).rest_select(table, filters={"folio": f"ilike.{prefix}-%"}, select="folio", limit=100, order="folio.desc")
-        numbers = []
-        if result.get("ok"):
-            for row in result.get("data") or []:
-                text = str(row.get("folio") or "")
-                if text.startswith(f"{prefix}-") and text.split("-", 1)[1].isdigit():
-                    numbers.append(int(text.split("-", 1)[1]))
-        return f"{prefix}-{max(numbers or [0]) + 1:05d}"
+    def _reserve_folio(self, context: dict, table: str, prefix: str) -> dict:
+        service_path = Path(__file__).resolve().parents[2] / "vertical_erp" / "erp_folio_reserve" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_folio_reserve_service", service_path)
+        if spec is None or spec.loader is None:
+            return {"ok": False, "error": "no se pudo cargar erp_folio_reserve"}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.ErpFolioReserveService().ejecutar(
+            {
+                **context,
+                "dry_run": False,
+                "table": table,
+                "scope": table,
+                "prefix": prefix,
+                "folio_column": "folio",
+                "digits": 5,
+            }
+        )
 
     def _blank(self, value):
         value = str(value or "").strip()

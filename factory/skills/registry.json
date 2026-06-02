@@ -3121,6 +3121,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp/erp_folio_reserve": {
+    "tipo": "interno",
+    "nombre": "vertical_erp/erp_folio_reserve",
+    "vertical": "vertical_erp",
+    "descripcion": "Reserva folios internos ERP por schema, scope y prefijo usando una secuencia atomica en Supabase.",
+    "path": "skills/internos/vertical_erp/erp_folio_reserve",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_inventory/erp_inventory_product_store": {
     "tipo": "interno",
     "nombre": "vertical_erp_inventory/erp_inventory_product_store",

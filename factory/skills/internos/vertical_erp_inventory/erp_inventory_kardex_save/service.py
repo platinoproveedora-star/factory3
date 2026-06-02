@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
+
 from factory.engine import SupabaseClient
 
 
@@ -37,15 +40,34 @@ class ErpInventoryKardexSaveService:
         source_prefix = "REM" if is_sale else "AJU" if is_adjustment else "COM"
         current_stock = self._current_stock(schema_context, context.get("product_id")) if not dry_run else 0
         balance_after = current_stock + quantity_in - quantity_out
+        if dry_run:
+            folio = "KAR-DRYRUN"
+            source_folio = f"{source_prefix}-DRYRUN"
+        else:
+            if context.get("allow_custom_folio") and context.get("folio"):
+                folio = context.get("folio")
+            else:
+                folio_result = self._reserve_folio(schema_context, "erp_kardex", "KAR", "folio", "erp_kardex")
+                if not folio_result.get("ok"):
+                    return folio_result
+                folio = folio_result["data"]["folio"]
+            if context.get("allow_custom_folio") and context.get("source_folio"):
+                source_folio = context.get("source_folio")
+            else:
+                source_scope = f"erp_kardex_source_{source_prefix.lower()}"
+                source_result = self._reserve_folio(schema_context, "erp_kardex", source_prefix, "source_folio", source_scope)
+                if not source_result.get("ok"):
+                    return source_result
+                source_folio = source_result["data"]["folio"]
 
         row = {
-            "folio": context.get("folio") or ("KAR-DRYRUN" if dry_run else self._next_folio(schema_context, "erp_kardex", "KAR")),
+            "folio": folio,
             "movement_type": movement_type,
             "source_type": source_type,
-            "source_folio": context.get("source_folio") or (f"{source_prefix}-DRYRUN" if dry_run else self._next_folio(schema_context, "erp_kardex", source_prefix)),
+            "source_folio": source_folio,
             "external_folio": self._blank(context.get("external_folio")),
-            "purchase_folio": None if is_sale or is_adjustment else context.get("source_folio"),
-            "remission_folio": context.get("source_folio") if is_sale else None,
+            "purchase_folio": None if is_sale or is_adjustment else source_folio,
+            "remission_folio": source_folio if is_sale else None,
             "product_id": context.get("product_id"),
             "product_name_snapshot": self._blank(context.get("product_name_snapshot")),
             "customer_id": context.get("party_id") if is_sale else None,
@@ -74,15 +96,24 @@ class ErpInventoryKardexSaveService:
         movement = data[0] if isinstance(data, list) and data else data
         return {"ok": True, "data": {"movement": movement}}
 
-    def _next_folio(self, context: dict, table: str, prefix: str) -> str:
-        result = SupabaseClient(context).rest_select(table, filters={"folio": f"ilike.{prefix}-%"}, select="folio", limit=100, order="folio.desc")
-        numbers = []
-        if result.get("ok"):
-            for row in result.get("data") or []:
-                text = str(row.get("folio") or "")
-                if text.startswith(f"{prefix}-") and text.split("-", 1)[1].isdigit():
-                    numbers.append(int(text.split("-", 1)[1]))
-        return f"{prefix}-{max(numbers or [0]) + 1:05d}"
+    def _reserve_folio(self, context: dict, table: str, prefix: str, folio_column: str, scope: str) -> dict:
+        service_path = Path(__file__).resolve().parents[2] / "vertical_erp" / "erp_folio_reserve" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_folio_reserve_service", service_path)
+        if spec is None or spec.loader is None:
+            return {"ok": False, "error": "no se pudo cargar erp_folio_reserve"}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.ErpFolioReserveService().ejecutar(
+            {
+                **context,
+                "dry_run": False,
+                "table": table,
+                "scope": scope,
+                "prefix": prefix,
+                "folio_column": folio_column,
+                "digits": 5,
+            }
+        )
 
     def _blank(self, value):
         value = str(value or "").strip()

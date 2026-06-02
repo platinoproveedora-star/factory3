@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_folio_reserve",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Reserva folios internos ERP por schema, scope y prefijo usando una secuencia atomica en Supabase.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

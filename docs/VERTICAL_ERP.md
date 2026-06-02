@@ -108,6 +108,7 @@ Regla: si se necesita mover el ERP completo, el proyecto `ERP_CORE` debe contene
 | `vertical_erp/erp_health_check` | Audita si un modulo cumple el contrato ERP-ready. |
 | `vertical_erp/erp_module_registry` | Registra o lista modulos activos de una empresa. |
 | `vertical_erp/erp_schema_planner` | Genera propuesta SQL para tablas ERP-ready sin ejecutar por default. |
+| `vertical_erp/erp_folio_reserve` | Reserva folios internos por schema, scope y prefijo usando secuencia atomica. |
 | `vertical_erp/erp_user_mapper` | Mapea usuarios locales a identidad global por Telegram, WhatsApp, phone o email. |
 | `vertical_erp/erp_event_logger` | Registra eventos comunes entre modulos. |
 | `vertical_erp/erp_cross_module_linker` | Crea relaciones entre registros de distintos modulos. |
