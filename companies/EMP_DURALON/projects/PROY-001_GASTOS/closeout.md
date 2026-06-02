@@ -1,34 +1,54 @@
-# Closeout - PROY-001 - Telegram bot de gastos y dashboard empresarial
+# Closeout — PROY-001 — Gastos
 
-Closed at: `pendiente — sprint 1 entregado 2026-05-27`
+**Cerrado:** 2026-06-01
+**Estado:** ERP-ready — operativo
 
-## Delivered URLs
+## URLs entregadas
 
 | Recurso | URL |
 |---|---|
-| Dashboard | pendiente Vercel (`https://uc101-proy001.vercel.app` esperado) |
+| Dashboard | https://uc101-gastos.onrender.com |
 | Bot Telegram | @Duralon1_bot |
-| GitHub repo | https://github.com/platinoproveedora-star/uc101-proy001 |
-| Supabase schema | uc101_proy001 (Supabase project ddcwdtqiupwtyltdpakm) |
-| Render service ID | legado/pausar: srv-d8bjgbel51nc73db9t30 |
+| GitHub | https://github.com/platinoproveedora-star/uc101-proy001 |
+| Supabase schema | uc101_proy001 (ddcwdtqiupwtyltdpakm) |
+| Factory API | https://factory3.onrender.com |
 
-## Sprint 1 — Entregado 2026-05-27
+## Entregables completados
 
-- [x] Bot @Duralon1_bot funcionando (forma rapida + /nuevo paso a paso)
-- [x] Base de datos Supabase (5 tablas, 12 categorias, folio GAS-001)
-- [ ] Dashboard Next/Vercel con KPIs, graficas, tabla filtrable, export CSV/Excel
-- [x] README y docs/OPERATIONS.md en repo del cliente
+- Bot Telegram con 3 modos de captura: manual paso a paso, formato rapido, OCR foto
+- Dashboard Next.js con KPIs, tablas por categoria (mes actual y anterior), comparativo mensual, matriz categoria x mes, tabla editable con CRUD completo
+- Schema Supabase ERP-ready: 5 tablas con empresa_id/project_code/module_code/folio
+- Columna vehiculo para control por unidad
+- Campos ERP en gastos para conexion futura con PROY-002 ventas, compras, activos
+- CORS habilitado en factory3 para dashboards externos
 
-## Sprint 2 — Pendiente
+## ERP Health Check — PASS (2026-06-01)
 
-- [ ] OCR/AI para fotos de tickets (Haiku + Vision)
-- [ ] Chat IDs de Tania y Luis
-- [ ] PDF export (si cliente lo aprueba)
-- [ ] Modulo de aprobaciones (si requerido)
+| Tabla | Estado |
+|---|---|
+| gastos | OK |
+| usuarios | OK |
+| categorias_gasto | OK |
+| gasto_documentos | OK |
+| gasto_eventos | OK |
 
-## Checklist de cierre final (sprint 2)
+## Estructura final
 
-- [ ] Deliverables accepted
-- [ ] Secrets removed from repo
-- [ ] Deploy URL shared with client
-- [ ] Repo transfer requested if applicable
+```
+companies/EMP_DURALON/projects/PROY-001_GASTOS/
+  dashboard/gastos/     <- Next.js (repo uc101-proy001, Render)
+  project.json
+  deliverables.md
+  closeout.md
+
+factory/skills/internos/vertical_client_expenses/
+  client_expenses_run/
+  client_expenses_dashboard_data/
+
+factory/bots/duralon1_bot/bot.py  <- webhook activo
+```
+
+## Pendientes post-cierre (no bloqueantes)
+
+- Chat ID de Luis -- se registra en su primer /start
+- Confirmar bucket uc101-proy001-assets activo en Supabase Storage

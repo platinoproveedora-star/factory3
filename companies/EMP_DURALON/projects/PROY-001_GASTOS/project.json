@@ -4,8 +4,10 @@
   "project_code": "PROY-001",
   "module_code": "gastos",
   "project_name": "Telegram bot de gastos y dashboard empresarial",
-  "status": "in_progress",
+  "status": "erp_ready",
   "erp_ready": true,
+  "erp_health_check": "PASS",
+  "erp_health_check_date": "2026-06-01",
   "erp_identity": {
     "empresa_id": "EMP_DURALON",
     "company_id": "EMP_DURALON",
@@ -21,6 +23,7 @@
   "estimated_hours": 16,
   "estimated_cost_usd": 640,
   "deadline": "2026-05-29",
+  "closed_at": "2026-06-01",
   "platform": "interno",
   "repo": "platinoproveedora-star/uc101-proy001",
   "repo_url": "https://github.com/platinoproveedora-star/uc101-proy001",
@@ -28,6 +31,7 @@
   "supabase_schema": "uc101_proy001",
   "storage_bucket": "uc101-proy001-assets",
   "dashboard_url": "https://uc101-gastos.onrender.com",
+  "dashboard_path": "companies/EMP_DURALON/projects/PROY-001_GASTOS/dashboard/gastos/",
   "initial_users": ["Tania", "Luis", "ACH"],
   "expense_categories": [
     "combustible", "gastos varios", "taller mecanico", "papeleria",
@@ -45,15 +49,11 @@
       { "name": "ACH",   "telegram_chat_id": "8739777586", "role": "admin" }
     ]
   },
-  "pendientes": {
-    "ocr_tickets":        "Codigo listo, depende de creditos Anthropic activos",
-    "storage_tickets":    "Bucket nombrado, confirmar si esta activo en Supabase",
-    "chat_id_luis":       "Pendiente que Luis haga /start en @Duralon1_bot",
-    "vinculacion_tania":  "Pre-registrada USR-002, se vincula automaticamente en su primer /start",
-    "pdf_export":         "No requerido en MVP; Excel ya funciona en dashboard",
-    "supabase_sql_erp":   "ALTER TABLE pendiente — ejecutar SQL en Supabase SQL Editor"
+  "pendientes_post_cierre": {
+    "chat_id_luis": "Pendiente que Luis haga /start en @Duralon1_bot",
+    "storage_tickets": "Bucket uc101-proy001-assets nombrado, confirmar si activo en Supabase"
   },
   "folder": "companies/EMP_DURALON/projects/PROY-001_GASTOS",
   "created_at": "2026-05-27T16:39:25.125162Z",
-  "updated_at": "2026-06-01T00:00:00Z"
+  "updated_at": "2026-06-01T12:00:00Z"
 }

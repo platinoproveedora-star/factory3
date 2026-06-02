@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, Download, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Check, X } from 'lucide-react';
+import { Search, Download, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Check, X, ChevronUp, ChevronDown } from 'lucide-react';
 import type { Gasto } from '../lib/db';
 import { gastosToCSV, downloadCSV } from '../lib/export';
 
@@ -49,6 +49,8 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
   const [gastos, setGastos]     = useState<Gasto[]>(initialGastos);
   const [q, setQ]               = useState('');
   const [page, setPage]         = useState(0);
+  const [sortCol, setSortCol]   = useState<keyof Gasto>('fecha');
+  const [sortDir, setSortDir]   = useState<'asc'|'desc'>('desc');
   const [editingFolio, setEdit] = useState<string | null>(null);
   const [draft, setDraft]       = useState<EditDraft>({ monto: '', fecha: '', descripcion: '', categoria: '', vehiculo: '' });
   const [saving, setSaving]     = useState(false);
@@ -58,14 +60,34 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
 
   const filtered = useMemo(() => {
     const lq = q.toLowerCase().trim();
-    if (!lq) return gastos;
-    return gastos.filter(g =>
+    const base = lq ? gastos.filter(g =>
       g.descripcion.toLowerCase().includes(lq) ||
       g.categoria.toLowerCase().includes(lq) ||
       g.nombre_usuario.toLowerCase().includes(lq) ||
       g.folio.toLowerCase().includes(lq)
-    );
-  }, [gastos, q]);
+    ) : [...gastos];
+
+    base.sort((a, b) => {
+      const av = a[sortCol] ?? '';
+      const bv = b[sortCol] ?? '';
+      const cmp = typeof av === 'number' && typeof bv === 'number'
+        ? av - bv
+        : String(av).localeCompare(String(bv));
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return base;
+  }, [gastos, q, sortCol, sortDir]);
+
+  function toggleSort(col: keyof Gasto) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('desc'); }
+    setPage(0);
+  }
+
+  function SortIcon({ col }: { col: keyof Gasto }) {
+    if (sortCol !== col) return <ChevronUp size={11} className="opacity-20" />;
+    return sortDir === 'asc' ? <ChevronUp size={11} /> : <ChevronDown size={11} />;
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage   = Math.min(page, totalPages - 1);
@@ -251,8 +273,18 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
         <table className="min-w-full divide-y divide-slate-100 text-sm">
           <thead className="bg-slate-50">
             <tr>
-              {['Folio','Fecha','Categoría','Vehículo','Descripción','Usuario','Método','Monto',''].map(h => (
-                <th key={h} className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
+              {([
+                ['Folio','folio'],['Fecha','fecha'],['Categoría','categoria'],
+                ['Vehículo','vehiculo'],['Descripción','descripcion'],
+                ['Usuario','nombre_usuario'],['Método','metodo_captura'],['Monto','monto'],['','']
+              ] as [string, string][]).map(([label, col]) => (
+                <th key={label}
+                  onClick={() => col && toggleSort(col as keyof Gasto)}
+                  className={`px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 ${col ? 'cursor-pointer hover:text-slate-800 select-none' : ''}`}>
+                  <span className="inline-flex items-center gap-1">
+                    {label}{col && <SortIcon col={col as keyof Gasto} />}
+                  </span>
+                </th>
               ))}
             </tr>
           </thead>

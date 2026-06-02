@@ -1,71 +1,58 @@
 'use client';
 
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import type { Gasto } from '../lib/db';
 
-type Props = {
-  total:        number;
-  count:        number;
-  avg:          number;
-  totalMes:     number;
-  totalMesAnt:  number;
-  variacion:    number;
-  topCategoria: string;
-};
+type Props = { gastos: Gasto[]; variacion: number; totalMesAnt: number };
 
 function mxn(n: number) {
   return new Intl.NumberFormat('es-MX', {
-    style:                 'currency',
-    currency:              'MXN',
-    maximumFractionDigits: 0,
+    style: 'currency', currency: 'MXN', maximumFractionDigits: 0,
   }).format(n);
 }
 
 function VariIcon({ v }: { v: number }) {
-  if (v > 1)  return <TrendingUp  size={16} className="text-red-500" />;
-  if (v < -1) return <TrendingDown size={16} className="text-emerald-500" />;
-  return <Minus size={16} className="text-slate-400" />;
+  if (v > 1)  return <TrendingUp  size={13} className="text-red-500" />;
+  if (v < -1) return <TrendingDown size={13} className="text-emerald-500" />;
+  return <Minus size={13} className="text-slate-400" />;
 }
 
-export default function KpiGrid({
-  total, count, avg, totalMes, totalMesAnt, variacion, topCategoria,
-}: Props) {
-  const mesNombre = new Date().toLocaleString('es-MX', { month: 'long', year: 'numeric' });
-  const varSign   = variacion >= 0 ? '+' : '';
-  const varColor  = variacion > 5 ? 'text-red-500' : variacion < -5 ? 'text-emerald-600' : 'text-slate-500';
+export default function KpiGrid({ gastos, variacion, totalMesAnt }: Props) {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const mesNombre    = new Date().toLocaleString('es-MX', { month: 'long', year: 'numeric' });
+
+  const mesGastos = gastos.filter(g => g.fecha.startsWith(currentMonth));
+  const total     = mesGastos.reduce((s, g) => s + g.monto, 0);
+  const count     = mesGastos.length;
+  const avg       = count > 0 ? total / count : 0;
+
+  const byCat: Record<string, number> = {};
+  for (const g of mesGastos) byCat[g.categoria] = (byCat[g.categoria] ?? 0) + g.monto;
+  const topCat = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—';
+
+  const varSign  = variacion >= 0 ? '+' : '';
+  const varColor = variacion > 5 ? 'text-red-500' : variacion < -5 ? 'text-emerald-600' : 'text-slate-500';
 
   const cards = [
     {
-      label: 'Gasto acumulado',
+      label: mesNombre,
       value: mxn(total),
-      sub:   `${count} movimientos en total`,
+      sub: totalMesAnt > 0
+        ? <span className="flex items-center gap-1">{varSign}{variacion.toFixed(1)}% vs mes ant <VariIcon v={variacion} /></span>
+        : <span className="text-slate-400">primer mes</span>,
     },
-    {
-      label: `Mes en curso`,
-      value: mxn(totalMes),
-      sub:   totalMesAnt > 0
-        ? <span className="flex items-center gap-1">{varSign}{variacion.toFixed(1)}% vs mes anterior <VariIcon v={variacion} /></span>
-        : <span className={varColor}>Sin mes anterior</span>,
-    },
-    {
-      label: 'Promedio por gasto',
-      value: mxn(avg),
-      sub:   'promedio acumulado',
-    },
-    {
-      label: 'Categoría principal',
-      value: topCategoria || '—',
-      sub:   'mayor gasto total',
-      mono:  true,
-    },
+    { label: 'Movimientos', value: String(count), sub: 'este mes' },
+    { label: 'Promedio', value: mxn(avg), sub: 'por gasto este mes' },
+    { label: 'Mayor categoría', value: topCat, sub: 'este mes', mono: true },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {cards.map((c) => (
-        <div key={c.label} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{c.label}</p>
-          <p className={`mt-2 text-2xl font-semibold text-slate-900 ${c.mono ? 'text-base' : ''}`}>{c.value}</p>
-          <p className={`mt-1 text-xs ${varColor}`}>{c.sub}</p>
+        <div key={c.label} className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{c.label}</p>
+          <p className={`mt-1 font-semibold text-slate-900 ${c.mono ? 'text-sm' : 'text-xl'}`}>{c.value}</p>
+          <p className={`mt-0.5 text-[11px] ${varColor}`}>{c.sub}</p>
         </div>
       ))}
     </div>
