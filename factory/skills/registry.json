@@ -1,4 +1,13 @@
 {
+  "vertical_supabase/supabase_expose_schema": {
+    "tipo": "interno",
+    "nombre": "vertical_supabase/supabase_expose_schema",
+    "vertical": "vertical_supabase",
+    "descripcion": "Expone un schema en Supabase Data API haciendo append — nunca sobreescribe schemas existentes",
+    "path": "skills/internos/vertical_supabase/supabase_expose_schema",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "qa_campaign_logger": {
     "tipo": "interno",
     "nombre": "qa_campaign_logger",

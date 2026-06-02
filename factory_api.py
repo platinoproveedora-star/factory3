@@ -293,6 +293,11 @@ def data(skill_name: str, request: Request):
 @app.post("/data/{skill_name:path}")
 async def data_write(skill_name: str, request: Request):
     """Escrituras ERP via skills — mismo patrón que GET /data pero acepta body JSON."""
+    write_key = os.getenv("FACTORY_WRITE_KEY", "")
+    if write_key:
+        received = request.headers.get("x-write-key", "")
+        if received != write_key:
+            raise HTTPException(status_code=401, detail="x-write-key requerido")
     try:
         body = await request.json()
     except Exception:

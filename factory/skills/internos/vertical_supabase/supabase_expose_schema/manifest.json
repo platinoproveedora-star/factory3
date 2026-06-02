@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "supabase_expose_schema",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Expone un schema en Supabase Data API haciendo append a la lista existente, nunca reemplaza. Evita que otros schemas sean removidos accidentalmente.",
+  "requires_env": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"]
+}
