@@ -74,6 +74,7 @@ class ErpInventoryKardexSaveService:
             "customer_name_snapshot": self._blank(context.get("party_name_snapshot")) if is_sale else None,
             "supplier_id": context.get("party_id") if source_type == "compra" else None,
             "supplier_name_snapshot": self._blank(context.get("party_name_snapshot")) if source_type == "compra" else None,
+            "delivery_address": self._blank(context.get("delivery_address")),
             "movement_date": context.get("movement_date"),
             "quantity_in": quantity_in,
             "quantity_out": quantity_out,

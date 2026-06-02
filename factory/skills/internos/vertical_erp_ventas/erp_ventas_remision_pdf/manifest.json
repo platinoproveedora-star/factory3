@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_remision_pdf",
+  "vertical": "vertical_erp_ventas",
+  "descripcion": "Genera HTML imprimible de remision ERP para abrir, imprimir o guardar como PDF.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

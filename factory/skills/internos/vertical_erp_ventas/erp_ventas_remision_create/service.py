@@ -17,14 +17,18 @@ class ErpVentasRemisionCreateService:
         items = context.get("items") or []
         dry_run = context.get("dry_run", True)
 
-        if not customer_id:
-            return {"ok": False, "error": "customer_id requerido"}
         if not items or not isinstance(items, list):
             return {"ok": False, "error": "items requerido (lista con al menos 1 producto)"}
 
-        customer = self._get_customer(context, customer_id)
-        if not customer:
-            return {"ok": False, "error": f"cliente no encontrado en erp_parties: {customer_id}"}
+        customer_result = self._get_or_create_customer(context)
+        if not customer_result.get("ok"):
+            return customer_result
+        customer = customer_result.get("data", {}).get("customer") or {}
+        customer_id = str(customer.get("id") or customer_id).strip()
+        if dry_run and not customer_id:
+            customer_id = "customer-dryrun"
+        if not customer_id:
+            return {"ok": False, "error": "cliente invalido"}
 
         parsed_items, error = self._parse_items(items)
         if error:
@@ -38,6 +42,7 @@ class ErpVentasRemisionCreateService:
         notes = str(context.get("notes") or "").strip() or None
         customer_name_snapshot = str(customer.get("party_name") or "")
         customer_folio_snapshot = str(customer.get("folio") or "")
+        delivery_address = str(context.get("delivery_address") or customer.get("address") or "").strip() or None
 
         if dry_run:
             return {
@@ -46,6 +51,7 @@ class ErpVentasRemisionCreateService:
                 "data": {
                     "folio": "REM-DRYRUN",
                     "customer_name_snapshot": customer_name_snapshot,
+                    "delivery_address": delivery_address,
                     "subtotal": subtotal,
                     "tax_total": tax_total,
                     "total": total,
@@ -69,6 +75,7 @@ class ErpVentasRemisionCreateService:
             "customer_id": customer_id,
             "customer_name_snapshot": customer_name_snapshot,
             "customer_folio_snapshot": customer_folio_snapshot,
+            "delivery_address": delivery_address,
             "status": "emitida",
             "document_date": doc_date,
             "currency": "MXN",
@@ -149,6 +156,7 @@ class ErpVentasRemisionCreateService:
                     item_folio,
                     customer_id,
                     customer_name_snapshot,
+                    delivery_address,
                     doc_date,
                 )
                 if not k_result.get("ok"):
@@ -177,15 +185,14 @@ class ErpVentasRemisionCreateService:
             },
         }
 
-    def _get_customer(self, context: dict, customer_id: str) -> dict | None:
-        result = SupabaseClient({**context, "schema": "uc101_proy004"}).rest_select(
-            "erp_parties",
-            filters={"id": f"eq.{customer_id}", "active": "eq.true"},
-            select="id,folio,party_name,phone,email",
-            limit=1,
-        )
-        rows = result.get("data") or []
-        return rows[0] if rows else None
+    def _get_or_create_customer(self, context: dict) -> dict:
+        service_path = _SKILLS_ROOT / "vertical_erp_ventas" / "erp_ventas_customer_get_or_create" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_ventas_customer_get_or_create_service", service_path)
+        if spec is None or spec.loader is None:
+            return {"ok": False, "error": "no se pudo cargar erp_ventas_customer_get_or_create"}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.ErpVentasCustomerGetOrCreateService().ejecutar(context)
 
     def _get_product(self, context: dict, product_id: str) -> dict:
         result = SupabaseClient({**context, "schema": "uc101_proy004"}).rest_select(
@@ -288,6 +295,7 @@ class ErpVentasRemisionCreateService:
         item_folio: str,
         customer_id: str,
         customer_name: str,
+        delivery_address: str | None,
         movement_date: str,
     ) -> dict:
         service_path = _SKILLS_ROOT / "vertical_erp_inventory" / "erp_inventory_kardex_save" / "service.py"
@@ -315,6 +323,7 @@ class ErpVentasRemisionCreateService:
                 "movement_date": movement_date,
                 "party_id": customer_id,
                 "party_name_snapshot": customer_name,
+                "delivery_address": delivery_address,
                 "notes": f"Remision {remision_folio} - {item['description']}",
                 "metadata": {
                     "sales_schema": "uc101_proy002",

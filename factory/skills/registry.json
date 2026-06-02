@@ -35,6 +35,33 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_ventas/erp_ventas_customer_get_or_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_customer_get_or_create",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Obtiene un cliente ERP existente o crea cliente nuevo compartido en inventario para remisiones.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_customer_get_or_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_remision_update": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_remision_update",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Actualiza campos editables de remisiones ERP sin alterar items ni kardex.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_remision_update",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_remision_pdf": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_remision_pdf",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Genera HTML imprimible de remision ERP para abrir, imprimir o guardar como PDF.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_remision_pdf",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_supabase/supabase_expose_schema": {
     "tipo": "interno",
     "nombre": "vertical_supabase/supabase_expose_schema",
@@ -3245,6 +3272,15 @@
     "vertical": "vertical_erp_inventory",
     "descripcion": "Crea o actualiza clientes/proveedores ERP inventory en Supabase usando contrato generico.",
     "path": "skills/internos/vertical_erp_inventory/erp_inventory_party_save",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_party_delete": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_party_delete",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Da de baja logica clientes/proveedores ERP inventory sin romper historial operativo.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_party_delete",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

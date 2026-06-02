@@ -55,6 +55,7 @@ export type KardexMovement = {
   customer_name_snapshot: string | null;
   supplier_id: string | null;
   supplier_name_snapshot: string | null;
+  delivery_address: string | null;
   movement_date: string;
   quantity_in: number;
   quantity_out: number;

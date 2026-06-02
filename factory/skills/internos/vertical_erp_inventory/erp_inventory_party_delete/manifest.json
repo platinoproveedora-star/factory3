@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_party_delete",
+  "vertical": "vertical_erp_inventory",
+  "descripcion": "Da de baja logica clientes/proveedores ERP inventory sin romper historial operativo.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

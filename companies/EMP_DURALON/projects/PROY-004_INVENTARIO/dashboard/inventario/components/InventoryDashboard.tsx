@@ -12,6 +12,7 @@ import {
   Save,
   Search,
   Store,
+  Trash2,
   Truck,
   UserRoundPlus,
 } from 'lucide-react';
@@ -20,6 +21,20 @@ import { money, qty, type KardexMovement, type Party, type Product } from '../li
 
 type Tab = 'inventario' | 'producto' | 'proveedores' | 'clientes' | 'ventas' | 'compras';
 type RefreshFn = () => Promise<DashboardData | null>;
+
+type RemisionDoc = {
+  id: string;
+  folio: string;
+  external_folio: string | null;
+  customer_name_snapshot: string | null;
+  status: string;
+  document_date: string;
+  delivery_address: string | null;
+  total: number;
+  balance_total: number;
+  notes: string | null;
+  created_at: string;
+};
 
 const emptyData: DashboardData = {
   products: [],
@@ -195,16 +210,7 @@ export default function InventoryDashboard() {
           {activeTab === 'proveedores' && <PartyTab type="supplier" parties={data.suppliers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
           {activeTab === 'clientes' && <PartyTab type="customer" parties={data.customers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
           {activeTab === 'ventas' && (
-            <MovementTab
-              type="remision"
-              products={data.products}
-              parties={data.customers}
-              movements={data.sales}
-              saving={saving}
-              setSaving={setSaving}
-              refresh={refresh}
-              setNotice={setNotice}
-            />
+            <RemisionesTab setNotice={setNotice} />
           )}
           {activeTab === 'compras' && (
             <MovementTab
@@ -649,6 +655,26 @@ function PartyRow({ party, refresh, setNotice }: { party: Party; refresh: Refres
     }
   }
 
+  async function remove() {
+    if (!window.confirm(`Borrar ${party.party_name}?`)) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/parties', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: party.id, party_type: party.party_type }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo borrar registro');
+      await refresh();
+      setNotice(`Registro borrado: ${party.party_name}`);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo borrar registro');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const inputClass = 'h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500';
 
   return (
@@ -675,6 +701,153 @@ function PartyRow({ party, refresh, setNotice }: { party: Party; refresh: Refres
       <td className="px-3 py-3">
         <input type="checkbox" checked={draft.active} onChange={(event) => update('active', event.target.checked)} />
       </td>
+      <td className="px-3 py-2 text-right">
+        <button
+          type="button"
+          onClick={remove}
+          disabled={saving}
+          className="mr-2 inline-flex h-9 items-center gap-2 rounded border border-red-200 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50"
+        >
+          <Trash2 size={15} />
+          Borrar
+        </button>
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="inline-flex h-9 items-center gap-2 rounded bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          <Save size={15} />
+          Guardar
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
+  const [remisiones, setRemisiones] = useState<RemisionDoc[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/remisiones?limit=100&t=${Date.now()}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudieron cargar remisiones');
+      setRemisiones(json.data || []);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudieron cargar remisiones');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  return (
+    <section className="rounded border border-slate-200 bg-white">
+      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-950">Remisiones</h3>
+          <p className="mt-0.5 text-xs text-slate-500">{loading ? 'Cargando...' : `${remisiones.length} documentos desde PROY-002`}</p>
+        </div>
+        <button
+          type="button"
+          onClick={load}
+          className="flex h-9 items-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          <RefreshCw size={15} />
+          Actualizar
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-[1120px] text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-3 text-left">Remision</th>
+              <th className="px-4 py-3 text-left">Fecha</th>
+              <th className="px-4 py-3 text-left">Cliente</th>
+              <th className="px-4 py-3 text-left">Dir de entrega</th>
+              <th className="px-4 py-3 text-left">Estado</th>
+              <th className="px-4 py-3 text-left">Folio externo</th>
+              <th className="px-4 py-3 text-left">Notas</th>
+              <th className="px-4 py-3 text-right">Total</th>
+              <th className="px-4 py-3 text-right">Accion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {remisiones.map((remision) => (
+              <RemisionRow key={remision.id} remision={remision} reload={load} setNotice={setNotice} />
+            ))}
+            {!loading && remisiones.length === 0 && (
+              <tr>
+                <td colSpan={9} className="px-4 py-8 text-center text-sm text-slate-500">
+                  Sin remisiones registradas
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function RemisionRow({ remision, reload, setNotice }: { remision: RemisionDoc; reload: () => Promise<void>; setNotice: (value: string) => void }) {
+  const [draft, setDraft] = useState({
+    status: remision.status || 'emitida',
+    delivery_address: remision.delivery_address || '',
+    external_folio: remision.external_folio || '',
+    notes: remision.notes || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const inputClass = 'h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500';
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/remisiones', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: remision.id, ...draft }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo actualizar remision');
+      await reload();
+      setNotice(`Remision actualizada: ${remision.folio}`);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo actualizar remision');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <tr className="border-b border-slate-100 align-top">
+      <td className="px-4 py-3 font-medium text-slate-900">{remision.folio}</td>
+      <td className="px-4 py-3 text-slate-500">{remision.document_date}</td>
+      <td className="px-4 py-3 text-slate-700">{remision.customer_name_snapshot}</td>
+      <td className="px-3 py-2">
+        <input className={inputClass} value={draft.delivery_address} onChange={(event) => setDraft((current) => ({ ...current, delivery_address: event.target.value }))} />
+      </td>
+      <td className="px-3 py-2">
+        <select className={inputClass} value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}>
+          <option value="emitida">Emitida</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="pagada">Pagada</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </td>
+      <td className="px-3 py-2">
+        <input className={inputClass} value={draft.external_folio} onChange={(event) => setDraft((current) => ({ ...current, external_folio: event.target.value }))} />
+      </td>
+      <td className="px-3 py-2">
+        <input className={inputClass} value={draft.notes} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} />
+      </td>
+      <td className="px-4 py-3 text-right">{money(remision.total)}</td>
       <td className="px-3 py-2 text-right">
         <button
           type="button"

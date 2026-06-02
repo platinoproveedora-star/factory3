@@ -66,13 +66,14 @@ class ErpInventoryDashboardDataService:
         }
 
     def _dashboard(self, products, parties, movements) -> dict:
+        active_parties = [p for p in parties if p.get("active") is not False]
         sales = [m for m in movements if m.get("source_type") == "remision"]
         purchases = [m for m in movements if m.get("source_type") == "compra"]
         adjustments = [m for m in movements if m.get("source_type") == "ajuste"]
         return {
             "products": sorted(products, key=lambda row: str(row.get("product_name") or "")),
-            "customers": sorted([p for p in parties if p.get("party_type") in {"customer", "both"}], key=lambda row: str(row.get("party_name") or "")),
-            "suppliers": sorted([p for p in parties if p.get("party_type") in {"supplier", "both"}], key=lambda row: str(row.get("party_name") or "")),
+            "customers": sorted([p for p in active_parties if p.get("party_type") in {"customer", "both"}], key=lambda row: str(row.get("party_name") or "")),
+            "suppliers": sorted([p for p in active_parties if p.get("party_type") in {"supplier", "both"}], key=lambda row: str(row.get("party_name") or "")),
             "purchases": purchases,
             "sales": sales,
             "adjustments": adjustments,
@@ -82,10 +83,11 @@ class ErpInventoryDashboardDataService:
         }
 
     def _summary(self, movements, products, parties) -> dict:
+        active_parties = [p for p in parties if p.get("active") is not False]
         return {
             "products": len(products),
-            "customers": sum(1 for p in parties if p.get("party_type") in {"customer", "both"}),
-            "suppliers": sum(1 for p in parties if p.get("party_type") in {"supplier", "both"}),
+            "customers": sum(1 for p in active_parties if p.get("party_type") in {"customer", "both"}),
+            "suppliers": sum(1 for p in active_parties if p.get("party_type") in {"supplier", "both"}),
             "movements": len(movements),
             "receivables_total": sum(row["balance_amount"] for row in self._receivables(movements)),
             "top_inventory": self._stock(movements, products)[:5],
@@ -143,7 +145,7 @@ class ErpInventoryDashboardDataService:
         rules = context.get("recurrence_rules") or KEY_RULES
         today = self._as_date(context.get("today")) or date.today()
         key_products = {p.get("id"): p for p in products if p.get("product_key") in {r["product_key"] for r in rules}}
-        customers = [p for p in parties if p.get("party_type") in {"customer", "both"}]
+        customers = [p for p in parties if p.get("active") is not False and p.get("party_type") in {"customer", "both"}]
         last = self._last_purchase_map(movements)
         alerts = []
         for customer in customers:

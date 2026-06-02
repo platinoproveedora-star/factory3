@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS uc101_proy004.erp_kardex (
     customer_name_snapshot text,
     supplier_id uuid REFERENCES uc101_proy004.erp_parties(id),
     supplier_name_snapshot text,
+    delivery_address text,
     movement_date date NOT NULL DEFAULT CURRENT_DATE,
     quantity_in numeric(14,4) NOT NULL DEFAULT 0,
     quantity_out numeric(14,4) NOT NULL DEFAULT 0,

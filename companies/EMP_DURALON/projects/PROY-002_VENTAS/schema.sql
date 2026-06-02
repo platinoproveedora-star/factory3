@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS uc101_proy002.sales_documents (
     document_type text NOT NULL CHECK (document_type IN ('cotizacion', 'pedido', 'remision', 'factura')),
     external_folio text,
     customer_id uuid REFERENCES uc101_proy002.sales_customers(id),
+    delivery_address text,
     parent_document_id uuid REFERENCES uc101_proy002.sales_documents(id),
     root_document_id uuid REFERENCES uc101_proy002.sales_documents(id),
     status text NOT NULL DEFAULT 'draft',
@@ -187,4 +188,3 @@ CREATE INDEX IF NOT EXISTS idx_sales_receivables_customer_status
 
 CREATE INDEX IF NOT EXISTS idx_sales_events_document
     ON uc101_proy002.sales_events (document_id, created_at);
-
