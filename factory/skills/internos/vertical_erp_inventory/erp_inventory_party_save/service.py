@@ -13,7 +13,15 @@ VALID_TYPES = {"customer", "supplier", "both"}
 class ErpInventoryPartySaveService:
     def ejecutar(self, context: dict) -> dict:
         party_id = context.get("id")
-        party_type = str(context.get("party_type") or "customer").strip()
+        schema_context = self._schema_context(context)
+        party_type = str(context.get("party_type") or "").strip()
+        if party_id and not party_type:
+            existing = SupabaseClient(schema_context).rest_select("erp_parties", filters={"id": party_id}, select="party_type", limit=1)
+            if not existing.get("ok"):
+                return existing
+            rows = existing.get("data") or []
+            party_type = str((rows[0] if rows else {}).get("party_type") or "").strip()
+        party_type = party_type or "customer"
         party_name = str(context.get("party_name") or context.get("name") or "").strip()
         if not party_name:
             return {"ok": False, "error": "party_name requerido"}
@@ -33,7 +41,6 @@ class ErpInventoryPartySaveService:
         if context.get("dry_run", True):
             return {"ok": True, "message": "dry_run: no se guardo tercero", "data": {"party": row}}
 
-        schema_context = self._schema_context(context)
         if party_id:
             row["updated_at"] = context.get("updated_at") or datetime.now(timezone.utc).isoformat()
             result = SupabaseClient(schema_context).rest_update("erp_parties", row, {"id": party_id})

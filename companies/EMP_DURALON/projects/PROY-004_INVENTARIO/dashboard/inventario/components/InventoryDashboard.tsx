@@ -636,7 +636,7 @@ function PartyRow({ party, refresh, setNotice }: { party: Party; refresh: Refres
       const res = await fetch('/api/parties', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: party.id, ...draft }),
+        body: JSON.stringify({ id: party.id, party_type: party.party_type, ...draft }),
       });
       const json = await res.json();
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo actualizar registro');
