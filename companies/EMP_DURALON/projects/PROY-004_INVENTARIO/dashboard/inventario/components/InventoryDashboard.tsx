@@ -41,8 +41,19 @@ const tabs: Array<{ id: Tab; label: string; icon: any }> = [
   { id: 'compras', label: 'Compras / entradas', icon: ArrowDownToLine },
 ];
 
+function savedTab(): Tab {
+  if (typeof window === 'undefined') return 'inventario';
+  const value = window.localStorage.getItem('duralon_inventory_tab');
+  if (tabs.some((tab) => tab.id === value)) return value as Tab;
+  return 'inventario';
+}
+
+function hardReloadDashboard() {
+  window.setTimeout(() => window.location.reload(), 350);
+}
+
 export default function InventoryDashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>('inventario');
+  const [activeTab, setActiveTab] = useState<Tab>(savedTab);
   const [data, setData] = useState<DashboardData>(emptyData);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -65,6 +76,10 @@ export default function InventoryDashboard() {
   useEffect(() => {
     refresh();
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('duralon_inventory_tab', activeTab);
+  }, [activeTab]);
 
   const filteredProducts = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -252,6 +267,7 @@ function ProductTab({
       formElement.reset();
       await refresh();
       setNotice(`Producto guardado: ${json.data?.folio || payload.product_name}`);
+      hardReloadDashboard();
     } catch (err: any) {
       window.alert(err.message || 'No se pudo guardar producto');
     } finally {
@@ -276,6 +292,7 @@ function ProductTab({
       formElement.reset();
       await refresh();
       setNotice(`Ajuste guardado: ${json.data?.source_folio || json.data?.folio || selectedProduct.product_name}`);
+      hardReloadDashboard();
     } catch (err: any) {
       window.alert(err.message || 'No se pudo guardar ajuste');
     } finally {
@@ -470,6 +487,7 @@ function PartyTab({
       formElement.reset();
       await refresh();
       setNotice(`${label} guardado: ${json.data?.folio || payload.party_name}`);
+      hardReloadDashboard();
     } catch (err: any) {
       window.alert(err.message || `No se pudo guardar ${label.toLowerCase()}`);
     } finally {
@@ -534,6 +552,7 @@ function MovementTab({
       formElement.reset();
       await refresh();
       setNotice(`${isSale ? 'Venta' : 'Compra'} guardada: ${json.data?.source_folio || json.data?.folio || ''}`);
+      hardReloadDashboard();
     } catch (err: any) {
       window.alert(err.message || 'No se pudo guardar movimiento');
     } finally {
@@ -627,6 +646,7 @@ function PartyRow({ party, refresh, setNotice }: { party: Party; refresh: () => 
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo actualizar registro');
       await refresh();
       setNotice(`Registro actualizado: ${json.data?.folio || draft.party_name}`);
+      hardReloadDashboard();
     } catch (err: any) {
       window.alert(err.message || 'No se pudo actualizar registro');
     } finally {
