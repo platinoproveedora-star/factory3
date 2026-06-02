@@ -634,7 +634,7 @@ def _delete_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
     try:
         filter_param = f"id=eq.{gasto_id}" if gasto_id else f"folio=eq.{folio}"
 
-        rows = _rest_get(schema, "gastos", filter_param.replace("=eq.", "=eq."))
+        rows = _rest_get(schema, "gastos", filter_param)
         if not rows:
             return {"ok": False, "error": "Gasto no encontrado"}
 
