@@ -3111,5 +3111,78 @@
     "path": "skills/internos/vertical_erp/erp_schema_planner",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_product_store": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_product_store",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Normaliza alta/edicion de productos ERP inventory.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_product_store",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_party_store": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_party_store",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Normaliza alta/edicion de clientes y proveedores para inventario ERP.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_party_store",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_document_folio": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_document_folio",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Genera folios ERP de inventario con 5 digitos para kardex, compras, remisiones, ajustes y devoluciones.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_document_folio",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_kardex_validator": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_kardex_validator",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Valida movimientos de kardex antes de guardar.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_kardex_validator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_kardex_store": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_kardex_store",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Normaliza movimientos de kardex ERP inventory.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_kardex_store",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_stock_report": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_stock_report",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Calcula existencias por producto desde movimientos de kardex.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_stock_report",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_balance_rebuild": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_balance_rebuild",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Reconstruye saldos balance_after por producto desde movimientos ordenados.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_balance_rebuild",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_dashboard_data": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_dashboard_data",
+    "vertical": "vertical_erp_inventory",
+    "kind": "data",
+    "descripcion": "Data skill para dashboard de kardex: CXC simple, ventas del mes, stock top y recurrencia.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_dashboard_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

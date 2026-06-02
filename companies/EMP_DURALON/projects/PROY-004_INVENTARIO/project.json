@@ -1,0 +1,54 @@
+{
+  "company_id": "EMP_DURALON",
+  "legacy_client_id": "UC-101",
+  "project_code": "PROY-004",
+  "module_code": "inventario",
+  "project_name": "Inventario, kardex y recurrencia comercial",
+  "status": "in_progress",
+  "erp_ready": true,
+  "erp_identity": {
+    "empresa_id": "EMP_DURALON",
+    "company_id": "EMP_DURALON",
+    "project_code": "PROY-004",
+    "module_code": "inventario",
+    "legacy_client_id": "UC-101",
+    "supabase_schema": "uc101_proy004"
+  },
+  "scope": "Modulo operativo inicial para productos, clientes/proveedores, entradas por compra, salidas por remision/venta, inventario actual, pagos simples y alertas de recurrencia por productos clave.",
+  "platform": "interno",
+  "supabase_schema": "uc101_proy004",
+  "folder": "companies/EMP_DURALON/projects/PROY-004_INVENTARIO",
+  "key_products": [
+    "varilla_3_8",
+    "varilla_1_2",
+    "cemento"
+  ],
+  "recurrence_rules": [
+    {
+      "product_key": "varilla_3_8",
+      "product_name": "Varilla 3/8",
+      "threshold_days": 7,
+      "alert_frequency": "daily"
+    },
+    {
+      "product_key": "varilla_1_2",
+      "product_name": "Varilla 1/2",
+      "threshold_days": 7,
+      "alert_frequency": "daily"
+    },
+    {
+      "product_key": "cemento",
+      "product_name": "Cemento",
+      "threshold_days": 7,
+      "alert_frequency": "daily"
+    }
+  ],
+  "deliverables": [
+    "Schema SQL ERP-ready para inventario/kardex",
+    "Skills base de inventario ERP",
+    "Reglas de recurrencia para productos clave",
+    "Base para dashboard operativo"
+  ],
+  "created_at": "2026-06-01T00:00:00Z",
+  "updated_at": "2026-06-02T00:00:00Z"
+}

@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
+
+_VALID_SCHEMA = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 @dataclass(frozen=True)
@@ -17,6 +20,7 @@ class SupabaseConfig:
     rest_key: str
     access_token: str
     project_ref: str
+    schema: str = ""
 
 
 class SupabaseClient:
@@ -48,6 +52,7 @@ class SupabaseClient:
             "project_ref": self.config.project_ref,
             "has_rest_key": bool(self.config.rest_key),
             "has_access_token": bool(self.config.access_token),
+            "schema": self.config.schema,
         }
 
     def management_query(self, query: str, read_only: bool = False) -> dict[str, Any]:
@@ -124,6 +129,9 @@ class SupabaseClient:
             "apikey": self.config.rest_key,
             "Authorization": f"Bearer {self.config.rest_key}",
         }
+        if self.config.schema:
+            headers["Accept-Profile"] = self.config.schema
+            headers["Content-Profile"] = self.config.schema
         if return_representation:
             headers["Prefer"] = "return=representation"
         return headers
@@ -182,9 +190,23 @@ class SupabaseClient:
         )
         access_token = os.getenv("SUPABASE_ACCESS_TOKEN", context.get("supabase_access_token", "")).strip()
         project_ref = os.getenv("SUPABASE_PROJECT_REF", context.get("supabase_project_ref", "")).strip()
+        schema = str(
+            context.get("schema")
+            or context.get("supabase_schema")
+            or context.get("db_schema")
+            or ""
+        ).strip()
+        if schema == "public" or not _VALID_SCHEMA.match(schema):
+            schema = ""
         if not project_ref and url:
             project_ref = self._project_ref_from_url(url)
-        return SupabaseConfig(url=url, rest_key=str(rest_key).strip(), access_token=access_token, project_ref=project_ref)
+        return SupabaseConfig(
+            url=url,
+            rest_key=str(rest_key).strip(),
+            access_token=access_token,
+            project_ref=project_ref,
+            schema=schema,
+        )
 
     def _project_ref_from_url(self, url: str) -> str:
         host = urllib.parse.urlparse(url).hostname or ""

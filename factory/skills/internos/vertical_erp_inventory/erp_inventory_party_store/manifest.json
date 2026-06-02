@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_inventory_party_store",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Normaliza alta/edicion de clientes y proveedores para inventario ERP.",
+  "requires_env": []
+}

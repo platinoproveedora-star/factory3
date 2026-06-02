@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_inventory_stock_report",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Calcula existencias por producto desde movimientos de kardex.",
+  "requires_env": []
+}

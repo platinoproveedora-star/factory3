@@ -18,7 +18,7 @@
       "project_code": "PROY-002",
       "module_code": "ventas",
       "project_name": "Ventas, documentos comerciales y cobranza",
-      "status": "in_progress",
+      "status": "planned",
       "erp_ready": false,
       "schema": "uc101_proy002",
       "folder": "companies/EMP_DURALON/projects/PROY-002_VENTAS",
@@ -26,7 +26,7 @@
       "depends_on": [
         "PROY-001"
       ],
-      "notes": "Scaffold y schema SQL creados. Pendiente ejecutar Supabase y correr health check."
+      "notes": "Scaffold y schema SQL creados. Pausado porque etapa 1 operativa se resolvera con PROY-004_INVENTARIO/kardex."
     },
     {
       "project_code": "PROY-003",
@@ -42,6 +42,20 @@
         "PROY-002"
       ],
       "notes": "Proyecto contenedor: arquitectura, contratos, integracion, dashboard central y handoff del ERP completo."
+    },
+    {
+      "project_code": "PROY-004",
+      "module_code": "inventario",
+      "project_name": "Inventario, kardex y recurrencia comercial",
+      "status": "in_progress",
+      "erp_ready": true,
+      "schema": "uc101_proy004",
+      "folder": "companies/EMP_DURALON/projects/PROY-004_INVENTARIO",
+      "dashboard_url": null,
+      "depends_on": [
+        "PROY-001"
+      ],
+      "notes": "Schema Supabase uc101_proy004 creado y expuesto. Modulo operativo urgente: productos, clientes/proveedores, entradas, salidas/remisiones, stock, pagos simples y recurrencia."
     }
   ]
 }

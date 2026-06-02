@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_inventory_product_store",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Normaliza alta/edicion de productos ERP inventory.",
+  "requires_env": []
+}

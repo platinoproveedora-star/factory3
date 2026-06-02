@@ -113,3 +113,44 @@ Relaciones previstas:
 - Los dashboards consumen data skills; no leen Supabase directo.
 - Las relaciones entre schemas se documentan aunque no tengan FK fisica entre schemas.
 - Los eventos cross-module se deben registrar con payload suficiente para auditoria.
+
+## Inventario / Kardex
+
+Origen previsto: `PROY-004_INVENTARIO`  
+Schema previsto: `uc101_proy004`
+
+Tablas:
+
+- `erp_products`
+- `erp_parties`
+- `erp_kardex`
+- `erp_recurrence_rules`
+
+El kardex general resuelve etapa 1:
+
+| Movimiento | Significado |
+|---|---|
+| `entrada` + `source_type=compra` | Compra / entrada de inventario |
+| `salida` + `source_type=remision` | Remision / venta / salida de inventario |
+| `ajuste` | Correccion de inventario |
+| `devolucion` | Regreso de producto |
+
+Campos de enlace:
+
+```text
+customer_id
+supplier_id
+purchase_folio
+remission_folio
+quote_folio
+order_folio
+invoice_folio
+```
+
+Reglas de recurrencia:
+
+```text
+varilla_3_8: alerta diaria si >= 7 dias sin compra
+varilla_1_2: alerta diaria si >= 7 dias sin compra
+cemento: alerta diaria si >= 7 dias sin compra
+```

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_inventory_document_folio",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera folios ERP de inventario con 5 digitos para kardex, compras, remisiones, ajustes y devoluciones.",
+  "requires_env": []
+}

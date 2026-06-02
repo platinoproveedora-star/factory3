@@ -1,0 +1,20 @@
+{
+  "company_id": "EMP_DURALON",
+  "project_code": "PROY-004",
+  "module_code": "inventario",
+  "dashboard": "duralon-inventario",
+  "schema": "uc101_proy004",
+  "views": [
+    "inventario",
+    "proveedores",
+    "clientes",
+    "ventas_salidas",
+    "compras_entradas"
+  ],
+  "tables": [
+    "erp_products",
+    "erp_parties",
+    "erp_kardex",
+    "erp_recurrence_rules"
+  ]
+}

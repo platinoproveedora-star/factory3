@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_inventory_dashboard_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Data skill para dashboard de kardex: CXC simple, ventas del mes, stock top y recurrencia.",
+  "requires_env": []
+}

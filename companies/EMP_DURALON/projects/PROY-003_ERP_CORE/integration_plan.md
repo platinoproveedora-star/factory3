@@ -19,11 +19,23 @@
 - [ ] Correr `vertical_erp/erp_health_check`.
 - [ ] Registrar modulo ventas en `modules.json` como `active` cuando pase health check.
 
+## Fase 2B - Inventario/Kardex Operativo
+
+- [x] Crear `PROY-004_INVENTARIO`.
+- [x] Definir schema `uc101_proy004`.
+- [x] Crear draft de tablas: productos, parties, kardex, reglas de recurrencia.
+- [x] Crear `vertical_erp_inventory` con skills base.
+- [ ] Ejecutar SQL en Supabase.
+- [ ] Correr `vertical_erp/erp_health_check`.
+- [ ] Crear dashboard operativo de kardex.
+- [ ] Probar entrada compra y salida remision.
+
 ## Fase 3 - Integracion
 
 - [ ] Definir IDs compartidos para clientes, pedidos y centros de costo.
 - [ ] Conectar gastos con ventas por `customer_id` y `sales_order_id`.
 - [ ] Usar `sales_documents.id` para pedidos enlazados desde gastos.
+- [ ] Conectar PROY-004 kardex con PROY-002 documentos cuando ventas formal se reactive.
 - [ ] Crear `erp_dashboard_data` para KPIs consolidados.
 - [ ] Definir eventos cross-module.
 

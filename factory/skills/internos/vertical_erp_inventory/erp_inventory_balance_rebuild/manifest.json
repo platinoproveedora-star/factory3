@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_inventory_balance_rebuild",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Reconstruye saldos balance_after por producto desde movimientos ordenados.",
+  "requires_env": []
+}

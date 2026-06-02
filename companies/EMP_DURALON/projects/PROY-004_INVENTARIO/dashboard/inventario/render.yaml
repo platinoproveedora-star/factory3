@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: uc101-inventario
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_SCHEMA
+        value: uc101_proy004

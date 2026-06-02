@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_inventory_kardex_validator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida movimientos de kardex antes de guardar.",
+  "requires_env": []
+}
