@@ -47,6 +47,7 @@ export default function InventoryDashboard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
 
   async function refresh() {
@@ -93,7 +94,10 @@ export default function InventoryDashboard() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setNotice('');
+                }}
                 className={`flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium ${
                   selected ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
                 }`}
@@ -142,7 +146,10 @@ export default function InventoryDashboard() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setNotice('');
+                }}
                 className={`whitespace-nowrap rounded px-3 py-2 text-sm font-medium ${
                   activeTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'
                 }`}
@@ -155,6 +162,7 @@ export default function InventoryDashboard() {
 
         <div className="px-4 py-5 lg:px-8">
           {error && <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+          {notice && <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
           <Kpis data={data} loading={loading} />
 
           {activeTab === 'inventario' && <InventoryTab products={filteredProducts} stock={data.stock} movements={[...data.sales, ...data.purchases, ...data.adjustments]} />}
@@ -166,10 +174,11 @@ export default function InventoryDashboard() {
               saving={saving}
               setSaving={setSaving}
               refresh={refresh}
+              setNotice={setNotice}
             />
           )}
-          {activeTab === 'proveedores' && <PartyTab type="supplier" parties={data.suppliers} saving={saving} setSaving={setSaving} refresh={refresh} />}
-          {activeTab === 'clientes' && <PartyTab type="customer" parties={data.customers} saving={saving} setSaving={setSaving} refresh={refresh} />}
+          {activeTab === 'proveedores' && <PartyTab type="supplier" parties={data.suppliers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
+          {activeTab === 'clientes' && <PartyTab type="customer" parties={data.customers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
           {activeTab === 'ventas' && (
             <MovementTab
               type="remision"
@@ -179,6 +188,7 @@ export default function InventoryDashboard() {
               saving={saving}
               setSaving={setSaving}
               refresh={refresh}
+              setNotice={setNotice}
             />
           )}
           {activeTab === 'compras' && (
@@ -190,6 +200,7 @@ export default function InventoryDashboard() {
               saving={saving}
               setSaving={setSaving}
               refresh={refresh}
+              setNotice={setNotice}
             />
           )}
         </div>
@@ -205,6 +216,7 @@ function ProductTab({
   saving,
   setSaving,
   refresh,
+  setNotice,
 }: {
   products: Product[];
   stock: DashboardData['stock'];
@@ -212,6 +224,7 @@ function ProductTab({
   saving: boolean;
   setSaving: (value: boolean) => void;
   refresh: () => Promise<void>;
+  setNotice: (value: string) => void;
 }) {
   const [selectedProductId, setSelectedProductId] = useState('');
   const selectedProduct = products.find((product) => product.id === selectedProductId) || products[0];
@@ -238,6 +251,7 @@ function ProductTab({
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar producto');
       formElement.reset();
       await refresh();
+      setNotice(`Producto guardado: ${json.data?.folio || payload.product_name}`);
     } catch (err: any) {
       window.alert(err.message || 'No se pudo guardar producto');
     } finally {
@@ -261,6 +275,7 @@ function ProductTab({
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar ajuste');
       formElement.reset();
       await refresh();
+      setNotice(`Ajuste guardado: ${json.data?.source_folio || json.data?.folio || selectedProduct.product_name}`);
     } catch (err: any) {
       window.alert(err.message || 'No se pudo guardar ajuste');
     } finally {
@@ -431,12 +446,14 @@ function PartyTab({
   saving,
   setSaving,
   refresh,
+  setNotice,
 }: {
   type: 'customer' | 'supplier';
   parties: Party[];
   saving: boolean;
   setSaving: (value: boolean) => void;
   refresh: () => Promise<void>;
+  setNotice: (value: string) => void;
 }) {
   const label = type === 'customer' ? 'Cliente' : 'Proveedor';
   async function save(event: React.FormEvent<HTMLFormElement>) {
@@ -452,6 +469,7 @@ function PartyTab({
       if (!res.ok || json.ok === false) throw new Error(json.error || `No se pudo guardar ${label.toLowerCase()}`);
       formElement.reset();
       await refresh();
+      setNotice(`${label} guardado: ${json.data?.folio || payload.party_name}`);
     } catch (err: any) {
       window.alert(err.message || `No se pudo guardar ${label.toLowerCase()}`);
     } finally {
@@ -473,7 +491,7 @@ function PartyTab({
           Guardar {label.toLowerCase()}
         </button>
       </form>
-      <PartyTable parties={parties} refresh={refresh} />
+      <PartyTable parties={parties} refresh={refresh} setNotice={setNotice} />
     </div>
   );
 }
@@ -486,6 +504,7 @@ function MovementTab({
   saving,
   setSaving,
   refresh,
+  setNotice,
 }: {
   type: 'compra' | 'remision';
   products: Product[];
@@ -494,6 +513,7 @@ function MovementTab({
   saving: boolean;
   setSaving: (value: boolean) => void;
   refresh: () => Promise<void>;
+  setNotice: (value: string) => void;
 }) {
   const isSale = type === 'remision';
   async function save(event: React.FormEvent<HTMLFormElement>) {
@@ -513,6 +533,7 @@ function MovementTab({
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar movimiento');
       formElement.reset();
       await refresh();
+      setNotice(`${isSale ? 'Venta' : 'Compra'} guardada: ${json.data?.source_folio || json.data?.folio || ''}`);
     } catch (err: any) {
       window.alert(err.message || 'No se pudo guardar movimiento');
     } finally {
@@ -544,7 +565,7 @@ function MovementTab({
   );
 }
 
-function PartyTable({ parties, refresh }: { parties: Party[]; refresh: () => Promise<void> }) {
+function PartyTable({ parties, refresh, setNotice }: { parties: Party[]; refresh: () => Promise<void>; setNotice: (value: string) => void }) {
   return (
     <section className="rounded border border-slate-200 bg-white">
       <SectionTitle title="Registros" subtitle={`${parties.length} activos`} />
@@ -565,7 +586,7 @@ function PartyTable({ parties, refresh }: { parties: Party[]; refresh: () => Pro
           </thead>
           <tbody>
             {parties.map((party) => (
-              <PartyRow key={party.id} party={party} refresh={refresh} />
+              <PartyRow key={party.id} party={party} refresh={refresh} setNotice={setNotice} />
             ))}
           </tbody>
         </table>
@@ -574,7 +595,7 @@ function PartyTable({ parties, refresh }: { parties: Party[]; refresh: () => Pro
   );
 }
 
-function PartyRow({ party, refresh }: { party: Party; refresh: () => Promise<void> }) {
+function PartyRow({ party, refresh, setNotice }: { party: Party; refresh: () => Promise<void>; setNotice: (value: string) => void }) {
   const [draft, setDraft] = useState({
     party_name: party.party_name || '',
     legal_name: party.legal_name || '',
@@ -605,6 +626,7 @@ function PartyRow({ party, refresh }: { party: Party; refresh: () => Promise<voi
       const json = await res.json();
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo actualizar registro');
       await refresh();
+      setNotice(`Registro actualizado: ${json.data?.folio || draft.party_name}`);
     } catch (err: any) {
       window.alert(err.message || 'No se pudo actualizar registro');
     } finally {

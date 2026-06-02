@@ -13,7 +13,7 @@ export type DashboardData = {
 };
 
 export async function loadDashboardData(): Promise<DashboardData> {
-  const res = await fetch('/api/summary', { cache: 'no-store' });
+  const res = await fetch(`/api/summary?t=${Date.now()}`, { cache: 'no-store' });
   const json = await res.json();
   if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudieron cargar datos');
   return json.data;
