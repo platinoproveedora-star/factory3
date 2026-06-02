@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_key_product_matrix",
+  "vertical": "vertical_erp_ventas",
+  "descripcion": "Reporte por remision y productos clave para rango de fechas con totales por producto y gran total.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

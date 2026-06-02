@@ -62,6 +62,33 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_ventas/erp_ventas_remision_detail": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_remision_detail",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Devuelve encabezado e items de una remision ERP para edicion post-creacion.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_remision_detail",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_remision_full_update": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_remision_full_update",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Actualiza encabezado e items de una remision y sincroniza renglones kardex ligados.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_remision_full_update",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_key_product_matrix": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_key_product_matrix",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Reporte por remision y productos clave para rango de fechas con totales por producto y gran total.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_key_product_matrix",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_supabase/supabase_expose_schema": {
     "tipo": "interno",
     "nombre": "vertical_supabase/supabase_expose_schema",

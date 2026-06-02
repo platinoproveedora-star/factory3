@@ -8,6 +8,8 @@ import {
   Building2,
   CircleDollarSign,
   PackagePlus,
+  Pencil,
+  Printer,
   RefreshCw,
   Save,
   Search,
@@ -34,6 +36,34 @@ type RemisionDoc = {
   balance_total: number;
   notes: string | null;
   created_at: string;
+};
+
+type RemisionItem = {
+  id: string;
+  folio: string;
+  product_id: string | null;
+  inventory_product_id: string | null;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  tax_rate: number;
+  tax_amount: number;
+  line_total: number;
+};
+
+type RemisionDetail = {
+  remision: RemisionDoc;
+  items: RemisionItem[];
+};
+
+type MatrixData = {
+  products: Array<{ id: string; folio: string; product_name: string; unit: string }>;
+  rows: Array<{ id: string; folio: string; external_folio: string | null; customer_name_snapshot: string | null; document_date: string; products: Record<string, number>; row_total: number }>;
+  totals: Record<string, number>;
+  grand_total: number;
+  start_date: string;
+  end_date: string;
 };
 
 const emptyData: DashboardData = {
@@ -727,6 +757,15 @@ function PartyRow({ party, refresh, setNotice }: { party: Party; refresh: Refres
 
 function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
   const [remisiones, setRemisiones] = useState<RemisionDoc[]>([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [detail, setDetail] = useState<RemisionDetail | null>(null);
+  const [matrix, setMatrix] = useState<MatrixData | null>(null);
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().slice(0, 10);
+  });
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -735,7 +774,9 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
       const res = await fetch(`/api/remisiones?limit=100&t=${Date.now()}`, { cache: 'no-store' });
       const json = await res.json();
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudieron cargar remisiones');
-      setRemisiones(json.data || []);
+      const rows = json.data || [];
+      setRemisiones(rows);
+      if (!selectedId && rows[0]?.id) setSelectedId(rows[0].id);
     } catch (err: any) {
       window.alert(err.message || 'No se pudieron cargar remisiones');
     } finally {
@@ -747,7 +788,44 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
     load();
   }, []);
 
+  useEffect(() => {
+    if (selectedId) loadDetail(selectedId);
+  }, [selectedId]);
+
+  useEffect(() => {
+    loadMatrix();
+  }, []);
+
+  async function loadDetail(id = selectedId) {
+    if (!id) return;
+    try {
+      const res = await fetch(`/api/remisiones?action=detail&id=${encodeURIComponent(id)}&t=${Date.now()}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo cargar detalle');
+      setDetail(json.data);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo cargar detalle');
+    }
+  }
+
+  async function loadMatrix() {
+    try {
+      const params = new URLSearchParams({ action: 'matrix', start_date: startDate, end_date: endDate, t: String(Date.now()) });
+      const res = await fetch(`/api/remisiones?${params.toString()}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo cargar reporte');
+      setMatrix(json.data);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo cargar reporte');
+    }
+  }
+
+  function printRemision(remision: RemisionDoc) {
+    window.open(`/api/remisiones/pdf?id=${encodeURIComponent(remision.id)}`, '_blank', 'noopener,noreferrer');
+  }
+
   return (
+    <div className="space-y-5">
     <section className="rounded border border-slate-200 bg-white">
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div>
@@ -780,7 +858,7 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
           </thead>
           <tbody>
             {remisiones.map((remision) => (
-              <RemisionRow key={remision.id} remision={remision} reload={load} setNotice={setNotice} />
+              <RemisionRow key={remision.id} remision={remision} reload={load} setNotice={setNotice} onPrint={() => printRemision(remision)} onSelect={() => setSelectedId(remision.id)} />
             ))}
             {!loading && remisiones.length === 0 && (
               <tr>
@@ -793,16 +871,39 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
         </table>
       </div>
     </section>
+    <RemisionDetailEditor
+      detail={detail}
+      remisiones={remisiones}
+      selectedId={selectedId}
+      setSelectedId={setSelectedId}
+      reload={async () => {
+        await load();
+        await loadDetail(selectedId);
+        await loadMatrix();
+      }}
+      setNotice={setNotice}
+      onPrint={() => detail && printRemision(detail.remision)}
+    />
+    <KeyProductMatrixPanel
+      matrix={matrix}
+      startDate={startDate}
+      endDate={endDate}
+      setStartDate={setStartDate}
+      setEndDate={setEndDate}
+      loadMatrix={loadMatrix}
+    />
+    </div>
   );
 }
 
-function RemisionRow({ remision, reload, setNotice }: { remision: RemisionDoc; reload: () => Promise<void>; setNotice: (value: string) => void }) {
+function RemisionRow({ remision, reload, setNotice, onPrint, onSelect }: { remision: RemisionDoc; reload: () => Promise<void>; setNotice: (value: string) => void; onPrint: () => void; onSelect: () => void }) {
   const [draft, setDraft] = useState({
     status: remision.status || 'emitida',
     delivery_address: remision.delivery_address || '',
     external_folio: remision.external_folio || '',
     notes: remision.notes || '',
   });
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const inputClass = 'h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500';
 
@@ -817,6 +918,7 @@ function RemisionRow({ remision, reload, setNotice }: { remision: RemisionDoc; r
       const json = await res.json();
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo actualizar remision');
       await reload();
+      setEditing(false);
       setNotice(`Remision actualizada: ${remision.folio}`);
     } catch (err: any) {
       window.alert(err.message || 'No se pudo actualizar remision');
@@ -827,39 +929,274 @@ function RemisionRow({ remision, reload, setNotice }: { remision: RemisionDoc; r
 
   return (
     <tr className="border-b border-slate-100 align-top">
-      <td className="px-4 py-3 font-medium text-slate-900">{remision.folio}</td>
+      <td className="px-4 py-3 font-medium text-slate-900"><button type="button" onClick={onSelect} className="text-left font-semibold text-slate-900 hover:underline">{remision.folio}</button></td>
       <td className="px-4 py-3 text-slate-500">{remision.document_date}</td>
       <td className="px-4 py-3 text-slate-700">{remision.customer_name_snapshot}</td>
       <td className="px-3 py-2">
-        <input className={inputClass} value={draft.delivery_address} onChange={(event) => setDraft((current) => ({ ...current, delivery_address: event.target.value }))} />
+        {editing ? <input className={inputClass} value={draft.delivery_address} onChange={(event) => setDraft((current) => ({ ...current, delivery_address: event.target.value }))} /> : <span className="block py-2 text-slate-600">{draft.delivery_address || '-'}</span>}
       </td>
       <td className="px-3 py-2">
-        <select className={inputClass} value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}>
+        {editing ? <select className={inputClass} value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}>
           <option value="emitida">Emitida</option>
           <option value="pendiente">Pendiente</option>
           <option value="pagada">Pagada</option>
           <option value="cancelada">Cancelada</option>
-        </select>
+        </select> : <span className="block py-2 text-slate-600">{draft.status}</span>}
       </td>
       <td className="px-3 py-2">
-        <input className={inputClass} value={draft.external_folio} onChange={(event) => setDraft((current) => ({ ...current, external_folio: event.target.value }))} />
+        {editing ? <input className={inputClass} value={draft.external_folio} onChange={(event) => setDraft((current) => ({ ...current, external_folio: event.target.value }))} /> : <span className="block py-2 text-slate-600">{draft.external_folio || '-'}</span>}
       </td>
       <td className="px-3 py-2">
-        <input className={inputClass} value={draft.notes} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} />
+        {editing ? <input className={inputClass} value={draft.notes} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} /> : <span className="block py-2 text-slate-600">{draft.notes || '-'}</span>}
       </td>
       <td className="px-4 py-3 text-right">{money(remision.total)}</td>
       <td className="px-3 py-2 text-right">
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          className="inline-flex h-9 items-center gap-2 rounded bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800"
-        >
-          <Save size={15} />
-          Guardar
-        </button>
+        <div className="flex justify-end gap-1">
+          <button type="button" onClick={() => { setEditing(true); onSelect(); }} title="Editar" className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50">
+            <Pencil size={15} />
+          </button>
+          <button type="button" onClick={save} disabled={saving} title="Guardar" className="inline-flex h-8 w-8 items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800">
+            <Save size={15} />
+          </button>
+          <button type="button" onClick={onPrint} title="Imprimir" className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50">
+            <Printer size={15} />
+          </button>
+        </div>
       </td>
     </tr>
+  );
+}
+
+function RemisionDetailEditor({
+  detail,
+  remisiones,
+  selectedId,
+  setSelectedId,
+  reload,
+  setNotice,
+  onPrint,
+}: {
+  detail: RemisionDetail | null;
+  remisiones: RemisionDoc[];
+  selectedId: string;
+  setSelectedId: (value: string) => void;
+  reload: () => Promise<void>;
+  setNotice: (value: string) => void;
+  onPrint: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState<RemisionDetail | null>(detail);
+
+  useEffect(() => {
+    setDraft(detail);
+  }, [detail]);
+
+  function patchHeader(patch: Partial<RemisionDoc>) {
+    setDraft((current) => (current ? { ...current, remision: { ...current.remision, ...patch } } : current));
+  }
+
+  function patchItem(itemId: string, patch: Partial<RemisionItem>) {
+    setDraft((current) => {
+      if (!current) return current;
+      return { ...current, items: current.items.map((item) => (item.id === itemId ? recalcItem({ ...item, ...patch }) : item)) };
+    });
+  }
+
+  async function save() {
+    if (!draft) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/remisiones', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: draft.remision.id,
+          document_date: draft.remision.document_date,
+          external_folio: draft.remision.external_folio || '',
+          delivery_address: draft.remision.delivery_address || '',
+          status: draft.remision.status,
+          notes: draft.remision.notes || '',
+          items: draft.items.map((item) => ({
+            id: item.id,
+            product_id: item.inventory_product_id || item.product_id,
+            description: item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            unit_price: item.unit_price,
+            tax_rate: item.tax_rate,
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar detalle');
+      await reload();
+      setNotice(`Remision actualizada: ${draft.remision.folio}`);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo guardar detalle');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rounded border border-slate-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-950">Editar remision y renglones</h3>
+          <p className="mt-0.5 text-xs text-slate-500">Encabezado, direccion, IVA, cantidades y precios ligados al kardex</p>
+        </div>
+        <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)} className="h-10 rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
+          <option value="">Seleccionar remision</option>
+          {remisiones.map((remision) => (
+            <option key={remision.id} value={remision.id}>{remision.folio} - {remision.customer_name_snapshot}</option>
+          ))}
+        </select>
+      </div>
+      {draft ? (
+        <div className="p-4">
+          <div className="grid gap-3 lg:grid-cols-5">
+            <Field label="Fecha" name="document_date" type="date" value={draft.remision.document_date || ''} onChange={(event) => patchHeader({ document_date: event.target.value })} />
+            <Field label="Folio externo" name="external_folio" value={draft.remision.external_folio || ''} onChange={(event) => patchHeader({ external_folio: event.target.value })} />
+            <label className="mt-3 block">
+              <span className="text-xs font-medium text-slate-600">Estado</span>
+              <select value={draft.remision.status || 'emitida'} onChange={(event) => patchHeader({ status: event.target.value })} className="mt-1 h-10 w-full rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
+                <option value="emitida">Emitida</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="pagada">Pagada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </label>
+            <Field label="Dir de entrega" name="delivery_address" value={draft.remision.delivery_address || ''} onChange={(event) => patchHeader({ delivery_address: event.target.value })} />
+            <Field label="Notas" name="notes" value={draft.remision.notes || ''} onChange={(event) => patchHeader({ notes: event.target.value })} />
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-[980px] text-sm">
+              <thead className="border-y border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-3 py-3 text-left">Producto / descripcion</th>
+                  <th className="px-3 py-3 text-right">Cantidad</th>
+                  <th className="px-3 py-3 text-left">Unidad</th>
+                  <th className="px-3 py-3 text-right">Precio</th>
+                  <th className="px-3 py-3 text-right">IVA</th>
+                  <th className="px-3 py-3 text-right">IVA $</th>
+                  <th className="px-3 py-3 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {draft.items.map((item) => (
+                  <tr key={item.id} className="border-b border-slate-100">
+                    <td className="px-3 py-2"><input value={item.description || ''} onChange={(event) => patchItem(item.id, { description: event.target.value })} className="h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500" /></td>
+                    <td className="px-3 py-2"><input type="number" step="0.01" value={item.quantity || 0} onChange={(event) => patchItem(item.id, { quantity: Number(event.target.value) })} className="h-9 w-full rounded border border-slate-200 px-2 text-right text-sm outline-none focus:border-slate-500" /></td>
+                    <td className="px-3 py-2"><input value={item.unit || ''} onChange={(event) => patchItem(item.id, { unit: event.target.value })} className="h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500" /></td>
+                    <td className="px-3 py-2"><input type="number" step="0.01" value={item.unit_price || 0} onChange={(event) => patchItem(item.id, { unit_price: Number(event.target.value) })} className="h-9 w-full rounded border border-slate-200 px-2 text-right text-sm outline-none focus:border-slate-500" /></td>
+                    <td className="px-3 py-2">
+                      <select value={item.tax_rate || 0} onChange={(event) => patchItem(item.id, { tax_rate: Number(event.target.value) })} className="h-9 w-full rounded border border-slate-200 bg-white px-2 text-sm outline-none focus:border-slate-500">
+                        <option value={0}>0%</option>
+                        <option value={0.16}>16%</option>
+                      </select>
+                    </td>
+                    <td className="px-3 py-3 text-right text-slate-500">{money(item.tax_amount)}</td>
+                    <td className="px-3 py-3 text-right font-semibold text-slate-900">{money(item.line_total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 flex justify-end gap-2">
+            <button type="button" onClick={onPrint} className="inline-flex h-10 items-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <Printer size={16} />
+              Imprimir
+            </button>
+            <button type="button" onClick={save} disabled={saving} className="inline-flex h-10 items-center gap-2 rounded bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800">
+              <Save size={16} />
+              Guardar todo
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="px-4 py-8 text-center text-sm text-slate-500">Selecciona una remision</div>
+      )}
+    </section>
+  );
+}
+
+function recalcItem(item: RemisionItem): RemisionItem {
+  const quantity = Number(item.quantity || 0);
+  const unit_price = Number(item.unit_price || 0);
+  const tax_rate = Number(item.tax_rate || 0);
+  const subtotal = Math.round(quantity * unit_price * 10000) / 10000;
+  const tax_amount = Math.round(subtotal * tax_rate * 10000) / 10000;
+  return { ...item, quantity, unit_price, tax_rate, tax_amount, line_total: Math.round((subtotal + tax_amount) * 100) / 100 };
+}
+
+function KeyProductMatrixPanel({
+  matrix,
+  startDate,
+  endDate,
+  setStartDate,
+  setEndDate,
+  loadMatrix,
+}: {
+  matrix: MatrixData | null;
+  startDate: string;
+  endDate: string;
+  setStartDate: (value: string) => void;
+  setEndDate: (value: string) => void;
+  loadMatrix: () => Promise<void>;
+}) {
+  return (
+    <section className="rounded border border-slate-200 bg-white">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-950">Ventas por productos clave</h3>
+          <p className="mt-0.5 text-xs text-slate-500">Importe neto por remision y producto marcado como clave</p>
+        </div>
+        <div className="flex gap-2">
+          <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
+          <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
+          <button type="button" onClick={loadMatrix} className="h-10 rounded bg-slate-900 px-3 text-sm font-semibold text-white">Ver</button>
+        </div>
+      </div>
+      <KeyProductMatrix matrix={matrix} />
+    </section>
+  );
+}
+
+function KeyProductMatrix({ matrix }: { matrix: MatrixData | null }) {
+  if (!matrix) return <div className="px-4 py-8 text-center text-sm text-slate-500">Carga un rango de fechas</div>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-[980px] text-sm">
+        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3 text-left">Remision</th>
+            <th className="px-4 py-3 text-left">Fecha</th>
+            <th className="px-4 py-3 text-left">Cliente</th>
+            {matrix.products.map((product) => <th key={product.id} className="px-4 py-3 text-right">{product.product_name}</th>)}
+            <th className="px-4 py-3 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {matrix.rows.map((row) => (
+            <tr key={row.id} className="border-b border-slate-100">
+              <td className="px-4 py-3 font-medium text-slate-900">{row.folio}</td>
+              <td className="px-4 py-3 text-slate-500">{row.document_date}</td>
+              <td className="px-4 py-3 text-slate-600">{row.customer_name_snapshot}</td>
+              {matrix.products.map((product) => <td key={product.id} className="px-4 py-3 text-right">{money(row.products[product.id])}</td>)}
+              <td className="px-4 py-3 text-right font-semibold">{money(row.row_total)}</td>
+            </tr>
+          ))}
+          <tr className="bg-slate-50 font-semibold">
+            <td className="px-4 py-3" colSpan={3}>Totales</td>
+            {matrix.products.map((product) => <td key={product.id} className="px-4 py-3 text-right">{money(matrix.totals[product.id])}</td>)}
+            <td className="px-4 py-3 text-right">{money(matrix.grand_total)}</td>
+          </tr>
+          {matrix.rows.length === 0 && (
+            <tr><td colSpan={matrix.products.length + 4} className="px-4 py-8 text-center text-sm text-slate-500">Sin ventas de productos clave en este rango</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

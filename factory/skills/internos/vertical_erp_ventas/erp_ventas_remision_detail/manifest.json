@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_remision_detail",
+  "vertical": "vertical_erp_ventas",
+  "descripcion": "Devuelve encabezado e items de una remision ERP para edicion post-creacion.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}
