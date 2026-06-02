@@ -7,6 +7,7 @@ export async function runFactorySkill<T>(skill: string, context: Record<string, 
   const res = await fetch(`${factoryUrl}/data/${skill}`, {
     method: 'POST',
     headers,
+    cache: 'no-store',
     body: JSON.stringify({
       company_id: 'EMP_DURALON',
       project_code: 'PROY-004',

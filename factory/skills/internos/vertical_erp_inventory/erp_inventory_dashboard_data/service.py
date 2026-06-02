@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
+from factory.engine import SupabaseClient
+
 
 KEY_RULES = [
     {"product_key": "varilla_3_8", "product_name": "Varilla 3/8", "threshold_days": 7, "alert_frequency": "daily"},
@@ -13,10 +15,15 @@ KEY_RULES = [
 class ErpInventoryDashboardDataService:
     def ejecutar(self, context: dict) -> dict:
         action = str(context.get("action") or "summary").strip()
-        movements = [m for m in (context.get("movements") or context.get("kardex") or []) if isinstance(m, dict)]
-        products = [p for p in (context.get("products") or []) if isinstance(p, dict)]
-        parties = [p for p in (context.get("parties") or []) if isinstance(p, dict)]
+        data = self._load_data(context)
+        if not data.get("ok"):
+            return data
+        products = data["data"]["products"]
+        parties = data["data"]["parties"]
+        movements = data["data"]["movements"]
 
+        if action in {"dashboard", "full"}:
+            return {"ok": True, "data": self._dashboard(products, parties, movements)}
         if action == "summary":
             return {"ok": True, "data": self._summary(movements, products, parties)}
         if action == "receivables":
@@ -30,6 +37,49 @@ class ErpInventoryDashboardDataService:
         if action == "last_purchase_by_customer":
             return {"ok": True, "data": {"last_purchase_by_customer": self._last_purchase_by_customer(movements, products, parties)}}
         return {"ok": False, "error": "action invalida"}
+
+    def _load_data(self, context: dict) -> dict:
+        provided_products = [p for p in (context.get("products") or []) if isinstance(p, dict)]
+        provided_parties = [p for p in (context.get("parties") or []) if isinstance(p, dict)]
+        provided_movements = [m for m in (context.get("movements") or context.get("kardex") or []) if isinstance(m, dict)]
+        if provided_products or provided_parties or provided_movements:
+            return {"ok": True, "data": {"products": provided_products, "parties": provided_parties, "movements": provided_movements}}
+
+        schema_context = {
+            **context,
+            "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004",
+        }
+        db = SupabaseClient(schema_context)
+        products_res = db.rest_select("erp_products", select="*", order="product_name.asc", limit=10000)
+        parties_res = db.rest_select("erp_parties", select="*", order="party_name.asc", limit=10000)
+        kardex_res = db.rest_select("erp_kardex", select="*", order="created_at.desc", limit=10000)
+        for result in (products_res, parties_res, kardex_res):
+            if not result.get("ok"):
+                return result
+        return {
+            "ok": True,
+            "data": {
+                "products": products_res.get("data") or [],
+                "parties": parties_res.get("data") or [],
+                "movements": kardex_res.get("data") or [],
+            },
+        }
+
+    def _dashboard(self, products, parties, movements) -> dict:
+        sales = [m for m in movements if m.get("source_type") == "remision"]
+        purchases = [m for m in movements if m.get("source_type") == "compra"]
+        adjustments = [m for m in movements if m.get("source_type") == "ajuste"]
+        return {
+            "products": sorted(products, key=lambda row: str(row.get("product_name") or "")),
+            "customers": sorted([p for p in parties if p.get("party_type") in {"customer", "both"}], key=lambda row: str(row.get("party_name") or "")),
+            "suppliers": sorted([p for p in parties if p.get("party_type") in {"supplier", "both"}], key=lambda row: str(row.get("party_name") or "")),
+            "purchases": purchases,
+            "sales": sales,
+            "adjustments": adjustments,
+            "stock": self._stock(movements, products),
+            "receivables_total": sum(float(row.get("balance_amount") or 0) for row in sales),
+            "payables_total": sum(float(row.get("balance_amount") or 0) for row in purchases),
+        }
 
     def _summary(self, movements, products, parties) -> dict:
         return {
