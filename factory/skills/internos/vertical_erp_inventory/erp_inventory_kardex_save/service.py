@@ -35,6 +35,8 @@ class ErpInventoryKardexSaveService:
         quantity_in = 0 if is_sale or (is_adjustment and adjustment_direction == "salida") else quantity
         quantity_out = quantity if is_sale or (is_adjustment and adjustment_direction == "salida") else 0
         source_prefix = "REM" if is_sale else "AJU" if is_adjustment else "COM"
+        current_stock = self._current_stock(schema_context, context.get("product_id")) if not dry_run else 0
+        balance_after = current_stock + quantity_in - quantity_out
 
         row = {
             "folio": context.get("folio") or ("KAR-DRYRUN" if dry_run else self._next_folio(schema_context, "erp_kardex", "KAR")),
@@ -53,6 +55,7 @@ class ErpInventoryKardexSaveService:
             "movement_date": context.get("movement_date"),
             "quantity_in": quantity_in,
             "quantity_out": quantity_out,
+            "balance_after": balance_after,
             "unit_cost": None if is_sale or is_adjustment else unit_cost,
             "unit_price": unit_price if is_sale else None,
             "total_cost": total_cost,
@@ -84,3 +87,17 @@ class ErpInventoryKardexSaveService:
     def _blank(self, value):
         value = str(value or "").strip()
         return value or None
+
+    def _current_stock(self, context: dict, product_id: str) -> float:
+        result = SupabaseClient(context).rest_select(
+            "erp_kardex",
+            filters={"product_id": product_id},
+            select="quantity_in,quantity_out",
+            limit=1000,
+        )
+        if not result.get("ok"):
+            return 0.0
+        total = 0.0
+        for row in result.get("data") or []:
+            total += float(row.get("quantity_in") or 0) - float(row.get("quantity_out") or 0)
+        return total
