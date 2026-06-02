@@ -475,7 +475,7 @@ function PartyTab({
           Guardar {label.toLowerCase()}
         </button>
       </form>
-      <PartyTable parties={parties} />
+      <PartyTable parties={parties} refresh={refresh} />
     </div>
   );
 }
@@ -547,35 +547,112 @@ function MovementTab({
   );
 }
 
-function PartyTable({ parties }: { parties: Party[] }) {
+function PartyTable({ parties, refresh }: { parties: Party[]; refresh: () => Promise<void> }) {
   return (
     <section className="rounded border border-slate-200 bg-white">
       <SectionTitle title="Registros" subtitle={`${parties.length} activos`} />
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+        <table className="min-w-[980px] text-sm">
           <thead className="border-y border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3 text-left">Nombre</th>
               <th className="px-4 py-3 text-left">Folio</th>
+              <th className="px-4 py-3 text-left">Razon social</th>
               <th className="px-4 py-3 text-left">RFC</th>
               <th className="px-4 py-3 text-left">Telefono</th>
               <th className="px-4 py-3 text-left">Email</th>
+              <th className="px-4 py-3 text-left">Direccion</th>
+              <th className="px-4 py-3 text-left">Activo</th>
+              <th className="px-4 py-3 text-right">Accion</th>
             </tr>
           </thead>
           <tbody>
             {parties.map((party) => (
-              <tr key={party.id} className="border-b border-slate-100">
-                <td className="px-4 py-3 font-medium text-slate-900">{party.party_name}</td>
-                <td className="px-4 py-3 text-slate-500">{party.folio}</td>
-                <td className="px-4 py-3 text-slate-500">{party.rfc || '-'}</td>
-                <td className="px-4 py-3 text-slate-500">{party.phone || '-'}</td>
-                <td className="px-4 py-3 text-slate-500">{party.email || '-'}</td>
-              </tr>
+              <PartyRow key={party.id} party={party} refresh={refresh} />
             ))}
           </tbody>
         </table>
       </div>
     </section>
+  );
+}
+
+function PartyRow({ party, refresh }: { party: Party; refresh: () => Promise<void> }) {
+  const [draft, setDraft] = useState({
+    party_name: party.party_name || '',
+    legal_name: party.legal_name || '',
+    rfc: party.rfc || '',
+    phone: party.phone || '',
+    email: party.email || '',
+    address: party.address || '',
+    active: party.active !== false,
+  });
+  const [saving, setSaving] = useState(false);
+
+  function update(key: keyof typeof draft, value: string | boolean) {
+    setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  async function save() {
+    if (!draft.party_name.trim()) {
+      window.alert('Nombre es obligatorio');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/parties', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: party.id, ...draft }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo actualizar registro');
+      await refresh();
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo actualizar registro');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputClass = 'h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500';
+
+  return (
+    <tr className="border-b border-slate-100 align-top">
+      <td className="px-3 py-2">
+        <input className={inputClass} value={draft.party_name} onChange={(event) => update('party_name', event.target.value)} />
+      </td>
+      <td className="px-3 py-3 text-slate-500">{party.folio}</td>
+      <td className="px-3 py-2">
+        <input className={inputClass} value={draft.legal_name} onChange={(event) => update('legal_name', event.target.value)} />
+      </td>
+      <td className="px-3 py-2">
+        <input className={inputClass} value={draft.rfc} onChange={(event) => update('rfc', event.target.value)} />
+      </td>
+      <td className="px-3 py-2">
+        <input className={inputClass} value={draft.phone} onChange={(event) => update('phone', event.target.value)} />
+      </td>
+      <td className="px-3 py-2">
+        <input className={inputClass} value={draft.email} onChange={(event) => update('email', event.target.value)} />
+      </td>
+      <td className="px-3 py-2">
+        <input className={inputClass} value={draft.address} onChange={(event) => update('address', event.target.value)} />
+      </td>
+      <td className="px-3 py-3">
+        <input type="checkbox" checked={draft.active} onChange={(event) => update('active', event.target.checked)} />
+      </td>
+      <td className="px-3 py-2 text-right">
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="inline-flex h-9 items-center gap-2 rounded bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          <Save size={15} />
+          Guardar
+        </button>
+      </td>
+    </tr>
   );
 }
 
