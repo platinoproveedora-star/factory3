@@ -19,7 +19,9 @@ function mxn(n: number) {
 export default function CategoryMonthlyTable({ gastos }: Props) {
   // Obtener meses únicos ordenados desc (más reciente primero)
   const monthSet = new Set(gastos.map(g => g.fecha.slice(0, 7)));
-  const months = Array.from(monthSet).sort((a, b) => b.localeCompare(a)).slice(0, 6);
+  const allMonths = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
+  const months = allMonths.slice(0, 6);
+  const hasMore = allMonths.length > 6;
 
   // Obtener categorías únicas
   const catSet = new Set(gastos.map(g => g.categoria).filter(Boolean));
@@ -114,6 +116,11 @@ export default function CategoryMonthlyTable({ gastos }: Props) {
           </tr>
         </tfoot>
       </table>
+      {hasMore && (
+        <p className="mt-2 text-[11px] text-slate-400 text-right">
+          Mostrando los últimos 6 meses · {allMonths.length} meses en total
+        </p>
+      )}
     </div>
   );
 }

@@ -9,10 +9,12 @@ type Props = { gastos: Gasto[] };
 
 const PAGE_SIZE = 50;
 const FACTORY_URL = process.env.NEXT_PUBLIC_FACTORY_API_URL ?? '';
+const WRITE_KEY   = process.env.NEXT_PUBLIC_WRITE_KEY ?? '';
 const SKILL = 'vertical_client_expenses/client_expenses_run';
 const BASE_CTX = { schema: 'uc101_proy001', empresa_id: 'EMP_DURALON', project_code: 'PROY-001', module_code: 'gastos', dry_run: false };
 
-const CATEGORIES = [
+// Fallback — se sobreescribe con categorías reales de los datos
+const CATEGORIES_DEFAULT = [
   'combustible','gastos varios','taller mecanico','papeleria',
   'telmex','gas','internet','recargas celulares','nomina','gps','imss','sat',
 ];
@@ -33,9 +35,11 @@ function fmtDate(s: string) {
 }
 
 async function skillPost(action: string, extra: object) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (WRITE_KEY) headers['x-write-key'] = WRITE_KEY;
   const res = await fetch(`${FACTORY_URL}/data/${SKILL}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ ...BASE_CTX, action, ...extra }),
   });
   const json = await res.json();
@@ -48,6 +52,8 @@ type EditDraft = { monto: string; fecha: string; descripcion: string; categoria:
 export default function ExpenseTable({ gastos: initialGastos }: Props) {
   const [gastos, setGastos]     = useState<Gasto[]>(initialGastos);
   const [q, setQ]               = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
   const [page, setPage]         = useState(0);
   const [sortCol, setSortCol]   = useState<keyof Gasto>('fecha');
   const [sortDir, setSortDir]   = useState<'asc'|'desc'>('desc');
@@ -56,16 +62,31 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState('');
   const [adding, setAdding]     = useState(false);
-  const [newRow, setNewRow]     = useState<EditDraft>({ monto: '', fecha: new Date().toISOString().slice(0,10), descripcion: '', categoria: 'combustible', vehiculo: '' });
+
+  // Categorías dinámicas desde los datos existentes
+  const CATEGORIES = useMemo(() => {
+    const fromData = Array.from(new Set(gastos.map(g => g.categoria).filter(Boolean))).sort();
+    return fromData.length > 0 ? fromData : CATEGORIES_DEFAULT;
+  }, [gastos]);
+
+  const [newRow, setNewRow] = useState<EditDraft>({
+    monto: '', fecha: new Date().toISOString().slice(0,10),
+    descripcion: '', categoria: CATEGORIES_DEFAULT[0], vehiculo: '',
+  });
 
   const filtered = useMemo(() => {
     const lq = q.toLowerCase().trim();
-    const base = lq ? gastos.filter(g =>
-      g.descripcion.toLowerCase().includes(lq) ||
-      g.categoria.toLowerCase().includes(lq) ||
-      g.nombre_usuario.toLowerCase().includes(lq) ||
-      g.folio.toLowerCase().includes(lq)
-    ) : [...gastos];
+    const base = gastos.filter(g => {
+      if (lq && !(
+        g.descripcion.toLowerCase().includes(lq) ||
+        g.categoria.toLowerCase().includes(lq) ||
+        g.nombre_usuario.toLowerCase().includes(lq) ||
+        g.folio.toLowerCase().includes(lq)
+      )) return false;
+      if (fechaDesde && g.fecha < fechaDesde) return false;
+      if (fechaHasta && g.fecha > fechaHasta) return false;
+      return true;
+    });
 
     base.sort((a, b) => {
       const av = a[sortCol] ?? '';
@@ -189,17 +210,29 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="relative flex-1 min-w-[180px]">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar descripción, categoría, usuario…"
+            placeholder="Buscar descripción, categoría, folio…"
             value={q}
             onChange={e => { setQ(e.target.value); setPage(0); }}
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm outline-none focus:border-slate-400"
           />
         </div>
+        <input type="date" value={fechaDesde}
+          onChange={e => { setFechaDesde(e.target.value); setPage(0); }}
+          title="Desde"
+          className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-slate-400 text-slate-600" />
+        <input type="date" value={fechaHasta}
+          onChange={e => { setFechaHasta(e.target.value); setPage(0); }}
+          title="Hasta"
+          className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-slate-400 text-slate-600" />
+        {(fechaDesde || fechaHasta) && (
+          <button onClick={() => { setFechaDesde(''); setFechaHasta(''); setPage(0); }}
+            className="text-xs text-slate-400 hover:text-slate-700">✕</button>
+        )}
         <span className="text-xs text-slate-500 whitespace-nowrap">{filtered.length} resultados</span>
         <button
           onClick={() => { setAdding(true); setError(''); }}
@@ -226,7 +259,7 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
           <div className="flex flex-wrap gap-2 items-end">
             <div>
               <label className="text-xs text-slate-500">Monto</label>
-              <input type="number" placeholder="0.00" value={newRow.monto}
+              <input type="number" placeholder="0.00" min="0" value={newRow.monto}
                 onChange={e => setNewRow(p => ({...p, monto: e.target.value}))}
                 className="block w-28 rounded border border-slate-200 px-2 py-1.5 text-sm mt-0.5" />
             </div>
@@ -341,7 +374,7 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
                   {/* Monto */}
                   <td className="px-3 py-2 text-right font-semibold text-slate-900">
                     {isEditing
-                      ? <input type="number" value={draft.monto}
+                      ? <input type="number" min="0" value={draft.monto}
                           onChange={e => setDraft(p => ({...p, monto: e.target.value}))}
                           className="rounded border border-slate-300 px-1 py-0.5 text-xs w-24 text-right" />
                       : mxn(g.monto)}

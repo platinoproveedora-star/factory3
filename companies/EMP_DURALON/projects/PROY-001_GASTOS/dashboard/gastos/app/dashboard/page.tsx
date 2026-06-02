@@ -141,7 +141,7 @@ export default async function DashboardPage() {
         </div>
 
         <p className="mt-6 text-center text-[10px] text-slate-400">
-          Factory3 · {new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+          Factory3 · Actualizado {new Date().toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
         </p>
 
       </section>
