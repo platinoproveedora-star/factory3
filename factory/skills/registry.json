@@ -1,4 +1,40 @@
 {
+  "vertical_erp_ventas/erp_ventas_customer_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_customer_list",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Lista clientes activos desde uc101_proy004.erp_parties (party_type customer o both)",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_customer_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_product_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_product_list",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Lista productos activos desde uc101_proy002.sales_products",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_product_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_remision_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_remision_create",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Crea remision en uc101_proy002 con items y descuenta inventario en uc101_proy004 kardex",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_remision_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_remision_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_remision_list",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Lista remisiones recientes desde uc101_proy002.sales_documents",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_remision_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_supabase/supabase_expose_schema": {
     "tipo": "interno",
     "nombre": "vertical_supabase/supabase_expose_schema",

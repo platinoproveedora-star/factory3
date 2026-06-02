@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_ventas_customer_list",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista clientes activos desde uc101_proy004.erp_parties (party_type customer o both)",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

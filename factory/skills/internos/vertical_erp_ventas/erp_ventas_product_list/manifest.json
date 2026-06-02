@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_ventas_product_list",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista productos activos desde uc101_proy002.sales_products",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

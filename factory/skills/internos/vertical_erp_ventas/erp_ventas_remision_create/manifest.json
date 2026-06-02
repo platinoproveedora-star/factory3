@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_ventas_remision_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea remision en uc101_proy002 con items y descuenta inventario en uc101_proy004 kardex",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
