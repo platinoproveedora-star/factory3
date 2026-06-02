@@ -86,6 +86,7 @@ class ErpInventoryKardexSaveService:
             "balance_amount": max(base_amount - paid, 0),
             "payment_status": context.get("payment_status") or ("pagado" if base_amount and paid >= base_amount else "parcial" if paid > 0 else "pendiente"),
             "notes": self._blank(context.get("notes")),
+            "metadata": context.get("metadata") if isinstance(context.get("metadata"), dict) else {},
         }
         if dry_run:
             return {"ok": True, "message": "dry_run: no se guardo movimiento", "data": {"movement": row}}
