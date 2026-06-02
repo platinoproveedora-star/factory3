@@ -17,10 +17,15 @@ export async function GET(req: Request) {
       .select('folio')
       .ilike('folio', `${prefix}-%`)
       .order('folio', { ascending: false })
-      .limit(1);
+      .limit(100);
     if (error) throw error;
-    const last = data?.[0]?.folio || `${prefix}-00000`;
-    const next = Number(String(last).split('-').pop() || '0') + 1;
+    const numbers = (data || [])
+      .map((row) => {
+        const match = String(row.folio || '').match(new RegExp(`^${prefix}-(\\d+)$`));
+        return match ? Number(match[1]) : 0;
+      })
+      .filter((value) => Number.isFinite(value));
+    const next = Math.max(0, ...numbers) + 1;
     return NextResponse.json({ ok: true, folio: `${prefix}-${String(next).padStart(5, '0')}` });
   } catch (error: any) {
     return NextResponse.json({ ok: false, error: error.message || 'Error generando folio' }, { status: 500 });

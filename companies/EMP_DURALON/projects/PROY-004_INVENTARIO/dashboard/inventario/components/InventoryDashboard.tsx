@@ -229,35 +229,45 @@ function ProductTab({
   async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    const form = new FormData(event.currentTarget);
-    const payload: any = Object.fromEntries(form.entries());
-    payload.folio = await nextFolio('erp_products', 'product');
-    payload.is_key_product = payload.is_key_product === 'on';
-    const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const json = await res.json();
-    setSaving(false);
-    if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar producto');
-    event.currentTarget.reset();
-    await refresh();
+    try {
+      const form = new FormData(event.currentTarget);
+      const payload: any = Object.fromEntries(form.entries());
+      payload.folio = await nextFolio('erp_products', 'product');
+      payload.is_key_product = payload.is_key_product === 'on';
+      const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar producto');
+      event.currentTarget.reset();
+      await refresh();
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo guardar producto');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function saveAdjustment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedProduct) return;
     setSaving(true);
-    const form = new FormData(event.currentTarget);
-    const payload: any = Object.fromEntries(form.entries());
-    payload.folio = await nextFolio('erp_kardex', 'kardex');
-    payload.source_folio = await nextFolio('erp_kardex', 'adjustment');
-    payload.source_type = 'ajuste';
-    payload.product_id = selectedProduct.id;
-    payload.product_name_snapshot = selectedProduct.product_name;
-    const res = await fetch('/api/kardex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const json = await res.json();
-    setSaving(false);
-    if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar ajuste');
-    event.currentTarget.reset();
-    await refresh();
+    try {
+      const form = new FormData(event.currentTarget);
+      const payload: any = Object.fromEntries(form.entries());
+      payload.folio = await nextFolio('erp_kardex', 'kardex');
+      payload.source_folio = await nextFolio('erp_kardex', 'adjustment');
+      payload.source_type = 'ajuste';
+      payload.product_id = selectedProduct.id;
+      payload.product_name_snapshot = selectedProduct.product_name;
+      const res = await fetch('/api/kardex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar ajuste');
+      event.currentTarget.reset();
+      await refresh();
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo guardar ajuste');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -434,16 +444,21 @@ function PartyTab({
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    const form = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(form.entries());
-    payload.folio = await nextFolio('erp_parties', type);
-    payload.party_type = type;
-    const res = await fetch('/api/parties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const json = await res.json();
-    setSaving(false);
-    if (!res.ok || json.ok === false) throw new Error(json.error || `No se pudo guardar ${label.toLowerCase()}`);
-    event.currentTarget.reset();
-    await refresh();
+    try {
+      const form = new FormData(event.currentTarget);
+      const payload = Object.fromEntries(form.entries());
+      payload.folio = await nextFolio('erp_parties', type);
+      payload.party_type = type;
+      const res = await fetch('/api/parties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || `No se pudo guardar ${label.toLowerCase()}`);
+      event.currentTarget.reset();
+      await refresh();
+    } catch (err: any) {
+      window.alert(err.message || `No se pudo guardar ${label.toLowerCase()}`);
+    } finally {
+      setSaving(false);
+    }
   }
   return (
     <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
@@ -486,21 +501,26 @@ function MovementTab({
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    const form = new FormData(event.currentTarget);
-    const payload: any = Object.fromEntries(form.entries());
-    const product = products.find((row) => row.id === payload.product_id);
-    const party = parties.find((row) => row.id === payload.party_id);
-    payload.folio = await nextFolio('erp_kardex', 'kardex');
-    payload.source_folio = await nextFolio('erp_kardex', isSale ? 'remission' : 'purchase');
-    payload.source_type = type;
-    payload.product_name_snapshot = product?.product_name || '';
-    payload.party_name_snapshot = party?.party_name || '';
-    const res = await fetch('/api/kardex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const json = await res.json();
-    setSaving(false);
-    if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar movimiento');
-    event.currentTarget.reset();
-    await refresh();
+    try {
+      const form = new FormData(event.currentTarget);
+      const payload: any = Object.fromEntries(form.entries());
+      const product = products.find((row) => row.id === payload.product_id);
+      const party = parties.find((row) => row.id === payload.party_id);
+      payload.folio = await nextFolio('erp_kardex', 'kardex');
+      payload.source_folio = await nextFolio('erp_kardex', isSale ? 'remission' : 'purchase');
+      payload.source_type = type;
+      payload.product_name_snapshot = product?.product_name || '';
+      payload.party_name_snapshot = party?.party_name || '';
+      const res = await fetch('/api/kardex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar movimiento');
+      event.currentTarget.reset();
+      await refresh();
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo guardar movimiento');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
