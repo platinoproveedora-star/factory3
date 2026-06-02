@@ -4,6 +4,7 @@ const PREFIXES = {
   supplier: 'PTY',
   purchase: 'COM',
   remission: 'REM',
+  adjustment: 'AJU',
   kardex: 'KAR',
 };
 

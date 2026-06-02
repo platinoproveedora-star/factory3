@@ -6,6 +6,7 @@ export type DashboardData = {
   suppliers: Party[];
   purchases: KardexMovement[];
   sales: KardexMovement[];
+  adjustments: KardexMovement[];
   stock: Array<{ product_id: string; product_name: string; quantity: number; total_in: number; total_out: number }>;
   receivables_total: number;
   payables_total: number;

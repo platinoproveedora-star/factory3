@@ -6,6 +6,7 @@
   "schema": "uc101_proy004",
   "views": [
     "inventario",
+    "producto",
     "proveedores",
     "clientes",
     "ventas_salidas",

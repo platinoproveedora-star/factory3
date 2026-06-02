@@ -35,6 +35,7 @@ export async function GET() {
     }
     const sales = movements.filter((m: any) => m.source_type === 'remision');
     const purchases = movements.filter((m: any) => m.source_type === 'compra');
+    const adjustments = movements.filter((m: any) => m.source_type === 'ajuste');
     return NextResponse.json({
       ok: true,
       data: {
@@ -43,6 +44,7 @@ export async function GET() {
         suppliers: parties.filter((p: any) => ['supplier', 'both'].includes(p.party_type)),
         purchases,
         sales,
+        adjustments,
         stock: Array.from(stockMap.values()).sort((a, b) => b.quantity - a.quantity),
         receivables_total: sales.reduce((sum: number, row: any) => sum + Number(row.balance_amount || 0), 0),
         payables_total: purchases.reduce((sum: number, row: any) => sum + Number(row.balance_amount || 0), 0),

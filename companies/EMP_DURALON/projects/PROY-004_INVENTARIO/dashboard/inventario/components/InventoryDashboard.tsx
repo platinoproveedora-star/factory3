@@ -7,6 +7,7 @@ import {
   Boxes,
   Building2,
   CircleDollarSign,
+  PackagePlus,
   RefreshCw,
   Save,
   Search,
@@ -18,7 +19,7 @@ import { loadDashboardData, type DashboardData } from '../lib/client-data';
 import { money, qty, type KardexMovement, type Party, type Product } from '../lib/supabase';
 import { nextFolio } from '../lib/folio';
 
-type Tab = 'inventario' | 'proveedores' | 'clientes' | 'ventas' | 'compras';
+type Tab = 'inventario' | 'producto' | 'proveedores' | 'clientes' | 'ventas' | 'compras';
 
 const emptyData: DashboardData = {
   products: [],
@@ -26,6 +27,7 @@ const emptyData: DashboardData = {
   suppliers: [],
   purchases: [],
   sales: [],
+  adjustments: [],
   stock: [],
   receivables_total: 0,
   payables_total: 0,
@@ -33,6 +35,7 @@ const emptyData: DashboardData = {
 
 const tabs: Array<{ id: Tab; label: string; icon: any }> = [
   { id: 'inventario', label: 'Inventario', icon: Boxes },
+  { id: 'producto', label: 'Producto', icon: PackagePlus },
   { id: 'proveedores', label: 'Proveedores', icon: Truck },
   { id: 'clientes', label: 'Clientes', icon: Store },
   { id: 'ventas', label: 'Ventas / salidas', icon: ArrowUpFromLine },
@@ -155,7 +158,17 @@ export default function InventoryDashboard() {
           {error && <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
           <Kpis data={data} loading={loading} />
 
-          {activeTab === 'inventario' && <InventoryTab products={filteredProducts} stock={data.stock} movements={[...data.sales, ...data.purchases]} />}
+          {activeTab === 'inventario' && <InventoryTab products={filteredProducts} stock={data.stock} movements={[...data.sales, ...data.purchases, ...data.adjustments]} />}
+          {activeTab === 'producto' && (
+            <ProductTab
+              products={filteredProducts}
+              stock={data.stock}
+              movements={[...data.sales, ...data.purchases, ...data.adjustments]}
+              saving={saving}
+              setSaving={setSaving}
+              refresh={refresh}
+            />
+          )}
           {activeTab === 'proveedores' && <PartyTab type="supplier" parties={data.suppliers} saving={saving} setSaving={setSaving} refresh={refresh} />}
           {activeTab === 'clientes' && <PartyTab type="customer" parties={data.customers} saving={saving} setSaving={setSaving} refresh={refresh} />}
           {activeTab === 'ventas' && (
@@ -183,6 +196,141 @@ export default function InventoryDashboard() {
         </div>
       </section>
     </main>
+  );
+}
+
+function ProductTab({
+  products,
+  stock,
+  movements,
+  saving,
+  setSaving,
+  refresh,
+}: {
+  products: Product[];
+  stock: DashboardData['stock'];
+  movements: KardexMovement[];
+  saving: boolean;
+  setSaving: (value: boolean) => void;
+  refresh: () => Promise<void>;
+}) {
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const selectedProduct = products.find((product) => product.id === selectedProductId) || products[0];
+  const productId = selectedProduct?.id || '';
+  const productStock = stock.find((row) => row.product_id === productId);
+  const productMovements = movements
+    .filter((movement) => movement.product_id === productId)
+    .sort((a, b) => String(b.movement_date).localeCompare(String(a.movement_date)));
+
+  useEffect(() => {
+    if (!selectedProductId && products[0]?.id) setSelectedProductId(products[0].id);
+  }, [products, selectedProductId]);
+
+  async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    const form = new FormData(event.currentTarget);
+    const payload: any = Object.fromEntries(form.entries());
+    payload.folio = await nextFolio('erp_products', 'product');
+    payload.is_key_product = payload.is_key_product === 'on';
+    const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const json = await res.json();
+    setSaving(false);
+    if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar producto');
+    event.currentTarget.reset();
+    await refresh();
+  }
+
+  async function saveAdjustment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedProduct) return;
+    setSaving(true);
+    const form = new FormData(event.currentTarget);
+    const payload: any = Object.fromEntries(form.entries());
+    payload.folio = await nextFolio('erp_kardex', 'kardex');
+    payload.source_folio = await nextFolio('erp_kardex', 'adjustment');
+    payload.source_type = 'ajuste';
+    payload.product_id = selectedProduct.id;
+    payload.product_name_snapshot = selectedProduct.product_name;
+    const res = await fetch('/api/kardex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const json = await res.json();
+    setSaving(false);
+    if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar ajuste');
+    event.currentTarget.reset();
+    await refresh();
+  }
+
+  return (
+    <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
+      <div className="space-y-5">
+        <form onSubmit={saveProduct} className="rounded border border-slate-200 bg-white p-4">
+          <SectionTitle title="Agregar producto" subtitle="Alta de catalogo" compact />
+          <Field name="product_name" label="Nombre" required />
+          <Field name="product_key" label="Clave interna" />
+          <Field name="sku" label="SKU" />
+          <Field name="category" label="Categoria" />
+          <div className="grid grid-cols-2 gap-3">
+            <Field name="unit" label="Unidad" defaultValue="pieza" required />
+            <Field name="min_stock" label="Minimo" type="number" step="0.01" />
+          </div>
+          <label className="mt-3 flex items-center gap-2 text-sm text-slate-700">
+            <input name="is_key_product" type="checkbox" className="h-4 w-4 rounded border-slate-300" />
+            Producto clave
+          </label>
+          <button className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800" disabled={saving}>
+            <PackagePlus size={16} />
+            Guardar producto
+          </button>
+        </form>
+
+        <form onSubmit={saveAdjustment} className="rounded border border-slate-200 bg-white p-4">
+          <SectionTitle title="Ajuste manual" subtitle="Entrada o salida sin compra/remision" compact />
+          <Select
+            name="adjustment_direction"
+            label="Tipo de ajuste"
+            options={[
+              { value: 'entrada', label: 'Entrada manual' },
+              { value: 'salida', label: 'Salida manual' },
+            ]}
+            required
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <Field name="movement_date" label="Fecha" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} />
+            <Field name="quantity" label="Cantidad" type="number" step="0.01" required />
+          </div>
+          <TextArea name="notes" label="Motivo" />
+          <button className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800" disabled={saving || !selectedProduct}>
+            <Save size={16} />
+            Guardar ajuste
+          </button>
+        </form>
+      </div>
+
+      <section className="rounded border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 px-4 py-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-950">Kardex por producto</h3>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Stock: {qty(productStock?.quantity)} · Entradas: {qty(productStock?.total_in)} · Salidas: {qty(productStock?.total_out)}
+              </p>
+            </div>
+            <select
+              value={productId}
+              onChange={(event) => setSelectedProductId(event.target.value)}
+              className="h-10 rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500"
+            >
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.product_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <ProductKardexTable movements={productMovements} />
+      </section>
+    </div>
   );
 }
 
@@ -444,6 +592,48 @@ function MovementTable({ movements, isSale }: { movements: KardexMovement[]; isS
         </table>
       </div>
     </section>
+  );
+}
+
+function ProductKardexTable({ movements }: { movements: KardexMovement[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-sm">
+        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3 text-left">Folio</th>
+            <th className="px-4 py-3 text-left">Tipo</th>
+            <th className="px-4 py-3 text-left">Fecha</th>
+            <th className="px-4 py-3 text-right">Entrada</th>
+            <th className="px-4 py-3 text-right">Salida</th>
+            <th className="px-4 py-3 text-left">Origen</th>
+            <th className="px-4 py-3 text-left">Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {movements.map((movement) => (
+            <tr key={movement.id} className="border-b border-slate-100">
+              <td className="px-4 py-3 font-medium text-slate-900">{movement.source_folio || movement.folio}</td>
+              <td className="px-4 py-3 text-slate-600">{movement.source_type}</td>
+              <td className="px-4 py-3 text-slate-500">{movement.movement_date}</td>
+              <td className="px-4 py-3 text-right">{qty(movement.quantity_in)}</td>
+              <td className="px-4 py-3 text-right">{qty(movement.quantity_out)}</td>
+              <td className="px-4 py-3 text-slate-500">
+                {movement.customer_name_snapshot || movement.supplier_name_snapshot || 'Manual'}
+              </td>
+              <td className="px-4 py-3 text-slate-500">{movement.notes || '-'}</td>
+            </tr>
+          ))}
+          {movements.length === 0 && (
+            <tr>
+              <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">
+                Sin movimientos para este producto
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

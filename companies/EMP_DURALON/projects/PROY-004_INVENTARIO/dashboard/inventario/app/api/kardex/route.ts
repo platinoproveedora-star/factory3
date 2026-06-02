@@ -26,32 +26,34 @@ export async function POST(req: Request) {
     const body = await req.json();
     const quantity = Number(body.quantity || 0);
     const isSale = body.source_type === 'remision';
+    const isAdjustment = body.source_type === 'ajuste';
+    const adjustmentDirection = body.adjustment_direction === 'salida' ? 'salida' : 'entrada';
     const productName = body.product_name_snapshot || null;
     const partyName = body.party_name_snapshot || null;
     const unitCost = Number(body.unit_cost || 0);
     const unitPrice = Number(body.unit_price || 0);
-    const totalCost = isSale ? 0 : Number(body.total_cost || unitCost * quantity);
+    const totalCost = isSale || isAdjustment ? 0 : Number(body.total_cost || unitCost * quantity);
     const totalSale = isSale ? Number(body.total_sale || unitPrice * quantity) : 0;
     const paid = Number(body.paid_amount || 0);
     const baseAmount = isSale ? totalSale : totalCost;
     const row = {
       folio: body.folio,
-      movement_type: isSale ? 'salida' : 'entrada',
+      movement_type: isAdjustment ? 'ajuste' : isSale ? 'salida' : 'entrada',
       source_type: body.source_type,
       source_folio: body.source_folio || body.folio,
       external_folio: body.external_folio || null,
-      purchase_folio: isSale ? null : body.source_folio || body.folio,
+      purchase_folio: !isSale && !isAdjustment ? body.source_folio || body.folio : null,
       remission_folio: isSale ? body.source_folio || body.folio : null,
       product_id: body.product_id,
       product_name_snapshot: productName,
       customer_id: isSale ? body.party_id : null,
       customer_name_snapshot: isSale ? partyName : null,
-      supplier_id: isSale ? null : body.party_id,
-      supplier_name_snapshot: isSale ? null : partyName,
+      supplier_id: !isSale && !isAdjustment ? body.party_id : null,
+      supplier_name_snapshot: !isSale && !isAdjustment ? partyName : null,
       movement_date: body.movement_date,
-      quantity_in: isSale ? 0 : quantity,
-      quantity_out: isSale ? quantity : 0,
-      unit_cost: isSale ? null : unitCost,
+      quantity_in: isSale || (isAdjustment && adjustmentDirection === 'salida') ? 0 : quantity,
+      quantity_out: isSale || (isAdjustment && adjustmentDirection === 'salida') ? quantity : 0,
+      unit_cost: isSale || isAdjustment ? null : unitCost,
       unit_price: isSale ? unitPrice : null,
       total_cost: totalCost,
       total_sale: totalSale,
