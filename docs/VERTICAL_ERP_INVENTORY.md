@@ -71,10 +71,24 @@ cemento: alertar diario si lleva 7 dias o mas sin compra
 |---|---|
 | `vertical_erp_inventory/erp_inventory_product_store` | Normaliza alta/edicion de productos |
 | `vertical_erp_inventory/erp_inventory_party_store` | Normaliza clientes/proveedores |
+| `vertical_erp_inventory/erp_inventory_product_save` | Crea productos en Supabase con contrato ERP |
+| `vertical_erp_inventory/erp_inventory_party_save` | Crea/actualiza clientes y proveedores en Supabase |
 | `vertical_erp_inventory/erp_inventory_document_folio` | Genera folios de 5 digitos |
 | `vertical_erp_inventory/erp_inventory_kardex_validator` | Valida movimientos antes de guardar |
 | `vertical_erp_inventory/erp_inventory_kardex_store` | Normaliza movimientos kardex |
+| `vertical_erp_inventory/erp_inventory_kardex_save` | Crea compras, remisiones y ajustes manuales en Supabase |
 | `vertical_erp_inventory/erp_inventory_stock_report` | Calcula existencias por producto |
 | `vertical_erp_inventory/erp_inventory_balance_rebuild` | Reconstruye saldos desde movimientos |
 | `vertical_erp_inventory/erp_inventory_dashboard_data` | Devuelve KPIs, CXC simple, ventas del mes, top inventario y recurrencia |
 
+## Dashboard Operativo
+
+Las escrituras del dashboard deben delegar en skills genericos via Factory API:
+
+```text
+POST /data/vertical_erp_inventory/erp_inventory_party_save
+POST /data/vertical_erp_inventory/erp_inventory_product_save
+POST /data/vertical_erp_inventory/erp_inventory_kardex_save
+```
+
+Las API routes del dashboard solo deben adaptar la UI al contrato del skill. La logica de negocio reutilizable vive en `vertical_erp_inventory`.

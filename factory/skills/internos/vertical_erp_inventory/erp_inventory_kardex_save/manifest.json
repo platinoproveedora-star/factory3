@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_kardex_save",
+  "vertical": "vertical_erp_inventory",
+  "descripcion": "Crea movimientos kardex ERP inventory en Supabase para compras, remisiones y ajustes manuales.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

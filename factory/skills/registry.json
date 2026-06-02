@@ -3193,5 +3193,32 @@
     "path": "skills/internos/vertical_erp_inventory/erp_inventory_dashboard_data",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_party_save": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_party_save",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Crea o actualiza clientes/proveedores ERP inventory en Supabase usando contrato generico.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_party_save",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_product_save": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_product_save",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Crea productos ERP inventory en Supabase usando contrato generico.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_product_save",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_kardex_save": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_kardex_save",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Crea movimientos kardex ERP inventory en Supabase para compras, remisiones y ajustes manuales.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_kardex_save",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

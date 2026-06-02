@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabase } from '../../../lib/supabase';
+import { runFactorySkill } from '../../../lib/factory';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,20 +21,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const row = {
-      folio: body.folio,
-      party_type: body.party_type,
-      party_name: body.party_name,
-      legal_name: body.legal_name || null,
-      rfc: body.rfc || null,
-      phone: body.phone || null,
-      email: body.email || null,
-      address: body.address || null,
-      active: body.active !== false,
-    };
-    const { data, error } = await getSupabase().from('erp_parties').insert(row).select().single();
-    if (error) throw error;
-    return NextResponse.json({ ok: true, data });
+    const result = await runFactorySkill<{ party: any }>('vertical_erp_inventory/erp_inventory_party_save', body);
+    return NextResponse.json({ ok: true, data: result.party });
   } catch (error: any) {
     return NextResponse.json({ ok: false, error: error.message || 'Error guardando tercero' }, { status: 500 });
   }
@@ -48,19 +37,8 @@ export async function PATCH(req: Request) {
     if (!String(body.party_name || '').trim()) {
       return NextResponse.json({ ok: false, error: 'nombre es requerido' }, { status: 400 });
     }
-    const row = {
-      party_name: String(body.party_name).trim(),
-      legal_name: body.legal_name || null,
-      rfc: body.rfc || null,
-      phone: body.phone || null,
-      email: body.email || null,
-      address: body.address || null,
-      active: body.active !== false,
-      updated_at: new Date().toISOString(),
-    };
-    const { data, error } = await getSupabase().from('erp_parties').update(row).eq('id', body.id).select().single();
-    if (error) throw error;
-    return NextResponse.json({ ok: true, data });
+    const result = await runFactorySkill<{ party: any }>('vertical_erp_inventory/erp_inventory_party_save', body);
+    return NextResponse.json({ ok: true, data: result.party });
   } catch (error: any) {
     return NextResponse.json({ ok: false, error: error.message || 'Error actualizando tercero' }, { status: 500 });
   }

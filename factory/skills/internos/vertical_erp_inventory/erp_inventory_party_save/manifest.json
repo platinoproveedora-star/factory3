@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_party_save",
+  "vertical": "vertical_erp_inventory",
+  "descripcion": "Crea o actualiza clientes/proveedores ERP inventory en Supabase usando contrato generico.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}
