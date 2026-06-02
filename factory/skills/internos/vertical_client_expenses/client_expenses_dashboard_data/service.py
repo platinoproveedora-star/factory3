@@ -92,7 +92,7 @@ class ClientExpensesDashboardDataService:
         return {
             "apikey": service_key,
             "Authorization": f"Bearer {service_key}",
-            "Content-Type": "application/json",
+            "Accept": "application/json",
             "Accept-Profile": schema,
         }
 
