@@ -20,9 +20,11 @@ class RenderNextjsServiceDeployService:
             "repo": str(context["repo"]).strip(),
             "root_dir": str(context["root_dir"]).strip().replace("\\", "/").strip("/"),
             "branch": str(context.get("branch") or "main").strip(),
+            "service_type": str(context.get("service_type") or "static_site").strip(),
             "owner_id": str(context.get("owner_id") or os.getenv("RENDER_OWNER_ID") or "").strip(),
             "build_command": str(context.get("build_command") or "npm install && npm run build").strip(),
             "start_command": str(context.get("start_command") or "npm start").strip(),
+            "publish_path": str(context.get("publish_path") or "out").strip(),
             "plan": str(context.get("plan") or "free").strip(),
             "region": str(context.get("region") or "oregon").strip(),
             "env_vars": context.get("env_vars") if isinstance(context.get("env_vars"), dict) else {},
@@ -44,6 +46,7 @@ class RenderNextjsServiceDeployService:
             if not service_id:
                 return {"ok": False, "error": "Render no devolvio service_id"}
 
+            service = self._update_service(service_id, ctx, service.get("type"))
             env_count = 0
             if ctx["env_vars"]:
                 env_count = self._set_env_vars(service_id, ctx["env_vars"])
@@ -55,6 +58,7 @@ class RenderNextjsServiceDeployService:
                 "data": {
                     "service_id": service_id,
                     "service_name": service_detail.get("name") or ctx["service_name"],
+                    "service_type": service_detail.get("type") or service.get("type"),
                     "url": (service_detail.get("serviceDetails") or {}).get("url", ""),
                     "created": created,
                     "env_vars_count": env_count,
@@ -65,6 +69,22 @@ class RenderNextjsServiceDeployService:
             return {"ok": False, "error": str(exc)}
 
     def _create_service(self, ctx: dict) -> dict:
+        if ctx["service_type"] == "static_site":
+            payload = {
+                "type": "static_site",
+                "name": ctx["service_name"],
+                "ownerId": ctx["owner_id"],
+                "repo": ctx["repo"],
+                "branch": ctx["branch"],
+                "autoDeploy": "yes",
+                "rootDir": ctx["root_dir"],
+                "serviceDetails": {
+                    "buildCommand": ctx["build_command"],
+                    "publishPath": ctx["publish_path"],
+                },
+            }
+            result = self._request("POST", "/services", payload)
+            return result.get("service", result)
         payload = {
             "type": "web_service",
             "name": ctx["service_name"],
@@ -85,6 +105,33 @@ class RenderNextjsServiceDeployService:
             },
         }
         result = self._request("POST", "/services", payload)
+        return result.get("service", result)
+
+    def _update_service(self, service_id: str, ctx: dict, current_type: str | None) -> dict:
+        if current_type == "static_site" or ctx["service_type"] == "static_site":
+            payload = {
+                "rootDir": ctx["root_dir"],
+                "branch": ctx["branch"],
+                "repo": ctx["repo"],
+                "serviceDetails": {
+                    "buildCommand": ctx["build_command"],
+                    "publishPath": ctx["publish_path"],
+                },
+            }
+        else:
+            payload = {
+                "rootDir": ctx["root_dir"],
+                "branch": ctx["branch"],
+                "repo": ctx["repo"],
+                "serviceDetails": {
+                    "env": "node",
+                    "envSpecificDetails": {
+                        "buildCommand": ctx["build_command"],
+                        "startCommand": ctx["start_command"],
+                    },
+                },
+            }
+        result = self._request("PATCH", f"/services/{service_id}", payload)
         return result.get("service", result)
 
     def _find_service(self, name: str) -> dict | None:

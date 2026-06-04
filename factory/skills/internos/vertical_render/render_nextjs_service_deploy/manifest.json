@@ -10,6 +10,8 @@
       "root_dir": {"type": "string"},
       "owner_id": {"type": "string"},
       "branch": {"type": "string"},
+      "service_type": {"type": "string"},
+      "publish_path": {"type": "string"},
       "env_vars": {"type": "object"},
       "wait": {"type": "boolean"},
       "dry_run": {"type": "boolean"}

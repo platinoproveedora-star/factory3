@@ -1,12 +1,11 @@
 services:
-  - type: web
+  - type: static_site
     name: uc101-remisiones
-    runtime: node
     repo: https://github.com/platinoproveedora-star/factory3
     branch: main
     rootDir: companies/EMP_DURALON/projects/PROY-002_VENTAS/proy002-form01_caja_rem
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    publishPath: out
     plan: free
     region: oregon
     envVars:
