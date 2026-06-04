@@ -1,0 +1,7 @@
+{
+  "name": "erp_compras_purchase_list",
+  "vertical": "vertical_erp_compras",
+  "version": "0.1.0",
+  "description": "Lista compras ERP agrupadas por folio COM con renglones y filtros de fecha.",
+  "entrypoint": "skill.py"
+}

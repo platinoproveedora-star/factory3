@@ -4,10 +4,16 @@ const WRITE_KEY = process.env.NEXT_PUBLIC_WRITE_KEY ?? '';
 export type Customer = { id: string; folio: string; party_name: string; phone?: string; email?: string; address?: string };
 export type Product  = { id: string; folio: string; product_name: string; sku?: string; unit: string; unit_price?: number; category?: string };
 export type Remision = { id: string; folio: string; external_folio?: string; customer_name_snapshot: string; status: string; document_date: string; delivery_address?: string; total: number; created_at: string };
+export type ProductLot = { lot_code: string; quantity: number; lot_cost: number; avg_cost: number; last_cost: number; label: string };
+export type ProductLotOptions = { lots: ProductLot[]; requires_lot: boolean; default_lot_code?: string | null; avg_cost: number; last_cost: number };
 
 export type FormItem = {
   _key:        string;
   product_id:  string | null;
+  lot_code:    string | null;
+  lots:        ProductLot[];
+  requires_lot: boolean;
+  lots_loading: boolean;
   description: string;
   quantity:    number;
   unit:        string;
@@ -48,6 +54,11 @@ export async function getProducts(): Promise<Product[]> {
   return data.products ?? [];
 }
 
+export async function getProductLots(productId: string): Promise<ProductLotOptions> {
+  const data = await get<ProductLotOptions>('vertical_erp_inventory/erp_inventory_lot_options', { product_id: productId });
+  return { lots: data.lots ?? [], requires_lot: Boolean(data.requires_lot), default_lot_code: data.default_lot_code ?? null, avg_cost: data.avg_cost ?? 0, last_cost: data.last_cost ?? 0 };
+}
+
 export async function getRemisiones(limit = 20): Promise<Remision[]> {
   const data = await get<{ remisiones: Remision[] }>('vertical_erp_ventas/erp_ventas_remision_list', { limit: String(limit) });
   return data.remisiones ?? [];
@@ -60,7 +71,7 @@ export async function createRemision(payload: {
   delivery_address?: string;
   external_folio?: string;
   notes?:          string;
-  items:           { product_id: string | null; description: string; quantity: number; unit: string; unit_price: number; tax_rate: number }[];
+  items:           { product_id: string | null; lot_code?: string | null; description: string; quantity: number; unit: string; unit_price: number; tax_rate: number }[];
 }): Promise<{ folio: string; total: number; items: string[] }> {
   return post('vertical_erp_ventas/erp_ventas_remision_create', { ...payload, dry_run: false });
 }

@@ -7,31 +7,47 @@ from datetime import date, timedelta
 import pandas as pd
 import streamlit as st
 
-_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+def _get_secret(key: str) -> str:
+    val = os.getenv(key, "")
+    if not val:
+        try:
+            import streamlit as _st
+            val = _st.secrets.get(key, "")
+        except Exception:
+            pass
+    return val or ""
+
 _SCH = "uc101_proy001"
+
+def _url() -> str:
+    return _get_secret("SUPABASE_URL").rstrip("/")
+
+def _key() -> str:
+    return _get_secret("SUPABASE_SERVICE_ROLE_KEY")
 
 
 def _read_headers() -> dict:
+    k = _key()
     return {
-        "apikey":         _KEY,
-        "Authorization":  f"Bearer {_KEY}",
+        "apikey":         k,
+        "Authorization":  f"Bearer {k}",
         "Accept-Profile": _SCH,
         "Content-Type":   "application/json",
     }
 
 
 def _write_headers() -> dict:
+    k = _key()
     return {
-        "apikey":          _KEY,
-        "Authorization":   f"Bearer {_KEY}",
+        "apikey":          k,
+        "Authorization":   f"Bearer {k}",
         "Content-Profile": _SCH,
         "Content-Type":    "application/json",
     }
 
 
 def _get(path: str) -> list:
-    req = urllib.request.Request(f"{_URL}/rest/v1/{path}", headers=_read_headers())
+    req = urllib.request.Request(f"{_url()}/rest/v1/{path}", headers=_read_headers())
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
             return json.loads(r.read().decode())
@@ -46,7 +62,7 @@ def _get(path: str) -> list:
 def _post(path: str, body: dict) -> list | dict:
     data = json.dumps(body).encode()
     req  = urllib.request.Request(
-        f"{_URL}/rest/v1/{path}",
+        f"{_url()}/rest/v1/{path}",
         data=data,
         headers={**_write_headers(), "Prefer": "return=representation"},
         method="POST",
@@ -63,7 +79,7 @@ def _post(path: str, body: dict) -> list | dict:
 def _patch(path: str, body: dict) -> bool:
     data = json.dumps(body).encode()
     req  = urllib.request.Request(
-        f"{_URL}/rest/v1/{path}",
+        f"{_url()}/rest/v1/{path}",
         data=data,
         headers={**_write_headers(), "Prefer": "return=minimal"},
         method="PATCH",
@@ -81,7 +97,7 @@ def _patch(path: str, body: dict) -> bool:
 
 def _delete(path: str) -> bool:
     req = urllib.request.Request(
-        f"{_URL}/rest/v1/{path}",
+        f"{_url()}/rest/v1/{path}",
         headers=_write_headers(),
         method="DELETE",
     )

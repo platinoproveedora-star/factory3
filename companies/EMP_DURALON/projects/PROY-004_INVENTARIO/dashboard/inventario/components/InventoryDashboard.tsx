@@ -7,6 +7,7 @@ import {
   Boxes,
   Building2,
   CircleDollarSign,
+  ClipboardList,
   PackagePlus,
   Pencil,
   Printer,
@@ -21,7 +22,7 @@ import {
 import { loadDashboardData, type DashboardData } from '../lib/client-data';
 import { money, qty, type KardexMovement, type Party, type Product } from '../lib/supabase';
 
-type Tab = 'inventario' | 'producto' | 'proveedores' | 'clientes' | 'ventas' | 'compras';
+type Tab = 'inventario' | 'producto' | 'kardex' | 'proveedores' | 'clientes' | 'ventas' | 'compras';
 type RefreshFn = () => Promise<DashboardData | null>;
 
 type RemisionDoc = {
@@ -47,6 +48,10 @@ type RemisionItem = {
   quantity: number;
   unit: string;
   unit_price: number;
+  lot_code: string | null;
+  lot_cost_snapshot?: number | null;
+  avg_cost_snapshot?: number | null;
+  last_cost_snapshot?: number | null;
   tax_rate: number;
   tax_amount: number;
   line_total: number;
@@ -66,6 +71,31 @@ type MatrixData = {
   end_date: string;
 };
 
+type PurchaseLine = {
+  id: string;
+  product_id: string;
+  lot_code: string;
+  quantity: string;
+  unit_cost: string;
+  tax_rate: string;
+  notes: string;
+};
+
+type PurchaseSummary = {
+  source_folio: string;
+  external_folio: string | null;
+  supplier_id: string | null;
+  supplier_name_snapshot: string | null;
+  movement_date: string;
+  line_count: number;
+  total_cost: number;
+  paid_amount: number;
+  balance_amount: number;
+  payment_status: string;
+  notes: string | null;
+  items: KardexMovement[];
+};
+
 const emptyData: DashboardData = {
   products: [],
   customers: [],
@@ -74,6 +104,7 @@ const emptyData: DashboardData = {
   sales: [],
   adjustments: [],
   stock: [],
+  lot_stock: [],
   receivables_total: 0,
   payables_total: 0,
 };
@@ -81,6 +112,7 @@ const emptyData: DashboardData = {
 const tabs: Array<{ id: Tab; label: string; icon: any }> = [
   { id: 'inventario', label: 'Inventario', icon: Boxes },
   { id: 'producto', label: 'Producto', icon: PackagePlus },
+  { id: 'kardex', label: 'Kardex', icon: ClipboardList },
   { id: 'proveedores', label: 'Proveedores', icon: Truck },
   { id: 'clientes', label: 'Clientes', icon: Store },
   { id: 'ventas', label: 'Ventas / salidas', icon: ArrowUpFromLine },
@@ -95,7 +127,7 @@ function savedTab(): Tab {
 }
 
 export default function InventoryDashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>(savedTab);
+  const [activeTab, setActiveTab] = useState<Tab>('inventario');
   const [data, setData] = useState<DashboardData>(emptyData);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -120,6 +152,7 @@ export default function InventoryDashboard() {
 
   useEffect(() => {
     refresh();
+    setActiveTab(savedTab());
   }, []);
 
   useEffect(() => {
@@ -225,7 +258,7 @@ export default function InventoryDashboard() {
           {notice && <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
           <Kpis data={data} loading={loading} />
 
-          {activeTab === 'inventario' && <InventoryTab products={filteredProducts} stock={data.stock} movements={[...data.sales, ...data.purchases, ...data.adjustments]} />}
+          {activeTab === 'inventario' && <InventoryTab products={filteredProducts} stock={data.stock} lotStock={data.lot_stock || []} />}
           {activeTab === 'producto' && (
             <ProductTab
               products={filteredProducts}
@@ -239,15 +272,14 @@ export default function InventoryDashboard() {
           )}
           {activeTab === 'proveedores' && <PartyTab type="supplier" parties={data.suppliers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
           {activeTab === 'clientes' && <PartyTab type="customer" parties={data.customers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
+          {activeTab === 'kardex' && <KardexTab products={data.products} />}
           {activeTab === 'ventas' && (
             <RemisionesTab setNotice={setNotice} />
           )}
           {activeTab === 'compras' && (
-            <MovementTab
-              type="compra"
+            <PurchaseTab
               products={data.products}
-              parties={data.suppliers}
-              movements={data.purchases}
+              suppliers={data.suppliers}
               saving={saving}
               setSaving={setSaving}
               refresh={refresh}
@@ -284,6 +316,8 @@ function ProductTab({
   const productMovements = movements
     .filter((movement) => movement.product_id === productId)
     .sort((a, b) => String(b.movement_date).localeCompare(String(a.movement_date)));
+  const categoryOptions = uniqueOptions(products.map((product) => product.category));
+  const category2Options = uniqueOptions(products.map((product) => product.category_2));
 
   useEffect(() => {
     if (!selectedProductId && products[0]?.id) setSelectedProductId(products[0].id);
@@ -335,14 +369,24 @@ function ProductTab({
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
+    <div className="space-y-5">
+      <datalist id="product-category-options">
+        {categoryOptions.map((value) => <option key={value} value={value} />)}
+      </datalist>
+      <datalist id="product-category-2-options">
+        {category2Options.map((value) => <option key={value} value={value} />)}
+      </datalist>
+      <ProductCatalogTable products={products} categoryOptions={categoryOptions} category2Options={category2Options} refresh={refresh} setNotice={setNotice} />
+      <div className="grid gap-5 xl:grid-cols-[380px_1fr]">
       <div className="space-y-5">
         <form onSubmit={saveProduct} className="rounded border border-slate-200 bg-white p-4">
           <SectionTitle title="Agregar producto" subtitle="Alta de catalogo" compact />
           <Field name="product_name" label="Nombre" required />
           <Field name="product_key" label="Clave interna" />
           <Field name="sku" label="SKU" />
-          <Field name="category" label="Categoria" />
+          <Field name="category" label="Categoria" list="product-category-options" />
+          <Field name="category_2" label="Categoria 2" list="product-category-2-options" />
+          <Field name="brand" label="Marca" />
           <div className="grid grid-cols-2 gap-3">
             <Field name="unit" label="Unidad" defaultValue="pieza" required />
             <Field name="min_stock" label="Minimo" type="number" step="0.01" />
@@ -404,7 +448,138 @@ function ProductTab({
         </div>
         <ProductKardexTable movements={productMovements} />
       </section>
+      </div>
     </div>
+  );
+}
+
+function ProductCatalogTable({
+  products,
+  categoryOptions,
+  category2Options,
+  refresh,
+  setNotice,
+}: {
+  products: Product[];
+  categoryOptions: string[];
+  category2Options: string[];
+  refresh: RefreshFn;
+  setNotice: (value: string) => void;
+}) {
+  const sorted = [...products].sort((a, b) => Number(b.is_key_product) - Number(a.is_key_product) || String(a.product_name || '').localeCompare(String(b.product_name || ''))).slice(0, 20);
+  return (
+    <section className="rounded border border-slate-200 bg-white">
+      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-950">Catalogo de productos</h3>
+          <p className="mt-0.5 text-xs text-slate-500">Maximo 20 visibles, productos clave primero</p>
+        </div>
+        <button type="button" className="inline-flex h-9 items-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <Search size={15} />
+          Buscar producto
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-[1360px] text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+              <th className="px-3 py-3 text-left">Clave</th>
+              <th className="px-3 py-3 text-left">Nombre</th>
+              <th className="px-3 py-3 text-left">Folio</th>
+              <th className="px-3 py-3 text-left">SKU</th>
+              <th className="px-3 py-3 text-left">Categoria</th>
+              <th className="px-3 py-3 text-left">Categoria 2</th>
+              <th className="px-3 py-3 text-left">Marca</th>
+              <th className="px-3 py-3 text-left">Unidad</th>
+              <th className="px-3 py-3 text-right">Minimo</th>
+              <th className="px-3 py-3 text-left">Clave</th>
+              <th className="px-3 py-3 text-left">Activo</th>
+              <th className="px-3 py-3 text-right">Accion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((product) => <ProductCatalogRow key={product.id} product={product} categoryOptions={categoryOptions} category2Options={category2Options} refresh={refresh} setNotice={setNotice} />)}
+            {sorted.length === 0 && <tr><td colSpan={12} className="px-4 py-8 text-center text-sm text-slate-500">Sin productos</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function ProductCatalogRow({
+  product,
+  categoryOptions,
+  category2Options,
+  refresh,
+  setNotice,
+}: {
+  product: Product;
+  categoryOptions: string[];
+  category2Options: string[];
+  refresh: RefreshFn;
+  setNotice: (value: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState({
+    product_key: product.product_key || '',
+    product_name: product.product_name || '',
+    sku: product.sku || '',
+    category: product.category || '',
+    category_2: product.category_2 || '',
+    brand: product.brand || '',
+    unit: product.unit || 'pieza',
+    min_stock: Number(product.min_stock || 0),
+    is_key_product: product.is_key_product || false,
+    active: product.active !== false,
+  });
+  const inputClass = 'h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500';
+
+  async function save() {
+    if (!draft.product_name.trim()) {
+      window.alert('Nombre es obligatorio');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/products', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: product.id, ...draft }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo actualizar producto');
+      await refresh();
+      setEditing(false);
+      setNotice(`Producto actualizado: ${draft.product_name}`);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo actualizar producto');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <tr className="border-b border-slate-100">
+      <td className="px-3 py-2">{editing ? <input className={inputClass} value={draft.product_key} onChange={(event) => setDraft((current) => ({ ...current, product_key: event.target.value }))} /> : <span className="text-slate-600">{draft.product_key || '-'}</span>}</td>
+      <td className="px-3 py-2">{editing ? <input className={inputClass} value={draft.product_name} onChange={(event) => setDraft((current) => ({ ...current, product_name: event.target.value }))} /> : <span className="font-medium text-slate-900">{draft.product_name}</span>}</td>
+      <td className="px-3 py-3 text-slate-500">{product.folio}</td>
+      <td className="px-3 py-2">{editing ? <input className={inputClass} value={draft.sku} onChange={(event) => setDraft((current) => ({ ...current, sku: event.target.value }))} /> : <span className="text-slate-600">{draft.sku || '-'}</span>}</td>
+      <td className="px-3 py-2">{editing ? <input className={inputClass} list="product-category-options" value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} /> : <span className="text-slate-600">{draft.category || '-'}</span>}</td>
+      <td className="px-3 py-2">{editing ? <input className={inputClass} list="product-category-2-options" value={draft.category_2} onChange={(event) => setDraft((current) => ({ ...current, category_2: event.target.value }))} /> : <span className="text-slate-600">{draft.category_2 || '-'}</span>}</td>
+      <td className="px-3 py-2">{editing ? <input className={inputClass} value={draft.brand} onChange={(event) => setDraft((current) => ({ ...current, brand: event.target.value }))} /> : <span className="text-slate-600">{draft.brand || '-'}</span>}</td>
+      <td className="px-3 py-2">{editing ? <input className={inputClass} value={draft.unit} onChange={(event) => setDraft((current) => ({ ...current, unit: event.target.value }))} /> : <span className="text-slate-600">{draft.unit}</span>}</td>
+      <td className="px-3 py-2">{editing ? <input type="number" step="0.01" className={`${inputClass} text-right`} value={draft.min_stock} onChange={(event) => setDraft((current) => ({ ...current, min_stock: Number(event.target.value) }))} /> : <span className="block text-right text-slate-600">{qty(draft.min_stock)}</span>}</td>
+      <td className="px-3 py-3"><input type="checkbox" checked={draft.is_key_product} disabled={!editing} onChange={(event) => setDraft((current) => ({ ...current, is_key_product: event.target.checked }))} /></td>
+      <td className="px-3 py-3"><input type="checkbox" checked={draft.active} disabled={!editing} onChange={(event) => setDraft((current) => ({ ...current, active: event.target.checked }))} /></td>
+      <td className="px-3 py-2 text-right">
+        <div className="flex justify-end gap-1">
+          <button type="button" onClick={() => setEditing(true)} title="Editar" className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50"><Pencil size={15} /></button>
+          <button type="button" onClick={save} disabled={saving} title="Guardar" className="inline-flex h-8 w-8 items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800"><Save size={15} /></button>
+        </div>
+      </td>
+    </tr>
   );
 }
 
@@ -435,7 +610,7 @@ function Kpis({ data, loading }: { data: DashboardData; loading: boolean }) {
   );
 }
 
-function InventoryTab({ products, stock, movements }: { products: Product[]; stock: DashboardData['stock']; movements: KardexMovement[] }) {
+function OldInventoryTab({ products, stock, movements }: { products: Product[]; stock: DashboardData['stock']; movements: KardexMovement[] }) {
   const stockByProduct = new Map(stock.map((row) => [row.product_id, row]));
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
@@ -491,6 +666,142 @@ function InventoryTab({ products, stock, movements }: { products: Product[]; sto
   );
 }
 
+function InventoryTab({ products, stock, lotStock }: { products: Product[]; stock: DashboardData['stock']; lotStock: NonNullable<DashboardData['lot_stock']> }) {
+  const [showKeyOnly, setShowKeyOnly] = useState(true);
+  const visibleIds = new Set(products.map((product) => product.id));
+  const visibleStock = stock.filter((row) => visibleIds.has(row.product_id));
+  const visibleLotStock = lotStock.filter((row) => visibleIds.has(row.product_id));
+  const filteredStock = showKeyOnly ? visibleStock.filter((row) => row.is_key_product) : visibleStock;
+  const filteredLotStock = showKeyOnly ? visibleLotStock.filter((row) => row.is_key_product) : visibleLotStock;
+  const filterLabel = showKeyOnly ? 'productos clave' : 'todos los productos';
+  return (
+    <div className="space-y-5">
+      <section className="rounded border border-slate-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">Inventario por lote</h3>
+            <p className="mt-0.5 text-xs text-slate-500">{`${filteredLotStock.length} lotes visibles - ${filterLabel}`}</p>
+          </div>
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={showKeyOnly}
+              onChange={(event) => setShowKeyOnly(event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            Solo productos clave
+          </label>
+        </div>
+        <InventoryLotTable rows={filteredLotStock} />
+      </section>
+      <section className="rounded border border-slate-200 bg-white">
+        <SectionTitle title="Inventario actual" subtitle={`${filteredStock.length} ${filterLabel}`} />
+        <InventoryStockTable rows={filteredStock} compact={!showKeyOnly} />
+      </section>
+    </div>
+  );
+}
+
+function InventoryLotTable({ rows }: { rows: NonNullable<DashboardData['lot_stock']> }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-[1320px] text-xs">
+        <thead className="border-y border-slate-200 bg-slate-50 uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3 text-left">Producto / lote</th>
+            <th className="px-4 py-3 text-left">Lote</th>
+            <th className="px-4 py-3 text-left">Marca</th>
+            <th className="px-4 py-3 text-left">Categoria</th>
+            <th className="px-4 py-3 text-left">Categoria 2</th>
+            <th className="px-4 py-3 text-right">Stock</th>
+            <th className="px-4 py-3 text-right">Entrada</th>
+            <th className="px-4 py-3 text-right">Salida</th>
+            <th className="px-4 py-3 text-left">Unidad</th>
+            <th className="px-4 py-3 text-right">Costo lote</th>
+            <th className="px-4 py-3 text-right">Ultimo costo</th>
+            <th className="px-4 py-3 text-right">Valor est.</th>
+            <th className="px-4 py-3 text-left">Ult. mov.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={`${row.product_id}-${row.lot_code}`} className="border-b border-slate-100">
+              <td className="px-4 py-3 font-medium text-slate-900">{row.display_name}</td>
+              <td className="px-4 py-3 text-slate-600">{row.lot_code}</td>
+              <td className="px-4 py-3 text-slate-600">{row.brand || '-'}</td>
+              <td className="px-4 py-3 text-slate-600">{row.category || '-'}</td>
+              <td className="px-4 py-3 text-slate-600">{row.category_2 || '-'}</td>
+              <td className={`px-4 py-3 text-right font-semibold ${Number(row.quantity || 0) < 0 ? 'text-red-600' : 'text-slate-950'}`}>{qty(row.quantity)}</td>
+              <td className="px-4 py-3 text-right">{qty(row.total_in)}</td>
+              <td className="px-4 py-3 text-right">{qty(row.total_out)}</td>
+              <td className="px-4 py-3 text-slate-500">{row.unit}</td>
+              <td className="px-4 py-3 text-right">{money(row.avg_cost)}</td>
+              <td className="px-4 py-3 text-right">{money(row.last_cost)}</td>
+              <td className="px-4 py-3 text-right">{money(row.estimated_value)}</td>
+              <td className="px-4 py-3 text-slate-500">{row.last_movement_date || '-'}</td>
+            </tr>
+          ))}
+          {rows.length === 0 && <tr><td colSpan={13} className="px-4 py-8 text-center text-sm text-slate-500">Sin lotes para mostrar</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function InventoryStockTable({ rows, compact }: { rows: DashboardData['stock']; compact?: boolean }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className={`${compact ? 'min-w-[1180px] text-xs' : 'min-w-[1180px] text-sm'}`}>
+        <thead className="border-y border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3 text-left">Semaforo</th>
+            <th className="px-4 py-3 text-left">Producto</th>
+            <th className="px-4 py-3 text-left">Folio</th>
+            <th className="px-4 py-3 text-left">Categoria</th>
+            <th className="px-4 py-3 text-right">Stock</th>
+            <th className="px-4 py-3 text-right">Minimo</th>
+            <th className="px-4 py-3 text-right">Diferencia</th>
+            <th className="px-4 py-3 text-right">Entrada</th>
+            <th className="px-4 py-3 text-right">Salida</th>
+            <th className="px-4 py-3 text-left">Unidad</th>
+            <th className="px-4 py-3 text-right">Costo prom.</th>
+            <th className="px-4 py-3 text-right">Ultimo costo</th>
+            <th className="px-4 py-3 text-right">Valor est.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.product_id} className="border-b border-slate-100">
+              <td className="px-4 py-3"><StockBadge status={row.stock_status} /></td>
+              <td className="px-4 py-3 font-medium text-slate-900">{row.product_name}</td>
+              <td className="px-4 py-3 text-slate-500">{row.folio}</td>
+              <td className="px-4 py-3 text-slate-600">{row.category || '-'}</td>
+              <td className={`px-4 py-3 text-right font-semibold ${Number(row.quantity || 0) < 0 ? 'text-red-600' : 'text-slate-950'}`}>{qty(row.quantity)}</td>
+              <td className="px-4 py-3 text-right">{qty(row.min_stock)}</td>
+              <td className="px-4 py-3 text-right">{qty(row.stock_delta)}</td>
+              <td className="px-4 py-3 text-right">{qty(row.total_in)}</td>
+              <td className="px-4 py-3 text-right">{qty(row.total_out)}</td>
+              <td className="px-4 py-3 text-slate-500">{row.unit}</td>
+              <td className="px-4 py-3 text-right">{money(row.avg_cost)}</td>
+              <td className="px-4 py-3 text-right">{money(row.last_cost)}</td>
+              <td className="px-4 py-3 text-right">{money(row.estimated_value)}</td>
+            </tr>
+          ))}
+          {rows.length === 0 && (
+            <tr><td colSpan={13} className="px-4 py-8 text-center text-sm text-slate-500">Sin productos para mostrar</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function StockBadge({ status }: { status?: string }) {
+  const style = status === 'negativo' ? 'bg-red-100 text-red-700' : status === 'bajo' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+  const label = status === 'negativo' ? 'Negativo' : status === 'bajo' ? 'Bajo' : 'OK';
+  return <span className={`inline-flex rounded px-2 py-1 text-xs font-semibold ${style}`}>{label}</span>;
+}
+
 function PartyTab({
   type,
   parties,
@@ -543,6 +854,327 @@ function PartyTab({
         </button>
       </form>
       <PartyTable parties={parties} refresh={refresh} setNotice={setNotice} />
+    </div>
+  );
+}
+
+function PurchaseTab({
+  products,
+  suppliers,
+  saving,
+  setSaving,
+  refresh,
+  setNotice,
+}: {
+  products: Product[];
+  suppliers: Party[];
+  saving: boolean;
+  setSaving: (value: boolean) => void;
+  refresh: RefreshFn;
+  setNotice: (value: string) => void;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [supplierId, setSupplierId] = useState('');
+  const [movementDate, setMovementDate] = useState(today);
+  const [externalFolio, setExternalFolio] = useState('');
+  const [paidAmount, setPaidAmount] = useState('');
+  const [notes, setNotes] = useState('');
+  const [items, setItems] = useState<PurchaseLine[]>([newPurchaseLine()]);
+  const [purchases, setPurchases] = useState<PurchaseSummary[]>([]);
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [endDate, setEndDate] = useState(today);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadPurchases();
+  }, []);
+
+  function updateItem(id: string, key: keyof PurchaseLine, value: string) {
+    setItems((current) => current.map((item) => (item.id === id ? { ...item, [key]: value } : item)));
+  }
+
+  function addItem() {
+    setItems((current) => [...current, newPurchaseLine()]);
+  }
+
+  function removeItem(id: string) {
+    setItems((current) => (current.length === 1 ? current : current.filter((item) => item.id !== id)));
+  }
+
+  const total = items.reduce((sum, item) => sum + purchaseLineTotal(item), 0);
+  const balance = Math.max(total - Number(paidAmount || 0), 0);
+
+  async function savePurchase(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const cleanItems = items
+      .map((item) => ({
+        product_id: item.product_id,
+        lot_code: item.lot_code,
+        quantity: Number(item.quantity || 0),
+        unit_cost: Number(item.unit_cost || 0),
+        tax_rate: Number(item.tax_rate || 0),
+        notes: item.notes,
+      }))
+      .filter((item) => item.product_id && item.quantity > 0);
+    if (!supplierId) {
+      window.alert('Proveedor es obligatorio');
+      return;
+    }
+    if (!cleanItems.length) {
+      window.alert('Agrega al menos un renglon valido');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/purchases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          supplier_id: supplierId,
+          movement_date: movementDate,
+          external_folio: externalFolio,
+          paid_amount: Number(paidAmount || 0),
+          notes,
+          items: cleanItems,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar compra');
+      setSupplierId('');
+      setMovementDate(today);
+      setExternalFolio('');
+      setPaidAmount('');
+      setNotes('');
+      setItems([newPurchaseLine()]);
+      await refresh();
+      await loadPurchases();
+      setNotice(`Compra guardada: ${json.data?.source_folio || ''}`);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo guardar compra');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function loadPurchases() {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ start_date: startDate, end_date: endDate, limit: '20', t: String(Date.now()) });
+      const res = await fetch(`/api/purchases?${params.toString()}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudieron cargar compras');
+      setPurchases(json.data || []);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudieron cargar compras');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <form onSubmit={savePurchase} className="rounded border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 px-4 py-3">
+          <h3 className="text-sm font-semibold text-slate-950">Agregar compra / entrada</h3>
+          <p className="mt-0.5 text-xs text-slate-500">Compra multi-renglon con entrada automatica al kardex</p>
+        </div>
+        <div className="grid gap-4 p-4 lg:grid-cols-4">
+          <label className="block lg:col-span-2">
+            <span className="text-xs font-medium text-slate-600">Proveedor</span>
+            <select value={supplierId} onChange={(event) => setSupplierId(event.target.value)} required className="mt-1 h-10 w-full rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
+              <option value="">Seleccionar</option>
+              {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.party_name}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">Fecha</span>
+            <input type="date" value={movementDate} onChange={(event) => setMovementDate(event.target.value)} required className="mt-1 h-10 w-full rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">Folio proveedor</span>
+            <input value={externalFolio} onChange={(event) => setExternalFolio(event.target.value)} className="mt-1 h-10 w-full rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
+          </label>
+        </div>
+
+        <div className="overflow-x-auto px-4">
+          <table className="min-w-[1240px] text-sm">
+            <thead className="border-y border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-3 text-left">Producto</th>
+                <th className="px-3 py-3 text-left">Lote</th>
+                <th className="px-3 py-3 text-right">Cantidad</th>
+                <th className="px-3 py-3 text-right">Costo unitario</th>
+                <th className="px-3 py-3 text-right">IVA</th>
+                <th className="px-3 py-3 text-right">Subtotal</th>
+                <th className="px-3 py-3 text-right">Total</th>
+                <th className="px-3 py-3 text-left">Notas</th>
+                <th className="px-3 py-3 text-right">Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => {
+                const lineSubtotal = purchaseLineSubtotal(item);
+                const lineTotal = purchaseLineTotal(item);
+                return (
+                  <tr key={item.id} className="border-b border-slate-100">
+                    <td className="px-3 py-2">
+                      <select value={item.product_id} onChange={(event) => updateItem(item.id, 'product_id', event.target.value)} required className="h-10 w-full rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
+                        <option value="">Seleccionar</option>
+                        {products.map((product) => <option key={product.id} value={product.id}>{product.product_name} · {product.unit}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <input value={item.lot_code} onChange={(event) => updateItem(item.id, 'lot_code', event.target.value)} placeholder="GENERAL" className="h-10 w-full rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" step="0.01" value={item.quantity} onChange={(event) => updateItem(item.id, 'quantity', event.target.value)} required className="h-10 w-full rounded border border-slate-200 px-3 text-right text-sm outline-none focus:border-slate-500" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input type="number" step="0.01" value={item.unit_cost} onChange={(event) => updateItem(item.id, 'unit_cost', event.target.value)} className="h-10 w-full rounded border border-slate-200 px-3 text-right text-sm outline-none focus:border-slate-500" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <select value={item.tax_rate} onChange={(event) => updateItem(item.id, 'tax_rate', event.target.value)} className="h-10 w-full rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
+                        <option value="0">0%</option>
+                        <option value="0.08">8%</option>
+                        <option value="0.16">16%</option>
+                      </select>
+                    </td>
+                    <td className="px-3 py-2 text-right text-slate-700">{money(lineSubtotal)}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-slate-900">{money(lineTotal)}</td>
+                    <td className="px-3 py-2">
+                      <input value={item.notes} onChange={(event) => updateItem(item.id, 'notes', event.target.value)} className="h-10 w-full rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <button type="button" onClick={() => removeItem(item.id)} disabled={items.length === 1} className="inline-flex h-9 items-center justify-center rounded border border-red-200 bg-white px-3 text-red-700 hover:bg-red-50 disabled:opacity-40">
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="grid gap-4 p-4 lg:grid-cols-[1fr_220px_220px_220px]">
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">Notas generales</span>
+            <input value={notes} onChange={(event) => setNotes(event.target.value)} className="mt-1 h-10 w-full rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">Pagado</span>
+            <input type="number" step="0.01" value={paidAmount} onChange={(event) => setPaidAmount(event.target.value)} className="mt-1 h-10 w-full rounded border border-slate-200 px-3 text-right text-sm outline-none focus:border-slate-500" />
+          </label>
+          <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2">
+            <p className="text-xs font-medium text-slate-500">Total</p>
+            <p className="text-lg font-semibold text-slate-950">{money(total)}</p>
+          </div>
+          <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2">
+            <p className="text-xs font-medium text-slate-500">Saldo</p>
+            <p className="text-lg font-semibold text-slate-950">{money(balance)}</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
+          <button type="button" onClick={addItem} className="inline-flex h-10 items-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <PackagePlus size={16} />
+            Agregar renglon
+          </button>
+          <button type="submit" disabled={saving} className="inline-flex h-10 items-center gap-2 rounded bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60">
+            <Save size={16} />
+            Guardar compra
+          </button>
+        </div>
+      </form>
+
+      <section className="rounded border border-slate-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">Ultimas compras</h3>
+            <p className="mt-0.5 text-xs text-slate-500">{loading ? 'Cargando...' : `${purchases.length} documentos`}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
+            <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
+            <button type="button" onClick={loadPurchases} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800">
+              <RefreshCw size={15} />
+              Ver
+            </button>
+          </div>
+        </div>
+        <PurchaseTable purchases={purchases} />
+      </section>
+    </div>
+  );
+}
+
+function newPurchaseLine(): PurchaseLine {
+  return { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, product_id: '', lot_code: '', quantity: '', unit_cost: '', tax_rate: '0.16', notes: '' };
+}
+
+function uniqueOptions(values: Array<string | null | undefined>) {
+  return Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+}
+
+function purchaseLineSubtotal(item: PurchaseLine) {
+  return Number(item.quantity || 0) * Number(item.unit_cost || 0);
+}
+
+function purchaseLineTotal(item: PurchaseLine) {
+  const subtotal = purchaseLineSubtotal(item);
+  return subtotal + subtotal * Number(item.tax_rate || 0);
+}
+
+function purchaseTaxAmount(purchase: PurchaseSummary) {
+  return (purchase.items || []).reduce((sum, item) => sum + movementTaxAmount(item), 0);
+}
+
+function purchaseNetAmount(purchase: PurchaseSummary) {
+  const net = (purchase.items || []).reduce((sum, item) => sum + movementNetAmount(item), 0);
+  return net || Math.max(Number(purchase.total_cost || 0) - purchaseTaxAmount(purchase), 0);
+}
+
+function PurchaseTable({ purchases }: { purchases: PurchaseSummary[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-[1080px] text-sm">
+        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-4 py-3 text-left">Folio</th>
+            <th className="px-4 py-3 text-left">Fecha</th>
+            <th className="px-4 py-3 text-left">Proveedor</th>
+            <th className="px-4 py-3 text-left">Folio prov.</th>
+            <th className="px-4 py-3 text-right">Renglones</th>
+            <th className="px-4 py-3 text-right">Neto</th>
+            <th className="px-4 py-3 text-right">IVA</th>
+            <th className="px-4 py-3 text-right">Total</th>
+            <th className="px-4 py-3 text-right">Pagado</th>
+            <th className="px-4 py-3 text-right">Saldo</th>
+            <th className="px-4 py-3 text-left">Estatus</th>
+          </tr>
+        </thead>
+        <tbody>
+          {purchases.map((purchase) => (
+            <tr key={purchase.source_folio} className="border-b border-slate-100">
+              <td className="px-4 py-3 font-medium text-slate-900">{purchase.source_folio}</td>
+              <td className="px-4 py-3 text-slate-500">{purchase.movement_date}</td>
+              <td className="px-4 py-3 text-slate-700">{purchase.supplier_name_snapshot}</td>
+              <td className="px-4 py-3 text-slate-500">{purchase.external_folio || '-'}</td>
+              <td className="px-4 py-3 text-right">{purchase.line_count}</td>
+              <td className="px-4 py-3 text-right">{money(purchaseNetAmount(purchase))}</td>
+              <td className="px-4 py-3 text-right">{money(purchaseTaxAmount(purchase))}</td>
+              <td className="px-4 py-3 text-right">{money(purchase.total_cost)}</td>
+              <td className="px-4 py-3 text-right">{money(purchase.paid_amount)}</td>
+              <td className="px-4 py-3 text-right">{money(purchase.balance_amount)}</td>
+              <td className="px-4 py-3 text-slate-500">{purchase.payment_status}</td>
+            </tr>
+          ))}
+          {purchases.length === 0 && <tr><td colSpan={11} className="px-4 py-8 text-center text-sm text-slate-500">Sin compras para mostrar</td></tr>}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -1023,6 +1655,7 @@ function RemisionDetailEditor({
             quantity: item.quantity,
             unit: item.unit,
             unit_price: item.unit_price,
+            lot_code: item.lot_code,
             tax_rate: item.tax_rate,
           })),
         }),
@@ -1074,6 +1707,7 @@ function RemisionDetailEditor({
               <thead className="border-y border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
                 <tr>
                   <th className="px-3 py-3 text-left">Producto / descripcion</th>
+                  <th className="px-3 py-3 text-left">Lote</th>
                   <th className="px-3 py-3 text-right">Cantidad</th>
                   <th className="px-3 py-3 text-left">Unidad</th>
                   <th className="px-3 py-3 text-right">Precio</th>
@@ -1086,6 +1720,7 @@ function RemisionDetailEditor({
                 {draft.items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100">
                     <td className="px-3 py-2"><input value={item.description || ''} onChange={(event) => patchItem(item.id, { description: event.target.value })} className="h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500" /></td>
+                    <td className="px-3 py-3 font-mono text-xs text-slate-600">{item.lot_code || 'GENERAL'}</td>
                     <td className="px-3 py-2"><input type="number" step="0.01" value={item.quantity || 0} onChange={(event) => patchItem(item.id, { quantity: Number(event.target.value) })} className="h-9 w-full rounded border border-slate-200 px-2 text-right text-sm outline-none focus:border-slate-500" /></td>
                     <td className="px-3 py-2"><input value={item.unit || ''} onChange={(event) => patchItem(item.id, { unit: event.target.value })} className="h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500" /></td>
                     <td className="px-3 py-2"><input type="number" step="0.01" value={item.unit_price || 0} onChange={(event) => patchItem(item.id, { unit_price: Number(event.target.value) })} className="h-9 w-full rounded border border-slate-200 px-2 text-right text-sm outline-none focus:border-slate-500" /></td>
@@ -1127,6 +1762,46 @@ function recalcItem(item: RemisionItem): RemisionItem {
   const subtotal = Math.round(quantity * unit_price * 10000) / 10000;
   const tax_amount = Math.round(subtotal * tax_rate * 10000) / 10000;
   return { ...item, quantity, unit_price, tax_rate, tax_amount, line_total: Math.round((subtotal + tax_amount) * 100) / 100 };
+}
+
+function movementUnitCost(movement: KardexMovement): number {
+  const metadata = movement.metadata || {};
+  return Number(movement.unit_cost ?? metadata.lot_cost_snapshot ?? metadata.avg_cost_snapshot ?? 0);
+}
+
+function movementTotalCost(movement: KardexMovement): number {
+  const stored = Number(movement.total_cost || 0);
+  if (stored > 0) return stored;
+  return movementUnitCost(movement) * Number(movement.quantity_out || movement.quantity_in || 0);
+}
+
+function movementNetAmount(movement: KardexMovement): number {
+  const metadata = movement.metadata || {};
+  const subtotal = Number(metadata.line_subtotal ?? metadata.subtotal_cost ?? 0);
+  if (subtotal > 0) return subtotal;
+  if (movement.source_type === 'remision') {
+    return Math.round(Number(movement.unit_price || 0) * Number(movement.quantity_out || 0) * 100) / 100;
+  }
+  if (movement.source_type === 'compra') {
+    return Math.max(Number(movement.total_cost || 0) - movementTaxAmount(movement), 0);
+  }
+  return Number(movement.total_sale || movement.total_cost || 0);
+}
+
+function movementTaxAmount(movement: KardexMovement): number {
+  const metadata = movement.metadata || {};
+  const taxAmount = Number(metadata.tax_amount ?? 0);
+  if (taxAmount > 0) return taxAmount;
+  if (movement.source_type === 'remision') {
+    return Math.max(Number(movement.total_sale || 0) - movementNetAmount(movement), 0);
+  }
+  return 0;
+}
+
+function movementGrossAmount(movement: KardexMovement): number {
+  if (movement.source_type === 'remision') return Number(movement.total_sale || 0);
+  if (movement.source_type === 'compra') return Number(movement.total_cost || 0);
+  return movementNetAmount(movement) + movementTaxAmount(movement);
 }
 
 function KeyProductMatrixPanel({
@@ -1200,20 +1875,173 @@ function KeyProductMatrix({ matrix }: { matrix: MatrixData | null }) {
   );
 }
 
+function KardexTab({ products }: { products: Product[] }) {
+  const [latest, setLatest] = useState<KardexMovement[]>([]);
+  const [filtered, setFiltered] = useState<KardexMovement[]>([]);
+  const [productId, setProductId] = useState(products[0]?.id || '');
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadLatest();
+  }, []);
+
+  useEffect(() => {
+    if (!productId && products[0]?.id) setProductId(products[0].id);
+  }, [products, productId]);
+
+  async function loadLatest() {
+    try {
+      const res = await fetch(`/api/kardex?limit=20&t=${Date.now()}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo cargar kardex');
+      setLatest(json.data || []);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo cargar kardex');
+    }
+  }
+
+  async function loadFiltered() {
+    if (!productId) {
+      window.alert('Selecciona un producto');
+      return;
+    }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      window.alert('Rango de fechas invalido');
+      return;
+    }
+    if ((end.getTime() - start.getTime()) / 86400000 > 62) {
+      window.alert('El rango maximo permitido es de 2 meses');
+      return;
+    }
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ product_id: productId, start_date: startDate, end_date: endDate, limit: '500', t: String(Date.now()) });
+      const res = await fetch(`/api/kardex?${params.toString()}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo cargar kardex filtrado');
+      setFiltered(json.data || []);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo cargar kardex filtrado');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded border border-slate-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">Kardex por producto</h3>
+            <p className="mt-0.5 text-xs text-slate-500">Un producto a la vez, rango maximo de 2 meses</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select value={productId} onChange={(event) => setProductId(event.target.value)} className="h-10 min-w-64 rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
+              <option value="">Seleccionar producto</option>
+              {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
+            </select>
+            <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
+            <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
+            <button type="button" onClick={loadFiltered} disabled={loading} className="h-10 rounded bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800">Ver</button>
+          </div>
+        </div>
+        <KardexTable movements={filtered} compact />
+      </section>
+
+      <section className="rounded border border-slate-200 bg-white">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">Ultimos 20 movimientos</h3>
+            <p className="mt-0.5 text-xs text-slate-500">Renglon por renglon de compras, remisiones y ajustes</p>
+          </div>
+          <button type="button" onClick={loadLatest} className="inline-flex h-9 items-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <RefreshCw size={15} />
+            Actualizar
+          </button>
+        </div>
+        <KardexTable movements={latest} />
+      </section>
+    </div>
+  );
+}
+
+function KardexTable({ movements, compact }: { movements: KardexMovement[]; compact?: boolean }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className={`${compact ? 'min-w-[1460px] text-xs' : 'min-w-[1360px] text-sm'}`}>
+        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-3 py-3 text-left">Fecha</th>
+            <th className="px-3 py-3 text-left">Documento</th>
+            <th className="px-3 py-3 text-left">Tipo</th>
+            <th className="px-3 py-3 text-left">Producto</th>
+            <th className="px-3 py-3 text-left">Lote</th>
+            <th className="px-3 py-3 text-left">Cliente/proveedor</th>
+            <th className="px-3 py-3 text-right">Entrada</th>
+            <th className="px-3 py-3 text-right">Salida</th>
+            <th className="px-3 py-3 text-right">Saldo</th>
+            <th className="px-3 py-3 text-right">Costo</th>
+            <th className="px-3 py-3 text-right">Precio</th>
+            <th className="px-3 py-3 text-right">Neto</th>
+            <th className="px-3 py-3 text-right">IVA</th>
+            <th className="px-3 py-3 text-right">Total</th>
+            <th className="px-3 py-3 text-left">Pago</th>
+            <th className="px-3 py-3 text-left">Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {movements.map((movement) => (
+              <tr key={movement.id} className="border-b border-slate-100">
+                <td className="px-3 py-2 text-slate-500">{movement.movement_date}</td>
+                <td className="px-3 py-2 font-medium text-slate-900">{movement.source_folio || movement.folio}</td>
+                <td className="px-3 py-2 text-slate-600">{movement.source_type}</td>
+                <td className="px-3 py-2 text-slate-700">{movement.product_name_snapshot}</td>
+                <td className="px-3 py-2 font-mono text-xs text-slate-600">{movement.lot_code || 'GENERAL'}</td>
+                <td className="px-3 py-2 text-slate-500">{movement.customer_name_snapshot || movement.supplier_name_snapshot || '-'}</td>
+                <td className="px-3 py-2 text-right">{qty(movement.quantity_in)}</td>
+                <td className="px-3 py-2 text-right">{qty(movement.quantity_out)}</td>
+                <td className="px-3 py-2 text-right">{qty(movement.balance_after)}</td>
+                <td className="px-3 py-2 text-right">{money(movementUnitCost(movement))}</td>
+                <td className="px-3 py-2 text-right">{money(movement.unit_price)}</td>
+                <td className="px-3 py-2 text-right">{money(movementNetAmount(movement))}</td>
+                <td className="px-3 py-2 text-right">{money(movementTaxAmount(movement))}</td>
+                <td className="px-3 py-2 text-right">{money(movementGrossAmount(movement))}</td>
+                <td className="px-3 py-2 text-slate-500">{movement.payment_status}</td>
+                <td className="px-3 py-2 text-slate-500">{movement.notes || '-'}</td>
+              </tr>
+          ))}
+          {movements.length === 0 && <tr><td colSpan={16} className="px-4 py-8 text-center text-sm text-slate-500">Sin movimientos</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function MovementTable({ movements, isSale }: { movements: KardexMovement[]; isSale: boolean }) {
   return (
     <section className="rounded border border-slate-200 bg-white">
       <SectionTitle title={isSale ? 'Remisiones' : 'Compras'} subtitle={`${movements.length} movimientos`} />
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
+        <table className="min-w-[980px] text-sm">
           <thead className="border-y border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3 text-left">Folio</th>
               <th className="px-4 py-3 text-left">Fecha</th>
               <th className="px-4 py-3 text-left">Producto</th>
+              <th className="px-4 py-3 text-left">Lote</th>
               <th className="px-4 py-3 text-left">{isSale ? 'Cliente' : 'Proveedor'}</th>
               <th className="px-4 py-3 text-right">Cantidad</th>
-              <th className="px-4 py-3 text-right">Importe</th>
+              <th className="px-4 py-3 text-right">Neto</th>
+              <th className="px-4 py-3 text-right">IVA</th>
+              <th className="px-4 py-3 text-right">Total</th>
               <th className="px-4 py-3 text-right">Saldo</th>
             </tr>
           </thead>
@@ -1223,9 +2051,12 @@ function MovementTable({ movements, isSale }: { movements: KardexMovement[]; isS
                 <td className="px-4 py-3 font-medium text-slate-900">{movement.source_folio}</td>
                 <td className="px-4 py-3 text-slate-500">{movement.movement_date}</td>
                 <td className="px-4 py-3 text-slate-700">{movement.product_name_snapshot}</td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-600">{movement.lot_code || 'GENERAL'}</td>
                 <td className="px-4 py-3 text-slate-500">{isSale ? movement.customer_name_snapshot : movement.supplier_name_snapshot}</td>
                 <td className="px-4 py-3 text-right">{qty(isSale ? movement.quantity_out : movement.quantity_in)}</td>
-                <td className="px-4 py-3 text-right">{money(isSale ? movement.total_sale : movement.total_cost)}</td>
+                <td className="px-4 py-3 text-right">{money(movementNetAmount(movement))}</td>
+                <td className="px-4 py-3 text-right">{money(movementTaxAmount(movement))}</td>
+                <td className="px-4 py-3 text-right">{money(movementGrossAmount(movement))}</td>
                 <td className="px-4 py-3 text-right">{money(movement.balance_amount)}</td>
               </tr>
             ))}
@@ -1245,6 +2076,7 @@ function ProductKardexTable({ movements }: { movements: KardexMovement[] }) {
             <th className="px-4 py-3 text-left">Folio</th>
             <th className="px-4 py-3 text-left">Tipo</th>
             <th className="px-4 py-3 text-left">Fecha</th>
+            <th className="px-4 py-3 text-left">Lote</th>
             <th className="px-4 py-3 text-right">Entrada</th>
             <th className="px-4 py-3 text-right">Salida</th>
             <th className="px-4 py-3 text-left">Origen</th>
@@ -1257,6 +2089,7 @@ function ProductKardexTable({ movements }: { movements: KardexMovement[] }) {
               <td className="px-4 py-3 font-medium text-slate-900">{movement.source_folio || movement.folio}</td>
               <td className="px-4 py-3 text-slate-600">{movement.source_type}</td>
               <td className="px-4 py-3 text-slate-500">{movement.movement_date}</td>
+              <td className="px-4 py-3 font-mono text-xs text-slate-600">{movement.lot_code || 'GENERAL'}</td>
               <td className="px-4 py-3 text-right">{qty(movement.quantity_in)}</td>
               <td className="px-4 py-3 text-right">{qty(movement.quantity_out)}</td>
               <td className="px-4 py-3 text-slate-500">
@@ -1267,7 +2100,7 @@ function ProductKardexTable({ movements }: { movements: KardexMovement[] }) {
           ))}
           {movements.length === 0 && (
             <tr>
-              <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">
+              <td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-500">
                 Sin movimientos para este producto
               </td>
             </tr>

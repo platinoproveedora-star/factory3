@@ -1,0 +1,7 @@
+{
+  "name": "erp_compras_supplier_list",
+  "vertical": "vertical_erp_compras",
+  "version": "0.1.0",
+  "description": "Lista proveedores activos ERP para formularios de compra.",
+  "entrypoint": "skill.py"
+}

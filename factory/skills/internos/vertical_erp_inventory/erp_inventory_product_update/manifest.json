@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_product_update",
+  "vertical": "vertical_erp_inventory",
+  "descripcion": "Actualiza datos editables del catalogo de productos ERP inventory.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

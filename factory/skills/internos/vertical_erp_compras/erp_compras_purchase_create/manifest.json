@@ -1,0 +1,7 @@
+{
+  "name": "erp_compras_purchase_create",
+  "vertical": "vertical_erp_compras",
+  "version": "0.1.0",
+  "description": "Crea una compra multi-renglon y registra entradas de kardex con un mismo folio COM.",
+  "entrypoint": "skill.py"
+}

@@ -21,6 +21,8 @@ export type Product = {
   product_name: string;
   sku: string | null;
   category: string | null;
+  category_2: string | null;
+  brand: string | null;
   unit: string;
   active: boolean;
   is_key_product: boolean;
@@ -51,6 +53,7 @@ export type KardexMovement = {
   remission_folio: string | null;
   product_id: string;
   product_name_snapshot: string | null;
+  lot_code: string | null;
   customer_id: string | null;
   customer_name_snapshot: string | null;
   supplier_id: string | null;
@@ -68,6 +71,7 @@ export type KardexMovement = {
   paid_amount: number;
   balance_amount: number;
   notes: string | null;
+  metadata?: Record<string, any> | null;
 };
 
 export function money(value: number | null | undefined) {

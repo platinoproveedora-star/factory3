@@ -28,6 +28,8 @@ class ErpInventoryProductSaveService:
             "product_name": name,
             "sku": self._blank(context.get("sku")),
             "category": self._blank(context.get("category")),
+            "category_2": self._blank(context.get("category_2")),
+            "brand": self._blank(context.get("brand") or context.get("marca")),
             "unit": context.get("unit") or "pieza",
             "active": context.get("active", True) is not False,
             "is_key_product": bool(context.get("is_key_product", False)),

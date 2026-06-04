@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_current_stock_report",
+  "vertical": "vertical_erp_inventory",
+  "descripcion": "Calcula inventario actual por producto con categoria, minimo, semaforo, costo promedio, ultimo costo y valor estimado.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

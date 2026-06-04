@@ -33,6 +33,9 @@ class ErpVentasRemisionCreateService:
         parsed_items, error = self._parse_items(items)
         if error:
             return {"ok": False, "error": error}
+        parsed_items, error = self._enrich_cost_snapshots(context, parsed_items, dry_run)
+        if error:
+            return {"ok": False, "error": error}
 
         subtotal = round(sum(i["line_subtotal"] for i in parsed_items), 2)
         tax_total = round(sum(i["tax_amount"] for i in parsed_items), 2)
@@ -126,6 +129,10 @@ class ErpVentasRemisionCreateService:
                 "quantity": item["quantity"],
                 "unit": item["unit"],
                 "unit_price": item["unit_price"],
+                "lot_code": item.get("lot_code"),
+                "lot_cost_snapshot": item.get("lot_cost_snapshot"),
+                "avg_cost_snapshot": item.get("avg_cost_snapshot"),
+                "last_cost_snapshot": item.get("last_cost_snapshot"),
                 "discount_amount": 0,
                 "tax_rate": item["tax_rate"],
                 "tax_amount": item["tax_amount"],
@@ -135,6 +142,14 @@ class ErpVentasRemisionCreateService:
                     "inventory_product_id": item.get("product_id"),
                     "product_folio": product.get("folio"),
                     "line_index": index,
+                    "lot_code": item.get("lot_code"),
+                    "line_subtotal": item.get("line_subtotal"),
+                    "tax_rate": item.get("tax_rate"),
+                    "tax_amount": item.get("tax_amount"),
+                    "line_total": item.get("line_total"),
+                    "lot_cost_snapshot": item.get("lot_cost_snapshot"),
+                    "avg_cost_snapshot": item.get("avg_cost_snapshot"),
+                    "last_cost_snapshot": item.get("last_cost_snapshot"),
                 },
             }
             item_result = SupabaseClient(ctx_ventas).rest_insert("sales_document_items", item_row)
@@ -158,6 +173,7 @@ class ErpVentasRemisionCreateService:
                     customer_name_snapshot,
                     delivery_address,
                     doc_date,
+                    notes,
                 )
                 if not k_result.get("ok"):
                     return {
@@ -234,9 +250,51 @@ class ErpVentasRemisionCreateService:
                     "tax_amount": tax_amount,
                     "line_subtotal": line_subtotal,
                     "line_total": line_total,
+                    "lot_code": str(item.get("lot_code") or "").strip() or None,
                 }
             )
         return parsed, None
+
+    def _enrich_cost_snapshots(self, context: dict, items: list[dict], dry_run: bool) -> tuple[list[dict], str | None]:
+        enriched = []
+        for idx, item in enumerate(items, start=1):
+            product_id = item.get("product_id")
+            if not product_id:
+                enriched.append(item)
+                continue
+            options_result = self._lot_options(context, product_id)
+            if not options_result.get("ok"):
+                return [], f"item {idx}: {options_result.get('error')}"
+            data = options_result.get("data") or {}
+            lots = data.get("lots") or []
+            lot_code = str(item.get("lot_code") or "").strip()
+            if not lot_code and data.get("default_lot_code"):
+                lot_code = data["default_lot_code"]
+            if data.get("requires_lot") and not lot_code:
+                return [], f"item {idx}: selecciona lote para {item['description']}"
+            selected_lot = next((lot for lot in lots if str(lot.get("lot_code")) == lot_code), None) if lot_code else None
+            if lots and lot_code and not selected_lot:
+                return [], f"item {idx}: lote invalido para {item['description']}"
+            if selected_lot and float(item.get("quantity") or 0) > float(selected_lot.get("quantity") or 0):
+                return [], f"item {idx}: lote {lot_code} no tiene saldo suficiente"
+            item = {
+                **item,
+                "lot_code": lot_code or None,
+                "lot_cost_snapshot": round(float((selected_lot or {}).get("lot_cost") or 0), 2) if selected_lot else 0,
+                "avg_cost_snapshot": round(float(data.get("avg_cost") or 0), 2),
+                "last_cost_snapshot": round(float(data.get("last_cost") or 0), 2),
+            }
+            enriched.append(item)
+        return enriched, None
+
+    def _lot_options(self, context: dict, product_id: str) -> dict:
+        service_path = _SKILLS_ROOT / "vertical_erp_inventory" / "erp_inventory_lot_options" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_inventory_lot_options_service", service_path)
+        if spec is None or spec.loader is None:
+            return {"ok": False, "error": "no se pudo cargar erp_inventory_lot_options"}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.ErpInventoryLotOptionsService().ejecutar({**context, "schema": "uc101_proy004", "product_id": product_id})
 
     def _reserve_folio(self, context: dict, table: str, prefix: str, digits: int = 5) -> dict:
         result = SupabaseClient({**context, "schema": "uc101_proy002"}).rest_select(
@@ -297,6 +355,7 @@ class ErpVentasRemisionCreateService:
         customer_name: str,
         delivery_address: str | None,
         movement_date: str,
+        notes: str | None = None,
     ) -> dict:
         service_path = _SKILLS_ROOT / "vertical_erp_inventory" / "erp_inventory_kardex_save" / "service.py"
         spec = importlib.util.spec_from_file_location("erp_inventory_kardex_save_service", service_path)
@@ -315,22 +374,29 @@ class ErpVentasRemisionCreateService:
                 "allow_custom_folio": True,
                 "product_id": item["product_id"],
                 "product_name_snapshot": item["description"],
+                "lot_code": item.get("lot_code"),
                 "source_type": "remision",
                 "source_folio": remision_folio,
                 "quantity": item["quantity"],
+                "unit_cost": item.get("lot_cost_snapshot"),
+                "total_cost": round(float(item.get("lot_cost_snapshot") or 0) * float(item["quantity"] or 0), 4),
                 "unit_price": item["unit_price"],
                 "total_sale": item["line_total"],
                 "movement_date": movement_date,
                 "party_id": customer_id,
                 "party_name_snapshot": customer_name,
                 "delivery_address": delivery_address,
-                "notes": f"Remision {remision_folio} - {item['description']}",
+                "notes": notes,
                 "metadata": {
                     "sales_schema": "uc101_proy002",
                     "remision_id": doc_id,
                     "remision_folio": remision_folio,
                     "remision_item_id": item_id,
                     "remision_item_folio": item_folio,
+                    "lot_code": item.get("lot_code"),
+                    "lot_cost_snapshot": item.get("lot_cost_snapshot"),
+                    "avg_cost_snapshot": item.get("avg_cost_snapshot"),
+                    "last_cost_snapshot": item.get("last_cost_snapshot"),
                 },
             }
         )

@@ -28,7 +28,7 @@ class ErpVentasRemisionDetailService:
         items_res = SupabaseClient(ctx).rest_select(
             "sales_document_items",
             filters={"document_id": doc["id"]},
-            select="id,folio,product_id,inventory_product_id,product_folio_snapshot,product_name_snapshot,description,quantity,unit,unit_price,tax_rate,tax_amount,line_total,metadata,created_at",
+            select="id,folio,product_id,inventory_product_id,product_folio_snapshot,product_name_snapshot,description,quantity,unit,unit_price,lot_code,lot_cost_snapshot,avg_cost_snapshot,last_cost_snapshot,tax_rate,tax_amount,line_total,metadata,created_at",
             order="created_at.asc",
             limit=500,
         )

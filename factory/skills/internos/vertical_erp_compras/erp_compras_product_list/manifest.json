@@ -1,0 +1,7 @@
+{
+  "name": "erp_compras_product_list",
+  "vertical": "vertical_erp_compras",
+  "version": "0.1.0",
+  "description": "Lista productos activos ERP para captura de compras.",
+  "entrypoint": "skill.py"
+}

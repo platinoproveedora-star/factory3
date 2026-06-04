@@ -8,8 +8,9 @@ export const fetchCache = 'force-no-store';
 export async function GET() {
   try {
     const data = await runFactorySkill<any>('vertical_erp_inventory/erp_inventory_dashboard_data', { action: 'dashboard' });
+    const lotReport = await runFactorySkill<any>('vertical_erp_inventory/erp_inventory_lot_stock_report', {});
     return NextResponse.json(
-      { ok: true, data },
+      { ok: true, data: { ...data, lot_stock: lotReport.lots || [] } },
       { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate' } }
     );
   } catch (error: any) {

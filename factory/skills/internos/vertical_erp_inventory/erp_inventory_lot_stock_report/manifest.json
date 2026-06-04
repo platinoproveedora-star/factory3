@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_lot_stock_report",
+  "vertical": "vertical_erp_inventory",
+  "version": "0.1.0",
+  "description": "Calcula inventario detallado por producto y lote desde kardex, con costo de lote y valor estimado.",
+  "entrypoint": "skill.py"
+}

@@ -125,21 +125,53 @@ class ErpInventoryDashboardDataService:
     def _stock(self, movements, products) -> list[dict]:
         product_names = {p.get("id"): p for p in products}
         stock = {}
+        latest_cost = {}
         for movement in movements:
             product_id = movement.get("product_id")
             if not product_id:
                 continue
-            row = stock.setdefault(product_id, {"product_id": product_id, "quantity": 0.0, "total_in": 0.0, "total_out": 0.0})
+            row = stock.setdefault(product_id, {"product_id": product_id, "quantity": 0.0, "total_in": 0.0, "total_out": 0.0, "cost_qty": 0.0, "cost_amount": 0.0})
             q_in = float(movement.get("quantity_in") or 0)
             q_out = float(movement.get("quantity_out") or 0)
             row["quantity"] += q_in - q_out
             row["total_in"] += q_in
             row["total_out"] += q_out
+            if q_in > 0:
+                unit_cost = float(movement.get("unit_cost") or 0)
+                total_cost = float(movement.get("total_cost") or unit_cost * q_in)
+                row["cost_qty"] += q_in
+                row["cost_amount"] += total_cost
+                if product_id not in latest_cost:
+                    latest_cost[product_id] = unit_cost
         result = []
-        for product_id, row in stock.items():
-            product = product_names.get(product_id, {})
-            result.append({**row, "product_name": product.get("product_name") or product_id, "is_key_product": product.get("is_key_product", False)})
-        return sorted(result, key=lambda row: -row["quantity"])
+        for product in products:
+            product_id = product.get("id")
+            row = stock.get(product_id, {"product_id": product_id, "quantity": 0.0, "total_in": 0.0, "total_out": 0.0, "cost_qty": 0.0, "cost_amount": 0.0})
+            quantity = round(float(row.get("quantity") or 0), 4)
+            min_stock = float(product.get("min_stock") or 0)
+            avg_cost = round(float(row.get("cost_amount") or 0) / float(row.get("cost_qty") or 1), 2) if float(row.get("cost_qty") or 0) > 0 else 0.0
+            status = "negativo" if quantity < 0 else "bajo" if min_stock and quantity < min_stock else "ok"
+            result.append({
+                **row,
+                "quantity": quantity,
+                "product_name": product.get("product_name") or product_id,
+                "folio": product.get("folio"),
+                "product_key": product.get("product_key"),
+                "sku": product.get("sku"),
+                "category": product.get("category"),
+                "category_2": product.get("category_2"),
+                "brand": product.get("brand"),
+                "unit": product.get("unit"),
+                "active": product.get("active") is not False,
+                "is_key_product": product.get("is_key_product", False),
+                "min_stock": min_stock,
+                "stock_delta": round(quantity - min_stock, 4),
+                "stock_status": status,
+                "avg_cost": avg_cost,
+                "last_cost": round(float(latest_cost.get(product_id) or 0), 2),
+                "estimated_value": round(quantity * avg_cost, 2),
+            })
+        return sorted(result, key=lambda row: (not row.get("is_key_product"), str(row.get("product_name") or "")))
 
     def _recurrence_alerts(self, movements, products, parties, context) -> list[dict]:
         rules = context.get("recurrence_rules") or KEY_RULES

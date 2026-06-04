@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_lot_options",
+  "vertical": "vertical_erp_inventory",
+  "version": "0.1.0",
+  "description": "Devuelve lotes disponibles por producto con saldo, costo de lote, costo promedio y ultimo costo para ventas.",
+  "entrypoint": "skill.py"
+}

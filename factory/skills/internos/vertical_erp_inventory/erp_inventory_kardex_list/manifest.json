@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_kardex_list",
+  "vertical": "vertical_erp_inventory",
+  "descripcion": "Lista movimientos de kardex con filtros por producto y rango de fechas, limitado a consultas operativas.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

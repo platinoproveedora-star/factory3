@@ -30,7 +30,7 @@ class ErpInventoryKardexSaveService:
 
         unit_cost = float(context.get("unit_cost") or 0)
         unit_price = float(context.get("unit_price") or 0)
-        total_cost = 0 if is_sale or is_adjustment else float(context.get("total_cost") or unit_cost * quantity)
+        total_cost = 0 if is_adjustment else float(context.get("total_cost") or unit_cost * quantity)
         total_sale = float(context.get("total_sale") or unit_price * quantity) if is_sale else 0
         paid = float(context.get("paid_amount") or 0)
         base_amount = total_sale if is_sale else total_cost
@@ -70,6 +70,7 @@ class ErpInventoryKardexSaveService:
             "remission_folio": source_folio if is_sale else None,
             "product_id": context.get("product_id"),
             "product_name_snapshot": self._blank(context.get("product_name_snapshot")),
+            "lot_code": self._blank(context.get("lot_code")),
             "customer_id": context.get("party_id") if is_sale else None,
             "customer_name_snapshot": self._blank(context.get("party_name_snapshot")) if is_sale else None,
             "supplier_id": context.get("party_id") if source_type == "compra" else None,
@@ -79,7 +80,7 @@ class ErpInventoryKardexSaveService:
             "quantity_in": quantity_in,
             "quantity_out": quantity_out,
             "balance_after": balance_after,
-            "unit_cost": None if is_sale or is_adjustment else unit_cost,
+            "unit_cost": None if is_adjustment else unit_cost,
             "unit_price": unit_price if is_sale else None,
             "total_cost": total_cost,
             "total_sale": total_sale,

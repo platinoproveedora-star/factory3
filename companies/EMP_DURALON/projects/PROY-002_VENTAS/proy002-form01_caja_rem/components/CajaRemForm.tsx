@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createRemision, getCustomers, getProducts, getRemisiones, openRemisionPdf } from '@/lib/api';
+import { createRemision, getCustomers, getProductLots, getProducts, getRemisiones, openRemisionPdf } from '@/lib/api';
 import type { Customer, FormItem, Product, Remision } from '@/lib/api';
 
 const IVA = 0.16;
@@ -15,7 +15,7 @@ function today() {
 }
 
 function newItem(): FormItem {
-  return { _key: crypto.randomUUID(), product_id: null, description: '', quantity: 1, unit: 'pieza', unit_price: 0, tax_rate: IVA, tax_amount: 0, line_total: 0 };
+  return { _key: crypto.randomUUID(), product_id: null, lot_code: null, lots: [], requires_lot: false, lots_loading: false, description: '', quantity: 1, unit: 'pieza', unit_price: 0, tax_rate: IVA, tax_amount: 0, line_total: 0 };
 }
 
 function calcItem(item: FormItem): FormItem {
@@ -75,7 +75,33 @@ export default function CajaRemForm() {
   }
 
   function selectProduct(key: string, prod: Product) {
-    setItems(prev => prev.map(it => it._key === key ? calcItem({ ...it, product_id: prod.id, description: prod.product_name, unit: prod.unit, unit_price: prod.unit_price ?? it.unit_price }) : it));
+    setError('');
+    setItems(prev => prev.map(it => it._key === key ? calcItem({
+      ...it,
+      product_id: prod.id,
+      lot_code: null,
+      lots: [],
+      requires_lot: false,
+      lots_loading: true,
+      description: prod.product_name,
+      unit: prod.unit,
+      unit_price: prod.unit_price ?? it.unit_price,
+    }) : it));
+
+    getProductLots(prod.id)
+      .then(data => {
+        setItems(prev => prev.map(it => it._key === key ? calcItem({
+          ...it,
+          lots: data.lots,
+          requires_lot: data.requires_lot,
+          lot_code: data.default_lot_code ?? null,
+          lots_loading: false,
+        }) : it));
+      })
+      .catch(e => {
+        setItems(prev => prev.map(it => it._key === key ? { ...it, lots_loading: false } : it));
+        setError(`No se pudieron cargar lotes de ${prod.product_name}: ${e.message ?? e}`);
+      });
   }
 
   function removeItem(key: string) {
@@ -93,6 +119,7 @@ export default function CajaRemForm() {
     const typedCustomer = custQuery.trim();
     if (!customer && !typedCustomer) { setError('Selecciona o escribe un cliente'); return; }
     if (items.some(it => !it.description || it.quantity <= 0)) { setError('Todos los productos necesitan descripción y cantidad mayor a 0'); return; }
+    if (items.some(it => it.product_id && it.requires_lot && !it.lot_code)) { setError('Selecciona lote en los productos que tienen mas de un lote disponible'); return; }
 
     setSubmitting(true);
     try {
@@ -105,6 +132,7 @@ export default function CajaRemForm() {
         notes: notes || undefined,
         items: items.map(it => ({
           product_id:  it.product_id,
+          lot_code:    it.lot_code,
           description: it.description,
           quantity:    it.quantity,
           unit:        it.unit,
@@ -345,7 +373,7 @@ function ItemRow({ item, idx, products, filteredProds, onUpdate, onSelectProduct
         <div className="relative flex-1">
           <input
             type="text" value={prodQuery}
-            onChange={e => { setProdQuery(e.target.value); onUpdate({ description: e.target.value, product_id: null }); setProdOpen(true); }}
+            onChange={e => { setProdQuery(e.target.value); onUpdate({ description: e.target.value, product_id: null, lot_code: null, lots: [], requires_lot: false, lots_loading: false }); setProdOpen(true); }}
             onFocus={() => setProdOpen(true)}
             placeholder="Producto o descripción…"
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
@@ -368,6 +396,38 @@ function ItemRow({ item, idx, products, filteredProds, onUpdate, onSelectProduct
           <button type="button" onClick={onRemove} className="text-slate-400 hover:text-red-500 pt-2 text-lg leading-none">×</button>
         )}
       </div>
+
+      {item.product_id && (
+        <div className="ml-7 mb-2">
+          <label className="text-xs text-slate-400">Lote</label>
+          {item.lots_loading ? (
+            <div className="mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-400 bg-white">
+              Cargando lotes...
+            </div>
+          ) : item.lots.length > 0 ? (
+            <select
+              value={item.lot_code ?? ''}
+              onChange={e => onUpdate({ lot_code: e.target.value || null })}
+              required={item.requires_lot}
+              className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
+            >
+              <option value="" disabled={item.requires_lot}>
+                {item.requires_lot ? 'Selecciona lote' : 'Sin lote especifico'}
+              </option>
+              {item.lots.map(lot => (
+                <option key={lot.lot_code} value={lot.lot_code}>{lot.label}</option>
+              ))}
+            </select>
+          ) : (
+            <div className="mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-400 bg-white">
+              Sin lotes disponibles
+            </div>
+          )}
+          {item.requires_lot && !item.lot_code && (
+            <p className="mt-1 text-xs text-amber-700">Este producto tiene varios lotes; elige cual sale.</p>
+          )}
+        </div>
+      )}
 
       {/* Qty / Unit / Price / IVA */}
       <div className="flex gap-2 ml-7">

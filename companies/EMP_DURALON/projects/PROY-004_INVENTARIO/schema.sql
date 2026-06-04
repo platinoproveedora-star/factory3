@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS uc101_proy004.erp_products (
     product_name text NOT NULL,
     sku text,
     category text,
+    category_2 text,
+    brand text,
     unit text NOT NULL DEFAULT 'pieza',
     active boolean NOT NULL DEFAULT true,
     is_key_product boolean NOT NULL DEFAULT false,
@@ -64,6 +66,7 @@ CREATE TABLE IF NOT EXISTS uc101_proy004.erp_kardex (
     invoice_folio text,
     product_id uuid NOT NULL REFERENCES uc101_proy004.erp_products(id),
     product_name_snapshot text,
+    lot_code text,
     customer_id uuid REFERENCES uc101_proy004.erp_parties(id),
     customer_name_snapshot text,
     supplier_id uuid REFERENCES uc101_proy004.erp_parties(id),
@@ -209,6 +212,9 @@ CREATE INDEX IF NOT EXISTS idx_erp_parties_type
 
 CREATE INDEX IF NOT EXISTS idx_erp_kardex_product_date
     ON uc101_proy004.erp_kardex (product_id, movement_date);
+
+CREATE INDEX IF NOT EXISTS idx_erp_kardex_product_lot
+    ON uc101_proy004.erp_kardex (product_id, lot_code);
 
 CREATE INDEX IF NOT EXISTS idx_erp_kardex_customer_date
     ON uc101_proy004.erp_kardex (customer_id, movement_date);

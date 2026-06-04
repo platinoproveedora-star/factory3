@@ -3293,6 +3293,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_inventory/erp_inventory_current_stock_report": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_current_stock_report",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Calcula inventario actual por producto con categoria, minimo, semaforo, costo promedio, ultimo costo y valor estimado.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_current_stock_report",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_inventory/erp_inventory_party_save": {
     "tipo": "interno",
     "nombre": "vertical_erp_inventory/erp_inventory_party_save",
@@ -3317,6 +3326,78 @@
     "vertical": "vertical_erp_inventory",
     "descripcion": "Crea productos ERP inventory en Supabase usando contrato generico.",
     "path": "skills/internos/vertical_erp_inventory/erp_inventory_product_save",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_product_update": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_product_update",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Actualiza datos editables del catalogo de productos ERP inventory.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_product_update",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_kardex_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_kardex_list",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Lista movimientos de kardex con filtros por producto y rango de fechas, limitado a consultas operativas.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_kardex_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_lot_stock_report": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_lot_stock_report",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Calcula inventario detallado por producto y lote desde kardex, con costo de lote y valor estimado.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_lot_stock_report",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_inventory/erp_inventory_lot_options": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_lot_options",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Devuelve lotes disponibles por producto con saldo, costo de lote, costo promedio y ultimo costo para ventas.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_lot_options",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_compras/erp_compras_supplier_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_compras/erp_compras_supplier_list",
+    "vertical": "vertical_erp_compras",
+    "descripcion": "Lista proveedores activos ERP para formularios de compra.",
+    "path": "skills/internos/vertical_erp_compras/erp_compras_supplier_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_compras/erp_compras_product_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_compras/erp_compras_product_list",
+    "vertical": "vertical_erp_compras",
+    "descripcion": "Lista productos activos ERP para captura de compras.",
+    "path": "skills/internos/vertical_erp_compras/erp_compras_product_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_compras/erp_compras_purchase_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_compras/erp_compras_purchase_create",
+    "vertical": "vertical_erp_compras",
+    "descripcion": "Crea una compra multi-renglon y registra entradas de kardex con un mismo folio COM.",
+    "path": "skills/internos/vertical_erp_compras/erp_compras_purchase_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_compras/erp_compras_purchase_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_compras/erp_compras_purchase_list",
+    "vertical": "vertical_erp_compras",
+    "descripcion": "Lista compras ERP agrupadas por folio COM con renglones y filtros de fecha.",
+    "path": "skills/internos/vertical_erp_compras/erp_compras_purchase_list",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
