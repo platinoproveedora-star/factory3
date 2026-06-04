@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: uc101-remisiones
+    runtime: node
+    repo: https://github.com/platinoproveedora-star/factory3
+    branch: main
+    rootDir: companies/EMP_DURALON/projects/PROY-002_VENTAS/proy002-form01_caja_rem
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    region: oregon
+    envVars:
+      - key: NEXT_PUBLIC_FACTORY_API_URL
+        value: https://factory3.onrender.com
+      - key: NEXT_PUBLIC_WRITE_KEY
+        value: ""
+      - key: NODE_VERSION
+        value: "20"
