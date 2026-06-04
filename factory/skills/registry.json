@@ -1055,6 +1055,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_render/render_nextjs_service_deploy": {
+    "tipo": "interno",
+    "nombre": "vertical_render/render_nextjs_service_deploy",
+    "vertical": "vertical_render",
+    "descripcion": "Crea o actualiza un servicio Render para una app Next.js en subdirectorio GitHub, configura env vars y dispara deploy.",
+    "path": "skills/internos/vertical_render/render_nextjs_service_deploy",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "github_update_file": {
     "tipo": "interno",
     "nombre": "github_update_file",

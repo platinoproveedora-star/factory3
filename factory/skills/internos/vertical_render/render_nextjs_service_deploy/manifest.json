@@ -1,0 +1,19 @@
+{
+  "name": "render_nextjs_service_deploy",
+  "version": "0.1.0",
+  "description": "Crea o actualiza un servicio Render para una app Next.js en un subdirectorio de GitHub, configura env vars y dispara deploy.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "service_name": {"type": "string"},
+      "repo": {"type": "string"},
+      "root_dir": {"type": "string"},
+      "owner_id": {"type": "string"},
+      "branch": {"type": "string"},
+      "env_vars": {"type": "object"},
+      "wait": {"type": "boolean"},
+      "dry_run": {"type": "boolean"}
+    },
+    "required": ["service_name", "repo", "root_dir"]
+  }
+}
