@@ -140,7 +140,7 @@ class ErpInventoryDashboardDataService:
                 unit_cost = float(movement.get("unit_cost") or 0)
                 total_cost = float(movement.get("total_cost") or unit_cost * q_in)
                 row["cost_qty"] += q_in
-                row["cost_amount"] += total_cost
+                row["cost_amount"] += unit_cost * q_in
                 if product_id not in latest_cost:
                     latest_cost[product_id] = unit_cost
         result = []
