@@ -67,6 +67,11 @@ class ErpVentasRemisionCreateService:
             return folio_result
         doc_folio = folio_result["data"]["folio"]
 
+        mark_as_paid = bool(context.get("mark_as_paid", False))
+        paid_total   = total if mark_as_paid else 0
+        balance_doc  = 0 if mark_as_paid else total
+        doc_status   = "pagada" if mark_as_paid else "emitida"
+
         ctx_ventas = {**context, "schema": "uc101_proy002"}
         doc_row = {
             "folio": doc_folio,
@@ -79,15 +84,15 @@ class ErpVentasRemisionCreateService:
             "customer_name_snapshot": customer_name_snapshot,
             "customer_folio_snapshot": customer_folio_snapshot,
             "delivery_address": delivery_address,
-            "status": "emitida",
+            "status": doc_status,
             "document_date": doc_date,
             "currency": "MXN",
             "subtotal": subtotal,
             "discount_total": 0,
             "tax_total": tax_total,
             "total": total,
-            "paid_total": 0,
-            "balance_total": total,
+            "paid_total": paid_total,
+            "balance_total": balance_doc,
             "notes": notes,
             "metadata": {
                 "customer_schema": "uc101_proy004",
@@ -178,6 +183,7 @@ class ErpVentasRemisionCreateService:
                     delivery_address,
                     doc_date,
                     notes,
+                    paid_amount=item["line_total"] if mark_as_paid else 0,
                 )
                 if not k_result.get("ok"):
                     return {
@@ -350,6 +356,7 @@ class ErpVentasRemisionCreateService:
         delivery_address: str | None,
         movement_date: str,
         notes: str | None = None,
+        paid_amount: float = 0,
     ) -> dict:
         service_path = _SKILLS_ROOT / "vertical_erp_inventory" / "erp_inventory_kardex_save" / "service.py"
         spec = importlib.util.spec_from_file_location("erp_inventory_kardex_save_service", service_path)
@@ -381,6 +388,7 @@ class ErpVentasRemisionCreateService:
                 "party_name_snapshot": customer_name,
                 "delivery_address": delivery_address,
                 "notes": notes,
+                "paid_amount": paid_amount,
                 "metadata": {
                     "sales_schema": "uc101_proy002",
                     "remision_id": doc_id,
