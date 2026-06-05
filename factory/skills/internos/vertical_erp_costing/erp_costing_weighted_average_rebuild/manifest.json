@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_costing/erp_costing_weighted_average_rebuild",
+  "vertical": "vertical_erp_costing",
+  "version": "0.1.0",
+  "description": "Recalcula costo promedio ponderado desde kardex para auditoria o reportes.",
+  "entrypoint": "skill.py"
+}

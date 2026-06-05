@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_costing/erp_costing_sale_snapshot",
+  "vertical": "vertical_erp_costing",
+  "version": "0.1.0",
+  "description": "Calcula snapshot de costos para venta/remision por producto y lote y valida saldo disponible.",
+  "entrypoint": "skill.py"
+}

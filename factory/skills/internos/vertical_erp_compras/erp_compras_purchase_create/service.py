@@ -53,6 +53,17 @@ class ErpComprasPurchaseCreateService:
             subtotal_cost = round(quantity * unit_cost, 2)
             tax_amount = round(subtotal_cost * tax_rate, 2)
             line_total = round(subtotal_cost + tax_amount, 2)
+            costing = self._purchase_costing({
+                **ctx,
+                "product_id": product_id,
+                "lot_code": lot_code,
+                "quantity": quantity,
+                "unit_cost": unit_cost,
+                "tax_rate": tax_rate,
+            })
+            if not costing.get("ok"):
+                return costing
+            costing_data = costing.get("data") or {}
             total_cost += line_total
             clean_items.append({
                 "product_id": product_id,
@@ -60,6 +71,10 @@ class ErpComprasPurchaseCreateService:
                 "quantity": quantity,
                 "unit_cost": unit_cost,
                 "lot_code": lot_code,
+                "lot_unit_cost": costing_data.get("lot_unit_cost"),
+                "last_purchase_cost": costing_data.get("last_purchase_cost"),
+                "weighted_avg_cost": costing_data.get("weighted_avg_cost"),
+                "cost_policy": costing_data.get("policy"),
                 "subtotal_cost": subtotal_cost,
                 "tax_rate": tax_rate,
                 "tax_amount": tax_amount,
@@ -115,6 +130,10 @@ class ErpComprasPurchaseCreateService:
                     "tax_rate": item["tax_rate"],
                     "tax_amount": item["tax_amount"],
                     "lot_code": item["lot_code"],
+                    "lot_unit_cost": item.get("lot_unit_cost"),
+                    "last_purchase_cost": item.get("last_purchase_cost"),
+                    "weighted_avg_cost": item.get("weighted_avg_cost"),
+                    "cost_policy": item.get("cost_policy"),
                 },
             })
             if not save_result.get("ok"):
@@ -179,6 +198,15 @@ class ErpComprasPurchaseCreateService:
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module.ErpInventoryKardexSaveService().ejecutar(context)
+
+    def _purchase_costing(self, context: dict) -> dict:
+        service_path = Path(__file__).resolve().parents[2] / "vertical_erp_costing" / "erp_costing_purchase_apply" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_costing_purchase_apply_service", service_path)
+        if spec is None or spec.loader is None:
+            return {"ok": False, "error": "no se pudo cargar erp_costing_purchase_apply"}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.ErpCostingPurchaseApplyService().ejecutar(context)
 
     def _blank(self, value):
         value = str(value or "").strip()

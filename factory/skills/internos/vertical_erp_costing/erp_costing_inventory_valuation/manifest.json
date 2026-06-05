@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_costing/erp_costing_inventory_valuation",
+  "vertical": "vertical_erp_costing",
+  "version": "0.1.0",
+  "description": "Valua inventario por producto y lote usando kardex como fuente de verdad.",
+  "entrypoint": "skill.py"
+}

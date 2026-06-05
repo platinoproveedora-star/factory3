@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_costing/erp_costing_policy",
+  "vertical": "vertical_erp_costing",
+  "version": "0.1.0",
+  "description": "Devuelve la politica canonica de costos ERP: lote, ultimo costo y promedio ponderado.",
+  "entrypoint": "skill.py"
+}

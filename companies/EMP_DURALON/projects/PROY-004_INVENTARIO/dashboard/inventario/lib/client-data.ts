@@ -45,6 +45,7 @@ export type DashboardData = {
     quantity: number;
     total_in: number;
     total_out: number;
+    lot_unit_cost?: number;
     avg_cost?: number;
     last_cost?: number;
     estimated_value?: number;

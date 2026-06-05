@@ -717,7 +717,7 @@ function InventoryLotTable({ rows }: { rows: NonNullable<DashboardData['lot_stoc
             <th className="px-4 py-3 text-right">Entrada</th>
             <th className="px-4 py-3 text-right">Salida</th>
             <th className="px-4 py-3 text-left">Unidad</th>
-            <th className="px-4 py-3 text-right">Costo lote</th>
+            <th className="px-4 py-3 text-right">Costo compra</th>
             <th className="px-4 py-3 text-right">Ultimo costo</th>
             <th className="px-4 py-3 text-right">Valor est.</th>
             <th className="px-4 py-3 text-left">Ult. mov.</th>
@@ -735,7 +735,7 @@ function InventoryLotTable({ rows }: { rows: NonNullable<DashboardData['lot_stoc
               <td className="px-4 py-3 text-right">{qty(row.total_in)}</td>
               <td className="px-4 py-3 text-right">{qty(row.total_out)}</td>
               <td className="px-4 py-3 text-slate-500">{row.unit}</td>
-              <td className="px-4 py-3 text-right">{money(row.avg_cost)}</td>
+              <td className="px-4 py-3 text-right">{money(row.lot_unit_cost ?? row.last_cost ?? row.avg_cost)}</td>
               <td className="px-4 py-3 text-right">{money(row.last_cost)}</td>
               <td className="px-4 py-3 text-right">{money(row.estimated_value)}</td>
               <td className="px-4 py-3 text-slate-500">{row.last_movement_date || '-'}</td>

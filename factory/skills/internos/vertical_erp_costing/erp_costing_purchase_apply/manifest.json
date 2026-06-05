@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_costing/erp_costing_purchase_apply",
+  "vertical": "vertical_erp_costing",
+  "version": "0.1.0",
+  "description": "Normaliza costos de una compra ERP antes de guardar entrada de kardex.",
+  "entrypoint": "skill.py"
+}

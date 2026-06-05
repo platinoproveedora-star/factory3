@@ -3418,5 +3418,50 @@
     "path": "skills/internos/vertical_erp_inventory/erp_inventory_kardex_save",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_erp_costing/erp_costing_policy": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_costing/erp_costing_policy",
+    "vertical": "vertical_erp_costing",
+    "descripcion": "Devuelve la politica canonica de costos ERP: lote, ultimo costo y promedio ponderado.",
+    "path": "skills/internos/vertical_erp_costing/erp_costing_policy",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_costing/erp_costing_purchase_apply": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_costing/erp_costing_purchase_apply",
+    "vertical": "vertical_erp_costing",
+    "descripcion": "Normaliza costos de una compra ERP antes de guardar entrada de kardex.",
+    "path": "skills/internos/vertical_erp_costing/erp_costing_purchase_apply",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_costing/erp_costing_sale_snapshot": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_costing/erp_costing_sale_snapshot",
+    "vertical": "vertical_erp_costing",
+    "descripcion": "Calcula snapshot de costos para venta/remision por producto y lote y valida saldo disponible.",
+    "path": "skills/internos/vertical_erp_costing/erp_costing_sale_snapshot",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_costing/erp_costing_inventory_valuation": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_costing/erp_costing_inventory_valuation",
+    "vertical": "vertical_erp_costing",
+    "descripcion": "Valua inventario por producto y lote usando kardex como fuente de verdad.",
+    "path": "skills/internos/vertical_erp_costing/erp_costing_inventory_valuation",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_costing/erp_costing_weighted_average_rebuild": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_costing/erp_costing_weighted_average_rebuild",
+    "vertical": "vertical_erp_costing",
+    "descripcion": "Recalcula costo promedio ponderado desde kardex para auditoria o reportes.",
+    "path": "skills/internos/vertical_erp_costing/erp_costing_weighted_average_rebuild",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

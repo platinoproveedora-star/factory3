@@ -147,6 +147,10 @@ class ErpVentasRemisionCreateService:
                     "tax_rate": item.get("tax_rate"),
                     "tax_amount": item.get("tax_amount"),
                     "line_total": item.get("line_total"),
+                    "lot_unit_cost": item.get("lot_cost_snapshot"),
+                    "last_purchase_cost": item.get("last_cost_snapshot"),
+                    "weighted_avg_cost": item.get("weighted_avg_cost_snapshot"),
+                    "weighted_avg_cost_after_sale": item.get("avg_cost_snapshot"),
                     "lot_cost_snapshot": item.get("lot_cost_snapshot"),
                     "avg_cost_snapshot": item.get("avg_cost_snapshot"),
                     "last_cost_snapshot": item.get("last_cost_snapshot"),
@@ -262,39 +266,29 @@ class ErpVentasRemisionCreateService:
             if not product_id:
                 enriched.append(item)
                 continue
-            options_result = self._lot_options(context, product_id)
-            if not options_result.get("ok"):
-                return [], f"item {idx}: {options_result.get('error')}"
-            data = options_result.get("data") or {}
-            lots = data.get("lots") or []
-            lot_code = str(item.get("lot_code") or "").strip()
-            if not lot_code and data.get("default_lot_code"):
-                lot_code = data["default_lot_code"]
-            if data.get("requires_lot") and not lot_code:
-                return [], f"item {idx}: selecciona lote para {item['description']}"
-            selected_lot = next((lot for lot in lots if str(lot.get("lot_code")) == lot_code), None) if lot_code else None
-            if lots and lot_code and not selected_lot:
-                return [], f"item {idx}: lote invalido para {item['description']}"
-            if selected_lot and float(item.get("quantity") or 0) > float(selected_lot.get("quantity") or 0):
-                return [], f"item {idx}: lote {lot_code} no tiene saldo suficiente"
+            costing_result = self._sale_cost_snapshot(context, product_id, item.get("quantity"), item.get("lot_code"))
+            if not costing_result.get("ok"):
+                return [], f"item {idx}: {costing_result.get('error')}"
+            data = costing_result.get("data") or {}
             item = {
                 **item,
-                "lot_code": lot_code or None,
-                "lot_cost_snapshot": round(float((selected_lot or {}).get("lot_cost") or 0), 2) if selected_lot else 0,
-                "avg_cost_snapshot": round(float(data.get("avg_cost") or 0), 2),
-                "last_cost_snapshot": round(float(data.get("last_cost") or 0), 2),
+                "lot_code": data.get("lot_code") or None,
+                "lot_cost_snapshot": round(float(data.get("lot_unit_cost") or 0), 4),
+                "avg_cost_snapshot": round(float(data.get("weighted_avg_cost_after_sale") or data.get("weighted_avg_cost") or 0), 4),
+                "weighted_avg_cost_snapshot": round(float(data.get("weighted_avg_cost") or 0), 4),
+                "last_cost_snapshot": round(float(data.get("last_purchase_cost") or 0), 4),
             }
             enriched.append(item)
         return enriched, None
 
-    def _lot_options(self, context: dict, product_id: str) -> dict:
-        service_path = _SKILLS_ROOT / "vertical_erp_inventory" / "erp_inventory_lot_options" / "service.py"
-        spec = importlib.util.spec_from_file_location("erp_inventory_lot_options_service", service_path)
+    def _sale_cost_snapshot(self, context: dict, product_id: str, quantity: float, lot_code: str | None) -> dict:
+        service_path = _SKILLS_ROOT / "vertical_erp_costing" / "erp_costing_sale_snapshot" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_costing_sale_snapshot_service", service_path)
         if spec is None or spec.loader is None:
-            return {"ok": False, "error": "no se pudo cargar erp_inventory_lot_options"}
+            return {"ok": False, "error": "no se pudo cargar erp_costing_sale_snapshot"}
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        return module.ErpInventoryLotOptionsService().ejecutar({**context, "schema": "uc101_proy004", "product_id": product_id})
+        return module.ErpCostingSaleSnapshotService().ejecutar({**context, "schema": "uc101_proy004", "product_id": product_id, "quantity": quantity, "lot_code": lot_code})
 
     def _reserve_folio(self, context: dict, table: str, prefix: str, digits: int = 5) -> dict:
         result = SupabaseClient({**context, "schema": "uc101_proy002"}).rest_select(
@@ -394,6 +388,14 @@ class ErpVentasRemisionCreateService:
                     "remision_item_id": item_id,
                     "remision_item_folio": item_folio,
                     "lot_code": item.get("lot_code"),
+                    "line_subtotal": item.get("line_subtotal"),
+                    "tax_rate": item.get("tax_rate"),
+                    "tax_amount": item.get("tax_amount"),
+                    "line_total": item.get("line_total"),
+                    "lot_unit_cost": item.get("lot_cost_snapshot"),
+                    "last_purchase_cost": item.get("last_cost_snapshot"),
+                    "weighted_avg_cost": item.get("weighted_avg_cost_snapshot"),
+                    "weighted_avg_cost_after_sale": item.get("avg_cost_snapshot"),
                     "lot_cost_snapshot": item.get("lot_cost_snapshot"),
                     "avg_cost_snapshot": item.get("avg_cost_snapshot"),
                     "last_cost_snapshot": item.get("last_cost_snapshot"),
