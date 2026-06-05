@@ -32,3 +32,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: error.message || 'Error guardando movimiento' }, { status: 500, headers: noStore });
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const body = await req.json();
+    const result = await runFactorySkill<{ movement: any }>('vertical_erp_inventory/erp_inventory_kardex_lot_reassign', body);
+    return NextResponse.json({ ok: true, data: result.movement }, { headers: noStore });
+  } catch (error: any) {
+    return NextResponse.json({ ok: false, error: error.message || 'Error reasignando lote' }, { status: 500, headers: noStore });
+  }
+}

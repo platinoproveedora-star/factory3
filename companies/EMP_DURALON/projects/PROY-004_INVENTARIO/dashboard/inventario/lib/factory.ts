@@ -15,6 +15,7 @@ const localSkillPaths: Record<string, string> = {
   'vertical_erp_inventory/erp_inventory_party_delete': 'factory/skills/internos/vertical_erp_inventory/erp_inventory_party_delete',
   'vertical_erp_inventory/erp_inventory_kardex_list': 'factory/skills/internos/vertical_erp_inventory/erp_inventory_kardex_list',
   'vertical_erp_inventory/erp_inventory_kardex_save': 'factory/skills/internos/vertical_erp_inventory/erp_inventory_kardex_save',
+  'vertical_erp_inventory/erp_inventory_kardex_lot_reassign': 'factory/skills/internos/vertical_erp_inventory/erp_inventory_kardex_lot_reassign',
   'vertical_erp_inventory/erp_inventory_lot_stock_report': 'factory/skills/internos/vertical_erp_inventory/erp_inventory_lot_stock_report',
   'vertical_erp_ventas/erp_ventas_remision_list': 'factory/skills/internos/vertical_erp_ventas/erp_ventas_remision_list',
   'vertical_erp_ventas/erp_ventas_remision_detail': 'factory/skills/internos/vertical_erp_ventas/erp_ventas_remision_detail',

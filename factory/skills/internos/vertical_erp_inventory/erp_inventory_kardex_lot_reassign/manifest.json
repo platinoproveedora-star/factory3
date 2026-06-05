@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_kardex_lot_reassign",
+  "vertical": "vertical_erp_inventory",
+  "version": "0.1.0",
+  "description": "Reasigna el lote de un movimiento kardex existente con metadata de auditoria.",
+  "entrypoint": "skill.py"
+}

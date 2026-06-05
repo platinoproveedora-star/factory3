@@ -416,6 +416,7 @@ function ProductTab({
             <Field name="movement_date" label="Fecha" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} />
             <Field name="quantity" label="Cantidad" type="number" step="0.01" required />
           </div>
+          <Field name="lot_code" label="Lote" placeholder="GENERAL" />
           <TextArea name="notes" label="Motivo" />
           <button className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded bg-slate-900 text-sm font-semibold text-white hover:bg-slate-800" disabled={saving || !selectedProduct}>
             <Save size={16} />

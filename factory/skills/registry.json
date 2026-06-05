@@ -3419,6 +3419,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_inventory/erp_inventory_kardex_lot_reassign": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_inventory/erp_inventory_kardex_lot_reassign",
+    "vertical": "vertical_erp_inventory",
+    "descripcion": "Reasigna el lote de un movimiento kardex existente con metadata de auditoria.",
+    "path": "skills/internos/vertical_erp_inventory/erp_inventory_kardex_lot_reassign",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_costing/erp_costing_policy": {
     "tipo": "interno",
     "nombre": "vertical_erp_costing/erp_costing_policy",
