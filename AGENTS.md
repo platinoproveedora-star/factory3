@@ -83,3 +83,29 @@ RENDER_API_KEY
 - Skills `kind=data` para datos del dashboard, expuestos via `GET /data/<skill>`
 - `dry_run=True` por defecto en skills con escritura
 - User-Agent en requests externos: `"FactoryFactory/0.1 (+https://github.com/)"`
+## FACTORY3 SELLABLE GATE - OBLIGATORIO
+
+Factory3 se construye para vender y reutilizar modulos por empresa. Antes de crear o modificar codigo, cualquier agente debe cumplir este gate:
+
+1. Resolver contexto desde `companies/<EMPRESA>/projects/<PROY>/project.json` o `PROY-003_ERP_CORE/modules.json`.
+2. Pasar siempre `company_id`/`empresa_id`, `project_code`, `module_code` y `schema` por `context`.
+3. No hardcodear identidad vendible en codigo generico: `EMP_DURALON`, `UC-101`, schemas `uc101_*`, URLs fijas, nombres de empresa, prefijos o folios especificos.
+4. Dashboards deben leer env/config y llamar Factory API/data skills; no deben guardar credenciales ni identidad fija.
+5. La logica reusable vive en skills internos; la UI solo captura datos y llama endpoints/skills.
+6. Si un modulo no puede copiarse a otra empresa cambiando config + schema + env vars, no esta listo para cierre.
+
+Hardcodes permitidos solo si estan en `project.json`, `modules.json`, `render.yaml`, `.env.example`, docs, seeds especificos, o si son defaults de prueba claramente sobreescribibles por `context`/env.
+
+Antes de cerrar o deployar un modulo ERP:
+
+- Correr/revisar `vertical_erp/erp_health_check`.
+- Buscar hardcodes de identidad: `EMP_`, `UC-`, `uc101_`, URLs Render/Vercel, schemas fijos.
+- Si aparecen en codigo generico, corregirlos o documentar bloqueo.
+- Confirmar que toda escritura reusable respeta `dry_run=True` por default.
+
+Skills/gates requeridos para evitar repetir deuda:
+
+- `vertical_erp/erp_project_context_resolve`: carga contexto estandar desde `project.json`, `modules.json`, env y overrides.
+- `vertical_erp/erp_no_hardcode_audit`: escanea codigo para detectar identidad/schema/URLs fijas en zonas vendibles.
+- `vertical_erp/erp_module_export_plan`: genera plan para copiar/vender un modulo a otra empresa.
+- `vertical_dashboards/dashboard_context_adapter`: patron para dashboards que leen contexto sin hardcodes.
