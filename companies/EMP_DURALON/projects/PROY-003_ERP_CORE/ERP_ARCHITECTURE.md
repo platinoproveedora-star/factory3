@@ -9,8 +9,9 @@ Los modulos viven como proyectos separados:
 | Proyecto | Modulo | Estado | Schema |
 |---|---|---|---|
 | `PROY-001` | `gastos` | ERP-ready | `uc101_proy001` |
-| `PROY-002` | `ventas` | design-ready | `uc101_proy002` |
-| `PROY-003` | `erp_core` | planned | N/A |
+| `PROY-002` | `ventas` | operativo parcial | `uc101_proy002` |
+| `PROY-003` | `erp_core` | arquitectura viva | N/A |
+| `PROY-004` | `inventario` | operativo | `uc101_proy004` |
 
 ## Identidad
 
@@ -76,6 +77,14 @@ ERP Core debe:
 - Mantener plan de integracion y migracion.
 - Ser el paquete movible si el ERP se separa de Factory3 o se entrega como producto.
 
+## Estado Actual al 2026-06-06
+
+- `PROY-001_GASTOS`: estable, ERP-ready, dashboard y bot operativos.
+- `PROY-002_VENTAS`: form de caja/remisiones operativo; remision guarda encabezado/items y descuenta kardex.
+- `PROY-003_ERP_CORE`: conserva contratos, mapa de modulos y plan movible del ERP.
+- `PROY-004_INVENTARIO`: dashboard operativo con productos, clientes/proveedores, compras, ventas/salidas, kardex, lotes y costeo.
+- Vertical generica nueva: `vertical_erp_costing` para costo lote, ultimo costo y promedio ponderado.
+
 ## Roadmap
 
 1. Confirmar `PROY-001_GASTOS` como ERP-ready.
@@ -84,3 +93,11 @@ ERP Core debe:
 4. Crear data contracts entre gastos y ventas.
 5. Diseñar dashboard ERP central.
 6. Agregar inventario/compras si el negocio lo requiere.
+
+## Roadmap actualizado
+
+1. Capturar ventas reales de mayo/junio y validar saldos por lote.
+2. Normalizar captura de lotes para evitar duplicados por escritura.
+3. Crear modulo de pagos/CXC/CXP cuando la operacion de inventario este estable.
+4. Implementar permisos/autorizacion real.
+5. Diseñar dashboard ERP central consolidado.

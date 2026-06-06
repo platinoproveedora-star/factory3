@@ -14,10 +14,13 @@
 - [x] Definir schema `uc101_proy002`.
 - [x] Crear draft de tablas ventas con contrato ERP.
 - [x] Modelar documentos comerciales: cotizacion -> pedido -> remision -> factura.
-- [ ] Crear data skill para dashboard de ventas.
-- [ ] Ejecutar SQL en Supabase.
+- [x] Ejecutar SQL/migraciones base en Supabase.
+- [x] Crear skills de ventas/remisiones.
+- [x] Crear form de caja/remisiones.
+- [x] Conectar remision con kardex de PROY-004.
+- [x] Integrar PDF de remision.
 - [ ] Correr `vertical_erp/erp_health_check`.
-- [ ] Registrar modulo ventas en `modules.json` como `active` cuando pase health check.
+- [ ] Registrar modulo ventas en `modules.json` como `active` final cuando pase health check.
 
 ## Fase 2B - Inventario/Kardex Operativo
 
@@ -25,17 +28,20 @@
 - [x] Definir schema `uc101_proy004`.
 - [x] Crear draft de tablas: productos, parties, kardex, reglas de recurrencia.
 - [x] Crear `vertical_erp_inventory` con skills base.
-- [ ] Ejecutar SQL en Supabase.
-- [ ] Correr `vertical_erp/erp_health_check`.
-- [ ] Crear dashboard operativo de kardex.
-- [ ] Probar entrada compra y salida remision.
+- [x] Ejecutar SQL en Supabase.
+- [x] Correr `vertical_erp/erp_health_check`.
+- [x] Crear dashboard operativo de kardex.
+- [x] Probar entrada compra y salida remision.
+- [x] Agregar compras multi-renglon con IVA y lote.
+- [x] Agregar costeo por lote/ultimo/promedio ponderado.
+- [x] Agregar reasignacion auditada de lote en kardex.
 
 ## Fase 3 - Integracion
 
 - [ ] Definir IDs compartidos para clientes, pedidos y centros de costo.
 - [ ] Conectar gastos con ventas por `customer_id` y `sales_order_id`.
 - [ ] Usar `sales_documents.id` para pedidos enlazados desde gastos.
-- [ ] Conectar PROY-004 kardex con PROY-002 documentos cuando ventas formal se reactive.
+- [x] Conectar PROY-004 kardex con PROY-002 remisiones.
 - [ ] Crear `erp_dashboard_data` para KPIs consolidados.
 - [ ] Definir eventos cross-module.
 

@@ -16,16 +16,21 @@ Modulo ERP-ready de ventas para clientes, productos, documentos comerciales, pag
 - [x] Modelo documental cotizacion -> pedido -> remision -> factura
 - [x] Folios internos de 5 digitos
 - [x] `external_folio` solo para pedido/remision/factura
-- [ ] Ejecutar SQL en Supabase
+- [x] Ejecutar SQL/migraciones base en Supabase
+- [x] Crear skills/data APIs de ventas
+- [x] Crear form de caja/remisiones
+- [x] Desplegar form en Render
+- [x] Integrar remisiones con kardex de PROY-004
+- [x] Guardar direccion de entrega por remision
+- [x] Generar PDF imprimible
+- [x] Integrar snapshot de costeo por lote/promedio/ultimo costo
 - [ ] Correr `vertical_erp/erp_health_check`
-- [ ] Crear skills/data APIs de ventas
-- [ ] Crear dashboard ventas
-- [ ] Actualizar `modules.json` a `active` cuando Supabase este listo
+- [ ] Dashboard ventas completo separado
+- [ ] Actualizar `modules.json` a `active` final cuando cierre health check
 
 ## Pendientes de negocio
 
-- Confirmar si productos tendran costo para margen.
+- Costeo base ya definido: costo lote, ultimo costo y promedio ponderado.
 - Confirmar impuestos por default.
-- Confirmar condiciones de credito y dias de vencimiento.
+- Confirmar condiciones de credito, pagos y dias de vencimiento.
 - Confirmar si la factura sera solo registro interno o integracion SAT futura.
-

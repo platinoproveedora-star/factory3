@@ -18,30 +18,31 @@
       "project_code": "PROY-002",
       "module_code": "ventas",
       "project_name": "Ventas, documentos comerciales y cobranza",
-      "status": "planned",
-      "erp_ready": false,
+      "status": "in_progress",
+      "erp_ready": true,
       "schema": "uc101_proy002",
       "folder": "companies/EMP_DURALON/projects/PROY-002_VENTAS",
-      "dashboard_url": null,
+      "dashboard_url": "https://uc101-remisiones.onrender.com",
       "depends_on": [
-        "PROY-001"
+        "PROY-004"
       ],
-      "notes": "Scaffold y schema SQL creados. Pausado porque etapa 1 operativa se resolvera con PROY-004_INVENTARIO/kardex."
+      "notes": "Operativo parcial: caja/remisiones, items, PDF y salida automatica en kardex. CXC/pagos/facturas quedan pendientes."
     },
     {
       "project_code": "PROY-003",
       "module_code": "erp_core",
       "project_name": "ERP Core Duralon",
-      "status": "planned",
+      "status": "in_progress",
       "erp_ready": false,
       "schema": null,
       "folder": "companies/EMP_DURALON/projects/PROY-003_ERP_CORE",
       "dashboard_url": null,
       "depends_on": [
         "PROY-001",
-        "PROY-002"
+        "PROY-002",
+        "PROY-004"
       ],
-      "notes": "Proyecto contenedor: arquitectura, contratos, integracion, dashboard central y handoff del ERP completo."
+      "notes": "Proyecto contenedor: arquitectura, contratos, integracion, dashboard central y handoff del ERP completo. Documentacion actualizada al 2026-06-06."
     },
     {
       "project_code": "PROY-004",
@@ -51,11 +52,11 @@
       "erp_ready": true,
       "schema": "uc101_proy004",
       "folder": "companies/EMP_DURALON/projects/PROY-004_INVENTARIO",
-      "dashboard_url": null,
+      "dashboard_url": "https://uc101-inventario.onrender.com",
       "depends_on": [
         "PROY-001"
       ],
-      "notes": "Schema Supabase uc101_proy004 creado y expuesto. Modulo operativo urgente: productos, clientes/proveedores, entradas, salidas/remisiones, stock, pagos simples y recurrencia."
+      "notes": "Modulo operativo: productos, clientes/proveedores, compras, salidas/remisiones, ajustes, kardex, lotes, stock y costeo generico."
     }
   ]
 }

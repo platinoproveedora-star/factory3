@@ -52,3 +52,10 @@ factory/bots/duralon1_bot/bot.py  <- webhook activo
 
 - Chat ID de Luis -- se registra en su primer /start
 - Confirmar bucket uc101-proy001-assets activo en Supabase Storage
+
+## Conexion ERP
+
+- `PROY-001` queda como modulo de gastos independiente y ERP-ready.
+- El ERP completo se documenta en `PROY-003_ERP_CORE`; este proyecto no debe guardar arquitectura global.
+- Campos de enlace preparados para crecer: `customer_id`, `supplier_id`, `sales_order_id`, `purchase_order_id`, `cost_center_id`, `asset_id`, `erp_tags`.
+- Estado operativo al 2026-06-06: estable; no bloquea PROY-002/003/004.

@@ -41,10 +41,10 @@ erp_tags
 
 ## Ventas
 
-Origen previsto: `PROY-002_VENTAS`  
-Schema previsto: `uc101_proy002`
+Origen: `PROY-002_VENTAS`  
+Schema: `uc101_proy002`
 
-Tablas candidatas:
+Tablas:
 
 - `sales_customers`
 - `sales_products`
@@ -98,6 +98,35 @@ balance_amount
 status
 ```
 
+### Integracion ventas - inventario
+
+En la operacion actual, cada remision guarda:
+
+```text
+sales_documents.id / folio
+sales_document_items.id / folio
+inventory_product_id
+lot_code
+lot_cost_snapshot
+avg_cost_snapshot
+last_cost_snapshot
+```
+
+Cada renglon de remision genera un movimiento `erp_kardex`:
+
+```text
+source_type = remision
+source_folio = REM-00001
+remission_folio = REM-00001
+product_id = inventory_product_id
+lot_code = lote elegido
+quantity_out = cantidad vendida
+metadata.remision_item_id
+metadata.lot_unit_cost
+metadata.weighted_avg_cost
+metadata.last_purchase_cost
+```
+
 ## Integracion Gastos - Ventas
 
 Relaciones previstas:
@@ -116,8 +145,8 @@ Relaciones previstas:
 
 ## Inventario / Kardex
 
-Origen previsto: `PROY-004_INVENTARIO`  
-Schema previsto: `uc101_proy004`
+Origen: `PROY-004_INVENTARIO`  
+Schema: `uc101_proy004`
 
 Tablas:
 
@@ -146,6 +175,23 @@ quote_folio
 order_folio
 invoice_folio
 ```
+
+## Costeo
+
+Origen: `vertical_erp_costing` y kardex `uc101_proy004.erp_kardex`.
+
+| Costo | Regla |
+|---|---|
+| `lot_unit_cost` | Costo real unitario de compra del lote. |
+| `last_purchase_cost` | Ultimo costo unitario comprado del producto. |
+| `weighted_avg_cost` | Promedio ponderado de existencias actuales por lote. |
+
+Reglas:
+
+- Compras escriben costo neto de inventario por lote.
+- IVA se mantiene separado en metadata y totales comerciales.
+- Ventas guardan snapshot de costos para utilidad/reportes.
+- El lote es texto exacto; debe normalizarse en UI para evitar duplicados.
 
 Reglas de recurrencia:
 
