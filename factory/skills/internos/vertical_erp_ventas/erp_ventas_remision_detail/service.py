@@ -10,7 +10,7 @@ class ErpVentasRemisionDetailService:
         if not doc_id and not folio:
             return {"ok": False, "error": "id o folio requerido"}
 
-        ctx = {**context, "schema": "uc101_proy002"}
+        ctx = {**context, "schema": context.get("schema_ventas") or "uc101_proy002"}
         filters = {"id": doc_id} if doc_id else {"folio": folio}
         doc_res = SupabaseClient(ctx).rest_select(
             "sales_documents",

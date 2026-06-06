@@ -4,7 +4,7 @@ from factory.engine import SupabaseClient
 
 class ErpVentasRemisionListService:
     def ejecutar(self, context: dict) -> dict:
-        ctx   = {**context, "schema": "uc101_proy002"}
+        ctx   = {**context, "schema": context.get("schema_ventas") or "uc101_proy002"}
         limit = int(context.get("limit") or 50)
         filters: dict = {"document_type": "eq.remision"}
         if context.get("customer_id"):

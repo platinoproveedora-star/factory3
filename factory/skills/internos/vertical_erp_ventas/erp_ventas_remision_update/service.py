@@ -27,7 +27,7 @@ class ErpVentasRemisionUpdateService:
             return {"ok": False, "error": "sin campos editables para actualizar"}
         update["updated_at"] = datetime.now(timezone.utc).isoformat()
 
-        ctx = {**context, "schema": "uc101_proy002"}
+        ctx = {**context, "schema": context.get("schema_ventas") or "uc101_proy002"}
         filters = {"id": doc_id} if doc_id else {"folio": folio}
         if context.get("dry_run", True):
             return {"ok": True, "message": "dry_run: no se actualizo remision", "data": {"remision": {**filters, **update}}}
@@ -46,7 +46,7 @@ class ErpVentasRemisionUpdateService:
     def _sync_kardex_delivery_address(self, context: dict, remision_folio: str | None, delivery_address: str | None) -> None:
         if not remision_folio:
             return
-        SupabaseClient({**context, "schema": "uc101_proy004"}).rest_update(
+        SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"}).rest_update(
             "erp_kardex",
             {"delivery_address": delivery_address},
             {"source_type": "remision", "source_folio": remision_folio},

@@ -17,7 +17,7 @@ class ErpVentasRemisionFullUpdateService:
         if not isinstance(items, list):
             return {"ok": False, "error": "items debe ser lista"}
 
-        ctx = {**context, "schema": "uc101_proy002"}
+        ctx = {**context, "schema": context.get("schema_ventas") or "uc101_proy002"}
         doc = self._get_doc(ctx, doc_id, folio)
         if not doc:
             return {"ok": False, "error": "remision no encontrada"}
@@ -135,7 +135,7 @@ class ErpVentasRemisionFullUpdateService:
         return parsed, None
 
     def _sync_kardex(self, context: dict, remision_folio: str, item_id: str, item: dict, product: dict, header: dict) -> None:
-        db = SupabaseClient({**context, "schema": "uc101_proy004"})
+        db = SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"})
         result = db.rest_select(
             "erp_kardex",
             filters={"source_type": "remision", "source_folio": remision_folio},
@@ -170,7 +170,7 @@ class ErpVentasRemisionFullUpdateService:
         )
 
     def _get_product(self, context: dict, product_id: str) -> dict:
-        result = SupabaseClient({**context, "schema": "uc101_proy004"}).rest_select(
+        result = SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"}).rest_select(
             "erp_products",
             filters={"id": f"eq.{product_id}"},
             select="id,folio,product_name,unit,category",

@@ -11,6 +11,18 @@ from factory.engine import SupabaseClient
 _SKILLS_ROOT = Path(__file__).resolve().parents[2]
 
 
+def _cfg(context: dict) -> dict:
+    return {
+        "empresa_id":       context.get("empresa_id")       or "EMP_DURALON",
+        "schema_ventas":    context.get("schema_ventas")    or "uc101_proy002",
+        "schema_inventario": context.get("schema_inventario") or "uc101_proy004",
+        "project_ventas":   context.get("project_ventas")   or "PROY-002",
+        "project_inv":      context.get("project_inv")      or "PROY-004",
+        "module_ventas":    context.get("module_ventas")    or "ventas",
+        "module_inv":       context.get("module_inv")       or "inventario",
+    }
+
+
 class ErpVentasRemisionCreateService:
     def ejecutar(self, context: dict) -> dict:
         customer_id = str(context.get("customer_id") or "").strip()
@@ -72,12 +84,13 @@ class ErpVentasRemisionCreateService:
         balance_doc  = 0 if mark_as_paid else total
         doc_status   = "pagada" if mark_as_paid else "emitida"
 
-        ctx_ventas = {**context, "schema": "uc101_proy002"}
+        cfg = _cfg(context)
+        ctx_ventas = {**context, "schema": cfg["schema_ventas"]}
         doc_row = {
             "folio": doc_folio,
-            "empresa_id": "EMP_DURALON",
-            "project_code": "PROY-002",
-            "module_code": "ventas",
+            "empresa_id": cfg["empresa_id"],
+            "project_code": cfg["project_ventas"],
+            "module_code": cfg["module_ventas"],
             "document_type": "remision",
             "external_folio": external_folio,
             "customer_id": customer_id,
@@ -121,13 +134,13 @@ class ErpVentasRemisionCreateService:
 
             item_row = {
                 "folio": item_folio,
-                "empresa_id": "EMP_DURALON",
-                "project_code": "PROY-002",
-                "module_code": "ventas",
+                "empresa_id": cfg["empresa_id"],
+                "project_code": cfg["project_ventas"],
+                "module_code": cfg["module_ventas"],
                 "document_id": doc_id,
                 "product_id": item.get("product_id"),
                 "inventory_product_id": item.get("product_id"),
-                "inventory_schema": "uc101_proy004",
+                "inventory_schema": cfg["schema_inventario"],
                 "product_folio_snapshot": product.get("folio"),
                 "product_name_snapshot": product.get("product_name") or item["description"],
                 "description": item["description"],
@@ -221,7 +234,7 @@ class ErpVentasRemisionCreateService:
         return module.ErpVentasCustomerGetOrCreateService().ejecutar(context)
 
     def _get_product(self, context: dict, product_id: str) -> dict:
-        result = SupabaseClient({**context, "schema": "uc101_proy004"}).rest_select(
+        result = SupabaseClient({**context, "schema": _cfg(context)["schema_inventario"]}).rest_select(
             "erp_products",
             filters={"id": f"eq.{product_id}"},
             select="id,folio,product_name,unit,category",
@@ -294,10 +307,10 @@ class ErpVentasRemisionCreateService:
             return {"ok": False, "error": "no se pudo cargar erp_costing_sale_snapshot"}
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        return module.ErpCostingSaleSnapshotService().ejecutar({**context, "schema": "uc101_proy004", "product_id": product_id, "quantity": quantity, "lot_code": lot_code})
+        return module.ErpCostingSaleSnapshotService().ejecutar({**context, "schema": _cfg(context)["schema_inventario"], "product_id": product_id, "quantity": quantity, "lot_code": lot_code})
 
     def _reserve_folio(self, context: dict, table: str, prefix: str, digits: int = 5) -> dict:
-        result = SupabaseClient({**context, "schema": "uc101_proy002"}).rest_select(
+        result = SupabaseClient({**context, "schema": _cfg(context)["schema_ventas"]}).rest_select(
             table,
             filters={"folio": f"ilike.{prefix}-%"},
             select="folio",

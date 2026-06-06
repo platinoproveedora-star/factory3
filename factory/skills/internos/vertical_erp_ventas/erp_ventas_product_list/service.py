@@ -4,7 +4,7 @@ from factory.engine import SupabaseClient
 
 class ErpVentasProductListService:
     def ejecutar(self, context: dict) -> dict:
-        ctx = {**context, "schema": "uc101_proy004"}
+        ctx = {**context, "schema": context.get("schema_inventario") or context.get("schema") or "uc101_proy004"}
         result = SupabaseClient(ctx).rest_select(
             "erp_products",
             filters={"active": "eq.true"},

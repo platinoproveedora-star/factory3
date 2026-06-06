@@ -11,7 +11,7 @@ class ErpVentasKeyProductMatrixService:
         end_date = str(context.get("end_date") or date.today().isoformat())
         product_limit = int(context.get("product_limit") or 6)
 
-        products_res = SupabaseClient({**context, "schema": "uc101_proy004"}).rest_select(
+        products_res = SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"}).rest_select(
             "erp_products",
             filters={"active": "eq.true", "is_key_product": "eq.true"},
             select="id,folio,product_name,unit",
@@ -23,7 +23,7 @@ class ErpVentasKeyProductMatrixService:
         products = products_res.get("data") or []
         product_ids = [p["id"] for p in products if p.get("id")]
 
-        docs_res = SupabaseClient({**context, "schema": "uc101_proy002"}).rest_select(
+        docs_res = SupabaseClient({**context, "schema": context.get("schema_ventas") or "uc101_proy002"}).rest_select(
             "sales_documents",
             filters={"document_type": "eq.remision", "document_date": f"gte.{start_date}"},
             select="id,folio,external_folio,customer_name_snapshot,document_date,total",
@@ -37,7 +37,7 @@ class ErpVentasKeyProductMatrixService:
             return {"ok": True, "data": {"products": products, "rows": [], "totals": {}, "grand_total": 0, "start_date": start_date, "end_date": end_date}}
 
         doc_ids = [d["id"] for d in docs if d.get("id")]
-        items_res = SupabaseClient({**context, "schema": "uc101_proy002"}).rest_select(
+        items_res = SupabaseClient({**context, "schema": context.get("schema_ventas") or "uc101_proy002"}).rest_select(
             "sales_document_items",
             filters={"document_id": f"in.({','.join(doc_ids)})"},
             select="document_id,inventory_product_id,product_id,quantity,unit_price,tax_amount,line_total",

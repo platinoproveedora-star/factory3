@@ -28,10 +28,10 @@ class ErpVentasCustomerGetOrCreateService:
 
         row = {
             **context,
-            "schema": "uc101_proy004",
-            "company_id": "EMP_DURALON",
-            "project_code": "PROY-004",
-            "module_code": "inventario",
+            "schema": context.get("schema_inventario") or "uc101_proy004",
+            "company_id": context.get("empresa_id") or "EMP_DURALON",
+            "project_code": context.get("project_inv") or "PROY-004",
+            "module_code": context.get("module_inv") or "inventario",
             "dry_run": context.get("dry_run", True),
             "party_type": "customer",
             "party_name": customer_name,
@@ -46,7 +46,7 @@ class ErpVentasCustomerGetOrCreateService:
         return {"ok": True, "data": {"customer": party, "created": not context.get("dry_run", True)}}
 
     def _get_by_id(self, context: dict, customer_id: str) -> dict | None:
-        result = SupabaseClient({**context, "schema": "uc101_proy004"}).rest_select(
+        result = SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"}).rest_select(
             "erp_parties",
             filters={"id": f"eq.{customer_id}", "active": "eq.true"},
             select="id,folio,party_name,phone,email,address",
@@ -56,7 +56,7 @@ class ErpVentasCustomerGetOrCreateService:
         return rows[0] if rows else None
 
     def _find_by_name(self, context: dict, customer_name: str) -> dict | None:
-        result = SupabaseClient({**context, "schema": "uc101_proy004"}).rest_select(
+        result = SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"}).rest_select(
             "erp_parties",
             filters={"party_name": f"eq.{customer_name}", "party_type": "in.(customer,both)", "active": "eq.true"},
             select="id,folio,party_name,phone,email,address",
