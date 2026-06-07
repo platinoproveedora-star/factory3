@@ -3517,5 +3517,14 @@
     "path": "skills/internos/vertical_factory_utils/company_scaffold",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "factory_project_scaffold": {
+    "tipo": "interno",
+    "nombre": "factory_project_scaffold",
+    "vertical": "factory",
+    "descripcion": "Genera un proyecto nuevo dentro de una empresa Factory3 existente con project.json y estructura base sin hardcodes en codigo.",
+    "path": "skills/internos/vertical_factory_utils/factory_project_scaffold",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

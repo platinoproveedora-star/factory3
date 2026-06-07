@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "factory_project_scaffold",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un proyecto nuevo dentro de una empresa Factory3 existente con project.json y estructura base vendible.",
+  "requires_env": []
+}

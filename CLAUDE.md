@@ -363,6 +363,7 @@ def _resolve_context(self, context: dict) -> dict:
 - `factory_project_context_resolve`: resolver contexto multiempresa desde `context`, `company.json`, `project.json` y `modules.json`.
 - `factory_no_hardcode_audit`: auditar hardcodes en cualquier vertical/proyecto.
 - `company_scaffold`: crear empresa/proyecto con estructura correcta desde el inicio.
+- `factory_project_scaffold`: agregar un proyecto nuevo a una empresa existente con `project.json` y estructura base.
 
 Antes de cerrar cambios nuevos:
 
