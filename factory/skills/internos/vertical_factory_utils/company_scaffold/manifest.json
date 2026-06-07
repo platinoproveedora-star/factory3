@@ -1,0 +1,11 @@
+{
+  "type": "skill",
+  "name": "company_scaffold",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera estructura base de empresa y proyecto Factory3 con company.json, project.json y archivos de arquitectura sin hardcodes en codigo.",
+  "vertical": "factory",
+  "permissions": ["filesystem:workspace-write"],
+  "requires_env": []
+}

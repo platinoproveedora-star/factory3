@@ -3490,5 +3490,32 @@
     "path": "skills/internos/vertical_erp_costing/erp_costing_weighted_average_rebuild",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "factory_no_hardcode_audit": {
+    "tipo": "interno",
+    "nombre": "factory_no_hardcode_audit",
+    "vertical": "factory",
+    "descripcion": "Audita codigo Factory3 para detectar hardcodes de empresa, schema, proyecto, URLs, tokens e identidad de cliente en cualquier vertical.",
+    "path": "skills/internos/vertical_factory_utils/factory_no_hardcode_audit",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "factory_project_context_resolve": {
+    "tipo": "interno",
+    "nombre": "factory_project_context_resolve",
+    "vertical": "factory",
+    "descripcion": "Resuelve contexto multiempresa Factory3 desde context, company.json, project.json y modules.json sin defaults de cliente.",
+    "path": "skills/internos/vertical_factory_utils/factory_project_context_resolve",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "company_scaffold": {
+    "tipo": "interno",
+    "nombre": "company_scaffold",
+    "vertical": "factory",
+    "descripcion": "Genera estructura base de empresa y proyecto Factory3 con company.json, project.json y archivos de arquitectura sin hardcodes en codigo.",
+    "path": "skills/internos/vertical_factory_utils/company_scaffold",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

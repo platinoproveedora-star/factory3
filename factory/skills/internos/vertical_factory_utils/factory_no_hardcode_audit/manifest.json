@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "factory_no_hardcode_audit",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Audita codigo Factory3 para detectar hardcodes de empresa, schema, proyecto, URLs, tokens e identidad de cliente en cualquier vertical.",
+  "vertical": "factory",
+  "requires_env": []
+}

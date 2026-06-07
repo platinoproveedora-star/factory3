@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "factory_project_context_resolve",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Resuelve contexto multiempresa Factory3 desde context, company.json, project.json y modules.json sin defaults de cliente.",
+  "vertical": "factory",
+  "requires_env": []
+}

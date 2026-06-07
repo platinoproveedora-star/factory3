@@ -109,3 +109,61 @@ Skills/gates requeridos para evitar repetir deuda:
 - `vertical_erp/erp_no_hardcode_audit`: escanea codigo para detectar identidad/schema/URLs fijas en zonas vendibles.
 - `vertical_erp/erp_module_export_plan`: genera plan para copiar/vender un modulo a otra empresa.
 - `vertical_dashboards/dashboard_context_adapter`: patron para dashboards que leen contexto sin hardcodes.
+
+## GOBERNANZA UNIVERSAL ANTI-HARDCODING - OBLIGATORIO
+
+Esta regla aplica a TODO Factory3: skills, bots, dashboards, scripts, seeders, APIs, agentes y cualquier vertical, no solo ERP.
+
+Regla de oro: ningun codigo reusable puede hardcodear:
+
+- `empresa_id` / `company_id`
+- schemas Supabase (`uc101_*`, `logplat`, o cualquier schema de cliente)
+- `project_code` / `module_code`
+- URLs Render/Vercel o dominios de despliegue
+- tokens, write keys, service keys o nombres parciales de secretos como valores
+
+Todo debe venir de `context`, `project.json`, `company.json`, `modules.json`, env vars o config versionada especifica del proyecto. Si falta contexto, el codigo debe devolver error explicito. Prohibidos los fallbacks silenciosos a clientes reales.
+
+### project.json minimo obligatorio
+
+Todo proyecto en `companies/EMP_XXX/projects/PROY-XXX*/` debe tener `project.json` con minimo:
+
+```json
+{
+  "company_id": "EMP_XXX",
+  "project_code": "PROY-001",
+  "module_code": "nombre_modulo",
+  "schema": "schema_cliente",
+  "platform": "render",
+  "requires_env": ["SUPABASE_URL"]
+}
+```
+
+Sin `project.json`, el proyecto no es valido para cierre, deploy o venta.
+
+### Patron obligatorio de contexto en service.py
+
+Todo `service.py` que necesite schema/empresa debe resolver contexto asi, o con `factory_project_context_resolve`:
+
+```python
+def _resolve_context(self, context: dict) -> dict:
+    schema = str(context.get("schema") or context.get("supabase_schema") or "").strip()
+    company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
+    if not schema:
+        return {"ok": False, "error": "schema requerido en context"}
+    if not company_id:
+        return {"ok": False, "error": "company_id requerido en context"}
+    return {"ok": True, "data": {**context, "schema": schema, "company_id": company_id}}
+```
+
+### Skills universales de gobernanza
+
+- `factory_project_context_resolve`: resolver contexto multiempresa desde `context`, `company.json`, `project.json` y `modules.json`.
+- `factory_no_hardcode_audit`: auditar hardcodes en cualquier vertical/proyecto.
+- `company_scaffold`: crear empresa/proyecto con estructura correcta desde el inicio.
+
+Antes de cerrar cambios nuevos:
+
+- Correr `factory_no_hardcode_audit` sobre los paths tocados.
+- Confirmar `0 blockers`.
+- Si quedan warnings, documentar si son env vars/config permitida o corregirlos.
