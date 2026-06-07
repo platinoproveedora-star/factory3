@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp/erp_no_hardcode_audit",
+  "vertical": "vertical_erp",
+  "version": "0.1.0",
+  "description": "Audita codigo ERP vendible para detectar hardcodes de empresa, schema, proyecto, URLs, tokens e identidad de cliente.",
+  "entrypoint": "skill.py"
+}

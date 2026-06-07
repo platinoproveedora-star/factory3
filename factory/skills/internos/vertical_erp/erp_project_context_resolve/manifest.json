@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp/erp_project_context_resolve",
+  "vertical": "vertical_erp",
+  "version": "0.1.0",
+  "description": "Resuelve contexto ERP multiempresa desde context, project.json y modules.json sin defaults de cliente.",
+  "entrypoint": "skill.py"
+}

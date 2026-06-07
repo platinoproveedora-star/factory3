@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import re
 from pathlib import Path
 
@@ -40,6 +41,8 @@ class ErpHealthCheckService:
             checks["schema_sql_parsed_tables"] = sorted(parsed.keys())
         else:
             warnings.append("No se recibieron tables ni schema_sql; auditoria de columnas no ejecutada")
+
+        self._check_no_hardcodes(context, issues, warnings, checks)
 
         score = self._score(issues, warnings)
         return {
@@ -127,6 +130,40 @@ class ErpHealthCheckService:
                 "missing_recommended": recommended_missing,
             }
         checks["tables"] = table_results
+
+    def _check_no_hardcodes(self, context: dict, issues: list[str], warnings: list[str], checks: dict) -> None:
+        raw_paths = context.get("hardcode_audit_paths") or context.get("scan_paths") or []
+        project_path = context.get("project_path") or ""
+        if not raw_paths and project_path:
+            raw_paths = [project_path]
+        if not raw_paths:
+            warnings.append("No se recibieron hardcode_audit_paths; auditoria anti-hardcode no ejecutada")
+            checks["no_hardcode_audit"] = {"executed": False}
+            return
+
+        service_path = Path(__file__).resolve().parents[1] / "erp_no_hardcode_audit" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_no_hardcode_audit_service", service_path)
+        if spec is None or spec.loader is None:
+            warnings.append("No se pudo cargar erp_no_hardcode_audit")
+            checks["no_hardcode_audit"] = {"executed": False}
+            return
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        result = module.ErpNoHardcodeAuditService().ejecutar({**context, "paths": raw_paths, "include_allowed": False})
+        data = result.get("data") or {}
+        summary = data.get("summary") or {}
+        checks["no_hardcode_audit"] = {
+            "executed": True,
+            "summary": summary,
+            "blockers": data.get("blockers") or [],
+            "warnings": data.get("warnings") or [],
+        }
+        blockers = int(summary.get("blockers") or 0)
+        warn_count = int(summary.get("warnings") or 0)
+        if blockers:
+            issues.append(f"Hardcodes bloqueantes detectados: {blockers}")
+        if warn_count:
+            warnings.append(f"Hardcodes/revisiones detectadas: {warn_count}")
 
     def _parse_schema_sql(self, schema_sql: str) -> dict[str, list[str]]:
         tables: dict[str, list[str]] = {}

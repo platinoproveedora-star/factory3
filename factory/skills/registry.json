@@ -3193,6 +3193,24 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp/erp_project_context_resolve": {
+    "tipo": "interno",
+    "nombre": "vertical_erp/erp_project_context_resolve",
+    "vertical": "vertical_erp",
+    "descripcion": "Resuelve contexto ERP multiempresa desde context, project.json y modules.json sin defaults de cliente.",
+    "path": "skills/internos/vertical_erp/erp_project_context_resolve",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp/erp_no_hardcode_audit": {
+    "tipo": "interno",
+    "nombre": "vertical_erp/erp_no_hardcode_audit",
+    "vertical": "vertical_erp",
+    "descripcion": "Audita codigo ERP vendible para detectar hardcodes de empresa, schema, proyecto, URLs, tokens e identidad de cliente.",
+    "path": "skills/internos/vertical_erp/erp_no_hardcode_audit",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp/erp_health_check": {
     "tipo": "interno",
     "nombre": "vertical_erp/erp_health_check",

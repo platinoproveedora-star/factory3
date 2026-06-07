@@ -105,6 +105,8 @@ Regla: si se necesita mover el ERP completo, el proyecto `ERP_CORE` debe contene
 | Skill | Funcion |
 |---|---|
 | `vertical_erp/erp_identity_contract` | Devuelve y valida `empresa_id`, `project_code`, `module_code`, schema y columnas requeridas. |
+| `vertical_erp/erp_project_context_resolve` | Resuelve contexto multiempresa desde `context`, `project.json`, `modules.json`, env y overrides; no usa defaults de cliente. |
+| `vertical_erp/erp_no_hardcode_audit` | Detecta hardcodes de empresa, schema, proyecto, URLs y secretos en codigo vendible. |
 | `vertical_erp/erp_health_check` | Audita si un modulo cumple el contrato ERP-ready. |
 | `vertical_erp/erp_module_registry` | Registra o lista modulos activos de una empresa. |
 | `vertical_erp/erp_schema_planner` | Genera propuesta SQL para tablas ERP-ready sin ejecutar por default. |
@@ -119,19 +121,23 @@ Regla: si se necesita mover el ERP completo, el proyecto `ERP_CORE` debe contene
 Para un modulo aislado:
 
 ```text
-erp_identity_contract
+erp_project_context_resolve
+-> erp_identity_contract
 -> vertical de negocio especifica
+-> erp_no_hardcode_audit
 -> erp_health_check
 ```
 
 Para un ERP completo:
 
 ```text
-erp_identity_contract
+erp_project_context_resolve
+-> erp_identity_contract
 -> erp_module_registry
 -> modulos de negocio
 -> erp_event_logger / erp_cross_module_linker
 -> erp_dashboard_data
+-> erp_no_hardcode_audit
 -> erp_health_check
 ```
 
@@ -159,6 +165,7 @@ module_code = <modulo>
 Un modulo esta ERP-ready si cumple:
 
 - Tiene `project.json` con `company_id`, `project_code`, `module_code` y schema.
+- No tiene hardcodes bloqueantes en codigo vendible: empresa, schema, proyecto, URLs o identidad de cliente deben venir de contexto/config.
 - Sus tablas operativas tienen `id`, `folio`, `empresa_id`, `project_code`, `module_code`.
 - Los usuarios pueden mapearse a `global_user_id` o campos equivalentes.
 - Usa data skills para dashboard.

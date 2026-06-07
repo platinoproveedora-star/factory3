@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib.util
 import re
+from pathlib import Path
 
 from factory.engine import SupabaseClient
 
@@ -22,6 +24,9 @@ class ErpFolioReserveService:
             return {"ok": False, "error": "digits debe estar entre 1 y 12"}
 
         schema_context = self._schema_context(context)
+        if not schema_context.get("ok"):
+            return schema_context
+        schema_context = schema_context["data"]
         if context.get("dry_run", True):
             return {
                 "ok": True,
@@ -79,10 +84,42 @@ class ErpFolioReserveService:
         return max(numbers or [0])
 
     def _schema_context(self, context: dict) -> dict:
+        resolved = self._resolve_context(context)
+        if not resolved.get("ok"):
+            return {"ok": False, "error": resolved.get("error") or "contexto ERP incompleto para reservar folio"}
+        data = resolved.get("data") or {}
         return {
-            **context,
-            "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004",
-            "company_id": context.get("company_id") or context.get("empresa_id") or "EMP_DURALON",
-            "project_code": context.get("project_code") or "PROY-004",
-            "module_code": context.get("module_code") or "inventario",
+            "ok": True,
+            "data": {
+                **context,
+                "schema": data.get("schema"),
+                "company_id": data.get("company_id"),
+                "empresa_id": data.get("empresa_id") or data.get("company_id"),
+                "project_code": data.get("project_code"),
+                "module_code": data.get("module_code"),
+            },
         }
+
+    def _resolve_context(self, context: dict) -> dict:
+        has_minimum = all(
+            str(context.get(key) or "").strip()
+            for key in ("schema", "company_id", "project_code", "module_code")
+        )
+        if has_minimum:
+            return {
+                "ok": True,
+                "data": {
+                    "schema": context.get("schema"),
+                    "company_id": context.get("company_id"),
+                    "empresa_id": context.get("empresa_id") or context.get("company_id"),
+                    "project_code": context.get("project_code"),
+                    "module_code": context.get("module_code"),
+                },
+            }
+        service_path = Path(__file__).resolve().parents[1] / "erp_project_context_resolve" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_project_context_resolve_service", service_path)
+        if spec is None or spec.loader is None:
+            return {"ok": False, "error": "no se pudo cargar erp_project_context_resolve"}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.ErpProjectContextResolveService().ejecutar(context)
