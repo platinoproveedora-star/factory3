@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createRemision, getCustomers, getProductLots, getProducts, getRemisiones, openRemisionPdf } from '@/lib/api';
 import type { Customer, FormItem, Product, Remision } from '@/lib/api';
+import projectContext from '@/project-context.json';
 
 const IVA = 0.16;
 
@@ -203,7 +204,7 @@ export default function CajaRemForm() {
 
         {/* Header */}
         <div className="mb-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Duralon · PROY-002</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">{projectContext.company_label} · {projectContext.project_label}</p>
           <h1 className="text-2xl font-bold text-slate-900 mt-1">🧾 Nueva Remisión</h1>
         </div>
 

@@ -1,8 +1,9 @@
 /**
- * Cliente del dashboard Duralon (EMP_DURALON / PROY-001 / gastos).
+ * Cliente del dashboard de gastos.
  * Llama a factory3 /data/vertical_client_expenses/client_expenses_dashboard_data.
  * Cero credenciales Supabase expuestas; factory3 maneja service_role_key internamente.
  */
+import projectContext from '../project-context.json';
 
 const FACTORY_URL = (
   process.env.FACTORY_API_URL ?? process.env.NEXT_PUBLIC_FACTORY_API_URL ?? ''
@@ -46,9 +47,9 @@ export type Stats = {
 
 function baseParams(extra: Record<string, string> = {}) {
   return {
-    company_id: 'EMP_DURALON',
-    project_code: 'PROY-001',
-    module_code: 'gastos',
+    company_id: projectContext.company_id,
+    project_code: projectContext.project_code,
+    module_code: projectContext.module_code,
     ...extra,
   };
 }

@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
+import projectContext from '../project-context.json';
 import './globals.css';
 
-export const metadata: Metadata = { title: 'Caja Remisiones — Duralon', description: 'PROY-002 Ventas' };
+export const metadata: Metadata = {
+  title: `Caja Remisiones - ${projectContext.company_label}`,
+  description: `${projectContext.project_label} Ventas`,
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

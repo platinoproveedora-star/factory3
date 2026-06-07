@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { Search, Download, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Check, X, ChevronUp, ChevronDown } from 'lucide-react';
 import type { Gasto } from '../lib/db';
 import { gastosToCSV, downloadCSV } from '../lib/export';
+import projectContext from '../project-context.json';
 
 type Props = { gastos: Gasto[] };
 
@@ -11,7 +12,13 @@ const PAGE_SIZE = 50;
 const FACTORY_URL = process.env.NEXT_PUBLIC_FACTORY_API_URL ?? '';
 const WRITE_KEY   = process.env.NEXT_PUBLIC_WRITE_KEY ?? '';
 const SKILL = 'vertical_client_expenses/client_expenses_run';
-const BASE_CTX = { schema: 'uc101_proy001', empresa_id: 'EMP_DURALON', project_code: 'PROY-001', module_code: 'gastos', dry_run: false };
+const BASE_CTX = {
+  schema: projectContext.schema,
+  empresa_id: projectContext.company_id,
+  project_code: projectContext.project_code,
+  module_code: projectContext.module_code,
+  dry_run: false,
+};
 
 // Fallback — se sobreescribe con categorías reales de los datos
 const CATEGORIES_DEFAULT = [

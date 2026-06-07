@@ -1,19 +1,22 @@
+import projectContext from '../project-context.json';
+
 const BASE = (process.env.NEXT_PUBLIC_FACTORY_API_URL ?? '').replace(/\/$/, '');
 const WRITE_KEY = process.env.NEXT_PUBLIC_WRITE_KEY ?? '';
+
 const ERP_CONTEXT = {
-  company_id: process.env.NEXT_PUBLIC_ERP_COMPANY_ID ?? 'EMP_DURALON',
-  empresa_id: process.env.NEXT_PUBLIC_ERP_COMPANY_ID ?? 'EMP_DURALON',
-  project_code: process.env.NEXT_PUBLIC_ERP_SALES_PROJECT_CODE ?? 'PROY-002',
-  module_code: process.env.NEXT_PUBLIC_ERP_SALES_MODULE_CODE ?? 'ventas',
-  schema: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? 'uc101_proy002',
-  schema_ventas: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? 'uc101_proy002',
-  sales_schema: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? 'uc101_proy002',
-  schema_inventario: process.env.NEXT_PUBLIC_ERP_INVENTORY_SCHEMA ?? 'uc101_proy004',
-  inventory_schema: process.env.NEXT_PUBLIC_ERP_INVENTORY_SCHEMA ?? 'uc101_proy004',
-  project_inv: process.env.NEXT_PUBLIC_ERP_INVENTORY_PROJECT_CODE ?? 'PROY-004',
-  inventory_project_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_PROJECT_CODE ?? 'PROY-004',
-  module_inv: process.env.NEXT_PUBLIC_ERP_INVENTORY_MODULE_CODE ?? 'inventario',
-  inventory_module_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_MODULE_CODE ?? 'inventario',
+  company_id: process.env.NEXT_PUBLIC_ERP_COMPANY_ID ?? projectContext.company_id,
+  empresa_id: process.env.NEXT_PUBLIC_ERP_COMPANY_ID ?? projectContext.company_id,
+  project_code: process.env.NEXT_PUBLIC_ERP_SALES_PROJECT_CODE ?? projectContext.sales_project_code,
+  module_code: process.env.NEXT_PUBLIC_ERP_SALES_MODULE_CODE ?? projectContext.sales_module_code,
+  schema: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? projectContext.sales_schema,
+  schema_ventas: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? projectContext.sales_schema,
+  sales_schema: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? projectContext.sales_schema,
+  schema_inventario: process.env.NEXT_PUBLIC_ERP_INVENTORY_SCHEMA ?? projectContext.inventory_schema,
+  inventory_schema: process.env.NEXT_PUBLIC_ERP_INVENTORY_SCHEMA ?? projectContext.inventory_schema,
+  project_inv: process.env.NEXT_PUBLIC_ERP_INVENTORY_PROJECT_CODE ?? projectContext.inventory_project_code,
+  inventory_project_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_PROJECT_CODE ?? projectContext.inventory_project_code,
+  module_inv: process.env.NEXT_PUBLIC_ERP_INVENTORY_MODULE_CODE ?? projectContext.inventory_module_code,
+  inventory_module_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_MODULE_CODE ?? projectContext.inventory_module_code,
 };
 
 export type Customer = { id: string; folio: string; party_name: string; phone?: string; email?: string; address?: string };

@@ -5,6 +5,7 @@ import CategoryTable        from '../../components/CategoryTable';
 import MonthlyTable         from '../../components/MonthlyTable';
 import CategoryMonthlyTable from '../../components/CategoryMonthlyTable';
 import ExpenseTable         from '../../components/ExpenseTable';
+import projectContext       from '../../project-context.json';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +57,7 @@ export default async function DashboardPage() {
       <aside className="fixed inset-y-0 left-0 w-56 border-r border-slate-200 bg-white px-5 py-6 z-10">
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Factory3</p>
         <h1 className="mt-1 text-base font-semibold text-slate-900">Duralon Gastos</h1>
-        <p className="mt-0.5 text-[11px] text-slate-400">EMP_DURALON · uc101_proy001</p>
+        <p className="mt-0.5 text-[11px] text-slate-400">{projectContext.company_label} - {projectContext.schema_label}</p>
         <nav className="mt-8 space-y-1 text-sm">
           <a href="#overview" className="block rounded-lg bg-slate-100 px-3 py-2 font-medium text-slate-900">
             📊 Overview

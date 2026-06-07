@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { spawnSync } from 'child_process';
+import projectContext from '../project-context.json';
 
 const factoryUrl = (process.env.FACTORY_API_URL || 'https://factory3.onrender.com').replace(/\/$/, '');
 const writeKey = process.env.FACTORY_WRITE_KEY || '';
@@ -41,10 +42,10 @@ export async function runFactorySkill<T>(skill: string, context: Record<string, 
     headers,
     cache: 'no-store',
     body: JSON.stringify({
-      company_id: 'EMP_DURALON',
-      project_code: 'PROY-004',
-      module_code: 'inventario',
-      schema: 'uc101_proy004',
+      company_id: projectContext.company_id,
+      project_code: projectContext.project_code,
+      module_code: projectContext.module_code,
+      schema: projectContext.schema,
       dry_run: false,
       ...context,
     }),
@@ -65,10 +66,10 @@ function runLocalSkill<T>(skill: string, context: Record<string, any>): T {
   const fullSkillPath = path.join(repoRoot, skillPath);
   const childEnv = { ...loadRootEnv(repoRoot), ...process.env };
   const payload = {
-    company_id: 'EMP_DURALON',
-    project_code: 'PROY-004',
-    module_code: 'inventario',
-    schema: 'uc101_proy004',
+    company_id: projectContext.company_id,
+    project_code: projectContext.project_code,
+    module_code: projectContext.module_code,
+    schema: projectContext.schema,
     dry_run: false,
     ...context,
   };

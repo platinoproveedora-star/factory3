@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { loadDashboardData, type DashboardData } from '../lib/client-data';
 import { money, qty, type KardexMovement, type Party, type Product } from '../lib/supabase';
+import projectContext from '../project-context.json';
 
 type Tab = 'inventario' | 'producto' | 'kardex' | 'proveedores' | 'clientes' | 'ventas' | 'compras';
 type RefreshFn = () => Promise<DashboardData | null>;
@@ -175,7 +176,7 @@ export default function InventoryDashboard() {
             <Building2 size={20} />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-slate-500">EMP_DURALON</p>
+            <p className="text-xs font-semibold uppercase text-slate-500">{projectContext.company_label}</p>
             <h1 className="text-lg font-semibold text-slate-950">Inventario</h1>
           </div>
         </div>
@@ -203,7 +204,7 @@ export default function InventoryDashboard() {
         </nav>
         <div className="absolute bottom-6 left-5 right-5 rounded border border-slate-200 bg-slate-50 p-3">
           <p className="text-xs font-medium text-slate-700">Schema</p>
-          <p className="mt-1 text-xs text-slate-500">uc101_proy004</p>
+          <p className="mt-1 text-xs text-slate-500">{projectContext.schema_label}</p>
         </div>
       </aside>
 
@@ -211,7 +212,7 @@ export default function InventoryDashboard() {
         <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur lg:px-8">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase text-slate-500">PROY-004 · Kardex operativo</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">{projectContext.project_label} - Kardex operativo</p>
               <h2 className="text-2xl font-semibold text-slate-950">Duralon Inventario</h2>
             </div>
             <div className="flex items-center gap-2">
@@ -1463,7 +1464,7 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-950">Remisiones</h3>
-          <p className="mt-0.5 text-xs text-slate-500">{loading ? 'Cargando...' : `${remisiones.length} documentos desde PROY-002`}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{loading ? 'Cargando...' : `${remisiones.length} documentos desde ${projectContext.sales_project_label}`}</p>
         </div>
         <button
           type="button"

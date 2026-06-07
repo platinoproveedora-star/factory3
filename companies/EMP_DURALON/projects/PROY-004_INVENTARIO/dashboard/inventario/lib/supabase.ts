@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import projectContext from '../project-context.json';
 
-const schema = process.env.SUPABASE_SCHEMA || 'uc101_proy004';
+const schema = process.env.SUPABASE_SCHEMA || projectContext.schema;
 
 export function getSupabase() {
   const url = process.env.SUPABASE_URL;

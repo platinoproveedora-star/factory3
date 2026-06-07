@@ -1,0 +1,11 @@
+{
+  "company_id": "EMP_DURALON",
+  "project_code": "PROY-004",
+  "module_code": "inventario",
+  "schema": "uc101_proy004",
+  "sales_project_code": "PROY-002",
+  "company_label": "EMP_DURALON",
+  "project_label": "PROY-004",
+  "sales_project_label": "PROY-002",
+  "schema_label": "uc101_proy004"
+}
