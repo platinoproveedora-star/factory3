@@ -28,7 +28,10 @@ class ErpInventoryKardexListService:
         if start_date:
             filters["movement_date"] = f"gte.{start_date}"
 
-        ctx = {**context, "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004"}
+        ctx = self._schema_context(context)
+        if not ctx.get("ok"):
+            return ctx
+        ctx = ctx["data"]
         db = SupabaseClient(ctx)
         result = db.rest_select(
             "erp_kardex",
@@ -73,3 +76,9 @@ class ErpInventoryKardexListService:
                 }
             )
         return enriched
+
+    def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema/supabase_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}

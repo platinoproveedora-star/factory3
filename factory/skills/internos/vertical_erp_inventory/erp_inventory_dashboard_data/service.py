@@ -45,10 +45,10 @@ class ErpInventoryDashboardDataService:
         if provided_products or provided_parties or provided_movements:
             return {"ok": True, "data": {"products": provided_products, "parties": provided_parties, "movements": provided_movements}}
 
-        schema_context = {
-            **context,
-            "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004",
-        }
+        schema_context = self._schema_context(context)
+        if not schema_context.get("ok"):
+            return schema_context
+        schema_context = schema_context["data"]
         db = SupabaseClient(schema_context)
         products_res = db.rest_select("erp_products", select="*", order="product_name.asc", limit=10000)
         parties_res = db.rest_select("erp_parties", select="*", order="party_name.asc", limit=10000)
@@ -64,6 +64,12 @@ class ErpInventoryDashboardDataService:
                 "movements": kardex_res.get("data") or [],
             },
         }
+
+    def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema/supabase_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}
 
     def _dashboard(self, products, parties, movements) -> dict:
         active_parties = [p for p in parties if p.get("active") is not False]

@@ -5,7 +5,10 @@ from factory.engine import SupabaseClient
 
 class ErpInventoryLotStockReportService:
     def ejecutar(self, context: dict) -> dict:
-        ctx = {**context, "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004"}
+        ctx = self._schema_context(context)
+        if not ctx.get("ok"):
+            return ctx
+        ctx = ctx["data"]
         db = SupabaseClient(ctx)
         products_res = db.rest_select("erp_products", select="*", order="product_name.asc", limit=10000)
         movements_res = db.rest_select("erp_kardex", select="*", order="created_at.desc", limit=10000)
@@ -118,3 +121,9 @@ class ErpInventoryLotStockReportService:
         value = movement.get("lot_code") or metadata.get("lot_code")
         value = str(value or "").strip()
         return value or "GENERAL"
+
+    def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema/supabase_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}

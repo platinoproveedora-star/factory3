@@ -15,13 +15,10 @@ class ErpInventoryKardexLotReassignService:
         if not new_lot_code:
             return {"ok": False, "error": "lot_code requerido"}
 
-        schema_context = {
-            **context,
-            "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004",
-            "company_id": context.get("company_id") or "EMP_DURALON",
-            "project_code": context.get("project_code") or "PROY-004",
-            "module_code": context.get("module_code") or "inventario",
-        }
+        schema_context = self._schema_context(context)
+        if not schema_context.get("ok"):
+            return schema_context
+        schema_context = schema_context["data"]
         db = SupabaseClient(schema_context)
         existing = db.rest_select("erp_kardex", filters={"id": movement_id}, select="*", limit=1)
         if not existing.get("ok"):
@@ -69,3 +66,32 @@ class ErpInventoryKardexLotReassignService:
     def _blank(self, value):
         value = str(value or "").strip()
         return value or None
+
+    def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
+        project_code = str(context.get("project_code") or "").strip()
+        module_code = str(context.get("module_code") or "").strip()
+        missing = [
+            key
+            for key, value in {
+                "schema": schema,
+                "company_id": company_id,
+                "project_code": project_code,
+                "module_code": module_code,
+            }.items()
+            if not value
+        ]
+        if missing:
+            return {"ok": False, "error": f"contexto ERP incompleto: {', '.join(missing)}"}
+        return {
+            "ok": True,
+            "data": {
+                **context,
+                "schema": schema,
+                "company_id": company_id,
+                "empresa_id": company_id,
+                "project_code": project_code,
+                "module_code": module_code,
+            },
+        }

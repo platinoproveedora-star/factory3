@@ -8,7 +8,10 @@ from factory.engine import SupabaseClient
 
 class ErpInventoryKardexSaveService:
     def ejecutar(self, context: dict) -> dict:
-        schema_context = {**context, "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004"}
+        schema_context = self._schema_context(context)
+        if not schema_context.get("ok"):
+            return schema_context
+        schema_context = schema_context["data"]
         source_type = str(context.get("source_type") or "").strip()
         if source_type not in {"compra", "remision", "ajuste"}:
             return {"ok": False, "error": "source_type invalido"}
@@ -62,6 +65,9 @@ class ErpInventoryKardexSaveService:
 
         row = {
             "folio": folio,
+            "empresa_id": schema_context.get("empresa_id") or schema_context.get("company_id"),
+            "project_code": schema_context.get("project_code"),
+            "module_code": schema_context.get("module_code"),
             "movement_type": movement_type,
             "source_type": source_type,
             "source_folio": source_folio,
@@ -135,3 +141,32 @@ class ErpInventoryKardexSaveService:
         for row in result.get("data") or []:
             total += float(row.get("quantity_in") or 0) - float(row.get("quantity_out") or 0)
         return total
+
+    def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
+        project_code = str(context.get("project_code") or "").strip()
+        module_code = str(context.get("module_code") or "").strip()
+        missing = [
+            key
+            for key, value in {
+                "schema": schema,
+                "company_id": company_id,
+                "project_code": project_code,
+                "module_code": module_code,
+            }.items()
+            if not value
+        ]
+        if missing:
+            return {"ok": False, "error": f"contexto ERP incompleto: {', '.join(missing)}"}
+        return {
+            "ok": True,
+            "data": {
+                **context,
+                "schema": schema,
+                "company_id": company_id,
+                "empresa_id": company_id,
+                "project_code": project_code,
+                "module_code": module_code,
+            },
+        }

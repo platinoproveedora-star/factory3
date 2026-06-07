@@ -29,7 +29,10 @@ class ErpInventoryProductUpdateService:
         }
         if context.get("dry_run", True):
             return {"ok": True, "message": "dry_run: no se actualizo producto", "data": {"product": {"id": product_id, **row}}}
-        result = SupabaseClient({**context, "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004"}).rest_update("erp_products", row, {"id": product_id})
+        schema_context = self._schema_context(context)
+        if not schema_context.get("ok"):
+            return schema_context
+        result = SupabaseClient(schema_context["data"]).rest_update("erp_products", row, {"id": product_id})
         if not result.get("ok"):
             return result
         data = result.get("data") or []
@@ -39,3 +42,9 @@ class ErpInventoryProductUpdateService:
     def _blank(self, value):
         value = str(value or "").strip()
         return value or None
+
+    def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema/supabase_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}

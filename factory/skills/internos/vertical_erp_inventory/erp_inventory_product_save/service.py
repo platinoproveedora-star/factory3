@@ -11,7 +11,9 @@ class ErpInventoryProductSaveService:
         name = str(context.get("product_name") or context.get("name") or "").strip()
         if not name:
             return {"ok": False, "error": "product_name requerido"}
-        schema_context = {**context, "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004"}
+        schema_context = self._schema_context(context)
+        if not schema_context.get("ok", True):
+            return schema_context
         dry_run = context.get("dry_run", True)
         folio = "PROD-DRYRUN"
         if not dry_run:
@@ -24,6 +26,9 @@ class ErpInventoryProductSaveService:
                 folio = folio_result["data"]["folio"]
         row = {
             "folio": folio,
+            "empresa_id": schema_context.get("empresa_id") or schema_context.get("company_id"),
+            "project_code": schema_context.get("project_code"),
+            "module_code": schema_context.get("module_code"),
             "product_key": self._blank(context.get("product_key")),
             "product_name": name,
             "sku": self._blank(context.get("sku")),
@@ -66,3 +71,22 @@ class ErpInventoryProductSaveService:
     def _blank(self, value):
         value = str(value or "").strip()
         return value or None
+
+    def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
+        project_code = str(context.get("project_code") or "").strip()
+        module_code = str(context.get("module_code") or "").strip()
+        missing = [
+            key
+            for key, value in {
+                "schema": schema,
+                "company_id": company_id,
+                "project_code": project_code,
+                "module_code": module_code,
+            }.items()
+            if not value
+        ]
+        if missing:
+            return {"ok": False, "error": f"contexto ERP incompleto: {', '.join(missing)}"}
+        return {**context, "schema": schema, "company_id": company_id, "empresa_id": company_id, "project_code": project_code, "module_code": module_code}

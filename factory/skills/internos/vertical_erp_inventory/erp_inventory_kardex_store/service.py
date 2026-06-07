@@ -17,11 +17,14 @@ class ErpInventoryKardexStoreService:
         paid_amount = self._num(context.get("paid_amount"))
         base_amount = total_sale if movement_type == "salida" else total_cost
         balance_amount = self._num(context.get("balance_amount"), max(base_amount - paid_amount, 0))
+        identity = self._identity(context)
+        if not identity.get("ok"):
+            return identity
         row = {
             "folio": context.get("folio"),
-            "empresa_id": context.get("empresa_id") or context.get("company_id") or "EMP_DURALON",
-            "project_code": context.get("project_code") or "PROY-004",
-            "module_code": context.get("module_code") or "inventario",
+            "empresa_id": identity["data"]["empresa_id"],
+            "project_code": identity["data"]["project_code"],
+            "module_code": identity["data"]["module_code"],
             "movement_type": movement_type,
             "source_type": context.get("source_type"),
             "source_folio": context.get("source_folio"),
@@ -59,3 +62,14 @@ class ErpInventoryKardexStoreService:
         if value is None:
             return float(default)
         return float(value)
+
+    def _identity(self, context: dict) -> dict:
+        data = {
+            "empresa_id": str(context.get("empresa_id") or context.get("company_id") or "").strip(),
+            "project_code": str(context.get("project_code") or "").strip(),
+            "module_code": str(context.get("module_code") or "").strip(),
+        }
+        missing = [key for key, value in data.items() if not value]
+        if missing:
+            return {"ok": False, "error": f"identidad ERP incompleta: {', '.join(missing)}"}
+        return {"ok": True, "data": data}

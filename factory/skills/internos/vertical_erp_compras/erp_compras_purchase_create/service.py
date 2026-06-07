@@ -9,13 +9,10 @@ from factory.engine import SupabaseClient
 
 class ErpComprasPurchaseCreateService:
     def ejecutar(self, context: dict) -> dict:
-        ctx = {
-            **context,
-            "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004",
-            "company_id": context.get("company_id") or "EMP_DURALON",
-            "project_code": context.get("project_code") or "PROY-004",
-            "module_code": "compras",
-        }
+        ctx = self._schema_context(context)
+        if not ctx.get("ok"):
+            return ctx
+        ctx = ctx["data"]
         supplier_id = str(context.get("supplier_id") or context.get("party_id") or "").strip()
         if not supplier_id:
             return {"ok": False, "error": "supplier_id requerido"}
@@ -211,3 +208,30 @@ class ErpComprasPurchaseCreateService:
     def _blank(self, value):
         value = str(value or "").strip()
         return value or None
+
+    def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
+        project_code = str(context.get("project_code") or context.get("inventory_project_code") or "").strip()
+        missing = [
+            key
+            for key, value in {
+                "schema": schema,
+                "company_id": company_id,
+                "project_code": project_code,
+            }.items()
+            if not value
+        ]
+        if missing:
+            return {"ok": False, "error": f"contexto ERP de compras incompleto: {', '.join(missing)}"}
+        return {
+            "ok": True,
+            "data": {
+                **context,
+                "schema": schema,
+                "company_id": company_id,
+                "empresa_id": company_id,
+                "project_code": project_code,
+                "module_code": "compras",
+            },
+        }

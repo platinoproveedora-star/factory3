@@ -14,6 +14,8 @@ class ErpInventoryPartySaveService:
     def ejecutar(self, context: dict) -> dict:
         party_id = context.get("id")
         schema_context = self._schema_context(context)
+        if not schema_context.get("ok", True):
+            return schema_context
         party_type = str(context.get("party_type") or "").strip()
         if party_id and not party_type:
             existing = SupabaseClient(schema_context).rest_select("erp_parties", filters={"id": party_id}, select="party_type", limit=1)
@@ -38,6 +40,14 @@ class ErpInventoryPartySaveService:
             "address": self._blank(context.get("address")),
             "active": context.get("active", True) is not False,
         }
+        if not party_id:
+            row.update(
+                {
+                    "empresa_id": schema_context.get("empresa_id") or schema_context.get("company_id"),
+                    "project_code": schema_context.get("project_code"),
+                    "module_code": schema_context.get("module_code"),
+                }
+            )
         if context.get("dry_run", True):
             return {"ok": True, "message": "dry_run: no se guardo tercero", "data": {"party": row}}
 
@@ -61,12 +71,29 @@ class ErpInventoryPartySaveService:
         return {"ok": True, "data": {"party": party}}
 
     def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
+        project_code = str(context.get("project_code") or "").strip()
+        module_code = str(context.get("module_code") or "").strip()
+        missing = [
+            key
+            for key, value in {
+                "schema": schema,
+                "company_id": company_id,
+                "project_code": project_code,
+                "module_code": module_code,
+            }.items()
+            if not value
+        ]
+        if missing:
+            return {"ok": False, "error": f"contexto ERP incompleto: {', '.join(missing)}"}
         return {
             **context,
-            "schema": context.get("schema") or context.get("supabase_schema") or "uc101_proy004",
-            "company_id": context.get("company_id") or "EMP_DURALON",
-            "project_code": context.get("project_code") or "PROY-004",
-            "module_code": context.get("module_code") or "inventario",
+            "schema": schema,
+            "company_id": company_id,
+            "empresa_id": company_id,
+            "project_code": project_code,
+            "module_code": module_code,
         }
 
     def _reserve_folio(self, context: dict, table: str, prefix: str) -> dict:
