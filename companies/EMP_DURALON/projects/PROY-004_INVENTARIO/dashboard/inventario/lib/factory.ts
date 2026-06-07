@@ -3,7 +3,7 @@ import fs from 'fs';
 import { spawnSync } from 'child_process';
 import projectContext from '../project-context.json';
 
-const factoryUrl = (process.env.FACTORY_API_URL || 'https://factory3.onrender.com').replace(/\/$/, '');
+const factoryUrl = (process.env.FACTORY_API_URL || projectContext.factory_api_url || '').replace(/\/$/, '');
 const writeKey = process.env.FACTORY_WRITE_KEY || '';
 const useLocalSkills = process.env.NODE_ENV === 'development' && !writeKey;
 
@@ -34,6 +34,9 @@ export async function runFactorySkill<T>(skill: string, context: Record<string, 
   if (useLocalSkills) {
     return runLocalSkill<T>(skill, context);
   }
+  if (!factoryUrl) {
+    throw new Error('FACTORY_API_URL requerido para ejecutar skills remotos');
+  }
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (writeKey) headers['X-Write-Key'] = writeKey;
@@ -46,6 +49,11 @@ export async function runFactorySkill<T>(skill: string, context: Record<string, 
       project_code: projectContext.project_code,
       module_code: projectContext.module_code,
       schema: projectContext.schema,
+      inventory_schema: projectContext.inventory_schema,
+      schema_inventario: projectContext.schema_inventario,
+      sales_schema: projectContext.sales_schema,
+      schema_ventas: projectContext.schema_ventas,
+      sales_project_code: projectContext.sales_project_code,
       dry_run: false,
       ...context,
     }),
@@ -70,6 +78,11 @@ function runLocalSkill<T>(skill: string, context: Record<string, any>): T {
     project_code: projectContext.project_code,
     module_code: projectContext.module_code,
     schema: projectContext.schema,
+    inventory_schema: projectContext.inventory_schema,
+    schema_inventario: projectContext.schema_inventario,
+    sales_schema: projectContext.sales_schema,
+    schema_ventas: projectContext.schema_ventas,
+    sales_project_code: projectContext.sales_project_code,
     dry_run: false,
     ...context,
   };
