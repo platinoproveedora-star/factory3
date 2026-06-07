@@ -1,5 +1,20 @@
 const BASE = (process.env.NEXT_PUBLIC_FACTORY_API_URL ?? '').replace(/\/$/, '');
 const WRITE_KEY = process.env.NEXT_PUBLIC_WRITE_KEY ?? '';
+const ERP_CONTEXT = {
+  company_id: process.env.NEXT_PUBLIC_ERP_COMPANY_ID ?? 'EMP_DURALON',
+  empresa_id: process.env.NEXT_PUBLIC_ERP_COMPANY_ID ?? 'EMP_DURALON',
+  project_code: process.env.NEXT_PUBLIC_ERP_SALES_PROJECT_CODE ?? 'PROY-002',
+  module_code: process.env.NEXT_PUBLIC_ERP_SALES_MODULE_CODE ?? 'ventas',
+  schema: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? 'uc101_proy002',
+  schema_ventas: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? 'uc101_proy002',
+  sales_schema: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? 'uc101_proy002',
+  schema_inventario: process.env.NEXT_PUBLIC_ERP_INVENTORY_SCHEMA ?? 'uc101_proy004',
+  inventory_schema: process.env.NEXT_PUBLIC_ERP_INVENTORY_SCHEMA ?? 'uc101_proy004',
+  project_inv: process.env.NEXT_PUBLIC_ERP_INVENTORY_PROJECT_CODE ?? 'PROY-004',
+  inventory_project_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_PROJECT_CODE ?? 'PROY-004',
+  module_inv: process.env.NEXT_PUBLIC_ERP_INVENTORY_MODULE_CODE ?? 'inventario',
+  inventory_module_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_MODULE_CODE ?? 'inventario',
+};
 
 export type Customer = { id: string; folio: string; party_name: string; phone?: string; email?: string; address?: string };
 export type Product  = { id: string; folio: string; product_name: string; sku?: string; unit: string; unit_price?: number; category?: string };
@@ -24,7 +39,7 @@ export type FormItem = {
 };
 
 async function get<T>(skill: string, params: Record<string, string> = {}): Promise<T> {
-  const qs  = new URLSearchParams(params).toString();
+  const qs  = new URLSearchParams({ ...toQuery(ERP_CONTEXT), ...params }).toString();
   const url = `${BASE}/data/${skill}${qs ? `?${qs}` : ''}`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
@@ -34,7 +49,7 @@ async function get<T>(skill: string, params: Record<string, string> = {}): Promi
 async function post<T>(skill: string, body: object): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (WRITE_KEY) headers['x-write-key'] = WRITE_KEY;
-  const res = await fetch(`${BASE}/data/${skill}`, { method: 'POST', headers, body: JSON.stringify(body) });
+  const res = await fetch(`${BASE}/data/${skill}`, { method: 'POST', headers, body: JSON.stringify({ ...ERP_CONTEXT, ...body }) });
   if (!res.ok) {
     const txt = await res.text();
     let msg = txt;
@@ -42,6 +57,14 @@ async function post<T>(skill: string, body: object): Promise<T> {
     throw new Error(msg);
   }
   return res.json();
+}
+
+function toQuery(values: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(values)
+      .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+      .map(([key, value]) => [key, String(value)])
+  );
 }
 
 export async function getCustomers(): Promise<Customer[]> {

@@ -4,7 +4,10 @@ from factory.engine import SupabaseClient
 
 class ErpVentasRemisionListService:
     def ejecutar(self, context: dict) -> dict:
-        ctx   = {**context, "schema": context.get("schema_ventas") or "uc101_proy002"}
+        ctx = self._sales_context(context)
+        if not ctx.get("ok"):
+            return ctx
+        ctx = ctx["data"]
         limit = int(context.get("limit") or 50)
         filters: dict = {"document_type": "eq.remision"}
         if context.get("customer_id"):
@@ -22,3 +25,9 @@ class ErpVentasRemisionListService:
         if not result.get("ok"):
             return result
         return {"ok": True, "data": {"remisiones": result.get("data", [])}}
+
+    def _sales_context(self, context: dict) -> dict:
+        schema = str(context.get("schema_ventas") or context.get("sales_schema") or context.get("schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema_ventas/sales_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}

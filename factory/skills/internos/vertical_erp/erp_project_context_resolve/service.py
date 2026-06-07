@@ -67,6 +67,11 @@ class ErpProjectContextResolveService:
             for row in modules
             if isinstance(row, dict) and row.get("module_code") and row.get("schema")
         }
+        module_projects = {
+            str(row.get("module_code")): row.get("project_code")
+            for row in modules
+            if isinstance(row, dict) and row.get("module_code") and row.get("project_code")
+        }
         project_schemas = {
             str(row.get("project_code")): row.get("schema")
             for row in modules
@@ -104,6 +109,7 @@ class ErpProjectContextResolveService:
             "inventory_schema": inventory_schema or None,
             "expenses_schema": expenses_schema or None,
             "module_schemas": module_schemas,
+            "module_projects": module_projects,
             "project_schemas": project_schemas,
             "folder": self._first(context.get("folder"), project.get("folder"), module_row.get("folder")) or None,
             "dashboard_url": self._first(context.get("dashboard_url"), project.get("dashboard_url"), module_row.get("dashboard_url")) or None,

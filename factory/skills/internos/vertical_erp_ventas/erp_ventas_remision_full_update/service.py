@@ -17,7 +17,10 @@ class ErpVentasRemisionFullUpdateService:
         if not isinstance(items, list):
             return {"ok": False, "error": "items debe ser lista"}
 
-        ctx = {**context, "schema": context.get("schema_ventas") or "uc101_proy002"}
+        ctx = self._sales_context(context)
+        if not ctx.get("ok"):
+            return ctx
+        ctx = ctx["data"]
         doc = self._get_doc(ctx, doc_id, folio)
         if not doc:
             return {"ok": False, "error": "remision no encontrada"}
@@ -135,7 +138,10 @@ class ErpVentasRemisionFullUpdateService:
         return parsed, None
 
     def _sync_kardex(self, context: dict, remision_folio: str, item_id: str, item: dict, product: dict, header: dict) -> None:
-        db = SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"})
+        ctx = self._inventory_context(context)
+        if not ctx.get("ok"):
+            return
+        db = SupabaseClient(ctx["data"])
         result = db.rest_select(
             "erp_kardex",
             filters={"source_type": "remision", "source_folio": remision_folio},
@@ -170,7 +176,10 @@ class ErpVentasRemisionFullUpdateService:
         )
 
     def _get_product(self, context: dict, product_id: str) -> dict:
-        result = SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"}).rest_select(
+        ctx = self._inventory_context(context)
+        if not ctx.get("ok"):
+            return {}
+        result = SupabaseClient(ctx["data"]).rest_select(
             "erp_products",
             filters={"id": f"eq.{product_id}"},
             select="id,folio,product_name,unit,category",
@@ -178,6 +187,18 @@ class ErpVentasRemisionFullUpdateService:
         )
         rows = result.get("data") or []
         return rows[0] if rows else {}
+
+    def _sales_context(self, context: dict) -> dict:
+        schema = str(context.get("schema_ventas") or context.get("sales_schema") or context.get("schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema_ventas/sales_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}
+
+    def _inventory_context(self, context: dict) -> dict:
+        schema = str(context.get("schema_inventario") or context.get("inventory_schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema_inventario/inventory_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}
 
     def _blank(self, value):
         value = str(value or "").strip()

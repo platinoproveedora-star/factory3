@@ -27,7 +27,10 @@ class ErpVentasRemisionUpdateService:
             return {"ok": False, "error": "sin campos editables para actualizar"}
         update["updated_at"] = datetime.now(timezone.utc).isoformat()
 
-        ctx = {**context, "schema": context.get("schema_ventas") or "uc101_proy002"}
+        ctx = self._sales_context(context)
+        if not ctx.get("ok"):
+            return ctx
+        ctx = ctx["data"]
         filters = {"id": doc_id} if doc_id else {"folio": folio}
         if context.get("dry_run", True):
             return {"ok": True, "message": "dry_run: no se actualizo remision", "data": {"remision": {**filters, **update}}}
@@ -46,11 +49,26 @@ class ErpVentasRemisionUpdateService:
     def _sync_kardex_delivery_address(self, context: dict, remision_folio: str | None, delivery_address: str | None) -> None:
         if not remision_folio:
             return
-        SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"}).rest_update(
+        ctx = self._inventory_context(context)
+        if not ctx.get("ok"):
+            return
+        SupabaseClient(ctx["data"]).rest_update(
             "erp_kardex",
             {"delivery_address": delivery_address},
             {"source_type": "remision", "source_folio": remision_folio},
         )
+
+    def _sales_context(self, context: dict) -> dict:
+        schema = str(context.get("schema_ventas") or context.get("sales_schema") or context.get("schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema_ventas/sales_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}
+
+    def _inventory_context(self, context: dict) -> dict:
+        schema = str(context.get("schema_inventario") or context.get("inventory_schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema_inventario/inventory_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}
 
     def _blank(self, value):
         value = str(value or "").strip()

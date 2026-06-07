@@ -26,12 +26,12 @@ class ErpVentasCustomerGetOrCreateService:
         if existing:
             return {"ok": True, "data": {"customer": existing, "created": False}}
 
+        schema_context = self._schema_context(context)
+        if not schema_context.get("ok"):
+            return schema_context
+
         row = {
-            **context,
-            "schema": context.get("schema_inventario") or "uc101_proy004",
-            "company_id": context.get("empresa_id") or "EMP_DURALON",
-            "project_code": context.get("project_inv") or "PROY-004",
-            "module_code": context.get("module_inv") or "inventario",
+            **schema_context["data"],
             "dry_run": context.get("dry_run", True),
             "party_type": "customer",
             "party_name": customer_name,
@@ -46,24 +46,70 @@ class ErpVentasCustomerGetOrCreateService:
         return {"ok": True, "data": {"customer": party, "created": not context.get("dry_run", True)}}
 
     def _get_by_id(self, context: dict, customer_id: str) -> dict | None:
-        result = SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"}).rest_select(
+        schema_context = self._schema_context(context)
+        if not schema_context.get("ok"):
+            return None
+        result = SupabaseClient(schema_context["data"]).rest_select(
             "erp_parties",
             filters={"id": f"eq.{customer_id}", "active": "eq.true"},
             select="id,folio,party_name,phone,email,address",
             limit=1,
         )
-        rows = result.get("data") or []
+        if not result.get("ok"):
+            return None
+        rows = self._rows(result.get("data"))
         return rows[0] if rows else None
 
     def _find_by_name(self, context: dict, customer_name: str) -> dict | None:
-        result = SupabaseClient({**context, "schema": context.get("schema_inventario") or "uc101_proy004"}).rest_select(
+        schema_context = self._schema_context(context)
+        if not schema_context.get("ok"):
+            return None
+        result = SupabaseClient(schema_context["data"]).rest_select(
             "erp_parties",
             filters={"party_name": f"eq.{customer_name}", "party_type": "in.(customer,both)", "active": "eq.true"},
             select="id,folio,party_name,phone,email,address",
             limit=1,
         )
-        rows = result.get("data") or []
+        if not result.get("ok"):
+            return None
+        rows = self._rows(result.get("data"))
         return rows[0] if rows else None
+
+    def _schema_context(self, context: dict) -> dict:
+        schema = str(context.get("schema") or context.get("schema_inventario") or context.get("inventory_schema") or "").strip()
+        company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
+        project_code = str(context.get("project_code") or context.get("project_inv") or context.get("inventory_project_code") or "").strip()
+        module_code = str(context.get("module_code") or context.get("module_inv") or context.get("inventory_module_code") or "").strip()
+        missing = [
+            key
+            for key, value in {
+                "schema": schema,
+                "company_id": company_id,
+                "project_code": project_code,
+                "module_code": module_code,
+            }.items()
+            if not value
+        ]
+        if missing:
+            return {"ok": False, "error": f"contexto ERP de cliente incompleto: {', '.join(missing)}"}
+        return {
+            "ok": True,
+            "data": {
+                **context,
+                "schema": schema,
+                "company_id": company_id,
+                "empresa_id": company_id,
+                "project_code": project_code,
+                "module_code": module_code,
+            },
+        }
+
+    def _rows(self, data) -> list[dict]:
+        if isinstance(data, list):
+            return [row for row in data if isinstance(row, dict)]
+        if isinstance(data, dict):
+            return [data]
+        return []
 
     def _party_save(self, context: dict) -> dict:
         service_path = _SKILLS_ROOT / "vertical_erp_inventory" / "erp_inventory_party_save" / "service.py"

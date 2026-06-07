@@ -11,18 +11,6 @@ from factory.engine import SupabaseClient
 _SKILLS_ROOT = Path(__file__).resolve().parents[2]
 
 
-def _cfg(context: dict) -> dict:
-    return {
-        "empresa_id":       context.get("empresa_id")       or "EMP_DURALON",
-        "schema_ventas":    context.get("schema_ventas")    or "uc101_proy002",
-        "schema_inventario": context.get("schema_inventario") or "uc101_proy004",
-        "project_ventas":   context.get("project_ventas")   or "PROY-002",
-        "project_inv":      context.get("project_inv")      or "PROY-004",
-        "module_ventas":    context.get("module_ventas")    or "ventas",
-        "module_inv":       context.get("module_inv")       or "inventario",
-    }
-
-
 class ErpVentasRemisionCreateService:
     def ejecutar(self, context: dict) -> dict:
         customer_id = str(context.get("customer_id") or "").strip()
@@ -32,7 +20,13 @@ class ErpVentasRemisionCreateService:
         if not items or not isinstance(items, list):
             return {"ok": False, "error": "items requerido (lista con al menos 1 producto)"}
 
-        customer_result = self._get_or_create_customer(context)
+        cfg_result = self._cfg(context)
+        if not cfg_result.get("ok"):
+            return cfg_result
+        cfg = cfg_result["data"]
+        context = {**context, **self._sales_context(context, cfg)}
+
+        customer_result = self._get_or_create_customer(context, cfg)
         if not customer_result.get("ok"):
             return customer_result
         customer = customer_result.get("data", {}).get("customer") or {}
@@ -45,7 +39,7 @@ class ErpVentasRemisionCreateService:
         parsed_items, error = self._parse_items(items)
         if error:
             return {"ok": False, "error": error}
-        parsed_items, error = self._enrich_cost_snapshots(context, parsed_items, dry_run)
+        parsed_items, error = self._enrich_cost_snapshots(context, cfg, parsed_items, dry_run)
         if error:
             return {"ok": False, "error": error}
 
@@ -84,8 +78,7 @@ class ErpVentasRemisionCreateService:
         balance_doc  = 0 if mark_as_paid else total
         doc_status   = "pagada" if mark_as_paid else "emitida"
 
-        cfg = _cfg(context)
-        ctx_ventas = {**context, "schema": cfg["schema_ventas"]}
+        ctx_ventas = self._sales_context(context, cfg)
         doc_row = {
             "folio": doc_folio,
             "empresa_id": cfg["empresa_id"],
@@ -108,7 +101,7 @@ class ErpVentasRemisionCreateService:
             "balance_total": balance_doc,
             "notes": notes,
             "metadata": {
-                "customer_schema": "uc101_proy004",
+                "customer_schema": cfg["schema_inventario"],
                 "customer_table": "erp_parties",
                 "customer_id": customer_id,
             },
@@ -130,7 +123,7 @@ class ErpVentasRemisionCreateService:
             if not item_folio_result.get("ok"):
                 return item_folio_result
             item_folio = item_folio_result["data"]["folio"]
-            product = self._get_product(context, item.get("product_id")) if item.get("product_id") else {}
+            product = self._get_product(context, cfg, item.get("product_id")) if item.get("product_id") else {}
 
             item_row = {
                 "folio": item_folio,
@@ -156,7 +149,7 @@ class ErpVentasRemisionCreateService:
                 "tax_amount": item["tax_amount"],
                 "line_total": item["line_total"],
                 "metadata": {
-                    "inventory_schema": "uc101_proy004",
+                    "inventory_schema": cfg["schema_inventario"],
                     "inventory_product_id": item.get("product_id"),
                     "product_folio": product.get("folio"),
                     "line_index": index,
@@ -186,6 +179,7 @@ class ErpVentasRemisionCreateService:
             if item.get("product_id"):
                 k_result = self._kardex_salida(
                     context,
+                    cfg,
                     item,
                     doc_folio,
                     doc_id,
@@ -206,7 +200,7 @@ class ErpVentasRemisionCreateService:
                     }
                 kardex_saved.append(k_result.get("data", {}).get("movement"))
 
-        event_result = self._log_event(ctx_ventas, doc_id, doc_folio, customer_id, total)
+        event_result = self._log_event(ctx_ventas, cfg, doc_id, doc_folio, customer_id, total)
         if not event_result.get("ok"):
             return {"ok": False, "error": f"error al crear evento: {event_result.get('error')}"}
 
@@ -224,17 +218,72 @@ class ErpVentasRemisionCreateService:
             },
         }
 
-    def _get_or_create_customer(self, context: dict) -> dict:
+    def _cfg(self, context: dict) -> dict:
+        service_path = _SKILLS_ROOT / "vertical_erp" / "erp_project_context_resolve" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_project_context_resolve_service", service_path)
+        if spec is None or spec.loader is None:
+            return {"ok": False, "error": "no se pudo cargar erp_project_context_resolve"}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        resolve_context = {
+            **context,
+            "module_code": context.get("module_ventas") or context.get("module_code") or "ventas",
+            "schema": context.get("schema_ventas") or context.get("sales_schema") or context.get("schema"),
+        }
+        result = module.ErpProjectContextResolveService().ejecutar(resolve_context)
+        if not result.get("ok"):
+            return {"ok": False, "error": result.get("error") or "contexto ERP de ventas incompleto"}
+        data = result.get("data") or {}
+        module_projects = data.get("module_projects") if isinstance(data.get("module_projects"), dict) else {}
+        issues = []
+        cfg = {
+            "empresa_id": data.get("empresa_id") or data.get("company_id"),
+            "schema_ventas": data.get("sales_schema") or data.get("schema"),
+            "schema_inventario": data.get("inventory_schema") or context.get("schema_inventario"),
+            "project_ventas": data.get("project_code"),
+            "project_inv": context.get("project_inv") or context.get("inventory_project_code") or module_projects.get("inventario"),
+            "module_ventas": data.get("module_code") or "ventas",
+            "module_inv": context.get("module_inv") or context.get("inventory_module_code") or "inventario",
+        }
+        for key in ("empresa_id", "schema_ventas", "schema_inventario", "project_ventas", "project_inv", "module_ventas", "module_inv"):
+            if not cfg.get(key):
+                issues.append(key)
+        if issues:
+            return {"ok": False, "error": f"contexto ERP de ventas incompleto: {', '.join(issues)}"}
+        return {"ok": True, "data": cfg}
+
+    def _sales_context(self, context: dict, cfg: dict) -> dict:
+        return {
+            **context,
+            "schema": cfg["schema_ventas"],
+            "company_id": cfg["empresa_id"],
+            "empresa_id": cfg["empresa_id"],
+            "project_code": cfg["project_ventas"],
+            "module_code": cfg["module_ventas"],
+        }
+
+    def _inventory_context(self, context: dict, cfg: dict) -> dict:
+        return {
+            **context,
+            "schema": cfg["schema_inventario"],
+            "company_id": cfg["empresa_id"],
+            "empresa_id": cfg["empresa_id"],
+            "project_code": cfg["project_inv"],
+            "module_code": cfg["module_inv"],
+        }
+
+    def _get_or_create_customer(self, context: dict, cfg: dict) -> dict:
         service_path = _SKILLS_ROOT / "vertical_erp_ventas" / "erp_ventas_customer_get_or_create" / "service.py"
         spec = importlib.util.spec_from_file_location("erp_ventas_customer_get_or_create_service", service_path)
         if spec is None or spec.loader is None:
             return {"ok": False, "error": "no se pudo cargar erp_ventas_customer_get_or_create"}
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        return module.ErpVentasCustomerGetOrCreateService().ejecutar(context)
+        return module.ErpVentasCustomerGetOrCreateService().ejecutar(self._inventory_context(context, cfg))
 
-    def _get_product(self, context: dict, product_id: str) -> dict:
-        result = SupabaseClient({**context, "schema": _cfg(context)["schema_inventario"]}).rest_select(
+    def _get_product(self, context: dict, cfg: dict, product_id: str) -> dict:
+        result = SupabaseClient(self._inventory_context(context, cfg)).rest_select(
             "erp_products",
             filters={"id": f"eq.{product_id}"},
             select="id,folio,product_name,unit,category",
@@ -278,14 +327,14 @@ class ErpVentasRemisionCreateService:
             )
         return parsed, None
 
-    def _enrich_cost_snapshots(self, context: dict, items: list[dict], dry_run: bool) -> tuple[list[dict], str | None]:
+    def _enrich_cost_snapshots(self, context: dict, cfg: dict, items: list[dict], dry_run: bool) -> tuple[list[dict], str | None]:
         enriched = []
         for idx, item in enumerate(items, start=1):
             product_id = item.get("product_id")
             if not product_id:
                 enriched.append(item)
                 continue
-            costing_result = self._sale_cost_snapshot(context, product_id, item.get("quantity"), item.get("lot_code"))
+            costing_result = self._sale_cost_snapshot(context, cfg, product_id, item.get("quantity"), item.get("lot_code"))
             if not costing_result.get("ok"):
                 return [], f"item {idx}: {costing_result.get('error')}"
             data = costing_result.get("data") or {}
@@ -300,17 +349,17 @@ class ErpVentasRemisionCreateService:
             enriched.append(item)
         return enriched, None
 
-    def _sale_cost_snapshot(self, context: dict, product_id: str, quantity: float, lot_code: str | None) -> dict:
+    def _sale_cost_snapshot(self, context: dict, cfg: dict, product_id: str, quantity: float, lot_code: str | None) -> dict:
         service_path = _SKILLS_ROOT / "vertical_erp_costing" / "erp_costing_sale_snapshot" / "service.py"
         spec = importlib.util.spec_from_file_location("erp_costing_sale_snapshot_service", service_path)
         if spec is None or spec.loader is None:
             return {"ok": False, "error": "no se pudo cargar erp_costing_sale_snapshot"}
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        return module.ErpCostingSaleSnapshotService().ejecutar({**context, "schema": _cfg(context)["schema_inventario"], "product_id": product_id, "quantity": quantity, "lot_code": lot_code})
+        return module.ErpCostingSaleSnapshotService().ejecutar({**self._inventory_context(context, cfg), "product_id": product_id, "quantity": quantity, "lot_code": lot_code})
 
     def _reserve_folio(self, context: dict, table: str, prefix: str, digits: int = 5) -> dict:
-        result = SupabaseClient({**context, "schema": _cfg(context)["schema_ventas"]}).rest_select(
+        result = SupabaseClient(context).rest_select(
             table,
             filters={"folio": f"ilike.{prefix}-%"},
             select="folio",
@@ -326,10 +375,14 @@ class ErpVentasRemisionCreateService:
         return {"ok": True, "data": {"folio": f"{prefix}-{max_num + 1:0{digits}d}"}}
 
     def _reserve_remision_folio(self, context: dict, digits: int = 5) -> dict:
+        cfg_result = self._cfg(context)
+        if not cfg_result.get("ok"):
+            return cfg_result
+        cfg = cfg_result["data"]
         max_num = 0
         sources = [
             (
-                SupabaseClient({**context, "schema": "uc101_proy002"}).rest_select(
+                SupabaseClient(self._sales_context(context, cfg)).rest_select(
                     "sales_documents",
                     filters={"folio": "ilike.REM-%"},
                     select="folio",
@@ -338,7 +391,7 @@ class ErpVentasRemisionCreateService:
                 "folio",
             ),
             (
-                SupabaseClient({**context, "schema": "uc101_proy004"}).rest_select(
+                SupabaseClient(self._inventory_context(context, cfg)).rest_select(
                     "erp_kardex",
                     filters={"source_folio": "ilike.REM-%"},
                     select="source_folio",
@@ -359,6 +412,7 @@ class ErpVentasRemisionCreateService:
     def _kardex_salida(
         self,
         context: dict,
+        cfg: dict,
         item: dict,
         remision_folio: str,
         doc_id: str,
@@ -379,11 +433,7 @@ class ErpVentasRemisionCreateService:
         spec.loader.exec_module(module)
         return module.ErpInventoryKardexSaveService().ejecutar(
             {
-                **context,
-                "schema": "uc101_proy004",
-                "company_id": "EMP_DURALON",
-                "project_code": "PROY-004",
-                "module_code": "inventario",
+                **self._inventory_context(context, cfg),
                 "dry_run": False,
                 "allow_custom_folio": True,
                 "product_id": item["product_id"],
@@ -403,7 +453,7 @@ class ErpVentasRemisionCreateService:
                 "notes": notes,
                 "paid_amount": paid_amount,
                 "metadata": {
-                    "sales_schema": "uc101_proy002",
+                    "sales_schema": cfg["schema_ventas"],
                     "remision_id": doc_id,
                     "remision_folio": remision_folio,
                     "remision_item_id": item_id,
@@ -424,15 +474,15 @@ class ErpVentasRemisionCreateService:
             }
         )
 
-    def _log_event(self, ctx: dict, doc_id: str, doc_folio: str, customer_id: str, total: float) -> dict:
+    def _log_event(self, ctx: dict, cfg: dict, doc_id: str, doc_folio: str, customer_id: str, total: float) -> dict:
         folio_num = re.sub(r"[^0-9]", "", doc_folio) or "0"
         return SupabaseClient(ctx).rest_insert(
             "sales_events",
             {
                 "folio": f"EVT-REM-{folio_num}",
-                "empresa_id": "EMP_DURALON",
-                "project_code": "PROY-002",
-                "module_code": "ventas",
+                "empresa_id": cfg["empresa_id"],
+                "project_code": cfg["project_ventas"],
+                "module_code": cfg["module_ventas"],
                 "event_type": "remision_created",
                 "document_id": doc_id,
                 "customer_id": customer_id,

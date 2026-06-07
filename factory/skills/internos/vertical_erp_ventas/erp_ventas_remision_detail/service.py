@@ -10,7 +10,10 @@ class ErpVentasRemisionDetailService:
         if not doc_id and not folio:
             return {"ok": False, "error": "id o folio requerido"}
 
-        ctx = {**context, "schema": context.get("schema_ventas") or "uc101_proy002"}
+        ctx = self._sales_context(context)
+        if not ctx.get("ok"):
+            return ctx
+        ctx = ctx["data"]
         filters = {"id": doc_id} if doc_id else {"folio": folio}
         doc_res = SupabaseClient(ctx).rest_select(
             "sales_documents",
@@ -35,3 +38,9 @@ class ErpVentasRemisionDetailService:
         if not items_res.get("ok"):
             return items_res
         return {"ok": True, "data": {"remision": doc, "items": items_res.get("data") or []}}
+
+    def _sales_context(self, context: dict) -> dict:
+        schema = str(context.get("schema_ventas") or context.get("sales_schema") or context.get("schema") or "").strip()
+        if not schema:
+            return {"ok": False, "error": "schema_ventas/sales_schema requerido"}
+        return {"ok": True, "data": {**context, "schema": schema}}
