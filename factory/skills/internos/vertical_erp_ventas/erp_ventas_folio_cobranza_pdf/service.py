@@ -78,11 +78,15 @@ class ErpVentasFolioCobranzaPdfService:
       <div class="notes-box"><span>Notas</span></div>
     </section>
     <section class="signature">
-      <div>
-        <span>Nombre de quien recibe</span>
+      <div class="client-signature">
+        <span>Nombre y firma del cliente</span>
       </div>
-      <div>
-        <span>Firma de quien recibe</span>
+      <div class="collector-box">
+        <strong>Mini cuadro de cobranza</strong>
+        <label>Importe recibido</label>
+        <div class="mini-write"></div>
+        <label>Nombre y firma del cobrador</label>
+        <div class="mini-sign"></div>
       </div>
     </section>
   </section>
@@ -119,7 +123,12 @@ class ErpVentasFolioCobranzaPdfService:
     .write-box { min-height: 44px; border: 1px solid #94a3b8; }
     .notes-box { min-height: 130px; border: 1px solid #94a3b8; padding: 10px; font-weight: bold; }
     .signature { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 36px; }
-    .signature div { min-height: 110px; border: 1px solid #94a3b8; display: flex; align-items: flex-end; justify-content: center; padding: 10px; font-size: 12px; color: #475569; }
+    .client-signature { min-height: 150px; border: 1px solid #94a3b8; display: flex; align-items: flex-end; justify-content: center; padding: 10px; font-size: 12px; color: #475569; }
+    .collector-box { min-height: 150px; border: 1px solid #94a3b8; padding: 10px; font-size: 12px; color: #475569; }
+    .collector-box strong { display: block; color: #111827; margin-bottom: 8px; }
+    .collector-box label { display: block; margin: 8px 0 4px; }
+    .mini-write { min-height: 32px; border: 1px solid #cbd5e1; }
+    .mini-sign { min-height: 46px; border: 1px solid #cbd5e1; }
     @media print { body { margin: 18mm; } .no-print { display: none; } }
 """
 
