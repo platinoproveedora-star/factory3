@@ -44,7 +44,16 @@ class IgRenderCarouselSlidesService:
         slides = []
         cover = carousel.get("cover") if isinstance(carousel.get("cover"), dict) else None
         if cover:
-            slides.append({"headline": cover.get("headline"), "body": cover.get("subheadline"), "kind": "cover"})
+            slides.append(
+                {
+                    "headline": cover.get("headline"),
+                    "body": cover.get("subheadline"),
+                    "kind": "cover",
+                    "keyword": cover.get("keyword") or carousel.get("keyword") or context.get("keyword"),
+                    "intent": cover.get("intent") or carousel.get("intent") or context.get("intent"),
+                    "promise": cover.get("promise") or carousel.get("promise") or context.get("promise"),
+                }
+            )
         for item in raw or []:
             if isinstance(item, dict):
                 slides.append(
@@ -52,6 +61,9 @@ class IgRenderCarouselSlidesService:
                         "headline": item.get("headline") or item.get("titulo") or item.get("title"),
                         "body": item.get("body") or item.get("cuerpo") or item.get("text"),
                         "kind": item.get("kind") or "body",
+                        "evidence": item.get("evidence") or item.get("evidencia") or item.get("proof"),
+                        "takeaway": item.get("takeaway") or item.get("conclusion") or item.get("accion"),
+                        "keyword": item.get("keyword") or carousel.get("keyword") or context.get("keyword"),
                     }
                 )
         cta = carousel.get("last_slide_cta") or context.get("last_slide_cta")
@@ -79,6 +91,8 @@ class IgRenderCarouselSlidesService:
         }
 
     def _render_slide(self, template: dict, slide: dict, number: int, total: int) -> dict:
+        if template.get("style") == "seo_hero" or template.get("name") == "seo_hero":
+            return self._render_seo_hero_slide(template, slide, number, total)
         width = int(template.get("width") or 1080)
         height = int(template.get("height") or 1350)
         palette = template.get("palette") if isinstance(template.get("palette"), dict) else {}
@@ -125,6 +139,91 @@ class IgRenderCarouselSlidesService:
   {body_svg}
   {evidence_bar}
   <text x="{margin + 36}" y="{height - margin - 44}" font-family="{html.escape(font)}" font-size="22" fill="{html.escape(muted)}">{footer}</text>
+</svg>"""
+        return {
+            "number": number,
+            "filename": f"slide_{number:02d}.svg",
+            "headline": headline,
+            "body": body,
+            "svg": svg,
+        }
+
+    def _render_seo_hero_slide(self, template: dict, slide: dict, number: int, total: int) -> dict:
+        width = int(template.get("width") or 1080)
+        height = int(template.get("height") or 1350)
+        palette = template.get("palette") if isinstance(template.get("palette"), dict) else {}
+        typo = template.get("typography") if isinstance(template.get("typography"), dict) else {}
+        layout = template.get("layout") if isinstance(template.get("layout"), dict) else {}
+        margin = int(layout.get("margin") or 64)
+        font = str(typo.get("font_family") or "Arial, Helvetica, sans-serif")
+        headline = str(slide.get("headline") or "").strip()
+        body = str(slide.get("body") or "").strip()
+        keyword = str(slide.get("keyword") or "").strip()
+        intent = str(slide.get("intent") or "educativo").strip()
+        promise = str(slide.get("promise") or "aprende lo esencial en menos de un minuto").strip()
+        evidence = str(slide.get("evidence") or "Sintesis basada en principios cientificos").strip()
+        takeaway = str(slide.get("takeaway") or "").strip()
+        kind = str(slide.get("kind") or "body")
+        accent = palette.get("accent", "#0b5fff")
+        accent_2 = palette.get("accent_2", "#14b8a6")
+        ink = palette.get("ink", "#101828")
+        muted = palette.get("muted", "#475467")
+        panel = palette.get("panel", "#ffffff")
+        bg = palette.get("background", "#eef2f7")
+        line = palette.get("line", "#d0d5dd")
+        soft = palette.get("soft", "#e0f2fe")
+        head_size = int(typo.get("headline_size") or 86)
+        body_size = int(typo.get("body_size") or 34)
+        footer = html.escape(str(layout.get("footer_label") or "Fuente: sintesis educativa"))
+        hero_label = html.escape(str(layout.get("hero_label") or "GUIA SEO"))
+        keyword_label = html.escape(str(layout.get("keyword_label") or "Keyword principal"))
+        title_y = 265 if kind == "cover" else 250
+        title_chars = 18 if kind == "cover" else 23
+        title_lines = self._wrap(headline, title_chars, 4)
+        body_lines = self._wrap(body, 38, 5)
+        proof_lines = self._wrap(evidence, 34, 3)
+        takeaway_lines = self._wrap(takeaway, 36, 3)
+        title_svg = self._text_lines(title_lines, margin + 40, title_y, head_size if kind == "cover" else 70, 84, ink, font, weight=900)
+        body_svg = self._text_lines(body_lines, margin + 44, 650, body_size, 48, muted, font, weight=500)
+        proof_svg = self._text_lines(proof_lines, margin + 76, 895, 28, 39, ink, font, weight=700)
+        takeaway_svg = self._text_lines(takeaway_lines, margin + 76, 1085, 30, 42, ink, font, weight=800) if takeaway else ""
+        keyword_box = ""
+        if keyword:
+            keyword_box = f"""
+  <rect x="{margin + 40}" y="170" width="{width - margin * 2 - 80}" height="56" rx="28" fill="{html.escape(soft)}" stroke="{html.escape(line)}"/>
+  <text x="{margin + 68}" y="207" font-family="{html.escape(font)}" font-size="24" font-weight="800" fill="{html.escape(accent)}">{keyword_label}: {html.escape(keyword)}</text>"""
+        promise_box = ""
+        if kind == "cover":
+            promise_lines = self._wrap(promise, 36, 2)
+            promise_svg = self._text_lines(promise_lines, margin + 74, 1048, 32, 43, ink, font, weight=800)
+            promise_box = f"""
+  <rect x="{margin + 38}" y="990" width="{width - margin * 2 - 76}" height="150" rx="24" fill="{html.escape(soft)}" stroke="{html.escape(accent)}" stroke-width="2"/>
+  <text x="{margin + 74}" y="1030" font-family="{html.escape(font)}" font-size="22" font-weight="900" fill="{html.escape(accent)}">PROMESA</text>
+  {promise_svg}"""
+        takeaway_box = ""
+        if takeaway:
+            takeaway_box = f"""
+  <rect x="{margin + 38}" y="1018" width="{width - margin * 2 - 76}" height="152" rx="24" fill="{html.escape(soft)}" stroke="{html.escape(accent_2)}" stroke-width="2"/>
+  <text x="{margin + 76}" y="1062" font-family="{html.escape(font)}" font-size="22" font-weight="900" fill="{html.escape(accent_2)}">TAKEAWAY</text>
+  {takeaway_svg}"""
+        svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
+  <rect width="{width}" height="{height}" fill="{html.escape(bg)}"/>
+  <rect x="{margin}" y="{margin}" width="{width - margin * 2}" height="{height - margin * 2}" rx="{int(layout.get('corner_radius') or 18)}" fill="{html.escape(panel)}" stroke="{html.escape(line)}" stroke-width="2"/>
+  <rect x="{margin}" y="{margin}" width="{width - margin * 2}" height="16" rx="8" fill="{html.escape(accent)}"/>
+  <circle cx="{width - 172}" cy="238" r="118" fill="{html.escape(accent_2)}" opacity="0.11"/>
+  <circle cx="{width - 110}" cy="310" r="62" fill="{html.escape(accent)}" opacity="0.10"/>
+  <text x="{margin + 40}" y="{margin + 72}" font-family="{html.escape(font)}" font-size="24" font-weight="900" fill="{html.escape(accent)}">{hero_label}</text>
+  <text x="{width - margin - 40}" y="{margin + 72}" font-family="{html.escape(font)}" font-size="24" font-weight="800" text-anchor="end" fill="{html.escape(muted)}">{number}/{total}</text>
+  {keyword_box}
+  {title_svg}
+  <text x="{margin + 44}" y="594" font-family="{html.escape(font)}" font-size="24" font-weight="900" fill="{html.escape(accent_2)}">INTENCION: {html.escape(intent.upper())}</text>
+  {body_svg}
+  <rect x="{margin + 38}" y="830" width="{width - margin * 2 - 76}" height="138" rx="24" fill="#ffffff" stroke="{html.escape(line)}" stroke-width="2"/>
+  <text x="{margin + 76}" y="876" font-family="{html.escape(font)}" font-size="22" font-weight="900" fill="{html.escape(accent)}">EVIDENCIA</text>
+  {proof_svg}
+  {promise_box}
+  {takeaway_box}
+  <text x="{margin + 40}" y="{height - margin - 42}" font-family="{html.escape(font)}" font-size="22" fill="{html.escape(muted)}">{footer}</text>
 </svg>"""
         return {
             "number": number,
