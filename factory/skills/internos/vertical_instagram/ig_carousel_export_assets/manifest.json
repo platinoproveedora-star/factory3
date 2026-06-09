@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_export_assets",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Exporta assets SVG/HTML de carrusel a una carpeta con manifest para revision y posterior publicacion.",
+  "vertical": "vertical_instagram"
+}

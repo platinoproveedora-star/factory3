@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_template_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera templates visuales reutilizables para carruseles cientificos de Instagram sin imagenes externas.",
+  "vertical": "vertical_instagram"
+}

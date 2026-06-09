@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_render_carousel_slides",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Renderiza carruseles cientificos sin imagenes externas como SVG/HTML usando copy slide por slide y un template.",
+  "vertical": "vertical_instagram"
+}

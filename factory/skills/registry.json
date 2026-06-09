@@ -1289,6 +1289,33 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_instagram/ig_carousel_template_builder": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_template_builder",
+    "descripcion": "Genera templates visuales reutilizables para carruseles cientificos de Instagram sin imagenes externas.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_template_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_render_carousel_slides": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_render_carousel_slides",
+    "descripcion": "Renderiza carruseles cientificos sin imagenes externas como SVG/HTML usando copy slide por slide y un template.",
+    "path": "skills/internos/vertical_instagram/ig_render_carousel_slides",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_export_assets": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_export_assets",
+    "descripcion": "Exporta assets SVG/HTML de carrusel a una carpeta con manifest para revision y posterior publicacion.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_export_assets",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_instagram/ig_content_brief": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
