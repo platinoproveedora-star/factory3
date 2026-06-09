@@ -62,6 +62,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_ventas/erp_ventas_folio_cobranza_pdf": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_folio_cobranza_pdf",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Genera HTML imprimible de folio de cobranza para entregar comprobante manual de pago al cliente.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_folio_cobranza_pdf",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_ventas/erp_ventas_remision_detail": {
     "tipo": "interno",
     "nombre": "vertical_erp_ventas/erp_ventas_remision_detail",

@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import importlib.util
 from html import escape
+from pathlib import Path
 
 from factory.engine import SupabaseClient
+
+
+_SKILLS_ROOT = Path(__file__).resolve().parents[2]
 
 
 class ErpVentasRemisionPdfService:
@@ -20,7 +25,7 @@ class ErpVentasRemisionPdfService:
         doc_res = SupabaseClient(ctx).rest_select(
             "sales_documents",
             filters=filters,
-            select="id,folio,external_folio,customer_name_snapshot,customer_folio_snapshot,status,document_date,delivery_address,subtotal,tax_total,total,notes",
+            select="id,folio,external_folio,customer_name_snapshot,customer_folio_snapshot,status,document_date,delivery_address,subtotal,tax_total,total,balance_total,notes",
             limit=1,
         )
         if not doc_res.get("ok"):
@@ -39,10 +44,11 @@ class ErpVentasRemisionPdfService:
         )
         if not items_res.get("ok"):
             return items_res
-        html = self._html(doc, items_res.get("data") or [])
+        receipt = self._receipt(context, doc)
+        html = self._html(context, doc, items_res.get("data") or [], receipt)
         return {"ok": True, "data": {"folio": doc.get("folio"), "filename": f"{doc.get('folio')}.html", "html": html}}
 
-    def _html(self, doc: dict, items: list[dict]) -> str:
+    def _html(self, context: dict, doc: dict, items: list[dict], receipt: dict) -> str:
         rows = "\n".join(
             f"""
             <tr>
@@ -61,13 +67,15 @@ class ErpVentasRemisionPdfService:
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Remision {escape(str(doc.get('folio') or ''))}</title>
+  <title>Remision {escape(str(doc.get('folio') or ''))} / {escape(str(receipt.get('folio') or 'Folio de cobranza'))}</title>
   <style>
     body {{ font-family: Arial, sans-serif; color: #111827; margin: 32px; }}
     header {{ display: flex; justify-content: space-between; border-bottom: 2px solid #111827; padding-bottom: 16px; }}
     h1 {{ margin: 0; font-size: 28px; }}
+    .right {{ text-align: right; }}
     .muted {{ color: #64748b; font-size: 12px; }}
     .box {{ border: 1px solid #cbd5e1; padding: 12px; margin-top: 18px; }}
+    .grid.two {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 13px; }}
     th {{ background: #f1f5f9; text-align: left; }}
     th, td {{ border: 1px solid #cbd5e1; padding: 8px; }}
@@ -75,6 +83,13 @@ class ErpVentasRemisionPdfService:
     .totals {{ margin-left: auto; width: 280px; margin-top: 18px; }}
     .totals div {{ display: flex; justify-content: space-between; padding: 6px 0; }}
     .total {{ border-top: 2px solid #111827; font-weight: bold; font-size: 16px; }}
+    .signature {{ display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 36px; }}
+    .signature div {{ min-height: 110px; border: 1px solid #94a3b8; display: flex; align-items: flex-end; justify-content: center; padding: 10px; font-size: 12px; color: #475569; }}
+    .receipt-page {{ break-before: page; page-break-before: always; }}
+    .payment-boxes {{ margin-top: 24px; border: 1px solid #cbd5e1; padding: 12px; }}
+    .pay-row {{ display: grid; grid-template-columns: 180px 1fr; gap: 16px; align-items: center; margin-bottom: 12px; font-weight: bold; }}
+    .write-box {{ min-height: 44px; border: 1px solid #94a3b8; }}
+    .notes-box {{ min-height: 130px; border: 1px solid #94a3b8; padding: 10px; font-weight: bold; }}
     @media print {{ body {{ margin: 18mm; }} .no-print {{ display: none; }} }}
   </style>
 </head>
@@ -82,10 +97,10 @@ class ErpVentasRemisionPdfService:
   <button class="no-print" onclick="window.print()">Imprimir / guardar PDF</button>
   <header>
     <div>
-      <h1>DURALON</h1>
+      <h1>{escape(self._brand(context))}</h1>
       <p class="muted">Remision de venta</p>
     </div>
-    <div>
+    <div class="right">
       <h1>{escape(str(doc.get('folio') or ''))}</h1>
       <p class="muted">Fecha: {escape(str(doc.get('document_date') or ''))}</p>
       <p class="muted">Folio externo: {escape(str(doc.get('external_folio') or '-'))}</p>
@@ -107,14 +122,36 @@ class ErpVentasRemisionPdfService:
     <div><span>IVA</span><span>{self._money(doc.get('tax_total'))}</span></div>
     <div class="total"><span>Total</span><span>{self._money(doc.get('total'))}</span></div>
   </section>
+  <section class="signature">
+    <div>
+      <span>Nombre de quien recibe</span>
+    </div>
+    <div>
+      <span>Firma de quien recibe</span>
+    </div>
+  </section>
+  {receipt.get('html') or ''}
 </body>
 </html>"""
+
+    def _receipt(self, context: dict, doc: dict) -> dict:
+        service_path = _SKILLS_ROOT / "vertical_erp_ventas" / "erp_ventas_folio_cobranza_pdf" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_ventas_folio_cobranza_pdf_service", service_path)
+        if spec is None or spec.loader is None:
+            return {"folio": "", "html": ""}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        service = module.ErpVentasFolioCobranzaPdfService()
+        return {"folio": service._receipt_folio(doc), "html": service.fragment(context, doc)}
 
     def _money(self, value) -> str:
         return f"${float(value or 0):,.2f}"
 
     def _num(self, value) -> str:
         return f"{float(value or 0):,.2f}"
+
+    def _brand(self, context: dict) -> str:
+        return str(context.get("document_brand") or context.get("brand_name") or "PLATINO").strip()
 
     def _sales_context(self, context: dict) -> dict:
         schema = str(context.get("schema_ventas") or context.get("sales_schema") or context.get("schema") or "").strip()

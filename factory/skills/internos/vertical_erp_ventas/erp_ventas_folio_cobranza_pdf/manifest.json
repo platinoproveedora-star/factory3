@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_folio_cobranza_pdf",
+  "vertical": "vertical_erp_ventas",
+  "descripcion": "Genera HTML imprimible de folio de cobranza para entregar comprobante manual de pago al cliente.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}
