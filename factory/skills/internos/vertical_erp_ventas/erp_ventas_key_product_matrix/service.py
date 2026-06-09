@@ -32,13 +32,17 @@ class ErpVentasKeyProductMatrixService:
         docs_res = SupabaseClient(sales_context["data"]).rest_select(
             "sales_documents",
             filters={"document_type": "eq.remision", "document_date": f"gte.{start_date}"},
-            select="id,folio,external_folio,customer_name_snapshot,document_date,total",
+            select="id,folio,external_folio,customer_name_snapshot,document_date,total,status",
             order="document_date.asc",
             limit=5000,
         )
         if not docs_res.get("ok"):
             return docs_res
-        docs = [d for d in (docs_res.get("data") or []) if str(d.get("document_date") or "") <= end_date]
+        docs = [
+            d
+            for d in (docs_res.get("data") or [])
+            if str(d.get("document_date") or "") <= end_date and str(d.get("status") or "") != "cancelada"
+        ]
         if not docs or not product_ids:
             return {"ok": True, "data": {"products": products, "rows": [], "totals": {}, "grand_total": 0, "start_date": start_date, "end_date": end_date}}
 

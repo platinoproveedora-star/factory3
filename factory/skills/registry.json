@@ -80,6 +80,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_ventas/erp_ventas_remision_cancel": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_remision_cancel",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Cancela una remision ERP y revierte sus salidas de inventario con movimientos de ajuste auditables.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_remision_cancel",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_ventas/erp_ventas_key_product_matrix": {
     "tipo": "interno",
     "nombre": "vertical_erp_ventas/erp_ventas_key_product_matrix",

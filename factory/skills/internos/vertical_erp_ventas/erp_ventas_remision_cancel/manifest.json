@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_ventas/erp_ventas_remision_cancel",
+  "vertical": "vertical_erp_ventas",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "descripcion": "Cancela una remision ERP y revierte sus salidas de inventario con movimientos de ajuste auditables.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

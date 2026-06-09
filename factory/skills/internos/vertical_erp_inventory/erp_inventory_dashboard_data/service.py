@@ -73,7 +73,7 @@ class ErpInventoryDashboardDataService:
 
     def _dashboard(self, products, parties, movements) -> dict:
         active_parties = [p for p in parties if p.get("active") is not False]
-        sales = [m for m in movements if m.get("source_type") == "remision"]
+        sales = [m for m in movements if m.get("source_type") == "remision" and not self._is_canceled(m)]
         purchases = [m for m in movements if m.get("source_type") == "compra"]
         adjustments = [m for m in movements if m.get("source_type") == "ajuste"]
         return {
@@ -102,6 +102,8 @@ class ErpInventoryDashboardDataService:
     def _receivables(self, movements) -> list[dict]:
         by_customer = {}
         for movement in movements:
+            if self._is_canceled(movement):
+                continue
             if movement.get("movement_type") != "salida":
                 continue
             balance = float(movement.get("balance_amount") or 0)
@@ -118,6 +120,8 @@ class ErpInventoryDashboardDataService:
         month = str(context.get("month") or date.today().strftime("%Y-%m"))
         totals = {}
         for movement in movements:
+            if self._is_canceled(movement):
+                continue
             if movement.get("movement_type") != "salida":
                 continue
             if not str(movement.get("movement_date") or "").startswith(month):
@@ -231,9 +235,15 @@ class ErpInventoryDashboardDataService:
             })
         return sorted(rows, key=lambda row: (row["customer_name"] or "", row["product_name"] or ""))
 
+    def _is_canceled(self, movement: dict) -> bool:
+        metadata = movement.get("metadata") if isinstance(movement.get("metadata"), dict) else {}
+        return bool(metadata.get("canceled"))
+
     def _last_purchase_map(self, movements) -> dict:
         last = {}
         for movement in movements:
+            if self._is_canceled(movement):
+                continue
             if movement.get("movement_type") != "salida":
                 continue
             customer_id = movement.get("customer_id")

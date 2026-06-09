@@ -18,6 +18,7 @@ import {
   Trash2,
   Truck,
   UserRoundPlus,
+  XCircle,
 } from 'lucide-react';
 import { loadDashboardData, type DashboardData } from '../lib/client-data';
 import { money, qty, type KardexMovement, type Party, type Product } from '../lib/supabase';
@@ -1492,7 +1493,18 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
           </thead>
           <tbody>
             {remisiones.map((remision) => (
-              <RemisionRow key={remision.id} remision={remision} reload={load} setNotice={setNotice} onPrint={() => printRemision(remision)} onSelect={() => setSelectedId(remision.id)} />
+              <RemisionRow
+                key={remision.id}
+                remision={remision}
+                reload={async () => {
+                  await load();
+                  if (selectedId === remision.id) await loadDetail(remision.id);
+                  await loadMatrix();
+                }}
+                setNotice={setNotice}
+                onPrint={() => printRemision(remision)}
+                onSelect={() => setSelectedId(remision.id)}
+              />
             ))}
             {!loading && remisiones.length === 0 && (
               <tr>
@@ -1517,6 +1529,14 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
       }}
       setNotice={setNotice}
       onPrint={() => detail && printRemision(detail.remision)}
+      onCancel={async () => {
+        if (!detail) return;
+        await cancelRemision(detail.remision, async () => {
+          await load();
+          await loadDetail(detail.remision.id);
+          await loadMatrix();
+        }, setNotice);
+      }}
     />
     <KeyProductMatrixPanel
       matrix={matrix}
@@ -1530,6 +1550,22 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
   );
 }
 
+async function cancelRemision(remision: RemisionDoc, reload: () => Promise<void>, setNotice: (value: string) => void) {
+  if (remision.status === 'cancelada') return;
+  const ok = window.confirm(`Cancelar remision ${remision.folio}? Esto regresara al almacen las salidas de sus renglones.`);
+  if (!ok) return;
+  const reason = window.prompt('Motivo de cancelacion', 'Cancelacion operativa') || 'Cancelacion operativa';
+  const res = await fetch('/api/remisiones/cancel', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: remision.id, cancel_reason: reason }),
+  });
+  const json = await res.json();
+  if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo cancelar remision');
+  await reload();
+  setNotice(`Remision cancelada: ${remision.folio}`);
+}
+
 function RemisionRow({ remision, reload, setNotice, onPrint, onSelect }: { remision: RemisionDoc; reload: () => Promise<void>; setNotice: (value: string) => void; onPrint: () => void; onSelect: () => void }) {
   const [draft, setDraft] = useState({
     status: remision.status || 'emitida',
@@ -1539,6 +1575,8 @@ function RemisionRow({ remision, reload, setNotice, onPrint, onSelect }: { remis
   });
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const isCanceled = remision.status === 'cancelada';
   const inputClass = 'h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500';
 
   async function save() {
@@ -1561,8 +1599,19 @@ function RemisionRow({ remision, reload, setNotice, onPrint, onSelect }: { remis
     }
   }
 
+  async function cancel() {
+    setCanceling(true);
+    try {
+      await cancelRemision(remision, reload, setNotice);
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo cancelar remision');
+    } finally {
+      setCanceling(false);
+    }
+  }
+
   return (
-    <tr className="border-b border-slate-100 align-top">
+    <tr className={`border-b border-slate-100 align-top ${isCanceled ? 'bg-slate-50 text-slate-500' : ''}`}>
       <td className="px-4 py-3 font-medium text-slate-900"><button type="button" onClick={onSelect} className="text-left font-semibold text-slate-900 hover:underline">{remision.folio}</button></td>
       <td className="px-4 py-3 text-slate-500">{remision.document_date}</td>
       <td className="px-4 py-3 text-slate-700">{remision.customer_name_snapshot}</td>
@@ -1574,7 +1623,6 @@ function RemisionRow({ remision, reload, setNotice, onPrint, onSelect }: { remis
           <option value="emitida">Emitida</option>
           <option value="pendiente">Pendiente</option>
           <option value="pagada">Pagada</option>
-          <option value="cancelada">Cancelada</option>
         </select> : <span className="block py-2 text-slate-600">{draft.status}</span>}
       </td>
       <td className="px-3 py-2">
@@ -1586,11 +1634,14 @@ function RemisionRow({ remision, reload, setNotice, onPrint, onSelect }: { remis
       <td className="px-4 py-3 text-right">{money(remision.total)}</td>
       <td className="px-3 py-2 text-right">
         <div className="flex justify-end gap-1">
-          <button type="button" onClick={() => { setEditing(true); onSelect(); }} title="Editar" className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50">
+          <button type="button" onClick={() => { setEditing(true); onSelect(); }} disabled={isCanceled} title="Editar" className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
             <Pencil size={15} />
           </button>
-          <button type="button" onClick={save} disabled={saving} title="Guardar" className="inline-flex h-8 w-8 items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800">
+          <button type="button" onClick={save} disabled={saving || isCanceled} title="Guardar" className="inline-flex h-8 w-8 items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">
             <Save size={15} />
+          </button>
+          <button type="button" onClick={cancel} disabled={canceling || isCanceled} title="Cancelar remision" className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-200 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
+            <XCircle size={15} />
           </button>
           <button type="button" onClick={onPrint} title="Imprimir" className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50">
             <Printer size={15} />
@@ -1609,6 +1660,7 @@ function RemisionDetailEditor({
   reload,
   setNotice,
   onPrint,
+  onCancel,
 }: {
   detail: RemisionDetail | null;
   remisiones: RemisionDoc[];
@@ -1617,8 +1669,10 @@ function RemisionDetailEditor({
   reload: () => Promise<void>;
   setNotice: (value: string) => void;
   onPrint: () => void;
+  onCancel: () => Promise<void>;
 }) {
   const [saving, setSaving] = useState(false);
+  const [canceling, setCanceling] = useState(false);
   const [draft, setDraft] = useState<RemisionDetail | null>(detail);
 
   useEffect(() => {
@@ -1673,6 +1727,17 @@ function RemisionDetailEditor({
     }
   }
 
+  async function cancel() {
+    setCanceling(true);
+    try {
+      await onCancel();
+    } catch (err: any) {
+      window.alert(err.message || 'No se pudo cancelar remision');
+    } finally {
+      setCanceling(false);
+    }
+  }
+
   return (
     <section className="rounded border border-slate-200 bg-white">
       <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
@@ -1698,7 +1763,7 @@ function RemisionDetailEditor({
                 <option value="emitida">Emitida</option>
                 <option value="pendiente">Pendiente</option>
                 <option value="pagada">Pagada</option>
-                <option value="cancelada">Cancelada</option>
+                {draft.remision.status === 'cancelada' && <option value="cancelada">Cancelada</option>}
               </select>
             </label>
             <Field label="Dir de entrega" name="delivery_address" value={draft.remision.delivery_address || ''} onChange={(event) => patchHeader({ delivery_address: event.target.value })} />
@@ -1744,7 +1809,11 @@ function RemisionDetailEditor({
               <Printer size={16} />
               Imprimir
             </button>
-            <button type="button" onClick={save} disabled={saving} className="inline-flex h-10 items-center gap-2 rounded bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800">
+            <button type="button" onClick={cancel} disabled={canceling || draft.remision.status === 'cancelada'} className="inline-flex h-10 items-center gap-2 rounded border border-red-200 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
+              <XCircle size={16} />
+              Cancelar
+            </button>
+            <button type="button" onClick={save} disabled={saving || draft.remision.status === 'cancelada'} className="inline-flex h-10 items-center gap-2 rounded bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">
               <Save size={16} />
               Guardar todo
             </button>
