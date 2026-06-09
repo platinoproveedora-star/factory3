@@ -12,6 +12,6 @@ services:
       - key: NEXT_PUBLIC_FACTORY_API_URL
         value: https://factory3.onrender.com
       - key: NEXT_PUBLIC_WRITE_KEY
-        value: ""
+        sync: false
       - key: NODE_VERSION
         value: "20"
