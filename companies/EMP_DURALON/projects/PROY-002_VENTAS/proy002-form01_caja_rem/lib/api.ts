@@ -81,7 +81,12 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProductLots(productId: string): Promise<ProductLotOptions> {
-  const data = await get<ProductLotOptions>('vertical_erp_inventory/erp_inventory_lot_options', { product_id: productId });
+  const data = await get<ProductLotOptions>('vertical_erp_inventory/erp_inventory_lot_options', {
+    product_id: productId,
+    schema: ERP_CONTEXT.inventory_schema,
+    project_code: ERP_CONTEXT.inventory_project_code,
+    module_code: ERP_CONTEXT.inventory_module_code,
+  });
   return { lots: data.lots ?? [], requires_lot: Boolean(data.requires_lot), default_lot_code: data.default_lot_code ?? null, avg_cost: data.avg_cost ?? 0, last_cost: data.last_cost ?? 0 };
 }
 

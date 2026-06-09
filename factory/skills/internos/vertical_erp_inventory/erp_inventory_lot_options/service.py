@@ -110,7 +110,13 @@ class ErpInventoryLotOptionsService:
         return value or "GENERAL"
 
     def _schema_context(self, context: dict) -> dict:
-        schema = str(context.get("schema") or context.get("supabase_schema") or context.get("inventory_schema") or "").strip()
+        schema = str(
+            context.get("inventory_schema")
+            or context.get("schema_inventario")
+            or context.get("schema")
+            or context.get("supabase_schema")
+            or ""
+        ).strip()
         if not schema:
             return {"ok": False, "error": "schema/supabase_schema requerido"}
         return {"ok": True, "data": {**context, "schema": schema}}
