@@ -18,7 +18,7 @@ class ErpVentasRemisionListService:
         result = SupabaseClient(ctx).rest_select(
             "sales_documents",
             filters=filters,
-            select="id,folio,external_folio,customer_id,customer_name_snapshot,status,document_date,delivery_address,total,balance_total,notes,created_at",
+            select="id,folio,external_folio,customer_id,customer_name_snapshot,status,document_date,delivery_address,chofer,unidad,total,balance_total,notes,created_at",
             order="created_at.desc",
             limit=limit,
         )

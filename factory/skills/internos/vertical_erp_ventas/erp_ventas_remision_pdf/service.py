@@ -25,7 +25,7 @@ class ErpVentasRemisionPdfService:
         doc_res = SupabaseClient(ctx).rest_select(
             "sales_documents",
             filters=filters,
-            select="id,folio,external_folio,customer_name_snapshot,customer_folio_snapshot,status,document_date,delivery_address,subtotal,tax_total,total,balance_total,notes",
+            select="id,folio,external_folio,customer_name_snapshot,customer_folio_snapshot,status,document_date,delivery_address,chofer,unidad,subtotal,tax_total,total,balance_total,notes",
             limit=1,
         )
         if not doc_res.get("ok"):
@@ -109,6 +109,8 @@ class ErpVentasRemisionPdfService:
   <section class="box">
     <strong>Cliente:</strong> {escape(str(doc.get('customer_name_snapshot') or ''))}<br />
     <strong>Direccion de entrega:</strong> {escape(str(doc.get('delivery_address') or ''))}<br />
+    <strong>Chofer:</strong> {escape(str(doc.get('chofer') or ''))}<br />
+    <strong>Unidad:</strong> {escape(str(doc.get('unidad') or ''))}<br />
     <strong>Notas:</strong> {escape(str(doc.get('notes') or ''))}
   </section>
   <table>

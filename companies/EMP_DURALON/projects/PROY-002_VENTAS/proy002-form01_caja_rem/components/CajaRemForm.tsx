@@ -15,6 +15,19 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function uniqueText(values: Array<string | null | undefined>) {
+  return Array.from(new Set(values.map(v => String(v ?? '').trim()).filter(Boolean)));
+}
+
+function priceWithTax(unitPrice: number, taxRate: number) {
+  return Math.round(unitPrice * (1 + taxRate) * 100) / 100;
+}
+
+function priceWithoutTax(unitPriceWithTax: number, taxRate: number) {
+  if (taxRate <= -1) return 0;
+  return Math.round((unitPriceWithTax / (1 + taxRate)) * 10000) / 10000;
+}
+
 function newItem(): FormItem {
   return { _key: crypto.randomUUID(), product_id: null, lot_code: null, lots: [], requires_lot: false, lots_loading: false, description: '', quantity: 1, unit: 'pieza', unit_price: 0, tax_rate: IVA, tax_amount: 0, line_total: 0 };
 }
@@ -39,6 +52,8 @@ export default function CajaRemForm() {
 
   const [docDate, setDocDate]         = useState(today());
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [chofer, setChofer]           = useState('');
+  const [unidad, setUnidad]           = useState('');
   const [extFolio, setExtFolio]       = useState('');
   const [notes, setNotes]             = useState('');
   const [items, setItems]             = useState<FormItem[]>([newItem()]);
@@ -69,6 +84,8 @@ export default function CajaRemForm() {
 
   const filteredProds = (query: string) =>
     products.filter(p => p.product_name.toLowerCase().includes(query.toLowerCase()) || (p.sku ?? '').toLowerCase().includes(query.toLowerCase()));
+  const choferOptions = uniqueText(remisiones.map(r => r.chofer));
+  const unidadOptions = uniqueText(remisiones.map(r => r.unidad));
 
   // Item helpers
   function updateItem(key: string, patch: Partial<FormItem>) {
@@ -129,6 +146,8 @@ export default function CajaRemForm() {
         customer_name: customer ? undefined : typedCustomer,
         document_date: docDate,
         delivery_address: deliveryAddress || undefined,
+        chofer: chofer || undefined,
+        unidad: unidad || undefined,
         external_folio: extFolio || undefined,
         notes: notes || undefined,
         items: items.map(it => ({
@@ -158,6 +177,8 @@ export default function CajaRemForm() {
     setCustQuery('');
     setDocDate(today());
     setDeliveryAddress('');
+    setChofer('');
+    setUnidad('');
     setExtFolio('');
     setNotes('');
     setItems([newItem()]);
@@ -258,6 +279,25 @@ export default function CajaRemForm() {
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Chofer <span className="text-slate-400 font-normal">(opcional)</span></label>
+                <input type="text" value={chofer} onChange={e => setChofer(e.target.value)} list="chofer-options" placeholder="Nombre del chofer"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
+                <datalist id="chofer-options">
+                  {choferOptions.map(option => <option key={option} value={option} />)}
+                </datalist>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Unidad <span className="text-slate-400 font-normal">(opcional)</span></label>
+                <input type="text" value={unidad} onChange={e => setUnidad(e.target.value)} list="unidad-options" placeholder="Camioneta, placas o unidad"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
+                <datalist id="unidad-options">
+                  {unidadOptions.map(option => <option key={option} value={option} />)}
+                </datalist>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Notas <span className="text-slate-400 font-normal">(opcional)</span></label>
               <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Observaciones…"
@@ -320,6 +360,7 @@ export default function CajaRemForm() {
                     <span className="font-mono font-semibold text-slate-800">{r.folio}</span>
                     {r.external_folio && <span className="text-slate-400 ml-2">({r.external_folio})</span>}
                     <span className="text-slate-500 ml-3">{r.customer_name_snapshot}</span>
+                    {(r.chofer || r.unidad) && <span className="text-slate-400 ml-3 text-xs">{[r.chofer, r.unidad].filter(Boolean).join(' / ')}</span>}
                   </div>
                   <div className="text-right">
                     <span className="font-semibold">{mxn(r.total)}</span>
@@ -431,7 +472,7 @@ function ItemRow({ item, idx, products, filteredProds, onUpdate, onSelectProduct
       )}
 
       {/* Qty / Unit / Price / IVA */}
-      <div className="flex gap-2 ml-7">
+      <div className="flex flex-wrap gap-2 ml-7">
         <div className="w-20">
           <label className="text-xs text-slate-400">Cant.</label>
           <input type="number" min="0" step="any" value={item.quantity}
@@ -456,6 +497,12 @@ function ItemRow({ item, idx, products, filteredProds, onUpdate, onSelectProduct
             <option value={0.16}>16%</option>
             <option value={0}>0%</option>
           </select>
+        </div>
+        <div className="w-28">
+          <label className="text-xs text-slate-400">Precio c/IVA</label>
+          <input type="number" min="0" step="any" value={priceWithTax(item.unit_price, item.tax_rate)}
+            onChange={e => onUpdate({ unit_price: priceWithoutTax(parseFloat(e.target.value) || 0, item.tax_rate) })}
+            className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-400" />
         </div>
         <div className="flex-1 text-right pt-5">
           <span className="font-semibold text-slate-800 text-sm">

@@ -38,9 +38,13 @@ class ErpVentasRemisionFullUpdateService:
         status = str(context.get("status") or doc.get("status") or "emitida").strip()
         if status not in self.ALLOWED_STATUS:
             return {"ok": False, "error": "status invalido"}
+        chofer_value = context.get("chofer") if "chofer" in context else context.get("driver") if "driver" in context else doc.get("chofer")
+        unidad_value = context.get("unidad") if "unidad" in context else context.get("vehicle_unit") if "vehicle_unit" in context else doc.get("unidad")
         header = {
             "external_folio": self._blank(context.get("external_folio")),
             "delivery_address": self._blank(context.get("delivery_address")),
+            "chofer": self._blank(chofer_value),
+            "unidad": self._blank(unidad_value),
             "status": status,
             "document_date": str(context.get("document_date") or doc.get("document_date")),
             "notes": self._blank(context.get("notes")),
@@ -96,7 +100,7 @@ class ErpVentasRemisionFullUpdateService:
         result = SupabaseClient(context).rest_select(
             "sales_documents",
             filters=filters,
-            select="id,folio,status,document_date,paid_total",
+            select="id,folio,status,document_date,delivery_address,chofer,unidad,paid_total",
             limit=1,
         )
         rows = result.get("data") or []

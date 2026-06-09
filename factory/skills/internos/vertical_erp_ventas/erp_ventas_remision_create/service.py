@@ -49,6 +49,8 @@ class ErpVentasRemisionCreateService:
         doc_date = str(context.get("document_date") or date.today().isoformat())
         external_folio = str(context.get("external_folio") or "").strip() or None
         notes = str(context.get("notes") or "").strip() or None
+        chofer = str(context.get("chofer") or context.get("driver") or "").strip() or None
+        unidad = str(context.get("unidad") or context.get("vehicle_unit") or "").strip() or None
         customer_name_snapshot = str(customer.get("party_name") or "")
         customer_folio_snapshot = str(customer.get("folio") or "")
         delivery_address = str(context.get("delivery_address") or customer.get("address") or "").strip() or None
@@ -61,6 +63,8 @@ class ErpVentasRemisionCreateService:
                     "folio": "REM-DRYRUN",
                     "customer_name_snapshot": customer_name_snapshot,
                     "delivery_address": delivery_address,
+                    "chofer": chofer,
+                    "unidad": unidad,
                     "subtotal": subtotal,
                     "tax_total": tax_total,
                     "total": total,
@@ -90,6 +94,8 @@ class ErpVentasRemisionCreateService:
             "customer_name_snapshot": customer_name_snapshot,
             "customer_folio_snapshot": customer_folio_snapshot,
             "delivery_address": delivery_address,
+            "chofer": chofer,
+            "unidad": unidad,
             "status": doc_status,
             "document_date": doc_date,
             "currency": "MXN",

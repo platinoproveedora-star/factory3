@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS uc101_proy002.sales_documents (
     external_folio text,
     customer_id uuid REFERENCES uc101_proy002.sales_customers(id),
     delivery_address text,
+    chofer text,
+    unidad text,
     parent_document_id uuid REFERENCES uc101_proy002.sales_documents(id),
     root_document_id uuid REFERENCES uc101_proy002.sales_documents(id),
     status text NOT NULL DEFAULT 'draft',

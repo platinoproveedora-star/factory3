@@ -21,7 +21,7 @@ const ERP_CONTEXT = {
 
 export type Customer = { id: string; folio: string; party_name: string; phone?: string; email?: string; address?: string };
 export type Product  = { id: string; folio: string; product_name: string; sku?: string; unit: string; unit_price?: number; category?: string };
-export type Remision = { id: string; folio: string; external_folio?: string; customer_name_snapshot: string; status: string; document_date: string; delivery_address?: string; total: number; created_at: string };
+export type Remision = { id: string; folio: string; external_folio?: string; customer_name_snapshot: string; status: string; document_date: string; delivery_address?: string; chofer?: string; unidad?: string; total: number; created_at: string };
 export type ProductLot = { lot_code: string; quantity: number; lot_cost: number; avg_cost: number; last_cost: number; label: string };
 export type ProductLotOptions = { lots: ProductLot[]; requires_lot: boolean; default_lot_code?: string | null; avg_cost: number; last_cost: number };
 
@@ -100,6 +100,8 @@ export async function createRemision(payload: {
   customer_name?: string;
   document_date:  string;
   delivery_address?: string;
+  chofer?:         string;
+  unidad?:         string;
   external_folio?: string;
   notes?:          string;
   items:           { product_id: string | null; lot_code?: string | null; description: string; quantity: number; unit: string; unit_price: number; tax_rate: number }[];
