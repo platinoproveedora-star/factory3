@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_schema_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera SQL generico para tablas ERP Billing: pagos, aplicaciones, folios de cobranza, cuentas de dinero, cortes y eventos.",
+  "requires_env": []
+}

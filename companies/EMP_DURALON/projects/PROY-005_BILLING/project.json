@@ -1,0 +1,30 @@
+{
+  "company_id": "EMP_DURALON",
+  "legacy_client_id": "UC-101",
+  "project_code": "PROY-005",
+  "module_code": "billing",
+  "project_name": "Billing, cobranza, pagos y cuentas por cobrar",
+  "status": "testing",
+  "erp_ready": false,
+  "erp_identity": {
+    "empresa_id": "EMP_DURALON",
+    "company_id": "EMP_DURALON",
+    "project_code": "PROY-005",
+    "module_code": "billing",
+    "legacy_client_id": "UC-101",
+    "supabase_schema": "uc101_proy005"
+  },
+  "scope": "Modulo generico de cobranza para registrar pagos, folios de cobranza, cuentas de dinero, cortes de caja y aplicaciones contra documentos de ventas.",
+  "platform": "interno",
+  "supabase_schema": "uc101_proy005",
+  "folder": "companies/EMP_DURALON/projects/PROY-005_BILLING",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "depends_on": [
+    "PROY-002"
+  ],
+  "created_at": "2026-06-09T00:00:00Z",
+  "updated_at": "2026-06-09T00:00:00Z"
+}

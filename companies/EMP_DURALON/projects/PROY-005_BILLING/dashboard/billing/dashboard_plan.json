@@ -1,0 +1,30 @@
+{
+  "dashboard": "uc101-billing",
+  "company_id": "EMP_DURALON",
+  "project_code": "PROY-005",
+  "module_code": "billing",
+  "schema": "uc101_proy005",
+  "factory_api": "https://factory3.onrender.com",
+  "tabs": [
+    "Cobranza",
+    "Folios",
+    "Cuentas",
+    "Corte de caja"
+  ],
+  "mvp_skills": [
+    "vertical_erp_billing/erp_billing_dashboard_data",
+    "vertical_erp_billing/erp_billing_money_account_list",
+    "vertical_erp_billing/erp_billing_money_account_create",
+    "vertical_erp_billing/erp_billing_collection_folio_create",
+    "vertical_erp_billing/erp_billing_collection_folio_pdf",
+    "vertical_erp_billing/erp_billing_payment_create",
+    "vertical_erp_billing/erp_billing_payment_apply",
+    "vertical_erp_ventas/erp_ventas_remision_list"
+  ],
+  "next_steps": [
+    "Completar UI de abrir/cerrar corte de caja",
+    "Agregar upload de comprobantes",
+    "Agregar OCR desde vertical de intake documental",
+    "Crear manual de usuario por flujo"
+  ]
+}

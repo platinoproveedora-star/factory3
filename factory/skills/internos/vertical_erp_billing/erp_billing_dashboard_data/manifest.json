@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_dashboard_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Devuelve KPIs y bandejas operativas para dashboard de Billing/Cobranza.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

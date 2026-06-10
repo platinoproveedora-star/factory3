@@ -57,6 +57,20 @@
         "PROY-001"
       ],
       "notes": "Modulo operativo: productos, clientes/proveedores, compras, salidas/remisiones, ajustes, kardex, lotes, stock y costeo generico."
+    },
+    {
+      "project_code": "PROY-005",
+      "module_code": "billing",
+      "project_name": "Billing, cobranza, pagos y cuentas por cobrar",
+      "status": "testing",
+      "erp_ready": false,
+      "schema": "uc101_proy005",
+      "folder": "companies/EMP_DURALON/projects/PROY-005_BILLING",
+      "dashboard_url": null,
+      "depends_on": [
+        "PROY-002"
+      ],
+      "notes": "Modulo en prueba: pagos, cuentas de dinero, folios de cobranza y cortes de caja. OCR y dashboard quedan fase posterior."
     }
   ]
 }

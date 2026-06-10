@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_collection_folio_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un folio de cobranza ligado a un documento comercial para cobranza manual o digital.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_payment_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Registra un pago de cobranza manual, efectivo, transferencia, deposito, tarjeta o cheque, con soporte para comprobante/archivo y OCR futuro.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

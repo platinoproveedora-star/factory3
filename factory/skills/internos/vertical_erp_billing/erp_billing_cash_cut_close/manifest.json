@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_cash_cut_close",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Cierra un corte de caja/cobrador, calcula diferencia y opcionalmente deposita el efectivo en una cuenta de dinero.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -107,6 +107,96 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_billing/erp_billing_schema_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_schema_plan",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Genera SQL generico para tablas ERP Billing: pagos, aplicaciones, folios de cobranza, cuentas de dinero, cortes y eventos.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_schema_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_money_account_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_money_account_create",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Crea o actualiza una cuenta de dinero generica para bancos, cajas de efectivo, cobradores o terminales.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_money_account_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_money_account_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_money_account_list",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Lista cuentas de dinero de billing por tipo, estado o responsable.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_money_account_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_collection_folio_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_collection_folio_create",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Crea un folio de cobranza ligado a un documento comercial para cobranza manual o digital.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_collection_folio_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_collection_folio_pdf": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_collection_folio_pdf",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Genera HTML imprimible del folio de cobranza para pago manual, efectivo o transferencia.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_collection_folio_pdf",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_payment_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_payment_create",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Registra un pago de cobranza manual, efectivo, transferencia, deposito, tarjeta o cheque, con soporte para comprobante/archivo y OCR futuro.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_payment_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_payment_apply": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_payment_apply",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Aplica un pago billing a un documento de ventas y actualiza saldos paid_total, balance_total y status.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_payment_apply",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_cash_cut_open": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_cash_cut_open",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Abre un corte de caja/cobrador para agrupar pagos en efectivo y controlar entrega de dinero.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_cash_cut_open",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_cash_cut_close": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_cash_cut_close",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Cierra un corte de caja/cobrador, calcula diferencia y opcionalmente deposita el efectivo en una cuenta de dinero.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_cash_cut_close",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_dashboard_data": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_dashboard_data",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Devuelve KPIs y bandejas operativas para dashboard de Billing/Cobranza.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_dashboard_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_supabase/supabase_expose_schema": {
     "tipo": "interno",
     "nombre": "vertical_supabase/supabase_expose_schema",
@@ -1316,6 +1406,123 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_instagram/ig_carousel_image_brief": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_image_brief",
+    "descripcion": "Genera brief visual slide por slide para carruseles de Instagram con imagenes o infografias.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_image_brief",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_image_prompt": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_image_prompt",
+    "descripcion": "Convierte briefs visuales de carrusel en prompts consistentes para generar imagenes de infografia.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_image_prompt",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_demo_image_assets": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_demo_image_assets",
+    "descripcion": "Genera assets visuales SVG locales para demos de carrusel con imagenes sin depender de APIs externas.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_demo_image_assets",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_typography_fit": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_typography_fit",
+    "descripcion": "Calcula tamanos de tipografia y limites de texto por slide para carruseles de Instagram.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_typography_fit",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_theme_guard": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_theme_guard",
+    "descripcion": "Normaliza paletas y contraste para carruseles de Instagram evitando combinaciones visuales debiles.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_theme_guard",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_layout_variants": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_layout_variants",
+    "descripcion": "Asigna variantes de layout por slide para carruseles: portada, evidencia, proceso, comparativo, checklist y CTA.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_layout_variants",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_slide_audit": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_slide_audit",
+    "descripcion": "Audita slides de carrusel por longitud, densidad, jerarquia, contraste, evidencia y preparacion visual.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_slide_audit",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_autofix_design": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_autofix_design",
+    "descripcion": "Aplica correcciones conservadoras de diseno a slides de carrusel segun auditoria visual.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_autofix_design",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_research_to_claims": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_research_to_claims",
+    "descripcion": "Convierte essays o paquetes editoriales de research en claims seguros listos para carrusel.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_research_to_claims",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_copy_builder": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_copy_builder",
+    "descripcion": "Construye copy slide por slide para carruseles a partir de claims, modo y audiencia.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_copy_builder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_quality_report": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_quality_report",
+    "descripcion": "Genera reporte de calidad de carrusel con scores, warnings, fuentes y readiness para publicar.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_quality_report",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_export_png": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_export_png",
+    "descripcion": "Prepara exportacion PNG/JPG publicable de carrusel y valida dependencias locales requeridas.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_export_png",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_instagram/ig_carousel_orchestrator": {
+    "vertical": "vertical_instagram",
+    "tipo": "interno",
+    "nombre": "vertical_instagram/ig_carousel_orchestrator",
+    "descripcion": "Orquesta la creacion de carruseles de Instagram por modo: cientifico, educativo SEO, ventas, how-to, mito y marca.",
+    "path": "skills/internos/vertical_instagram/ig_carousel_orchestrator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_instagram/ig_content_brief": {
     "vertical": "vertical_instagram",
     "tipo": "interno",
@@ -1349,6 +1556,24 @@
     "nombre": "vertical_meta/meta_get_instagram_account",
     "descripcion": "Obtiene la cuenta Instagram Business conectada a una pagina Meta",
     "path": "skills/internos/vertical_meta/meta_get_instagram_account",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_research/research_general_essay": {
+    "vertical": "vertical_research",
+    "tipo": "interno",
+    "nombre": "vertical_research/research_general_essay",
+    "descripcion": "Crea un ensayo cientifico general sobre un tema usando solo fuentes reales provistas y bibliografia verificable.",
+    "path": "skills/internos/vertical_research/research_general_essay",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_research/research_topic_essay": {
+    "vertical": "vertical_research",
+    "tipo": "interno",
+    "nombre": "vertical_research/research_topic_essay",
+    "descripcion": "Crea un ensayo cientifico especifico sobre un subtema o claim usando solo fuentes reales provistas y bibliografia verificable.",
+    "path": "skills/internos/vertical_research/research_topic_essay",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

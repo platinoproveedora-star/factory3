@@ -1,0 +1,13 @@
+{
+  "company_id": "EMP_DURALON",
+  "company_label": "Duralon",
+  "project_code": "PROY-005",
+  "module_code": "billing",
+  "project_label": "PROY-005 Billing",
+  "schema": "uc101_proy005",
+  "schema_label": "uc101_proy005",
+  "sales_schema": "uc101_proy002",
+  "sales_project_code": "PROY-002",
+  "sales_module_code": "ventas",
+  "factory_api_url": "https://factory3.onrender.com"
+}

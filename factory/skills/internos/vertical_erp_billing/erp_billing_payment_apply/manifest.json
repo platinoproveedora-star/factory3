@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_payment_apply",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Aplica un pago billing a un documento de ventas y actualiza saldos paid_total, balance_total y status.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

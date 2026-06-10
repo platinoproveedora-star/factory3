@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_money_account_list",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista cuentas de dinero de billing por tipo, estado o responsable.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

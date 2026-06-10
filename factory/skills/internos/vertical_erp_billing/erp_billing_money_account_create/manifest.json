@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_money_account_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea o actualiza una cuenta de dinero generica para bancos, cajas de efectivo, cobradores o terminales.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_cash_cut_open",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Abre un corte de caja/cobrador para agrupar pagos en efectivo y controlar entrega de dinero.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
