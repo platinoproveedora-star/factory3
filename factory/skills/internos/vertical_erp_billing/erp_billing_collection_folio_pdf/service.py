@@ -32,6 +32,16 @@ class ErpBillingCollectionFolioPdfService:
     def _html(self, context: dict, folio: dict) -> str:
         brand = escape(str(context.get("document_brand") or context.get("brand_name") or "PLATINO"))
         today = escape(str(context.get("print_date") or today_iso()))
+        documents = self._documents(folio)
+        rows = "\n".join(
+            f"""      <tr>
+        <td>{escape(str(doc.get('sales_folio') or '-'))}</td>
+        <td class="money">${float(doc.get('document_total') or 0):,.2f}</td>
+        <td class="money">${float(doc.get('balance_total') or 0):,.2f}</td>
+        <td class="money">${float(doc.get('amount_to_collect') or 0):,.2f}</td>
+      </tr>"""
+            for doc in documents
+        )
         return f"""<!doctype html>
 <html lang="es">
 <head>
@@ -47,6 +57,10 @@ class ErpBillingCollectionFolioPdfService:
     .write {{ min-height: 44px; border: 1px solid #94a3b8; margin-top: 6px; }}
     .notes {{ min-height: 110px; border: 1px solid #94a3b8; margin-top: 6px; }}
     .signature {{ min-height: 90px; border: 1px solid #94a3b8; display: flex; align-items: flex-end; justify-content: center; padding: 10px; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }}
+    th, td {{ border: 1px solid #cbd5e1; padding: 7px; text-align: left; }}
+    th {{ background: #f1f5f9; color: #334155; text-transform: uppercase; font-size: 10px; }}
+    .money {{ text-align: right; white-space: nowrap; }}
     @media print {{ body {{ margin: 18mm; }} .no-print {{ display: none; }} }}
   </style>
 </head>
@@ -64,8 +78,19 @@ class ErpBillingCollectionFolioPdfService:
   </header>
   <section class="box">
     <strong>Cliente:</strong> {escape(str(folio.get('customer_name') or ''))}<br />
-    <strong>Documento:</strong> {escape(str(folio.get('sales_folio') or ''))}<br />
+    <strong>Cobrador:</strong> {escape(str(folio.get('collector_name') or ''))}<br />
     <strong>Importe esperado:</strong> ${float(folio.get('expected_amount') or 0):,.2f}
+  </section>
+  <section class="box">
+    <strong>Remisiones a cobrar</strong>
+    <table>
+      <thead>
+        <tr><th>Remision</th><th>Total remision</th><th>Saldo pendiente</th><th>X cobrar</th></tr>
+      </thead>
+      <tbody>
+{rows}
+      </tbody>
+    </table>
   </section>
   <section class="box grid">
     <div><strong>Pago en efectivo</strong><div class="write"></div></div>
@@ -83,3 +108,18 @@ class ErpBillingCollectionFolioPdfService:
   </section>
 </body>
 </html>"""
+
+    def _documents(self, folio: dict) -> list[dict]:
+        metadata = folio.get("metadata") if isinstance(folio.get("metadata"), dict) else {}
+        docs = metadata.get("documents") if isinstance(metadata.get("documents"), list) else []
+        if docs:
+            return [doc for doc in docs if isinstance(doc, dict)]
+        expected = float(folio.get("expected_amount") or 0)
+        return [
+            {
+                "sales_folio": folio.get("sales_folio"),
+                "document_total": expected,
+                "balance_total": folio.get("balance_amount") or expected,
+                "amount_to_collect": expected,
+            }
+        ]

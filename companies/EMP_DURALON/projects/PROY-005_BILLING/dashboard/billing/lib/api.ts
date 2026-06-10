@@ -40,7 +40,22 @@ export type CollectionFolio = {
   status: string;
   collector_name?: string | null;
   due_date?: string | null;
+  payment_id?: string | null;
+  metadata?: {
+    documents?: CollectionDocument[];
+    [key: string]: unknown;
+  } | null;
   created_at?: string;
+};
+
+export type CollectionDocument = {
+  sales_document_id?: string | null;
+  sales_folio?: string | null;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  document_total?: number;
+  balance_total?: number;
+  amount_to_collect?: number;
 };
 
 export type Payment = {
@@ -63,6 +78,7 @@ export type Remision = {
   id: string;
   folio: string;
   external_folio?: string | null;
+  customer_id?: string | null;
   customer_name_snapshot: string;
   status: string;
   document_date: string;
@@ -159,8 +175,13 @@ export async function createCollectionFolio(payload: {
   customer_name?: string;
   expected_amount: number;
   collector_name?: string;
+  documents?: CollectionDocument[];
 }) {
   return request<{ collection_folio: CollectionFolio }>('vertical_erp_billing/erp_billing_collection_folio_create', { ...payload, dry_run: false });
+}
+
+export async function cancelCollectionFolio(payload: { collection_folio_id?: string; folio?: string; cancel_reason?: string }) {
+  return request<{ collection_folio: CollectionFolio }>('vertical_erp_billing/erp_billing_collection_folio_cancel', { ...payload, dry_run: false });
 }
 
 export async function getCollectionFolioHtml(folio: string): Promise<string> {

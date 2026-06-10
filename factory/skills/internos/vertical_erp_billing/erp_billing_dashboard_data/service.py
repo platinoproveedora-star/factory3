@@ -27,7 +27,7 @@ class ErpBillingDashboardDataService:
         folios_result = db.rest_select(
             "billing_collection_folios",
             filters={"empresa_id": ctx["company_id"]},
-            select="id,folio,sales_folio,customer_name,expected_amount,collected_amount,balance_amount,status,collector_name,due_date,created_at",
+            select="id,folio,sales_folio,customer_name,expected_amount,collected_amount,balance_amount,status,collector_name,due_date,payment_id,metadata,created_at",
             order="created_at.desc",
             limit=limit,
         )

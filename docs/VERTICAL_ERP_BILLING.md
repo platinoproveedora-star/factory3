@@ -34,6 +34,7 @@
 | `vertical_erp_billing/erp_billing_money_account_list` | Lista cuentas de dinero. |
 | `vertical_erp_billing/erp_billing_collection_folio_create` | Crea folio de cobranza desde documento comercial. |
 | `vertical_erp_billing/erp_billing_collection_folio_pdf` | Genera HTML imprimible del folio. |
+| `vertical_erp_billing/erp_billing_collection_folio_cancel` | Cancela folio de cobranza sin borrar historia y bloquea si ya tiene pagos ligados. |
 | `vertical_erp_billing/erp_billing_payment_create` | Registra pago manual/bancario/efectivo. |
 | `vertical_erp_billing/erp_billing_payment_apply` | Aplica pago y actualiza saldos de ventas. |
 | `vertical_erp_billing/erp_billing_cash_cut_open` | Abre corte de efectivo. |
@@ -43,7 +44,7 @@
 ## Flujo operativo
 
 1. Ventas emite remision/factura.
-2. Billing crea `billing_collection_folios` y PDF de cobranza.
+2. Billing crea `billing_collection_folios` y PDF de cobranza. Un folio puede contener una o varias remisiones del mismo cliente en `metadata.documents`.
 3. Cobrador recibe efectivo o transferencia.
 4. Usuario registra pago con `erp_billing_payment_create`.
 5. Si el pago corresponde a un documento, se aplica con `erp_billing_payment_apply`.
@@ -68,6 +69,8 @@ La fase 2 debe conectar `vertical_finance_document_intake` para leer PDF/imagen 
 - Toda escritura usa `dry_run=True` por defecto.
 - Billing puede leer/escribir su schema propio y, para aplicar pagos, requiere `sales_schema`.
 - El dashboard no debe tocar Supabase directo; consume data skills.
+- Remisiones canceladas no deben aparecer para crear folios nuevos.
+- Un folio solo se puede cancelar si no tiene pagos ligados.
 
 ## Manual de usuario pendiente
 

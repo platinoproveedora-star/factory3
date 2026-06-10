@@ -152,6 +152,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_billing/erp_billing_collection_folio_cancel": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_collection_folio_cancel",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Cancela un folio de cobranza sin borrar historia y bloquea la cancelacion si ya tiene pagos ligados.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_collection_folio_cancel",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_billing/erp_billing_payment_create": {
     "tipo": "interno",
     "nombre": "vertical_erp_billing/erp_billing_payment_create",

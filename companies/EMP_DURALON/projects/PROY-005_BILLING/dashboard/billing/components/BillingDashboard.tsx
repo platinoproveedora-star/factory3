@@ -2,20 +2,24 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Ban,
   Banknote,
   Building2,
   CircleDollarSign,
   ClipboardCheck,
   FileText,
   Landmark,
+  Plus,
   Printer,
   RefreshCw,
   Save,
   Search,
+  Trash2,
   WalletCards,
 } from 'lucide-react';
 import {
   applyPayment,
+  cancelCollectionFolio,
   createCollectionFolio,
   createMoneyAccount,
   createPayment,
@@ -24,6 +28,7 @@ import {
   getMoneyAccounts,
   getRemisiones,
   openHtml,
+  type CollectionDocument,
   type CollectionFolio,
   type DashboardData,
   type MoneyAccount,
@@ -62,6 +67,39 @@ function mxn(value: number | string | null | undefined) {
 
 function today() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function pendingBalance(remision: Remision) {
+  return Number(remision.balance_total ?? remision.total ?? 0);
+}
+
+function isActivePendingRemision(remision: Remision) {
+  return String(remision.status || '').toLowerCase() !== 'cancelada' && pendingBalance(remision) > 0;
+}
+
+function customerKey(remision: Remision) {
+  return String(remision.customer_id || remision.customer_name_snapshot || '').trim().toLowerCase();
+}
+
+function folioDocuments(folio: CollectionFolio): CollectionDocument[] {
+  const docs = folio.metadata?.documents;
+  if (Array.isArray(docs) && docs.length) return docs;
+  return [
+    {
+      sales_document_id: undefined,
+      sales_folio: folio.sales_folio,
+      customer_name: folio.customer_name,
+      document_total: folio.expected_amount,
+      balance_total: folio.balance_amount,
+      amount_to_collect: folio.expected_amount,
+    },
+  ];
+}
+
+function sumDocs(folio: CollectionFolio, key: keyof CollectionDocument, fallback: number) {
+  const docs = folioDocuments(folio);
+  const total = docs.reduce((sum, doc) => sum + Number(doc[key] || 0), 0);
+  return total || fallback;
 }
 
 function savedTab(): Tab {
@@ -274,6 +312,8 @@ function CobranzaPanel({
   const [paymentId, setPaymentId] = useState('');
   const [remisionId, setRemisionId] = useState('');
   const [applyAmount, setApplyAmount] = useState('');
+  const pendingRemisiones = useMemo(() => remisiones.filter(isActivePendingRemision), [remisiones]);
+  const activeFolios = useMemo(() => folios.filter((folio) => !['cancelado', 'pagada'].includes(String(folio.status || '').toLowerCase())), [folios]);
 
   return (
     <div className="grid gap-5 xl:grid-cols-[420px_1fr]">
@@ -283,7 +323,7 @@ function CobranzaPanel({
           <div className="mt-4 space-y-3">
             <Select label="Folio de cobranza" value={collectionId} onChange={setCollectionId}>
               <option value="">Sin folio / pago directo</option>
-              {folios.map((folio) => (
+              {activeFolios.map((folio) => (
                 <option key={folio.id} value={folio.id}>
                   {folio.folio} - {folio.customer_name || 'Cliente'} - {mxn(folio.balance_amount)}
                 </option>
@@ -345,7 +385,7 @@ function CobranzaPanel({
             </Select>
             <Select label="Remision" value={remisionId} onChange={setRemisionId}>
               <option value="">Selecciona remision</option>
-              {remisiones.map((remision) => (
+              {pendingRemisiones.map((remision) => (
                 <option key={remision.id} value={remision.id}>
                   {remision.folio} - {remision.customer_name_snapshot} - {mxn(remision.balance_total ?? remision.total)}
                 </option>
@@ -385,43 +425,124 @@ function FoliosPanel({
   saving: boolean;
   runAction: (fn: () => Promise<void>, okMessage: string) => Promise<void>;
 }) {
-  const [remisionId, setRemisionId] = useState('');
-  const [amount, setAmount] = useState('');
+  const [selectedDocs, setSelectedDocs] = useState<Array<{ remisionId: string; amount: string }>>([{ remisionId: '', amount: '' }]);
   const [collector, setCollector] = useState('');
 
-  const selected = remisiones.find((item) => item.id === remisionId);
+  const pendingRemisiones = useMemo(() => remisiones.filter(isActivePendingRemision), [remisiones]);
+  const firstSelected = pendingRemisiones.find((item) => item.id === selectedDocs[0]?.remisionId);
+  const activeCustomer = firstSelected ? customerKey(firstSelected) : '';
+  const collectorOptions = useMemo(
+    () => Array.from(new Set(folios.map((folio) => folio.collector_name).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)),
+    [folios]
+  );
+  const selectedRemisiones = selectedDocs
+    .map((doc) => ({ item: pendingRemisiones.find((remision) => remision.id === doc.remisionId), amount: doc.amount }))
+    .filter((doc): doc is { item: Remision; amount: string } => Boolean(doc.item));
+  const totalToCollect = selectedRemisiones.reduce((sum, doc) => sum + Number(doc.amount || 0), 0);
 
-  useEffect(() => {
-    if (selected) setAmount(String(selected.balance_total ?? selected.total ?? ''));
-  }, [selected]);
+  function updateSelectedDoc(index: number, patch: Partial<{ remisionId: string; amount: string }>) {
+    setSelectedDocs((current) => {
+      const next = [...current];
+      const currentRow = next[index] ?? { remisionId: '', amount: '' };
+      const remision = patch.remisionId ? pendingRemisiones.find((item) => item.id === patch.remisionId) : undefined;
+      next[index] = {
+        ...currentRow,
+        ...patch,
+        amount: patch.remisionId && remision ? String(pendingBalance(remision)) : patch.amount ?? currentRow.amount,
+      };
+      return index === 0 && patch.remisionId ? [next[0]] : next;
+    });
+  }
+
+  function optionsForRow(index: number) {
+    const used = new Set(selectedDocs.map((doc, docIndex) => (docIndex === index ? '' : doc.remisionId)).filter(Boolean));
+    const rowId = selectedDocs[index]?.remisionId;
+    return pendingRemisiones.filter((remision) => {
+      if (used.has(remision.id)) return false;
+      if (!activeCustomer) return true;
+      return customerKey(remision) === activeCustomer || rowId === remision.id;
+    });
+  }
+
+  const extraOptions = activeCustomer
+    ? pendingRemisiones.filter((remision) => customerKey(remision) === activeCustomer && !selectedDocs.some((doc) => doc.remisionId === remision.id))
+    : [];
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[420px_1fr]">
-      <section className="rounded border border-slate-200 bg-white p-4">
+    <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
+      <section className="rounded border border-slate-200 bg-white p-3">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">Crear folio de cobranza</h3>
-        <div className="mt-4 space-y-3">
-          <Select label="Remision" value={remisionId} onChange={setRemisionId}>
-            <option value="">Selecciona remision</option>
-            {remisiones.map((remision) => (
-              <option key={remision.id} value={remision.id}>
-                {remision.folio} - {remision.customer_name_snapshot}
-              </option>
+        <div className="mt-3 space-y-3">
+          {selectedDocs.map((doc, index) => {
+            const selected = pendingRemisiones.find((item) => item.id === doc.remisionId);
+            return (
+              <div key={`${index}-${doc.remisionId || 'empty'}`} className="rounded border border-slate-200 bg-slate-50 p-2">
+                <Select label={index === 0 ? 'Remision' : 'Otra remision'} value={doc.remisionId} onChange={(value) => updateSelectedDoc(index, { remisionId: value })}>
+                  <option value="">Selecciona remision</option>
+                  {optionsForRow(index).map((remision) => (
+                    <option key={remision.id} value={remision.id}>
+                      {remision.folio} - {remision.customer_name_snapshot} - saldo {mxn(pendingBalance(remision))}
+                    </option>
+                  ))}
+                </Select>
+                <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+                  <Input label="X cobrar" type="number" value={doc.amount} onChange={(value) => updateSelectedDoc(index, { amount: value })} />
+                  <button
+                    type="button"
+                    disabled={selectedDocs.length === 1}
+                    onClick={() => setSelectedDocs((current) => current.filter((_, docIndex) => docIndex !== index))}
+                    className="mt-5 flex h-9 w-9 items-center justify-center rounded border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                    title="Quitar remision"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+                {selected && <p className="mt-1 text-xs text-slate-500">Saldo pendiente: {mxn(pendingBalance(selected))}</p>}
+              </div>
+            );
+          })}
+          {extraOptions.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedDocs((current) => [...current, { remisionId: '', amount: '' }])}
+              className="flex h-9 w-full items-center justify-center gap-2 rounded border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <Plus size={15} />
+              Agregar otra remision
+            </button>
+          )}
+          <Input label="Cobrador" value={collector} onChange={setCollector} list="collector-options" />
+          <datalist id="collector-options">
+            {collectorOptions.map((name) => (
+              <option key={name} value={name} />
             ))}
-          </Select>
-          <Input label="Importe esperado" type="number" value={amount} onChange={setAmount} />
-          <Input label="Cobrador" value={collector} onChange={setCollector} />
+          </datalist>
+          <div className="rounded bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">Total del folio: {mxn(totalToCollect)}</div>
           <button
             type="button"
             disabled={saving}
             onClick={() =>
               runAction(async () => {
+                if (!selectedRemisiones.length) throw new Error('Selecciona al menos una remision');
+                if (selectedRemisiones.some((doc) => Number(doc.amount || 0) <= 0)) throw new Error('Cada importe por cobrar debe ser mayor a 0');
+                const documents = selectedRemisiones.map(({ item, amount }) => ({
+                  sales_document_id: item.id,
+                  sales_folio: item.folio,
+                  customer_id: item.customer_id,
+                  customer_name: item.customer_name_snapshot,
+                  document_total: Number(item.total || 0),
+                  balance_total: pendingBalance(item),
+                  amount_to_collect: Number(amount || 0),
+                }));
                 await createCollectionFolio({
-                  sales_document_id: selected?.id,
-                  sales_folio: selected?.folio,
-                  customer_name: selected?.customer_name_snapshot,
-                  expected_amount: Number(amount || 0),
+                  sales_document_id: selectedRemisiones[0]?.item.id,
+                  sales_folio: selectedRemisiones[0]?.item.folio,
+                  customer_name: selectedRemisiones[0]?.item.customer_name_snapshot,
+                  expected_amount: totalToCollect,
                   collector_name: collector || undefined,
+                  documents,
                 });
+                setSelectedDocs([{ remisionId: '', amount: '' }]);
               }, 'Folio creado')
             }
             className="flex h-10 w-full items-center justify-center gap-2 rounded bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
@@ -431,7 +552,7 @@ function FoliosPanel({
           </button>
         </div>
       </section>
-      <FoliosTable folios={folios} />
+      <FoliosTable folios={folios} runAction={runAction} saving={saving} />
     </div>
   );
 }
@@ -543,35 +664,118 @@ function PaymentsTable({ payments }: { payments: Payment[] }) {
   );
 }
 
-function FoliosTable({ folios }: { folios: CollectionFolio[] }) {
+function FoliosTable({
+  folios,
+  runAction,
+  saving,
+}: {
+  folios: CollectionFolio[];
+  runAction: (fn: () => Promise<void>, okMessage: string) => Promise<void>;
+  saving: boolean;
+}) {
   return (
     <section className="rounded border border-slate-200 bg-white">
       <TableHeader title="Folios de cobranza" count={folios.length} />
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="space-y-3 p-3 md:hidden">
+        {folios.map((folio) => {
+          const docs = folioDocuments(folio);
+          const status = String(folio.status || '').toLowerCase();
+          return (
+            <div key={folio.id} className="rounded border border-slate-200 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-mono text-sm font-semibold text-slate-950">{folio.folio}</p>
+                  <p className="text-xs text-slate-500">{folio.customer_name || '-'}</p>
+                </div>
+                <Badge value={folio.status} />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <Metric label="Remision" value={docs.map((doc) => doc.sales_folio).filter(Boolean).join(', ') || '-'} />
+                <Metric label="Saldo" value={mxn(sumDocs(folio, 'balance_total', folio.balance_amount))} />
+                <Metric label="X cobrar" value={mxn(sumDocs(folio, 'amount_to_collect', folio.expected_amount))} />
+              </div>
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={async () => openHtml(await getCollectionFolioHtml(folio.folio))}
+                  className="inline-flex h-8 items-center gap-1 rounded border border-slate-200 px-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <Printer size={14} />
+                  PDF
+                </button>
+                <button
+                  type="button"
+                  disabled={saving || status === 'cancelado' || Boolean(folio.payment_id)}
+                  onClick={() =>
+                    runAction(async () => {
+                      await cancelCollectionFolio({ collection_folio_id: folio.id, cancel_reason: 'cancelado desde dashboard' });
+                    }, 'Folio cancelado')
+                  }
+                  className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-30"
+                  title="Cancelar folio"
+                >
+                  <Ban size={14} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full text-left text-xs">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr><th className="px-3 py-2">Folio</th><th className="px-3 py-2">Documento</th><th className="px-3 py-2">Cliente</th><th className="px-3 py-2 text-right">Saldo</th><th className="px-3 py-2">Status</th><th className="px-3 py-2"></th></tr>
+            <tr>
+              <th className="px-2 py-2">Folio</th>
+              <th className="px-2 py-2">Cliente</th>
+              <th className="px-2 py-2">Remisiones</th>
+              <th className="px-2 py-2 text-right">Importe</th>
+              <th className="px-2 py-2 text-right">Saldo</th>
+              <th className="px-2 py-2 text-right">X cobrar</th>
+              <th className="px-2 py-2">Status</th>
+              <th className="px-2 py-2"></th>
+            </tr>
           </thead>
           <tbody>
-            {folios.map((folio) => (
-              <tr key={folio.id} className="border-t border-slate-100">
-                <td className="px-3 py-2 font-mono font-medium">{folio.folio}</td>
-                <td className="px-3 py-2">{folio.sales_folio || '-'}</td>
-                <td className="px-3 py-2">{folio.customer_name || '-'}</td>
-                <td className="px-3 py-2 text-right">{mxn(folio.balance_amount)}</td>
-                <td className="px-3 py-2"><Badge value={folio.status} /></td>
-                <td className="px-3 py-2 text-right">
-                  <button
-                    type="button"
-                    onClick={async () => openHtml(await getCollectionFolioHtml(folio.folio))}
-                    className="inline-flex h-8 items-center gap-1 rounded border border-slate-200 px-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                  >
-                    <Printer size={14} />
-                    PDF
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {folios.map((folio) => {
+              const docs = folioDocuments(folio);
+              const status = String(folio.status || '').toLowerCase();
+              return (
+                <tr key={folio.id} className="border-t border-slate-100">
+                  <td className="px-2 py-2 font-mono font-medium">{folio.folio}</td>
+                  <td className="px-2 py-2">{folio.customer_name || '-'}</td>
+                  <td className="px-2 py-2">{docs.map((doc) => doc.sales_folio).filter(Boolean).join(', ') || '-'}</td>
+                  <td className="px-2 py-2 text-right">{mxn(sumDocs(folio, 'document_total', folio.expected_amount))}</td>
+                  <td className="px-2 py-2 text-right">{mxn(sumDocs(folio, 'balance_total', folio.balance_amount))}</td>
+                  <td className="px-2 py-2 text-right">{mxn(sumDocs(folio, 'amount_to_collect', folio.expected_amount))}</td>
+                  <td className="px-2 py-2"><Badge value={folio.status} /></td>
+                  <td className="px-2 py-2 text-right">
+                    <div className="flex justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={async () => openHtml(await getCollectionFolioHtml(folio.folio))}
+                        className="inline-flex h-8 items-center gap-1 rounded border border-slate-200 px-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        <Printer size={14} />
+                        PDF
+                      </button>
+                      <button
+                        type="button"
+                        disabled={saving || status === 'cancelado' || Boolean(folio.payment_id)}
+                        onClick={() =>
+                          runAction(async () => {
+                            await cancelCollectionFolio({ collection_folio_id: folio.id, cancel_reason: 'cancelado desde dashboard' });
+                          }, 'Folio cancelado')
+                        }
+                        className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-30"
+                        title="Cancelar folio"
+                      >
+                        <Ban size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -614,15 +818,42 @@ function TableHeader({ title, count }: { title: string; count: number }) {
   );
 }
 
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded bg-slate-50 p-2">
+      <p className="text-[10px] font-semibold uppercase text-slate-500">{label}</p>
+      <p className="truncate text-xs font-medium text-slate-800">{value}</p>
+    </div>
+  );
+}
+
 function Badge({ value }: { value: string }) {
   return <span className="rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">{value || '-'}</span>;
 }
 
-function Input({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
+function Input({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  list,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  list?: string;
+}) {
   return (
     <label className="block">
       <span className="text-xs font-medium text-slate-600">{label}</span>
-      <input value={value} type={type} onChange={(event) => onChange(event.target.value)} className="mt-1 h-10 w-full rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
+      <input
+        value={value}
+        type={type}
+        list={list}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-1 h-9 w-full rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500"
+      />
     </label>
   );
 }
@@ -631,7 +862,7 @@ function Select({ label, value, onChange, children }: { label: string; value: st
   return (
     <label className="block">
       <span className="text-xs font-medium text-slate-600">{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 h-10 w-full rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 h-9 w-full rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
         {children}
       </select>
     </label>

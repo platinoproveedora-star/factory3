@@ -81,11 +81,22 @@ class ErpBillingPaymentApplyService:
         if not pay_result.get("ok"):
             return pay_result
         if payment.get("collection_folio_id"):
-            billing_db.rest_update(
-                "billing_collection_folios",
-                {"collected_amount": new_paid, "balance_amount": new_balance, "status": doc_status, "payment_id": payment["id"], "updated_at": utc_now()},
-                {"id": payment["collection_folio_id"]},
-            )
+            collection = fetch_one(billing_db, "billing_collection_folios", {"id": payment["collection_folio_id"]}, "id,collected_amount,balance_amount")
+            if collection:
+                collection_collected = money(collection.get("collected_amount")) + amount
+                collection_balance = max(money(collection.get("balance_amount")) - amount, 0)
+                collection_status = "pagada" if collection_balance <= 0 else "parcial"
+                billing_db.rest_update(
+                    "billing_collection_folios",
+                    {
+                        "collected_amount": collection_collected,
+                        "balance_amount": collection_balance,
+                        "status": collection_status,
+                        "payment_id": payment["id"],
+                        "updated_at": utc_now(),
+                    },
+                    {"id": payment["collection_folio_id"]},
+                )
         insert_event(ctx, "payment_applied", {"payment_id": payment["id"], "document_id": document["id"], "amount": amount}, False)
         app_data = app_result.get("data") or []
         application_saved = app_data[0] if isinstance(app_data, list) and app_data else app_data
