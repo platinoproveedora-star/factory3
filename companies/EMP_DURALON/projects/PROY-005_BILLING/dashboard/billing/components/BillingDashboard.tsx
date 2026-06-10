@@ -33,6 +33,7 @@ import {
   type DashboardData,
   type MoneyAccount,
   type Payment,
+  type PaymentApplication,
   type Remision,
 } from '../lib/api';
 import projectContext from '../project-context.json';
@@ -56,6 +57,7 @@ const emptyData: DashboardData = {
     pending_validation: 0,
   },
   payments: [],
+  payment_applications: [],
   collection_folios: [],
   money_accounts: [],
   work_queue: { pending_folios: [], pending_validation: [] },
@@ -124,7 +126,7 @@ export default function BillingDashboard() {
     setError('');
     try {
       const [dashboard, accountRows, remisionRows] = await Promise.all([getDashboardData(), getMoneyAccounts(), getRemisiones()]);
-      setData(dashboard);
+      setData({ ...emptyData, ...dashboard, payment_applications: dashboard.payment_applications ?? [] });
       setAccounts(accountRows);
       setRemisiones(remisionRows);
     } catch (err: any) {
@@ -249,6 +251,7 @@ export default function BillingDashboard() {
           {activeTab === 'cobranza' && (
             <CobranzaPanel
               payments={filteredPayments}
+              applications={data.payment_applications}
               folios={data.collection_folios}
               remisiones={remisiones}
               accounts={accounts}
@@ -292,6 +295,7 @@ function Kpis({ data, loading }: { data: DashboardData; loading: boolean }) {
 
 function CobranzaPanel({
   payments,
+  applications,
   folios,
   remisiones,
   accounts,
@@ -299,13 +303,14 @@ function CobranzaPanel({
   runAction,
 }: {
   payments: Payment[];
+  applications: PaymentApplication[];
   folios: CollectionFolio[];
   remisiones: Remision[];
   accounts: MoneyAccount[];
   saving: boolean;
   runAction: (fn: () => Promise<void>, okMessage: string) => Promise<void>;
 }) {
-  const [collectionId, setCollectionId] = useState('');
+  const [selectedFolioRows, setSelectedFolioRows] = useState<Array<{ folioId: string }>>([{ folioId: '' }]);
   const [method, setMethod] = useState('cash');
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState('');
@@ -313,7 +318,31 @@ function CobranzaPanel({
   const [remisionId, setRemisionId] = useState('');
   const [applyAmount, setApplyAmount] = useState('');
   const pendingRemisiones = useMemo(() => remisiones.filter(isActivePendingRemision), [remisiones]);
-  const activeFolios = useMemo(() => folios.filter((folio) => !['cancelado', 'pagada'].includes(String(folio.status || '').toLowerCase())), [folios]);
+  const activeFolios = useMemo(
+    () => folios.filter((folio) => !['cancelado', 'cancelada', 'pagada'].includes(String(folio.status || '').toLowerCase()) && Number(folio.balance_amount || 0) > 0),
+    [folios]
+  );
+  const selectedFolios = selectedFolioRows
+    .map((row) => activeFolios.find((folio) => folio.id === row.folioId))
+    .filter((folio): folio is CollectionFolio => Boolean(folio));
+  const firstFolio = selectedFolios[0];
+  const selectedCustomer = firstFolio ? String(firstFolio.customer_name || '').trim().toLowerCase() : '';
+  const folioTotal = selectedFolios.reduce((sum, folio) => sum + Number(folio.balance_amount || 0), 0);
+  const unappliedPayments = useMemo(() => payments.filter((payment) => Number(payment.unapplied_amount ?? payment.amount ?? 0) > 0 && payment.status !== 'cancelado'), [payments]);
+
+  function folioOptionsForRow(index: number) {
+    const used = new Set(selectedFolioRows.map((row, rowIndex) => (rowIndex === index ? '' : row.folioId)).filter(Boolean));
+    const rowId = selectedFolioRows[index]?.folioId;
+    return activeFolios.filter((folio) => {
+      if (used.has(folio.id)) return false;
+      if (!selectedCustomer) return true;
+      return String(folio.customer_name || '').trim().toLowerCase() === selectedCustomer || folio.id === rowId;
+    });
+  }
+
+  const extraFolioOptions = selectedCustomer
+    ? activeFolios.filter((folio) => String(folio.customer_name || '').trim().toLowerCase() === selectedCustomer && !selectedFolioRows.some((row) => row.folioId === folio.id))
+    : [];
 
   return (
     <div className="grid gap-5 xl:grid-cols-[420px_1fr]">
@@ -321,14 +350,43 @@ function CobranzaPanel({
         <section className="rounded border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">Registrar pago</h3>
           <div className="mt-4 space-y-3">
-            <Select label="Folio de cobranza" value={collectionId} onChange={setCollectionId}>
-              <option value="">Sin folio / pago directo</option>
-              {activeFolios.map((folio) => (
-                <option key={folio.id} value={folio.id}>
-                  {folio.folio} - {folio.customer_name || 'Cliente'} - {mxn(folio.balance_amount)}
-                </option>
-              ))}
-            </Select>
+            {selectedFolioRows.map((row, index) => {
+              const selected = activeFolios.find((folio) => folio.id === row.folioId);
+              return (
+                <div key={`${index}-${row.folioId || 'empty'}`} className="rounded border border-slate-200 bg-slate-50 p-2">
+                  <Select
+                    label={index === 0 ? 'Folio de cobranza' : 'Otro folio'}
+                    value={row.folioId}
+                    onChange={(value) =>
+                      setSelectedFolioRows((current) => {
+                        const next = [...current];
+                        next[index] = { folioId: value };
+                        return index === 0 && value ? [next[0]] : next;
+                      })
+                    }
+                  >
+                    <option value="">Sin folio / pago directo</option>
+                    {folioOptionsForRow(index).map((folio) => (
+                      <option key={folio.id} value={folio.id}>
+                        {folio.folio} - {folio.customer_name || 'Cliente'} - {mxn(folio.balance_amount)}
+                      </option>
+                    ))}
+                  </Select>
+                  {selected && <p className="mt-1 text-xs text-slate-500">Saldo de referencia: {mxn(selected.balance_amount)}</p>}
+                </div>
+              );
+            })}
+            {extraFolioOptions.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedFolioRows((current) => [...current, { folioId: '' }])}
+                className="flex h-9 w-full items-center justify-center gap-2 rounded border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <Plus size={15} />
+                Agregar otro folio
+              </button>
+            )}
+            {selectedFolios.length > 0 && <div className="rounded bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">Total folios: {mxn(folioTotal)}</div>}
             <div className="grid grid-cols-2 gap-3">
               <Select label="Metodo" value={method} onChange={setMethod}>
                 <option value="cash">Efectivo</option>
@@ -353,15 +411,28 @@ function CobranzaPanel({
               disabled={saving}
               onClick={() =>
                 runAction(async () => {
-                  const folio = folios.find((item) => item.id === collectionId);
+                  if (selectedFolios.length > 1) {
+                    const customer = String(selectedFolios[0]?.customer_name || '').trim().toLowerCase();
+                    if (selectedFolios.some((folio) => String(folio.customer_name || '').trim().toLowerCase() !== customer)) {
+                      throw new Error('Todos los folios del pago deben ser del mismo cliente');
+                    }
+                  }
                   await createPayment({
-                    collection_folio_id: collectionId || undefined,
+                    collection_folio_id: selectedFolios[0]?.id,
+                    collection_folios: selectedFolios.map((folio) => ({
+                      id: folio.id,
+                      folio: folio.folio,
+                      customer_name: folio.customer_name,
+                      expected_amount: folio.expected_amount,
+                      balance_amount: folio.balance_amount,
+                    })),
                     payment_method: method,
                     amount: Number(amount || 0),
                     destination_money_account_id: accountId || undefined,
-                    customer_name: folio?.customer_name || undefined,
+                    customer_name: selectedFolios[0]?.customer_name || undefined,
                   });
                   setAmount('');
+                  setSelectedFolioRows([{ folioId: '' }]);
                 }, 'Pago registrado')
               }
               className="flex h-10 w-full items-center justify-center gap-2 rounded bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
@@ -377,7 +448,7 @@ function CobranzaPanel({
           <div className="mt-4 space-y-3">
             <Select label="Pago" value={paymentId} onChange={setPaymentId}>
               <option value="">Selecciona pago</option>
-              {payments.map((payment) => (
+              {unappliedPayments.map((payment) => (
                 <option key={payment.id} value={payment.id}>
                   {payment.folio} - {mxn(payment.unapplied_amount || payment.amount)}
                 </option>
@@ -409,7 +480,7 @@ function CobranzaPanel({
           </div>
         </section>
       </div>
-      <PaymentsTable payments={payments} />
+      <PaymentsLedger payments={payments} applications={applications} />
     </div>
   );
 }
@@ -638,29 +709,87 @@ function CortePanel({ accounts }: { accounts: MoneyAccount[]; saving: boolean; r
   );
 }
 
-function PaymentsTable({ payments }: { payments: Payment[] }) {
+function paymentFolios(payment: Payment) {
+  const rows = payment.metadata?.collection_folios;
+  if (Array.isArray(rows) && rows.length) return rows.map((row) => row.folio).filter(Boolean).join(', ');
+  return payment.collection_folio || '-';
+}
+
+function PaymentsLedger({ payments, applications }: { payments: Payment[]; applications: PaymentApplication[] }) {
+  const pending = payments.filter((payment) => Number(payment.unapplied_amount ?? payment.amount ?? 0) > 0 && payment.status !== 'cancelado');
+  const appliedPaymentIds = new Set(applications.map((application) => application.payment_id));
+  const applied = payments.filter((payment) => appliedPaymentIds.has(payment.id) || Number(payment.unapplied_amount || 0) <= 0);
+
   return (
-    <section className="rounded border border-slate-200 bg-white">
-      <TableHeader title="Pagos recientes" count={payments.length} />
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr><th className="px-3 py-2">Folio</th><th className="px-3 py-2">Cliente</th><th className="px-3 py-2">Metodo</th><th className="px-3 py-2 text-right">Importe</th><th className="px-3 py-2">Status</th></tr>
-          </thead>
-          <tbody>
-            {payments.map((payment) => (
-              <tr key={payment.id} className="border-t border-slate-100">
-                <td className="px-3 py-2 font-mono font-medium">{payment.folio}</td>
-                <td className="px-3 py-2">{payment.customer_name || '-'}</td>
-                <td className="px-3 py-2 text-slate-500">{payment.payment_method}</td>
-                <td className="px-3 py-2 text-right">{mxn(payment.amount)}</td>
-                <td className="px-3 py-2"><Badge value={payment.status} /></td>
+    <div className="space-y-5">
+      <section className="rounded border border-red-200 bg-white">
+        <TableHeader title="Pagos sin aplicar" count={pending.length} tone="red" />
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-red-50 text-xs uppercase text-red-700">
+              <tr>
+                <th className="px-3 py-2">Pago</th>
+                <th className="px-3 py-2">Folios</th>
+                <th className="px-3 py-2">Cliente</th>
+                <th className="px-3 py-2 text-right">Importe</th>
+                <th className="px-3 py-2 text-right">Sin aplicar</th>
+                <th className="px-3 py-2">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
+            </thead>
+            <tbody>
+              {pending.map((payment) => (
+                <tr key={payment.id} className="border-t border-red-100">
+                  <td className="px-3 py-2 font-mono font-medium">{payment.folio}</td>
+                  <td className="px-3 py-2">{paymentFolios(payment)}</td>
+                  <td className="px-3 py-2">{payment.customer_name || '-'}</td>
+                  <td className="px-3 py-2 text-right">{mxn(payment.amount)}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-red-700">{mxn(payment.unapplied_amount ?? payment.amount)}</td>
+                  <td className="px-3 py-2"><Badge value="sin_aplicar" /></td>
+                </tr>
+              ))}
+              {!pending.length && <EmptyRow cols={6} label="No hay pagos pendientes de aplicar" />}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded border border-slate-200 bg-white">
+        <TableHeader title="Pagos aplicados" count={applied.length} />
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-2">Pago</th>
+                <th className="px-3 py-2">Cliente</th>
+                <th className="px-3 py-2">Remisiones aplicadas</th>
+                <th className="px-3 py-2 text-right">Aplicado</th>
+                <th className="px-3 py-2 text-right">Saldo remision</th>
+                <th className="px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {applied.map((payment) => {
+                const rows = applications.filter((application) => application.payment_id === payment.id);
+                const remisiones = rows.map((row) => row.sales_folio).filter(Boolean).join(', ') || '-';
+                const appliedAmount = rows.reduce((sum, row) => sum + Number(row.amount_applied || 0), 0);
+                const balanceAfter = rows.length ? rows[rows.length - 1]?.metadata?.document_balance_after : undefined;
+                return (
+                  <tr key={payment.id} className="border-t border-slate-100">
+                    <td className="px-3 py-2 font-mono font-medium">{payment.folio}</td>
+                    <td className="px-3 py-2">{payment.customer_name || '-'}</td>
+                    <td className="px-3 py-2">{remisiones}</td>
+                    <td className="px-3 py-2 text-right">{mxn(appliedAmount || payment.amount - Number(payment.unapplied_amount || 0))}</td>
+                    <td className="px-3 py-2 text-right">{balanceAfter === undefined ? '-' : mxn(balanceAfter)}</td>
+                    <td className="px-3 py-2"><Badge value={payment.status} /></td>
+                  </tr>
+                );
+              })}
+              {!applied.length && <EmptyRow cols={6} label="Todavia no hay pagos aplicados" />}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -809,12 +938,23 @@ function AccountsTable({ accounts }: { accounts: MoneyAccount[] }) {
   );
 }
 
-function TableHeader({ title, count }: { title: string; count: number }) {
+function TableHeader({ title, count, tone = 'slate' }: { title: string; count: number; tone?: 'slate' | 'red' }) {
+  const badgeClass = tone === 'red' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600';
   return (
     <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
       <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">{title}</h3>
-      <span className="rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{count}</span>
+      <span className={`rounded px-2 py-1 text-xs font-medium ${badgeClass}`}>{count}</span>
     </div>
+  );
+}
+
+function EmptyRow({ cols, label }: { cols: number; label: string }) {
+  return (
+    <tr>
+      <td colSpan={cols} className="px-3 py-6 text-center text-sm text-slate-500">
+        {label}
+      </td>
+    </tr>
   );
 }
 
@@ -828,7 +968,9 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 function Badge({ value }: { value: string }) {
-  return <span className="rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">{value || '-'}</span>;
+  const normalized = String(value || '').toLowerCase();
+  const cls = normalized === 'sin_aplicar' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700';
+  return <span className={`rounded px-2 py-1 text-xs font-medium ${cls}`}>{value || '-'}</span>;
 }
 
 function Input({

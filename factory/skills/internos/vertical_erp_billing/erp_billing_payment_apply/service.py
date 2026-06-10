@@ -38,6 +38,7 @@ class ErpBillingPaymentApplyService:
         doc_status = "pagada" if new_balance <= 0 else "parcial"
         payment_unapplied = max(unapplied - amount, 0)
         payment_status = "aplicado" if payment_unapplied <= 0 else "parcial"
+        base_metadata = context.get("metadata") if isinstance(context.get("metadata"), dict) else {}
         application = {
             **identity_row(ctx),
             "payment_id": payment["id"],
@@ -47,7 +48,13 @@ class ErpBillingPaymentApplyService:
             "sales_folio": document.get("folio"),
             "amount_applied": amount,
             "status": "aplicado",
-            "metadata": context.get("metadata") if isinstance(context.get("metadata"), dict) else {},
+            "metadata": {
+                **base_metadata,
+                "document_total": money(document.get("total")),
+                "document_paid_after": new_paid,
+                "document_balance_after": new_balance,
+                "document_status_after": doc_status,
+            },
         }
         preview = {
             "application": {"folio": "BAPP-DRYRUN", **application},
@@ -80,23 +87,7 @@ class ErpBillingPaymentApplyService:
         )
         if not pay_result.get("ok"):
             return pay_result
-        if payment.get("collection_folio_id"):
-            collection = fetch_one(billing_db, "billing_collection_folios", {"id": payment["collection_folio_id"]}, "id,collected_amount,balance_amount")
-            if collection:
-                collection_collected = money(collection.get("collected_amount")) + amount
-                collection_balance = max(money(collection.get("balance_amount")) - amount, 0)
-                collection_status = "pagada" if collection_balance <= 0 else "parcial"
-                billing_db.rest_update(
-                    "billing_collection_folios",
-                    {
-                        "collected_amount": collection_collected,
-                        "balance_amount": collection_balance,
-                        "status": collection_status,
-                        "payment_id": payment["id"],
-                        "updated_at": utc_now(),
-                    },
-                    {"id": payment["collection_folio_id"]},
-                )
+        self._update_collection_folios(billing_db, payment, amount)
         insert_event(ctx, "payment_applied", {"payment_id": payment["id"], "document_id": document["id"], "amount": amount}, False)
         app_data = app_result.get("data") or []
         application_saved = app_data[0] if isinstance(app_data, list) and app_data else app_data
@@ -109,6 +100,43 @@ class ErpBillingPaymentApplyService:
             return None
         filters = {"id": payment_id} if payment_id else {"folio": folio}
         return fetch_one(SupabaseClient(ctx), "billing_payments", filters)
+
+    def _update_collection_folios(self, billing_db: SupabaseClient, payment: dict, amount: float) -> None:
+        ids = []
+        metadata = payment.get("metadata") if isinstance(payment.get("metadata"), dict) else {}
+        raw_folios = metadata.get("collection_folios") if isinstance(metadata.get("collection_folios"), list) else []
+        for row in raw_folios:
+            if isinstance(row, dict) and blank(row.get("id")):
+                ids.append(blank(row.get("id")))
+        if not ids and payment.get("collection_folio_id"):
+            ids.append(payment["collection_folio_id"])
+
+        remaining = money(amount)
+        for collection_id in ids:
+            if remaining <= 0:
+                break
+            collection = fetch_one(billing_db, "billing_collection_folios", {"id": collection_id}, "id,collected_amount,balance_amount")
+            if not collection:
+                continue
+            current_balance = money(collection.get("balance_amount"))
+            if current_balance <= 0:
+                continue
+            applied_to_folio = min(remaining, current_balance)
+            collection_collected = money(collection.get("collected_amount")) + applied_to_folio
+            collection_balance = max(current_balance - applied_to_folio, 0)
+            collection_status = "pagada" if collection_balance <= 0 else "parcial"
+            billing_db.rest_update(
+                "billing_collection_folios",
+                {
+                    "collected_amount": collection_collected,
+                    "balance_amount": collection_balance,
+                    "status": collection_status,
+                    "payment_id": payment["id"],
+                    "updated_at": utc_now(),
+                },
+                {"id": collection_id},
+            )
+            remaining = money(remaining - applied_to_folio)
 
     def _document(self, sales_ctx: dict, context: dict) -> dict | None:
         doc_id = blank(context.get("sales_document_id") or context.get("document_id"))

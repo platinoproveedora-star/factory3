@@ -23,7 +23,27 @@ class ErpBillingPaymentCreateService:
         if amount <= 0:
             return {"ok": False, "error": "amount debe ser mayor a 0"}
 
-        collection = self._collection(ctx, context)
+        collections_result = self._collections(ctx, context)
+        if not collections_result.get("ok"):
+            return collections_result
+        collections = collections_result["data"]["collections"]
+        collection = collections[0] if collections else None
+        metadata = context.get("metadata") if isinstance(context.get("metadata"), dict) else {}
+        if collections:
+            metadata = {
+                **metadata,
+                "collection_folios": [
+                    {
+                        "id": item.get("id"),
+                        "folio": item.get("folio"),
+                        "customer_id": item.get("customer_id"),
+                        "customer_name": item.get("customer_name"),
+                        "expected_amount": money(item.get("expected_amount")),
+                        "balance_amount": money(item.get("balance_amount")),
+                    }
+                    for item in collections
+                ],
+            }
         receipt_file_url = blank(context.get("receipt_file_url") or context.get("document_file_url"))
         row = {
             **identity_row(ctx),
@@ -47,9 +67,9 @@ class ErpBillingPaymentCreateService:
             "receipt_file_bucket": blank(context.get("receipt_file_bucket") or context.get("document_file_bucket")),
             "ocr_status": str(context.get("ocr_status") or ("pending" if receipt_file_url else "not_required")).strip(),
             "validation_status": str(context.get("validation_status") or "manual").strip(),
-            "status": str(context.get("status") or "capturado").strip(),
+            "status": str(context.get("status") or "sin_aplicar").strip(),
             "notes": blank(context.get("notes")),
-            "metadata": context.get("metadata") if isinstance(context.get("metadata"), dict) else {},
+            "metadata": metadata,
         }
         if context.get("dry_run", True):
             return {"ok": True, "message": "dry_run: no se registro pago", "data": {"payment": {"folio": "BPAY-DRYRUN", **row}}}
@@ -66,10 +86,37 @@ class ErpBillingPaymentCreateService:
         insert_event(ctx, "payment_created", {"payment_id": payment.get("id"), "folio": payment.get("folio"), "amount": amount}, False)
         return {"ok": True, "data": {"payment": payment}}
 
+    def _collections(self, ctx: dict, context: dict) -> dict:
+        raw_items = context.get("collection_folios")
+        collections = []
+        if isinstance(raw_items, list) and raw_items:
+            for raw in raw_items:
+                if not isinstance(raw, dict):
+                    return {"ok": False, "error": "collection_folios debe ser una lista de objetos"}
+                collection = self._collection(ctx, raw)
+                if not collection:
+                    return {"ok": False, "error": "folio de cobranza no encontrado"}
+                collections.append(collection)
+        else:
+            collection = self._collection(ctx, context)
+            if collection:
+                collections.append(collection)
+
+        customer_key = None
+        for collection in collections:
+            status = str(collection.get("status") or "").strip().lower()
+            if status in {"cancelado", "cancelada", "pagada"}:
+                return {"ok": False, "error": "no se puede registrar pago contra folios cancelados o pagados"}
+            key = collection.get("customer_id") or collection.get("customer_name")
+            if customer_key and key and customer_key != key:
+                return {"ok": False, "error": "todos los folios del pago deben ser del mismo cliente"}
+            customer_key = customer_key or key
+        return {"ok": True, "data": {"collections": collections}}
+
     def _collection(self, ctx: dict, context: dict) -> dict | None:
         collection_id = blank(context.get("collection_folio_id"))
-        collection_folio = blank(context.get("collection_folio"))
+        collection_folio = blank(context.get("collection_folio") or context.get("folio"))
         if not collection_id and not collection_folio:
             return None
         filters = {"id": collection_id} if collection_id else {"folio": collection_folio}
-        return fetch_one(SupabaseClient(ctx), "billing_collection_folios", filters, "id,folio,customer_id,customer_name,balance_amount,status")
+        return fetch_one(SupabaseClient(ctx), "billing_collection_folios", filters, "id,folio,customer_id,customer_name,expected_amount,balance_amount,status")

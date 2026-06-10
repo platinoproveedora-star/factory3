@@ -46,8 +46,8 @@
 1. Ventas emite remision/factura.
 2. Billing crea `billing_collection_folios` y PDF de cobranza. Un folio puede contener una o varias remisiones del mismo cliente en `metadata.documents`.
 3. Cobrador recibe efectivo o transferencia.
-4. Usuario registra pago con `erp_billing_payment_create`.
-5. Si el pago corresponde a un documento, se aplica con `erp_billing_payment_apply`.
+4. Usuario registra pago con `erp_billing_payment_create` contra uno o varios folios del mismo cliente. El pago inicia como `sin_aplicar`.
+5. El pago se aplica contra una o varias remisiones con `erp_billing_payment_apply`; ahi baja la deuda real del documento de ventas.
 6. Para efectivo, el corte se abre/cierra con `cash_cut_open/close`.
 7. Dashboard consume `erp_billing_dashboard_data`.
 
@@ -71,6 +71,8 @@ La fase 2 debe conectar `vertical_finance_document_intake` para leer PDF/imagen 
 - El dashboard no debe tocar Supabase directo; consume data skills.
 - Remisiones canceladas no deben aparecer para crear folios nuevos.
 - Un folio solo se puede cancelar si no tiene pagos ligados.
+- Folio = documento de cobranza; pago = dinero recibido; aplicacion = abono real contra remision/factura.
+- Los pagos con `unapplied_amount > 0` deben mostrarse como pendientes/sin aplicar.
 
 ## Manual de usuario pendiente
 

@@ -72,6 +72,35 @@ export type Payment = {
   ocr_status?: string;
   bank_name?: string | null;
   reference?: string | null;
+  metadata?: {
+    collection_folios?: CollectionFolioSummary[];
+    [key: string]: unknown;
+  } | null;
+};
+
+export type CollectionFolioSummary = {
+  id?: string | null;
+  folio?: string | null;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  expected_amount?: number;
+  balance_amount?: number;
+};
+
+export type PaymentApplication = {
+  id: string;
+  folio: string;
+  payment_id: string;
+  payment_folio?: string | null;
+  sales_folio?: string | null;
+  amount_applied: number;
+  status: string;
+  metadata?: {
+    document_balance_after?: number;
+    document_status_after?: string;
+    [key: string]: unknown;
+  } | null;
+  created_at?: string;
 };
 
 export type Remision = {
@@ -96,6 +125,7 @@ export type DashboardData = {
     pending_validation: number;
   };
   payments: Payment[];
+  payment_applications: PaymentApplication[];
   collection_folios: CollectionFolio[];
   money_accounts: MoneyAccount[];
   work_queue: {
@@ -192,6 +222,7 @@ export async function getCollectionFolioHtml(folio: string): Promise<string> {
 export async function createPayment(payload: {
   collection_folio_id?: string;
   collection_folio?: string;
+  collection_folios?: CollectionFolioSummary[];
   customer_name?: string;
   payment_method: string;
   amount: number;
