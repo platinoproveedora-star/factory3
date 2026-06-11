@@ -3707,6 +3707,43 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_banks/erp_banks_schema_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_schema_plan",
+    "vertical": "vertical_erp_banks",
+    "descripcion": "Genera el SQL DDL para crear el schema y tablas de ERP Banks (banks_accounts, banks_movements).",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_schema_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_banks/erp_banks_account_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_account_create",
+    "vertical": "vertical_erp_banks",
+    "descripcion": "Crea una cuenta bancaria ERP (caja, banco, terminal) con folio BAC. Multitenant.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_account_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_banks/erp_banks_account_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_account_list",
+    "vertical": "vertical_erp_banks",
+    "kind": "data",
+    "descripcion": "Lista cuentas bancarias ERP con saldo actual. Multitenant por schema y company_id.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_account_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_banks/erp_banks_movement_record": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_movement_record",
+    "vertical": "vertical_erp_banks",
+    "descripcion": "Registra un movimiento en una cuenta bancaria ERP y actualiza el saldo. Multitenant.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_movement_record",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_compras/erp_compras_purchase_cancel": {
     "tipo": "interno",
     "nombre": "vertical_erp_compras/erp_compras_purchase_cancel",

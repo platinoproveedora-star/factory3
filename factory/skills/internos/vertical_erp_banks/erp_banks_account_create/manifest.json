@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_banks/erp_banks_account_create",
+  "vertical": "vertical_erp_banks",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea una cuenta bancaria ERP (caja, banco, terminal) con folio BAC. Multitenant por schema y company_id.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

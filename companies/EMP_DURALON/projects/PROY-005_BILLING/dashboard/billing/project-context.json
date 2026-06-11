@@ -9,5 +9,8 @@
   "sales_schema": "uc101_proy002",
   "sales_project_code": "PROY-002",
   "sales_module_code": "ventas",
+  "banks_schema": "uc101_banks",
+  "banks_project_code": "PROY-005",
+  "banks_module_code": "banks",
   "factory_api_url": "https://factory3.onrender.com"
 }

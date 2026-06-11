@@ -12,6 +12,9 @@ const ERP_CONTEXT = {
   billing_schema: process.env.NEXT_PUBLIC_ERP_BILLING_SCHEMA ?? projectContext.schema,
   sales_schema: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? projectContext.sales_schema,
   schema_ventas: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? projectContext.sales_schema,
+  banks_schema: process.env.NEXT_PUBLIC_ERP_BANKS_SCHEMA ?? projectContext.banks_schema,
+  banks_project_code: process.env.NEXT_PUBLIC_ERP_BANKS_PROJECT_CODE ?? projectContext.banks_project_code,
+  banks_module_code: projectContext.banks_module_code,
 };
 
 export type MoneyAccount = {
@@ -176,7 +179,13 @@ export async function getDashboardData(): Promise<DashboardData> {
 }
 
 export async function getMoneyAccounts(): Promise<MoneyAccount[]> {
-  const data = await request<{ accounts: MoneyAccount[] }>('vertical_erp_billing/erp_billing_money_account_list', { limit: 200 }, 'GET');
+  const data = await request<{ accounts: MoneyAccount[] }>('vertical_erp_banks/erp_banks_account_list', {
+    schema: ERP_CONTEXT.banks_schema,
+    banks_schema: ERP_CONTEXT.banks_schema,
+    project_code: ERP_CONTEXT.banks_project_code,
+    module_code: ERP_CONTEXT.banks_module_code,
+    limit: 200,
+  }, 'GET');
   return data.accounts ?? [];
 }
 
@@ -196,7 +205,14 @@ export async function getRemisiones(limit = 50): Promise<Remision[]> {
 }
 
 export async function createMoneyAccount(payload: Partial<MoneyAccount> & { account_name: string; account_type: string }) {
-  return request<{ account: MoneyAccount }>('vertical_erp_billing/erp_billing_money_account_create', { ...payload, dry_run: false });
+  return request<{ account: MoneyAccount }>('vertical_erp_banks/erp_banks_account_create', {
+    ...payload,
+    schema: ERP_CONTEXT.banks_schema,
+    banks_schema: ERP_CONTEXT.banks_schema,
+    project_code: ERP_CONTEXT.banks_project_code,
+    module_code: ERP_CONTEXT.banks_module_code,
+    dry_run: false,
+  });
 }
 
 export async function createCollectionFolio(payload: {
@@ -234,7 +250,12 @@ export async function createPayment(payload: {
   reference?: string;
   notes?: string;
 }) {
-  return request<{ payment: Payment }>('vertical_erp_billing/erp_billing_payment_create', { ...payload, dry_run: false });
+  return request<{ payment: Payment }>('vertical_erp_billing/erp_billing_payment_create', {
+    ...payload,
+    banks_schema: ERP_CONTEXT.banks_schema,
+    banks_project_code: ERP_CONTEXT.banks_project_code,
+    dry_run: false,
+  });
 }
 
 export async function applyPayment(payload: { payment_id?: string; payment_folio?: string; sales_document_id: string; amount_applied: number }) {

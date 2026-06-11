@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_banks/erp_banks_movement_record",
+  "vertical": "vertical_erp_banks",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Registra un movimiento en una cuenta bancaria ERP (entrada/salida) y actualiza el saldo. Fuente auditada por source_type y source_folio. Multitenant.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

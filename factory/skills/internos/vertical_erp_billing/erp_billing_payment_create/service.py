@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import importlib.util
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from _common import SupabaseClient, blank, fetch_one, identity_row, insert_event, money, reserve_folio, resolve_billing_context, today_iso  # noqa: E402
+
+_SKILLS_ROOT = Path(__file__).resolve().parents[2]
 
 
 VALID_METHODS = {"cash", "transfer", "deposit", "card", "check", "other"}
@@ -84,7 +87,41 @@ class ErpBillingPaymentCreateService:
         data = result.get("data") or []
         payment = data[0] if isinstance(data, list) and data else data
         insert_event(ctx, "payment_created", {"payment_id": payment.get("id"), "folio": payment.get("folio"), "amount": amount}, False)
+        self._record_bank_movement(context, ctx, payment, amount)
         return {"ok": True, "data": {"payment": payment}}
+
+    def _record_bank_movement(self, context: dict, ctx: dict, payment: dict, amount: float) -> None:
+        account_id = blank(context.get("destination_money_account_id"))
+        account_folio = blank(context.get("destination_account_folio"))
+        if not account_id and not account_folio:
+            return
+        banks_schema = str(context.get("banks_schema") or context.get("banks_supabase_schema") or "").strip()
+        if not banks_schema:
+            return
+        service_path = _SKILLS_ROOT / "vertical_erp_banks" / "erp_banks_movement_record" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_banks_movement_record_service", service_path)
+        if spec is None or spec.loader is None:
+            return
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.ErpBanksMovementRecordService().ejecutar({
+            **context,
+            "schema": banks_schema,
+            "banks_schema": banks_schema,
+            "project_code": context.get("banks_project_code") or ctx.get("project_code"),
+            "module_code": "banks",
+            "dry_run": False,
+            "account_id": account_id,
+            "account_folio": account_folio,
+            "movement_type": "entrada",
+            "source_type": "pago",
+            "source_id": payment.get("id"),
+            "source_folio": payment.get("folio"),
+            "amount": amount,
+            "movement_date": payment.get("payment_date"),
+            "notes": f"Pago {payment.get('folio')} - {payment.get('customer_name') or ''}".strip(" -"),
+            "metadata": {"billing_schema": ctx.get("schema"), "payment_method": context.get("payment_method")},
+        })
 
     def _collections(self, ctx: dict, context: dict) -> dict:
         raw_items = context.get("collection_folios")

@@ -640,6 +640,7 @@ function CuentasPanel({
   const [type, setType] = useState('cash_box');
   const [name, setName] = useState('');
   const [bank, setBank] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
   const [responsible, setResponsible] = useState('');
 
   return (
@@ -657,15 +658,17 @@ function CuentasPanel({
           </Select>
           <Input label="Nombre de cuenta" value={name} onChange={setName} />
           <Input label="Banco" value={bank} onChange={setBank} />
+          <Input label="No. de cuenta" value={accountNumber} onChange={setAccountNumber} />
           <Input label="Responsable" value={responsible} onChange={setResponsible} />
           <button
             type="button"
             disabled={saving}
             onClick={() =>
               runAction(async () => {
-                await createMoneyAccount({ account_type: type, account_name: name, bank_name: bank || undefined, responsible_user: responsible || undefined });
+                await createMoneyAccount({ account_type: type, account_name: name, bank_name: bank || undefined, account_number: accountNumber || undefined, responsible_user: responsible || undefined });
                 setName('');
                 setBank('');
+                setAccountNumber('');
                 setResponsible('');
               }, 'Cuenta creada')
             }
@@ -913,24 +916,45 @@ function FoliosTable({
 }
 
 function AccountsTable({ accounts }: { accounts: MoneyAccount[] }) {
+  const total = accounts.filter((a) => a.status === 'active').reduce((sum, a) => sum + Number(a.current_balance || 0), 0);
   return (
     <section className="rounded border border-slate-200 bg-white">
-      <TableHeader title="Cuentas de dinero" count={accounts.length} />
+      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">Cuentas de dinero</h3>
+          <p className="mt-0.5 text-xs text-slate-500">{accounts.length} cuentas · saldo total: {mxn(total)}</p>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr><th className="px-3 py-2">Cuenta</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2">Responsable</th><th className="px-3 py-2 text-right">Saldo</th><th className="px-3 py-2">Status</th></tr>
+            <tr>
+              <th className="px-3 py-2">Folio</th>
+              <th className="px-3 py-2">Cuenta</th>
+              <th className="px-3 py-2">Banco</th>
+              <th className="px-3 py-2">No. cuenta</th>
+              <th className="px-3 py-2">Tipo</th>
+              <th className="px-3 py-2">Responsable</th>
+              <th className="px-3 py-2 text-right">Saldo</th>
+              <th className="px-3 py-2">Status</th>
+            </tr>
           </thead>
           <tbody>
             {accounts.map((account) => (
               <tr key={account.id} className="border-t border-slate-100">
+                <td className="px-3 py-2 font-mono text-xs text-slate-400">{account.folio}</td>
                 <td className="px-3 py-2 font-medium">{account.account_name}</td>
+                <td className="px-3 py-2 text-slate-600">{account.bank_name || '-'}</td>
+                <td className="px-3 py-2 font-mono text-slate-500">{account.account_number_mask || '-'}</td>
                 <td className="px-3 py-2 text-slate-500">{account.account_type}</td>
                 <td className="px-3 py-2">{account.responsible_user || '-'}</td>
-                <td className="px-3 py-2 text-right">{mxn(account.current_balance)}</td>
+                <td className="px-3 py-2 text-right font-semibold">{mxn(account.current_balance)}</td>
                 <td className="px-3 py-2"><Badge value={account.status} /></td>
               </tr>
             ))}
+            {accounts.length === 0 && (
+              <tr><td colSpan={8} className="px-3 py-6 text-center text-sm text-slate-500">Sin cuentas registradas</td></tr>
+            )}
           </tbody>
         </table>
       </div>
