@@ -23,6 +23,7 @@ export type MoneyAccount = {
   account_type: string;
   account_name: string;
   bank_name?: string | null;
+  account_number?: string | null;
   account_number_mask?: string | null;
   holder_name?: string | null;
   currency: string;
