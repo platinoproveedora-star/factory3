@@ -53,6 +53,7 @@ class ErpComprasPurchaseListService:
                     "balance_amount": 0.0,
                     "payment_status": row.get("payment_status"),
                     "notes": row.get("notes"),
+                    "canceled": False,
                     "items": [],
                 }
             purchase = purchases[key]
@@ -60,6 +61,9 @@ class ErpComprasPurchaseListService:
             purchase["total_cost"] += float(row.get("total_cost") or 0)
             purchase["paid_amount"] += float(row.get("paid_amount") or 0)
             purchase["balance_amount"] += float(row.get("balance_amount") or 0)
+            metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+            if metadata.get("canceled"):
+                purchase["canceled"] = True
             purchase["items"].append(row)
         result = []
         for key in order:

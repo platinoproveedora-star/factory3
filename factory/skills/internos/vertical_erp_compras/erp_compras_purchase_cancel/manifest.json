@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_compras/erp_compras_purchase_cancel",
+  "vertical": "vertical_erp_compras",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Cancela una compra ERP y revierte sus entradas de inventario con movimientos de ajuste auditables.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

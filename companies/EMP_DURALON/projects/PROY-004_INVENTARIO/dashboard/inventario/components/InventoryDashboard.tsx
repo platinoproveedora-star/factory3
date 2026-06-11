@@ -96,6 +96,7 @@ type PurchaseSummary = {
   payment_status: string;
   notes: string | null;
   items: KardexMovement[];
+  canceled?: boolean;
 };
 
 const emptyData: DashboardData = {
@@ -891,6 +892,9 @@ function PurchaseTab({
   });
   const [endDate, setEndDate] = useState(today);
   const [loading, setLoading] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<PurchaseSummary | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
+  const [canceling, setCanceling] = useState(false);
 
   useEffect(() => {
     loadPurchases();
@@ -975,6 +979,28 @@ function PurchaseTab({
       window.alert(err.message || 'No se pudieron cargar compras');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function cancelPurchase(folio: string) {
+    setCanceling(true);
+    try {
+      const res = await fetch('/api/purchases/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_folio: folio }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo cancelar compra');
+      setCancelConfirm(null);
+      if (selectedPurchase?.source_folio === folio) setSelectedPurchase(null);
+      await refresh();
+      await loadPurchases();
+      setNotice(`Compra cancelada: ${folio}`);
+    } catch (err: any) {
+      window.alert(err.message || 'Error al cancelar compra');
+    } finally {
+      setCanceling(false);
     }
   }
 
@@ -1108,8 +1134,18 @@ function PurchaseTab({
             </button>
           </div>
         </div>
-        <PurchaseTable purchases={purchases} />
+        <PurchaseTable
+          purchases={purchases}
+          selectedFolio={selectedPurchase?.source_folio ?? null}
+          onSelect={(p) => setSelectedPurchase((prev) => prev?.source_folio === p.source_folio ? null : p)}
+          cancelConfirm={cancelConfirm}
+          canceling={canceling}
+          onCancelRequest={(folio) => setCancelConfirm(folio)}
+          onCancelConfirm={cancelPurchase}
+          onCancelAbort={() => setCancelConfirm(null)}
+        />
       </section>
+      {selectedPurchase && <PurchaseDetailPanel purchase={selectedPurchase} />}
     </div>
   );
 }
@@ -1140,10 +1176,28 @@ function purchaseNetAmount(purchase: PurchaseSummary) {
   return net || Math.max(Number(purchase.total_cost || 0) - purchaseTaxAmount(purchase), 0);
 }
 
-function PurchaseTable({ purchases }: { purchases: PurchaseSummary[] }) {
+function PurchaseTable({
+  purchases,
+  selectedFolio,
+  onSelect,
+  cancelConfirm,
+  canceling,
+  onCancelRequest,
+  onCancelConfirm,
+  onCancelAbort,
+}: {
+  purchases: PurchaseSummary[];
+  selectedFolio: string | null;
+  onSelect: (p: PurchaseSummary) => void;
+  cancelConfirm: string | null;
+  canceling: boolean;
+  onCancelRequest: (folio: string) => void;
+  onCancelConfirm: (folio: string) => void;
+  onCancelAbort: () => void;
+}) {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-[1080px] text-sm">
+      <table className="min-w-[1160px] text-sm">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
             <th className="px-4 py-3 text-left">Folio</th>
@@ -1157,28 +1211,120 @@ function PurchaseTable({ purchases }: { purchases: PurchaseSummary[] }) {
             <th className="px-4 py-3 text-right">Pagado</th>
             <th className="px-4 py-3 text-right">Saldo</th>
             <th className="px-4 py-3 text-left">Estatus</th>
+            <th className="px-4 py-3 text-right">Accion</th>
           </tr>
         </thead>
         <tbody>
-          {purchases.map((purchase) => (
-            <tr key={purchase.source_folio} className="border-b border-slate-100">
-              <td className="px-4 py-3 font-medium text-slate-900">{purchase.source_folio}</td>
-              <td className="px-4 py-3 text-slate-500">{purchase.movement_date}</td>
-              <td className="px-4 py-3 text-slate-700">{purchase.supplier_name_snapshot}</td>
-              <td className="px-4 py-3 text-slate-500">{purchase.external_folio || '-'}</td>
-              <td className="px-4 py-3 text-right">{purchase.line_count}</td>
-              <td className="px-4 py-3 text-right">{money(purchaseNetAmount(purchase))}</td>
-              <td className="px-4 py-3 text-right">{money(purchaseTaxAmount(purchase))}</td>
-              <td className="px-4 py-3 text-right">{money(purchase.total_cost)}</td>
-              <td className="px-4 py-3 text-right">{money(purchase.paid_amount)}</td>
-              <td className="px-4 py-3 text-right">{money(purchase.balance_amount)}</td>
-              <td className="px-4 py-3 text-slate-500">{purchase.payment_status}</td>
-            </tr>
-          ))}
-          {purchases.length === 0 && <tr><td colSpan={11} className="px-4 py-8 text-center text-sm text-slate-500">Sin compras para mostrar</td></tr>}
+          {purchases.map((purchase) => {
+            const isSelected = selectedFolio === purchase.source_folio;
+            const isCanceled = purchase.canceled === true;
+            const isConfirming = cancelConfirm === purchase.source_folio;
+            return (
+              <tr
+                key={purchase.source_folio}
+                onClick={() => !isCanceled && onSelect(purchase)}
+                className={`border-b border-slate-100 transition-colors ${isCanceled ? 'opacity-50' : 'cursor-pointer hover:bg-slate-50'} ${isSelected ? 'bg-blue-50' : ''}`}
+              >
+                <td className={`px-4 py-3 font-medium ${isCanceled ? 'line-through text-slate-400' : 'text-slate-900'}`}>{purchase.source_folio}</td>
+                <td className="px-4 py-3 text-slate-500">{purchase.movement_date}</td>
+                <td className="px-4 py-3 text-slate-700">{purchase.supplier_name_snapshot}</td>
+                <td className="px-4 py-3 text-slate-500">{purchase.external_folio || '-'}</td>
+                <td className="px-4 py-3 text-right">{purchase.line_count}</td>
+                <td className="px-4 py-3 text-right">{money(purchaseNetAmount(purchase))}</td>
+                <td className="px-4 py-3 text-right">{money(purchaseTaxAmount(purchase))}</td>
+                <td className="px-4 py-3 text-right">{money(purchase.total_cost)}</td>
+                <td className="px-4 py-3 text-right">{money(purchase.paid_amount)}</td>
+                <td className="px-4 py-3 text-right">{money(purchase.balance_amount)}</td>
+                <td className="px-4 py-3 text-slate-500">{isCanceled ? 'cancelada' : purchase.payment_status}</td>
+                <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                  {!isCanceled && (
+                    isConfirming ? (
+                      <span className="inline-flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={canceling}
+                          onClick={() => onCancelConfirm(purchase.source_folio)}
+                          className="inline-flex h-7 items-center rounded bg-red-600 px-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                        >
+                          {canceling ? '...' : 'Si'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={onCancelAbort}
+                          className="inline-flex h-7 items-center rounded border border-slate-200 bg-white px-2 text-xs text-slate-600 hover:bg-slate-50"
+                        >
+                          No
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onCancelRequest(purchase.source_folio)}
+                        title="Cancelar compra"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded border border-red-200 bg-white text-red-500 hover:bg-red-50"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+          {purchases.length === 0 && <tr><td colSpan={12} className="px-4 py-8 text-center text-sm text-slate-500">Sin compras para mostrar</td></tr>}
         </tbody>
       </table>
     </div>
+  );
+}
+
+function PurchaseDetailPanel({ purchase }: { purchase: PurchaseSummary }) {
+  return (
+    <section className="rounded border border-blue-200 bg-white">
+      <div className="border-b border-blue-200 bg-blue-50 px-4 py-3">
+        <h3 className="text-sm font-semibold text-slate-950">Detalle: {purchase.source_folio}</h3>
+        <p className="mt-0.5 text-xs text-slate-500">
+          {purchase.supplier_name_snapshot} · {purchase.movement_date} · {purchase.line_count} renglon{purchase.line_count !== 1 ? 'es' : ''}
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-[860px] text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-2 text-left">Producto</th>
+              <th className="px-4 py-2 text-left">Lote</th>
+              <th className="px-4 py-2 text-right">Cantidad</th>
+              <th className="px-4 py-2 text-right">Costo unit.</th>
+              <th className="px-4 py-2 text-right">Subtotal</th>
+              <th className="px-4 py-2 text-right">IVA</th>
+              <th className="px-4 py-2 text-right">Total</th>
+              <th className="px-4 py-2 text-left">Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {purchase.items.map((item) => {
+              const subtotal = Number(item.metadata?.subtotal_cost ?? (Number(item.quantity_in) * Number(item.unit_cost ?? 0)));
+              const tax = Number(item.metadata?.tax_amount ?? (Number(item.total_cost) - subtotal));
+              return (
+                <tr key={item.id} className="border-b border-slate-100">
+                  <td className="px-4 py-2 text-slate-900">{item.product_name_snapshot || '-'}</td>
+                  <td className="px-4 py-2 text-slate-500">{item.lot_code || 'GENERAL'}</td>
+                  <td className="px-4 py-2 text-right">{qty(item.quantity_in)}</td>
+                  <td className="px-4 py-2 text-right">{money(item.unit_cost)}</td>
+                  <td className="px-4 py-2 text-right">{money(subtotal)}</td>
+                  <td className="px-4 py-2 text-right">{money(tax)}</td>
+                  <td className="px-4 py-2 text-right font-semibold">{money(item.total_cost)}</td>
+                  <td className="px-4 py-2 text-slate-500">{item.notes || '-'}</td>
+                </tr>
+              );
+            })}
+            {purchase.items.length === 0 && (
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-slate-500">Sin renglones</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

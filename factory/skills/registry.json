@@ -3707,6 +3707,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_compras/erp_compras_purchase_cancel": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_compras/erp_compras_purchase_cancel",
+    "vertical": "vertical_erp_compras",
+    "descripcion": "Cancela una compra ERP y revierte sus entradas de inventario con movimientos de ajuste auditables.",
+    "path": "skills/internos/vertical_erp_compras/erp_compras_purchase_cancel",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_inventory/erp_inventory_kardex_save": {
     "tipo": "interno",
     "nombre": "vertical_erp_inventory/erp_inventory_kardex_save",
