@@ -1,7 +1,12 @@
 from __future__ import annotations
-from service import ErpBanksMovementRecordService
+import importlib.util
+from pathlib import Path
 
 def run(context: dict) -> dict:
     if not isinstance(context, dict):
         return {"ok": False, "error": "context debe ser dict"}
-    return ErpBanksMovementRecordService().ejecutar(context)
+    p = Path(__file__).parent / 'service.py'
+    spec = importlib.util.spec_from_file_location('erp_banks_movement_record_service', p)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.ErpBanksMovementRecordService().ejecutar(context)

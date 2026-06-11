@@ -1,7 +1,12 @@
 from __future__ import annotations
-from service import ErpBanksSchemaPlanService
+import importlib.util
+from pathlib import Path
 
 def run(context: dict) -> dict:
     if not isinstance(context, dict):
         return {"ok": False, "error": "context debe ser dict"}
-    return ErpBanksSchemaPlanService().ejecutar(context)
+    p = Path(__file__).parent / 'service.py'
+    spec = importlib.util.spec_from_file_location('erp_banks_schema_plan_service', p)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.ErpBanksSchemaPlanService().ejecutar(context)
