@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import schema_identifier  # noqa: E402
+from _banks_common import schema_identifier  # noqa: E402
 
 
 class ErpBanksSchemaPlanService:

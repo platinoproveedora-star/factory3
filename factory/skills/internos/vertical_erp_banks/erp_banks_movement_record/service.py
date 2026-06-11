@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import SupabaseClient, blank, fetch_one, identity_row, money, reserve_folio, resolve_banks_context, today_iso  # noqa: E402
+from _banks_common import SupabaseClient, blank, fetch_one, identity_row, money, reserve_folio, resolve_banks_context, today_iso  # noqa: E402
 
 VALID_MOVEMENT_TYPES = {"entrada", "salida"}
 VALID_SOURCE_TYPES = {"pago", "transferencia", "ajuste", "corte", "apertura", "devolucion"}

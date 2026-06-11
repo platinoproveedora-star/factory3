@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import SupabaseClient, blank, identity_row, money, reserve_folio, resolve_banks_context  # noqa: E402
+from _banks_common import SupabaseClient, blank, identity_row, money, reserve_folio, resolve_banks_context  # noqa: E402
 
 VALID_TYPES = {"bank", "cash", "cash_box", "collector_cash", "card_terminal", "other"}
 
