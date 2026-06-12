@@ -1605,6 +1605,10 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
     window.open(`/api/remisiones/pdf?id=${encodeURIComponent(remision.id)}`, '_blank', 'noopener,noreferrer');
   }
 
+  function printRemisionSinPrecio(remision: RemisionDoc) {
+    window.open(`/api/remisiones/pdf?id=${encodeURIComponent(remision.id)}&hide_prices=true`, '_blank', 'noopener,noreferrer');
+  }
+
   return (
     <div className="space-y-5">
     <section className="rounded border border-slate-200 bg-white">
@@ -1649,6 +1653,7 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
                 }}
                 setNotice={setNotice}
                 onPrint={() => printRemision(remision)}
+                onPrintSinPrecio={() => printRemisionSinPrecio(remision)}
                 onSelect={() => setSelectedId(remision.id)}
               />
             ))}
@@ -1675,6 +1680,7 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
       }}
       setNotice={setNotice}
       onPrint={() => detail && printRemision(detail.remision)}
+      onPrintSinPrecio={() => detail && printRemisionSinPrecio(detail.remision)}
       onCancel={async () => {
         if (!detail) return;
         await cancelRemision(detail.remision, async () => {
@@ -1712,7 +1718,7 @@ async function cancelRemision(remision: RemisionDoc, reload: () => Promise<void>
   setNotice(`Remision cancelada: ${remision.folio}`);
 }
 
-function RemisionRow({ remision, reload, setNotice, onPrint, onSelect }: { remision: RemisionDoc; reload: () => Promise<void>; setNotice: (value: string) => void; onPrint: () => void; onSelect: () => void }) {
+function RemisionRow({ remision, reload, setNotice, onPrint, onPrintSinPrecio, onSelect }: { remision: RemisionDoc; reload: () => Promise<void>; setNotice: (value: string) => void; onPrint: () => void; onPrintSinPrecio: () => void; onSelect: () => void }) {
   const [draft, setDraft] = useState({
     status: remision.status || 'emitida',
     delivery_address: remision.delivery_address || '',
@@ -1789,7 +1795,10 @@ function RemisionRow({ remision, reload, setNotice, onPrint, onSelect }: { remis
           <button type="button" onClick={cancel} disabled={canceling || isCanceled} title="Cancelar remision" className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-200 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
             <XCircle size={15} />
           </button>
-          <button type="button" onClick={onPrint} title="Imprimir" className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50">
+          <button type="button" onClick={onPrint} title="Imprimir con precio" className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50">
+            <Printer size={15} />
+          </button>
+          <button type="button" onClick={onPrintSinPrecio} title="Imprimir sin precio" className="inline-flex h-8 w-8 items-center justify-center rounded border border-dashed border-slate-300 text-slate-500 hover:bg-slate-50">
             <Printer size={15} />
           </button>
         </div>
@@ -1806,6 +1815,7 @@ function RemisionDetailEditor({
   reload,
   setNotice,
   onPrint,
+  onPrintSinPrecio,
   onCancel,
 }: {
   detail: RemisionDetail | null;
@@ -1815,6 +1825,7 @@ function RemisionDetailEditor({
   reload: () => Promise<void>;
   setNotice: (value: string) => void;
   onPrint: () => void;
+  onPrintSinPrecio: () => void;
   onCancel: () => Promise<void>;
 }) {
   const [saving, setSaving] = useState(false);
@@ -1951,9 +1962,13 @@ function RemisionDetailEditor({
             </table>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <button type="button" onClick={onPrint} className="inline-flex h-10 items-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <button type="button" onClick={onPrint} title="Imprimir con precio" className="inline-flex h-10 items-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               <Printer size={16} />
-              Imprimir
+              Con precio
+            </button>
+            <button type="button" onClick={onPrintSinPrecio} title="Imprimir sin precio" className="inline-flex h-10 items-center gap-2 rounded border border-dashed border-slate-300 bg-white px-3 text-sm font-semibold text-slate-500 hover:bg-slate-50">
+              <Printer size={16} />
+              Sin precio
             </button>
             <button type="button" onClick={cancel} disabled={canceling || draft.remision.status === 'cancelada'} className="inline-flex h-10 items-center gap-2 rounded border border-red-200 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
               <XCircle size={16} />

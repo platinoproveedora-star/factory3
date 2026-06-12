@@ -11,6 +11,7 @@ export async function GET(req: Request) {
     const result = await runFactorySkill<{ html: string }>('vertical_erp_ventas/erp_ventas_remision_pdf', {
       id: params.get('id') || undefined,
       folio: params.get('folio') || undefined,
+      hide_prices: params.get('hide_prices') || undefined,
     });
     return new NextResponse(result.html, {
       headers: {
