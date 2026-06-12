@@ -109,15 +109,24 @@ export async function createRemision(payload: {
   return post('vertical_erp_ventas/erp_ventas_remision_create', { ...payload, dry_run: false });
 }
 
-export async function getRemisionPdfHtml(folio: string): Promise<string> {
-  const data = await get<{ html: string }>('vertical_erp_ventas/erp_ventas_remision_pdf', { folio });
+export async function getRemisionPdfHtml(folio: string, hidePrices = false): Promise<string> {
+  const params: Record<string, string> = { folio };
+  if (hidePrices) params.hide_prices = 'true';
+  const data = await get<{ html: string }>('vertical_erp_ventas/erp_ventas_remision_pdf', params);
   return data.html;
 }
 
-export async function openRemisionPdf(folio: string) {
-  const html = await getRemisionPdfHtml(folio);
+async function openHtml(html: string) {
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   window.open(url, '_blank', 'noopener,noreferrer');
   setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+export async function openRemisionPdf(folio: string) {
+  openHtml(await getRemisionPdfHtml(folio));
+}
+
+export async function openRemisionPdfSinPrecio(folio: string) {
+  openHtml(await getRemisionPdfHtml(folio, true));
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createRemision, getCustomers, getProductLots, getProducts, getRemisiones, openRemisionPdf } from '@/lib/api';
+import { createRemision, getCustomers, getProductLots, getProducts, getRemisiones, openRemisionPdf, openRemisionPdfSinPrecio } from '@/lib/api';
 import type { Customer, FormItem, Product, Remision } from '@/lib/api';
 import projectContext from '@/project-context.json';
 
@@ -209,7 +209,10 @@ export default function CajaRemForm() {
         <p className="text-3xl font-mono font-bold text-emerald-600 my-4">{result.folio}</p>
         <p className="text-slate-500 mb-6">Total: <span className="font-semibold text-slate-800">{mxn(result.total)}</span></p>
         <button onClick={() => openRemisionPdf(result.folio)} className="mb-3 w-full border border-slate-300 text-slate-800 py-3 rounded-xl font-semibold hover:bg-slate-50 transition">
-          Abrir PDF
+          Imprimir con precio
+        </button>
+        <button onClick={() => openRemisionPdfSinPrecio(result.folio)} className="mb-3 w-full border border-slate-200 text-slate-600 py-3 rounded-xl font-semibold hover:bg-slate-50 transition">
+          Imprimir sin precio
         </button>
         <button onClick={handleNueva} className="w-full bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-slate-700 transition">
           + Nueva Remisión

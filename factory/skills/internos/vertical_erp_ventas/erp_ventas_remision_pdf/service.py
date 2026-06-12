@@ -44,25 +44,49 @@ class ErpVentasRemisionPdfService:
         )
         if not items_res.get("ok"):
             return items_res
+        hide_prices = str(context.get("hide_prices") or "").strip().lower() in ("1", "true", "yes")
         receipt = self._receipt(context, doc)
-        html = self._html(context, doc, items_res.get("data") or [], receipt)
+        html = self._html(context, doc, items_res.get("data") or [], receipt, hide_prices=hide_prices)
         return {"ok": True, "data": {"folio": doc.get("folio"), "filename": f"{doc.get('folio')}.html", "html": html}}
 
-    def _html(self, context: dict, doc: dict, items: list[dict], receipt: dict) -> str:
-        rows = "\n".join(
-            f"""
-            <tr>
-              <td>{idx}</td>
-              <td>{escape(str(item.get('description') or ''))}</td>
-              <td class="num">{self._num(item.get('quantity'))}</td>
-              <td>{escape(str(item.get('unit') or ''))}</td>
-              <td class="num">{self._money(item.get('unit_price'))}</td>
-              <td class="num">{self._money(item.get('tax_amount'))}</td>
-              <td class="num">{self._money(item.get('line_total'))}</td>
-            </tr>
-            """
-            for idx, item in enumerate(items, start=1)
-        )
+    def _html(self, context: dict, doc: dict, items: list[dict], receipt: dict, hide_prices: bool = False) -> str:
+        if hide_prices:
+            rows = "\n".join(
+                f"""
+                <tr>
+                  <td>{idx}</td>
+                  <td>{escape(str(item.get('description') or ''))}</td>
+                  <td class="num">{self._num(item.get('quantity'))}</td>
+                  <td>{escape(str(item.get('unit') or ''))}</td>
+                </tr>
+                """
+                for idx, item in enumerate(items, start=1)
+            )
+            table_header = "<tr><th>#</th><th>Producto</th><th class=\"num\">Cantidad</th><th>Unidad</th></tr>"
+            totals_section = ""
+        else:
+            rows = "\n".join(
+                f"""
+                <tr>
+                  <td>{idx}</td>
+                  <td>{escape(str(item.get('description') or ''))}</td>
+                  <td class="num">{self._num(item.get('quantity'))}</td>
+                  <td>{escape(str(item.get('unit') or ''))}</td>
+                  <td class="num">{self._money(item.get('unit_price'))}</td>
+                  <td class="num">{self._money(item.get('tax_amount'))}</td>
+                  <td class="num">{self._money(item.get('line_total'))}</td>
+                </tr>
+                """
+                for idx, item in enumerate(items, start=1)
+            )
+            table_header = "<tr><th>#</th><th>Producto</th><th class=\"num\">Cantidad</th><th>Unidad</th><th class=\"num\">Precio</th><th class=\"num\">IVA</th><th class=\"num\">Importe</th></tr>"
+            totals_section = f"""
+  <section class="totals">
+    <div><span>Subtotal</span><span>{self._money(doc.get('subtotal'))}</span></div>
+    <div><span>IVA</span><span>{self._money(doc.get('tax_total'))}</span></div>
+    <div class="total"><span>Total</span><span>{self._money(doc.get('total'))}</span></div>
+  </section>"""
+
         return f"""<!doctype html>
 <html lang="es">
 <head>
@@ -75,7 +99,6 @@ class ErpVentasRemisionPdfService:
     .right {{ text-align: right; }}
     .muted {{ color: #64748b; font-size: 12px; }}
     .box {{ border: 1px solid #cbd5e1; padding: 12px; margin-top: 18px; }}
-    .grid.two {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 13px; }}
     th {{ background: #f1f5f9; text-align: left; }}
     th, td {{ border: 1px solid #cbd5e1; padding: 8px; }}
@@ -98,7 +121,7 @@ class ErpVentasRemisionPdfService:
   <header>
     <div>
       <h1>{escape(self._brand(context))}</h1>
-      <p class="muted">Remision de venta</p>
+      <p class="muted">Remision de venta{' (sin precios)' if hide_prices else ''}</p>
     </div>
     <div class="right">
       <h1>{escape(str(doc.get('folio') or ''))}</h1>
@@ -114,23 +137,13 @@ class ErpVentasRemisionPdfService:
     <strong>Notas:</strong> {escape(str(doc.get('notes') or ''))}
   </section>
   <table>
-    <thead>
-      <tr><th>#</th><th>Producto</th><th class="num">Cantidad</th><th>Unidad</th><th class="num">Precio</th><th class="num">IVA</th><th class="num">Importe</th></tr>
-    </thead>
+    <thead>{table_header}</thead>
     <tbody>{rows}</tbody>
   </table>
-  <section class="totals">
-    <div><span>Subtotal</span><span>{self._money(doc.get('subtotal'))}</span></div>
-    <div><span>IVA</span><span>{self._money(doc.get('tax_total'))}</span></div>
-    <div class="total"><span>Total</span><span>{self._money(doc.get('total'))}</span></div>
-  </section>
+  {totals_section}
   <section class="signature">
-    <div>
-      <span>Nombre de quien recibe</span>
-    </div>
-    <div>
-      <span>Firma de quien recibe</span>
-    </div>
+    <div><span>Nombre de quien recibe</span></div>
+    <div><span>Firma de quien recibe</span></div>
   </section>
   {receipt.get('html') or ''}
 </body>
