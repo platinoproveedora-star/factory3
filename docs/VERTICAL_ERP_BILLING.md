@@ -36,6 +36,7 @@
 | `vertical_erp_billing/erp_billing_collection_folio_pdf` | Genera HTML imprimible del folio. |
 | `vertical_erp_billing/erp_billing_collection_folio_cancel` | Cancela folio de cobranza sin borrar historia y bloquea si ya tiene pagos ligados. |
 | `vertical_erp_billing/erp_billing_payment_create` | Registra pago manual/bancario/efectivo. |
+| `vertical_erp_billing/erp_billing_receipt_upload_prepare` | Genera URL firmada para subir comprobantes a Storage sin exponer credenciales al browser. |
 | `vertical_erp_billing/erp_billing_payment_apply` | Aplica pago y actualiza saldos de ventas. |
 | `vertical_erp_billing/erp_billing_cash_cut_open` | Abre corte de efectivo. |
 | `vertical_erp_billing/erp_billing_cash_cut_close` | Cierra corte y deposita a cuenta de dinero. |
@@ -62,6 +63,8 @@ La fase 1 deja campos para comprobantes:
 - `validation_status`
 
 La fase 2 debe conectar `vertical_finance_document_intake` para leer PDF/imagen de banco o folio firmado.
+
+El upload enterprise recomendado usa signed upload URLs: el dashboard pide permiso a Factory API, Factory firma el path en Supabase Storage y el browser sube directo al bucket privado. El pago guarda `receipt_file_bucket`, `receipt_file_path`, `ocr_status=pending` y `validation_status=pending`.
 
 ## Reglas
 

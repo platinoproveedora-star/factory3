@@ -1,0 +1,17 @@
+services:
+  - type: static_site
+    name: uc101-auxpagos
+    repo: https://github.com/platinoproveedora-star/factory3
+    branch: main
+    rootDir: companies/EMP_DURALON/projects/PROY-005_BILLING/uc101-auxpagos
+    buildCommand: npm install && npm run build
+    publishPath: out
+    plan: free
+    region: oregon
+    envVars:
+      - key: NEXT_PUBLIC_FACTORY_API_URL
+        value: https://factory3.onrender.com
+      - key: NEXT_PUBLIC_WRITE_KEY
+        sync: false
+      - key: NODE_VERSION
+        value: "20"

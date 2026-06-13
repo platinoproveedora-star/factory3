@@ -170,6 +170,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_billing/erp_billing_receipt_upload_prepare": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_receipt_upload_prepare",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Genera URL firmada para subir comprobantes de pago a Supabase Storage sin exponer credenciales.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_receipt_upload_prepare",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_billing/erp_billing_payment_apply": {
     "tipo": "interno",
     "nombre": "vertical_erp_billing/erp_billing_payment_apply",

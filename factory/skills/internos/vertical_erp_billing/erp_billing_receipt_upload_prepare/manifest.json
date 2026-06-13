@@ -1,0 +1,6 @@
+{
+  "name": "vertical_erp_billing/erp_billing_receipt_upload_prepare",
+  "version": "0.1.0",
+  "description": "Genera una URL firmada de Supabase Storage para subir comprobantes de pago de Billing sin exponer credenciales al browser.",
+  "entrypoint": "skill.py"
+}
