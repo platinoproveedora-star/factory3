@@ -1,8 +1,11 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import projectContext from '../project-context.json';
+
+const companyLabel = projectContext.company_label || projectContext.company_id;
 
 export const metadata: Metadata = {
-  title: 'Duralon Billing',
+  title: `${companyLabel} Billing`,
   description: 'Dashboard operativo de cobranza y pagos',
 };
 

@@ -1,0 +1,6 @@
+{
+  "name": "vertical_erp_banks/erp_banks_account_update",
+  "version": "0.1.0",
+  "description": "Actualiza datos editables o da de baja logica una cuenta bancaria ERP. Multitenant por schema y company_id.",
+  "entrypoint": "skill.py"
+}

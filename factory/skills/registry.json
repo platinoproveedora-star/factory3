@@ -179,6 +179,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_billing/erp_billing_receipt_link_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_receipt_link_create",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Genera URL firmada temporal para consultar comprobantes privados de pago.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_receipt_link_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_billing/erp_billing_payment_apply": {
     "tipo": "interno",
     "nombre": "vertical_erp_billing/erp_billing_payment_apply",
@@ -3741,6 +3750,15 @@
     "kind": "data",
     "descripcion": "Lista cuentas bancarias ERP con saldo actual. Multitenant por schema y company_id.",
     "path": "skills/internos/vertical_erp_banks/erp_banks_account_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_banks/erp_banks_account_update": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_account_update",
+    "vertical": "vertical_erp_banks",
+    "descripcion": "Actualiza datos editables o da de baja logica una cuenta bancaria ERP. Multitenant.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_account_update",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

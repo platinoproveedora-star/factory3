@@ -66,16 +66,22 @@ export type Payment = {
   id: string;
   folio: string;
   collection_folio?: string | null;
+  customer_id?: string | null;
   customer_name?: string | null;
   payment_method: string;
   amount: number;
   unapplied_amount: number;
   payment_date: string;
+  destination_money_account_id?: string | null;
   status: string;
   validation_status?: string;
   ocr_status?: string;
   bank_name?: string | null;
   reference?: string | null;
+  tracking_key?: string | null;
+  receipt_file_url?: string | null;
+  receipt_file_path?: string | null;
+  receipt_file_bucket?: string | null;
   metadata?: {
     collection_folios?: CollectionFolioSummary[];
     [key: string]: unknown;
@@ -212,6 +218,25 @@ export async function createMoneyAccount(payload: Partial<MoneyAccount> & { acco
     banks_schema: ERP_CONTEXT.banks_schema,
     project_code: ERP_CONTEXT.banks_project_code,
     module_code: ERP_CONTEXT.banks_module_code,
+    dry_run: false,
+  });
+}
+
+export async function updateMoneyAccount(payload: Partial<MoneyAccount> & { account_id: string }) {
+  return request<{ account: MoneyAccount }>('vertical_erp_banks/erp_banks_account_update', {
+    ...payload,
+    schema: ERP_CONTEXT.banks_schema,
+    banks_schema: ERP_CONTEXT.banks_schema,
+    project_code: ERP_CONTEXT.banks_project_code,
+    module_code: ERP_CONTEXT.banks_module_code,
+    dry_run: false,
+  });
+}
+
+export async function getReceiptLink(payload: { receipt_file_bucket: string; receipt_file_path: string }) {
+  return request<{ url: string }>('vertical_erp_billing/erp_billing_receipt_link_create', {
+    ...payload,
+    expires_in: 600,
     dry_run: false,
   });
 }

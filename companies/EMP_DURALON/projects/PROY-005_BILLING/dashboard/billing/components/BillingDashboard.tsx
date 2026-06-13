@@ -7,8 +7,10 @@ import {
   Building2,
   CircleDollarSign,
   ClipboardCheck,
+  ExternalLink,
   FileText,
   Landmark,
+  Pencil,
   Plus,
   Printer,
   RefreshCw,
@@ -27,7 +29,9 @@ import {
   getDashboardData,
   getMoneyAccounts,
   getRemisiones,
+  getReceiptLink,
   openHtml,
+  updateMoneyAccount,
   type CollectionDocument,
   type CollectionFolio,
   type DashboardData,
@@ -38,14 +42,18 @@ import {
 } from '../lib/api';
 import projectContext from '../project-context.json';
 
-type Tab = 'cobranza' | 'folios' | 'cuentas' | 'corte';
+type Tab = 'cobranza' | 'folios' | 'cuentas' | 'comprobantes' | 'corte';
 
 const tabs: Array<{ id: Tab; label: string; icon: any }> = [
   { id: 'cobranza', label: 'Cobranza', icon: CircleDollarSign },
   { id: 'folios', label: 'Folios', icon: FileText },
   { id: 'cuentas', label: 'Cuentas', icon: Landmark },
+  { id: 'comprobantes', label: 'Comprobantes', icon: FileText },
   { id: 'corte', label: 'Corte de caja', icon: ClipboardCheck },
 ];
+const companyLabel = projectContext.company_label || projectContext.company_id;
+const storagePrefix = [projectContext.company_id, projectContext.project_code, projectContext.module_code].filter(Boolean).join('_').toLowerCase();
+const billingTabStorageKey = `${storagePrefix || 'factory_billing'}_tab`;
 
 const emptyData: DashboardData = {
   kpis: {
@@ -106,7 +114,7 @@ function sumDocs(folio: CollectionFolio, key: keyof CollectionDocument, fallback
 
 function savedTab(): Tab {
   if (typeof window === 'undefined') return 'cobranza';
-  const value = window.localStorage.getItem('duralon_billing_tab');
+  const value = window.localStorage.getItem(billingTabStorageKey);
   return tabs.some((tab) => tab.id === value) ? (value as Tab) : 'cobranza';
 }
 
@@ -142,7 +150,7 @@ export default function BillingDashboard() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem('duralon_billing_tab', activeTab);
+    window.localStorage.setItem(billingTabStorageKey, activeTab);
   }, [activeTab]);
 
   const filteredFolios = useMemo(() => filterRows(data.collection_folios, search, ['folio', 'sales_folio', 'customer_name', 'status']), [data.collection_folios, search]);
@@ -171,7 +179,7 @@ export default function BillingDashboard() {
             <Building2 size={20} />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-slate-500">{projectContext.company_label}</p>
+            <p className="text-xs font-semibold uppercase text-slate-500">{companyLabel}</p>
             <h1 className="text-lg font-semibold text-slate-950">Billing</h1>
           </div>
         </div>
@@ -208,7 +216,7 @@ export default function BillingDashboard() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase text-slate-500">{projectContext.project_label} - Cobranza operativa</p>
-              <h2 className="text-2xl font-semibold text-slate-950">Duralon Billing</h2>
+              <h2 className="text-2xl font-semibold text-slate-950">{companyLabel} Billing</h2>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -261,6 +269,7 @@ export default function BillingDashboard() {
           )}
           {activeTab === 'folios' && <FoliosPanel folios={filteredFolios} remisiones={remisiones} saving={saving} runAction={runAction} />}
           {activeTab === 'cuentas' && <CuentasPanel accounts={accounts} saving={saving} runAction={runAction} />}
+          {activeTab === 'comprobantes' && <ComprobantesPanel payments={filteredPayments} accounts={accounts} />}
           {activeTab === 'corte' && <CortePanel accounts={accounts} saving={saving} runAction={runAction} />}
         </div>
       </section>
@@ -352,8 +361,9 @@ function CobranzaPanel({
           <div className="mt-4 space-y-3">
             {selectedFolioRows.map((row, index) => {
               const selected = activeFolios.find((folio) => folio.id === row.folioId);
+              const docs = selected ? folioDocuments(selected) : [];
               return (
-                <div key={`${index}-${row.folioId || 'empty'}`} className="rounded border border-slate-200 bg-slate-50 p-2">
+                <div key={`${index}-${row.folioId || 'empty'}`} className="rounded border border-slate-200 bg-slate-50 p-2 space-y-2">
                   <Select
                     label={index === 0 ? 'Folio de cobranza' : 'Otro folio'}
                     value={row.folioId}
@@ -372,7 +382,23 @@ function CobranzaPanel({
                       </option>
                     ))}
                   </Select>
-                  {selected && <p className="mt-1 text-xs text-slate-500">Saldo de referencia: {mxn(selected.balance_amount)}</p>}
+                  {selected && (
+                    <div className="rounded border border-blue-100 bg-blue-50 px-3 py-2 space-y-1">
+                      <p className="text-xs font-semibold text-blue-800">Cliente: {selected.customer_name || '-'}</p>
+                      {docs.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-slate-600 mb-1">Remisiones vinculadas:</p>
+                          {docs.map((doc, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs text-slate-700">
+                              <span>{doc.sales_folio || '-'}</span>
+                              <span className="font-medium">{mxn(doc.balance_total ?? doc.amount_to_collect)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-500 pt-1">Saldo total folio: {mxn(selected.balance_amount)}</p>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -383,10 +409,10 @@ function CobranzaPanel({
                 className="flex h-9 w-full items-center justify-center gap-2 rounded border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 <Plus size={15} />
-                Agregar otro folio
+                Agregar otro folio del mismo cliente
               </button>
             )}
-            {selectedFolios.length > 0 && <div className="rounded bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">Total folios: {mxn(folioTotal)}</div>}
+            {selectedFolios.length > 0 && <div className="rounded bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">Total a pagar: {mxn(folioTotal)}</div>}
             <div className="grid grid-cols-2 gap-3">
               <Select label="Metodo" value={method} onChange={setMethod}>
                 <option value="cash">Efectivo</option>
@@ -446,30 +472,48 @@ function CobranzaPanel({
         <section className="rounded border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">Aplicar pago a remision</h3>
           <div className="mt-4 space-y-3">
-            <Select label="Pago" value={paymentId} onChange={setPaymentId}>
+            <Select label="Pago" value={paymentId} onChange={(value) => { setPaymentId(value); setRemisionId(''); setApplyAmount(''); }}>
               <option value="">Selecciona pago</option>
               {unappliedPayments.map((payment) => (
                 <option key={payment.id} value={payment.id}>
-                  {payment.folio} - {mxn(payment.unapplied_amount || payment.amount)}
+                  {payment.folio} - {payment.customer_name || 'Sin cliente'} - {mxn(payment.unapplied_amount || payment.amount)}
                 </option>
               ))}
             </Select>
-            <Select label="Remision" value={remisionId} onChange={setRemisionId}>
-              <option value="">Selecciona remision</option>
-              {pendingRemisiones.map((remision) => (
-                <option key={remision.id} value={remision.id}>
-                  {remision.folio} - {remision.customer_name_snapshot} - {mxn(remision.balance_total ?? remision.total)}
-                </option>
-              ))}
-            </Select>
+            {paymentId && (() => {
+              const pago = unappliedPayments.find((p) => p.id === paymentId);
+              const pagoFolios = pago?.metadata?.collection_folios ?? [];
+              const customerKey = pagoFolios[0]?.customer_id || String(pago?.customer_name || '').trim().toLowerCase();
+              const remisionesFiltradas = customerKey
+                ? pendingRemisiones.filter((r) => r.customer_id === customerKey || String(r.customer_name_snapshot || '').trim().toLowerCase() === customerKey)
+                : pendingRemisiones;
+              return (
+                <>
+                  {pago?.customer_name && <p className="text-xs font-semibold text-blue-700 bg-blue-50 rounded px-2 py-1">Cliente: {pago.customer_name}</p>}
+                  <Select label="Remision a saldar" value={remisionId} onChange={(value) => {
+                    setRemisionId(value);
+                    const rem = remisionesFiltradas.find((r) => r.id === value);
+                    if (rem) setApplyAmount(String(Math.min(Number(pago?.unapplied_amount || 0), Number(rem.balance_total ?? rem.total))));
+                  }}>
+                    <option value="">Selecciona remision</option>
+                    {remisionesFiltradas.map((remision) => (
+                      <option key={remision.id} value={remision.id}>
+                        {remision.folio} - {remision.customer_name_snapshot} - saldo {mxn(remision.balance_total ?? remision.total)}
+                      </option>
+                    ))}
+                  </Select>
+                </>
+              );
+            })()}
             <Input label="Importe a aplicar" type="number" value={applyAmount} onChange={setApplyAmount} />
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || !paymentId || !remisionId}
               onClick={() =>
                 runAction(async () => {
                   await applyPayment({ payment_id: paymentId, sales_document_id: remisionId, amount_applied: Number(applyAmount || 0) });
                   setApplyAmount('');
+                  setRemisionId('');
                 }, 'Pago aplicado')
               }
               className="flex h-10 w-full items-center justify-center gap-2 rounded bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
@@ -642,11 +686,37 @@ function CuentasPanel({
   const [bank, setBank] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [responsible, setResponsible] = useState('');
+  const [editing, setEditing] = useState<MoneyAccount | null>(null);
+
+  function resetForm() {
+    setEditing(null);
+    setType('cash_box');
+    setName('');
+    setBank('');
+    setAccountNumber('');
+    setResponsible('');
+  }
+
+  function startEdit(account: MoneyAccount) {
+    setEditing(account);
+    setType(account.account_type || 'cash_box');
+    setName(account.account_name || '');
+    setBank(account.bank_name || '');
+    setAccountNumber(account.account_number || '');
+    setResponsible(account.responsible_user || '');
+  }
 
   return (
     <div className="grid gap-5 xl:grid-cols-[420px_1fr]">
       <section className="rounded border border-slate-200 bg-white p-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">Nueva cuenta de dinero</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">{editing ? 'Editar cuenta' : 'Nueva cuenta de dinero'}</h3>
+          {editing && (
+            <button type="button" onClick={resetForm} className="text-xs font-medium text-slate-500 hover:text-slate-900">
+              Cancelar
+            </button>
+          )}
+        </div>
         <div className="mt-4 space-y-3">
           <Select label="Tipo" value={type} onChange={setType}>
             <option value="bank">Banco</option>
@@ -665,22 +735,102 @@ function CuentasPanel({
             disabled={saving}
             onClick={() =>
               runAction(async () => {
-                await createMoneyAccount({ account_type: type, account_name: name, bank_name: bank || undefined, account_number: accountNumber || undefined, responsible_user: responsible || undefined });
-                setName('');
-                setBank('');
-                setAccountNumber('');
-                setResponsible('');
-              }, 'Cuenta creada')
+                const payload = { account_type: type, account_name: name, bank_name: bank || undefined, account_number: accountNumber || undefined, responsible_user: responsible || undefined };
+                if (editing) {
+                  await updateMoneyAccount({ ...payload, account_id: editing.id });
+                } else {
+                  await createMoneyAccount(payload);
+                }
+                resetForm();
+              }, editing ? 'Cuenta actualizada' : 'Cuenta creada')
             }
             className="flex h-10 w-full items-center justify-center gap-2 rounded bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
           >
             <Save size={16} />
-            Crear cuenta
+            {editing ? 'Guardar cambios' : 'Crear cuenta'}
           </button>
         </div>
       </section>
-      <AccountsTable accounts={accounts} />
+      <AccountsTable accounts={accounts} saving={saving} runAction={runAction} onEdit={startEdit} />
     </div>
+  );
+}
+
+function ComprobantesPanel({ payments, accounts }: { payments: Payment[]; accounts: MoneyAccount[] }) {
+  const [openingId, setOpeningId] = useState('');
+  const accountById = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
+  const rows = useMemo(() => payments.filter((payment) => payment.status !== 'cancelado'), [payments]);
+
+  async function openReceipt(payment: Payment) {
+    if (payment.receipt_file_url) {
+      window.open(payment.receipt_file_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (!payment.receipt_file_bucket || !payment.receipt_file_path) return;
+    setOpeningId(payment.id);
+    try {
+      const link = await getReceiptLink({ receipt_file_bucket: payment.receipt_file_bucket, receipt_file_path: payment.receipt_file_path });
+      window.open(link.url, '_blank', 'noopener,noreferrer');
+    } finally {
+      setOpeningId('');
+    }
+  }
+
+  return (
+    <section className="rounded border border-slate-200 bg-white">
+      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">Comprobantes</h3>
+          <p className="mt-0.5 text-xs text-slate-500">{rows.length} pagos registrados</p>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+              <th className="px-3 py-2">Pago</th>
+              <th className="px-3 py-2">Cliente</th>
+              <th className="px-3 py-2">Fecha</th>
+              <th className="px-3 py-2">Deposito</th>
+              <th className="px-3 py-2 text-right">Cantidad</th>
+              <th className="px-3 py-2">Comprobante</th>
+              <th className="px-3 py-2">OCR</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((payment) => {
+              const destination = payment.destination_money_account_id ? accountById.get(payment.destination_money_account_id) : undefined;
+              const hasReceipt = Boolean(payment.receipt_file_url || (payment.receipt_file_bucket && payment.receipt_file_path));
+              return (
+                <tr key={payment.id} className="border-t border-slate-100">
+                  <td className="px-3 py-2 font-mono font-medium">{payment.folio}</td>
+                  <td className="px-3 py-2">{payment.customer_name || '-'}</td>
+                  <td className="px-3 py-2 text-slate-600">{payment.payment_date || '-'}</td>
+                  <td className="px-3 py-2">
+                    <div className="font-medium text-slate-800">{destination?.account_name || payment.bank_name || '-'}</div>
+                    <div className="text-xs text-slate-500">{payment.reference || payment.tracking_key || destination?.bank_name || ''}</div>
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold">{mxn(payment.amount)}</td>
+                  <td className="px-3 py-2">
+                    <button
+                      type="button"
+                      disabled={!hasReceipt || openingId === payment.id}
+                      onClick={() => openReceipt(payment)}
+                      className="inline-flex h-8 items-center gap-1 rounded border border-slate-200 px-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-30"
+                    >
+                      <ExternalLink size={14} />
+                      {hasReceipt ? 'Ver' : 'Sin archivo'}
+                    </button>
+                  </td>
+                  <td className="px-3 py-2"><Badge value={payment.ocr_status || 'not_required'} /></td>
+                </tr>
+              );
+            })}
+            {!rows.length && <EmptyRow cols={7} label="No hay pagos registrados" />}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -722,6 +872,24 @@ function PaymentsLedger({ payments, applications }: { payments: Payment[]; appli
   const pending = payments.filter((payment) => Number(payment.unapplied_amount ?? payment.amount ?? 0) > 0 && payment.status !== 'cancelado');
   const appliedPaymentIds = new Set(applications.map((application) => application.payment_id));
   const applied = payments.filter((payment) => appliedPaymentIds.has(payment.id) || Number(payment.unapplied_amount || 0) <= 0);
+  const [clientFilter, setClientFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const clients = useMemo(
+    () => Array.from(new Set(applied.map((payment) => payment.customer_name).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b)),
+    [applied]
+  );
+  const filteredApplied = useMemo(
+    () =>
+      applied.filter((payment) => {
+        if (clientFilter && payment.customer_name !== clientFilter) return false;
+        const date = String(payment.payment_date || '');
+        if (dateFrom && date < dateFrom) return false;
+        if (dateTo && date > dateTo) return false;
+        return true;
+      }),
+    [applied, clientFilter, dateFrom, dateTo]
+  );
 
   return (
     <div className="space-y-5">
@@ -757,12 +925,30 @@ function PaymentsLedger({ payments, applications }: { payments: Payment[]; appli
       </section>
 
       <section className="rounded border border-slate-200 bg-white">
-        <TableHeader title="Pagos aplicados" count={applied.length} />
+        <div className="border-b border-slate-200 px-4 py-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">Pagos aplicados</h3>
+            <span className="w-fit rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{filteredApplied.length}</span>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
+            <Select label="Cliente" value={clientFilter} onChange={setClientFilter}>
+              <option value="">Todos</option>
+              {clients.map((client) => (
+                <option key={client} value={client}>
+                  {client}
+                </option>
+              ))}
+            </Select>
+            <Input label="Desde" type="date" value={dateFrom} onChange={setDateFrom} />
+            <Input label="Hasta" type="date" value={dateTo} onChange={setDateTo} />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-3 py-2">Pago</th>
+                <th className="px-3 py-2">Fecha</th>
                 <th className="px-3 py-2">Cliente</th>
                 <th className="px-3 py-2">Remisiones aplicadas</th>
                 <th className="px-3 py-2 text-right">Aplicado</th>
@@ -771,7 +957,7 @@ function PaymentsLedger({ payments, applications }: { payments: Payment[]; appli
               </tr>
             </thead>
             <tbody>
-              {applied.map((payment) => {
+              {filteredApplied.map((payment) => {
                 const rows = applications.filter((application) => application.payment_id === payment.id);
                 const remisiones = rows.map((row) => row.sales_folio).filter(Boolean).join(', ') || '-';
                 const appliedAmount = rows.reduce((sum, row) => sum + Number(row.amount_applied || 0), 0);
@@ -779,6 +965,7 @@ function PaymentsLedger({ payments, applications }: { payments: Payment[]; appli
                 return (
                   <tr key={payment.id} className="border-t border-slate-100">
                     <td className="px-3 py-2 font-mono font-medium">{payment.folio}</td>
+                    <td className="px-3 py-2 text-slate-600">{payment.payment_date || '-'}</td>
                     <td className="px-3 py-2">{payment.customer_name || '-'}</td>
                     <td className="px-3 py-2">{remisiones}</td>
                     <td className="px-3 py-2 text-right">{mxn(appliedAmount || payment.amount - Number(payment.unapplied_amount || 0))}</td>
@@ -787,7 +974,7 @@ function PaymentsLedger({ payments, applications }: { payments: Payment[]; appli
                   </tr>
                 );
               })}
-              {!applied.length && <EmptyRow cols={6} label="Todavia no hay pagos aplicados" />}
+              {!filteredApplied.length && <EmptyRow cols={7} label="Todavia no hay pagos aplicados para esos filtros" />}
             </tbody>
           </table>
         </div>
@@ -915,7 +1102,17 @@ function FoliosTable({
   );
 }
 
-function AccountsTable({ accounts }: { accounts: MoneyAccount[] }) {
+function AccountsTable({
+  accounts,
+  saving,
+  runAction,
+  onEdit,
+}: {
+  accounts: MoneyAccount[];
+  saving: boolean;
+  runAction: (fn: () => Promise<void>, okMessage: string) => Promise<void>;
+  onEdit: (account: MoneyAccount) => void;
+}) {
   const total = accounts.filter((a) => a.status === 'active').reduce((sum, a) => sum + Number(a.current_balance || 0), 0);
   return (
     <section className="rounded border border-slate-200 bg-white">
@@ -937,6 +1134,7 @@ function AccountsTable({ accounts }: { accounts: MoneyAccount[] }) {
               <th className="px-3 py-2">Responsable</th>
               <th className="px-3 py-2 text-right">Saldo</th>
               <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2 text-right"></th>
             </tr>
           </thead>
           <tbody>
@@ -950,10 +1148,35 @@ function AccountsTable({ accounts }: { accounts: MoneyAccount[] }) {
                 <td className="px-3 py-2">{account.responsible_user || '-'}</td>
                 <td className="px-3 py-2 text-right font-semibold">{mxn(account.current_balance)}</td>
                 <td className="px-3 py-2"><Badge value={account.status} /></td>
+                <td className="px-3 py-2 text-right">
+                  <div className="flex justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onEdit(account)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      title="Editar cuenta"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving || account.status !== 'active'}
+                      onClick={() =>
+                        runAction(async () => {
+                          await updateMoneyAccount({ account_id: account.id, status: 'inactive' });
+                        }, 'Cuenta dada de baja')
+                      }
+                      className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-30"
+                      title="Dar de baja cuenta"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
             {accounts.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-6 text-center text-sm text-slate-500">Sin cuentas registradas</td></tr>
+              <tr><td colSpan={9} className="px-3 py-6 text-center text-sm text-slate-500">Sin cuentas registradas</td></tr>
             )}
           </tbody>
         </table>

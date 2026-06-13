@@ -37,6 +37,7 @@
 | `vertical_erp_billing/erp_billing_collection_folio_cancel` | Cancela folio de cobranza sin borrar historia y bloquea si ya tiene pagos ligados. |
 | `vertical_erp_billing/erp_billing_payment_create` | Registra pago manual/bancario/efectivo. |
 | `vertical_erp_billing/erp_billing_receipt_upload_prepare` | Genera URL firmada para subir comprobantes a Storage sin exponer credenciales al browser. |
+| `vertical_erp_billing/erp_billing_receipt_link_create` | Genera URL firmada temporal para abrir comprobantes privados desde el dashboard. |
 | `vertical_erp_billing/erp_billing_payment_apply` | Aplica pago y actualiza saldos de ventas. |
 | `vertical_erp_billing/erp_billing_cash_cut_open` | Abre corte de efectivo. |
 | `vertical_erp_billing/erp_billing_cash_cut_close` | Cierra corte y deposita a cuenta de dinero. |

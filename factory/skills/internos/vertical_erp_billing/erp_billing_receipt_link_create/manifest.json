@@ -1,0 +1,6 @@
+{
+  "name": "vertical_erp_billing/erp_billing_receipt_link_create",
+  "version": "0.1.0",
+  "description": "Genera una URL firmada temporal para consultar un comprobante privado de pago en Supabase Storage.",
+  "entrypoint": "skill.py"
+}
