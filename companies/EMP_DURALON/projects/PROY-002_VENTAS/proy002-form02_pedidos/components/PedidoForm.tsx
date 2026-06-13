@@ -339,12 +339,7 @@ export default function PedidoForm() {
         </section>
 
         <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">Productos</h2>
-            <button type="button" onClick={() => setItems((current) => [...current, newItem()])} className="h-10 rounded bg-slate-900 px-3 text-sm font-semibold text-white">
-              Agregar
-            </button>
-          </div>
+          <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">Productos</h2>
           {items.map((item, index) => (
             <ProductCard
               key={item._key}
@@ -357,6 +352,9 @@ export default function PedidoForm() {
               onSelectProduct={(product) => selectProduct(item._key, product)}
             />
           ))}
+          <button type="button" onClick={() => setItems((current) => [...current, newItem()])} className="flex h-12 w-full items-center justify-center rounded border border-dashed border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:border-slate-500 hover:bg-slate-50">
+            Agregar producto
+          </button>
         </section>
 
         <section className="rounded border border-slate-200 bg-white p-4">
@@ -494,14 +492,15 @@ function ProductCard({
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Field label="Precio sin IVA">
-          <input type="number" min="0" step="0.01" value={item.unit_price_ex_vat} onChange={(event) => onUpdate({ unit_price_ex_vat: Number(event.target.value || 0) })} className="input" />
+          <input type="number" min="0" step="0.0001" inputMode="decimal" value={item.unit_price_ex_vat} onChange={(event) => onUpdate({ unit_price_ex_vat: Number(event.target.value || 0) })} className="input" />
         </Field>
         <Field label="Precio con IVA">
           <input
             type="number"
             min="0"
-            step="0.01"
-            value={Math.round(item.unit_price_ex_vat * (1 + item.vat_rate) * 100) / 100}
+            step="0.0001"
+            inputMode="decimal"
+            value={Math.round(item.unit_price_ex_vat * (1 + item.vat_rate) * 10000) / 10000}
             onChange={(event) => onUpdate({ unit_price_ex_vat: item.vat_rate <= -1 ? 0 : Math.round((Number(event.target.value || 0) / (1 + item.vat_rate)) * 10000) / 10000 })}
             className="input"
           />
