@@ -1,61 +1,61 @@
 # Notes - PROY-001
 
-## Arranque
+## Project Overview
 
-Cliente: Luis Castillejos  
-Empresa: COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV  
-Contacto: Luis Castillejos  
-Email: alfredo82@hotmail.com  
-Plataforma: interno
+PROY-001 is the first operational module delivered for the client: an expense capture and analysis system built around a Telegram bot, AI/OCR receipt processing, Supabase storage, and a business dashboard.
 
-## Objetivo General
+The first goal was not only to capture expenses. It was also to create a reusable foundation for future internal modules such as sales, inventory, billing, logistics, and ERP reporting.
 
-Mejorar procesos internos con AI.
+## Initial Scope
 
-## Proyecto Inicial
+- Telegram bot for expense capture.
+- Receipt and ticket photo reading with AI/OCR.
+- Manual capture through a guided form.
+- Fast capture for simple expense messages.
+- Business dashboard for expense analytics.
+- Modular architecture so the same pattern can be reused for other departments.
 
-Crear el primer modulo operativo para la empresa: registro y analisis de gastos.
+## Confirmed Decisions
 
-Este proyecto debe tener dos piezas:
+- Dedicated Telegram bot: `@Duralon1_bot`.
+- Initial users: Tania, Luis, and ACH.
+- Capture policy: no approval workflow in MVP; every authorized user can register expenses.
+- User identity: Telegram chat ID.
+- Export requirement: spreadsheet-friendly export from the dashboard.
+- Dashboard deployment: Render.
+- Backend runtime: Factory3 API on Render.
+- Database: Supabase schema `uc101_proy001`.
+- Storage: Supabase Storage bucket `uc101-proy001-assets`.
 
-1. Telegram bot para captura de gastos.
-2. Dashboard empresarial modular para visualizar y analizar informacion.
+## Expense Categories
 
-El dashboard no debe quedar limitado a gastos. Debe ser la base para futuros proyectos internos de la empresa.
+- combustible
+- gastos varios
+- taller mecanico
+- papeleria
+- telmex
+- gas
+- internet
+- recargas celulares
+- nomina
+- gps
+- imss
+- sat
 
-## Requerimientos Iniciales
+## Key Risks Identified
 
-- Bot Telegram para registrar gastos.
-- Lectura de tickets e imagenes de gastos con AI/OCR.
-- Captura manual sin AI mediante formulario guiado.
-- Dashboard completo para analisis de gastos.
-- Estructura modular para agregar futuros proyectos/procesos de la empresa.
-- Analisis principal de la informacion que posteriormente entregara el cliente.
+- Low-quality receipt photos can reduce OCR accuracy.
+- Ticket formats vary significantly between vendors.
+- Category rules may need refinement after real production usage.
+- Future role-based permissions may be needed as more users join.
 
-## Pendientes por Confirmar
+## Implementation Notes
 
-- Campos obligatorios para captura manual.
-- Chat IDs de Telegram de Tania, Luis y ACH.
-- Si habra roles/permisos por usuario.
-- Si requiere exportacion a PDF.
-- Si el proyecto requiere repo propio desde el inicio: recomendado si.
-- Dashboard nuevo debe ir a Vercel; Render queda reservado para Factory API central.
+- Business logic lives in Factory3 skills, not in the Telegram adapter.
+- Dashboard reads and writes through Factory API skills instead of owning database credentials.
+- The expense schema includes ERP identity fields to support later integration.
+- The module should remain sellable and reusable: project identity belongs in config/context, while generic behavior belongs in skills.
 
-## Tiempo y Costo
+## Current Status
 
-- Tarifa acordada/base: 40 USD/hora.
-- Estimacion inicial: 16 horas.
-- Costo estimado: 640 USD.
-- Deadline: 2026-05-29.
-- Prioridad: alta, liberar MVP rapido porque ya existe un siguiente proyecto del cliente listo para iniciar.
-
-## Datos Confirmados
-
-- Bot Telegram dedicado: `@Duralon1_bot`.
-- Usuarios iniciales: Tania, Luis y ACH.
-- Captura: sin aprobacion de gastos; solo registro por usuario.
-- Identificacion: por `telegram_chat_id`/numero de Telegram que envia el gasto.
-- Usuario de pruebas inicial: ACH (`8739777586`).
-- Exportacion a Excel: requerida.
-- Categorias: combustible, gastos varios, taller mecanico, papeleria, telmex, gas, internet, recargas celulares, nomina, gps, imss, sat.
-
+The module is operational, ERP-ready, and suitable for an Upwork portfolio/demo. The public-facing English case study is maintained in `UPWORK_CASE_STUDY.md`.

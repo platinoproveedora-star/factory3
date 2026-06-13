@@ -1,39 +1,52 @@
-# Deliverables — PROY-001 — Gastos
+# Deliverables - PROY-001 - Expense Capture Bot and Dashboard
 
-`EMP_DURALON` · `UC-101` (legacy) · `module_code: gastos` · Repo: `platinoproveedora-star/uc101-proy001`
+`EMP_DURALON` | `UC-101` legacy client | `module_code: gastos` | Repo: `platinoproveedora-star/uc101-proy001`
 
-**Estado: ERP-READY** — cerrado 2026-06-01
+**Status:** ERP-ready and operational
+**Closed:** 2026-06-01
+**Last documentation review:** 2026-06-13
 
-## Checklist final
+## Final Checklist
 
-- [x] Bot @Duralon1_bot corriendo en factory3 (webhook activo)
-- [x] Captura manual — forma rápida (cantidad,fecha,concepto) + /nuevo paso a paso
-- [x] OCR/AI para fotos de tickets — Haiku Vision, guarda directo con categoría sugerida
-- [x] Base de datos — schema `uc101_proy001`, 5 tablas ERP-ready, 12 categorías seed
-- [x] Columna `vehiculo` — control de gasto por unidad
-- [x] Dashboard Next.js — https://uc101-gastos.onrender.com
-- [x] KPIs mes actual, tablas categoría mes actual vs anterior, comparativo mensual, matriz categoría×mes
-- [x] Tabla editable inline — editar, agregar y borrar gastos desde dashboard
-- [x] Ordenar tabla por cualquier columna
-- [x] Export CSV desde dashboard
-- [x] ERP health check PASS — empresa_id, project_code, module_code, folio en las 5 tablas
-- [x] Columnas ERP en gastos: cost_center_id, customer_id, supplier_id, sales_order_id, purchase_order_id, asset_id, erp_tags
-- [x] Usuarios con global_user_id, modules_allowed para identidad global futura
-- [x] Tania pre-registrada (USR-002)
-- [x] ACH registrado (USR-003)
-- [x] CORS activo en factory3 para requests desde dashboards
+- [x] Telegram bot running through Factory3 with an active webhook.
+- [x] Guided manual expense capture through `/nuevo`.
+- [x] Fast manual capture for amount, date, and concept.
+- [x] AI/OCR receipt capture from ticket photos using Anthropic Haiku vision.
+- [x] Expense category suggestion from receipt images and text.
+- [x] Supabase schema `uc101_proy001` with 5 ERP-ready tables.
+- [x] 12 seeded expense categories.
+- [x] `vehiculo` field for vehicle/unit-level expense tracking.
+- [x] Next.js dashboard deployed at `https://uc101-gastos.onrender.com`.
+- [x] Monthly KPIs, category comparisons, monthly comparison, and category by month matrix.
+- [x] Inline editable expense table with create, update, and delete support.
+- [x] Sortable expense table.
+- [x] CSV export from the dashboard.
+- [x] ERP health check passed for required identity fields and folios.
+- [x] ERP link fields on expenses: `cost_center_id`, `customer_id`, `supplier_id`, `sales_order_id`, `purchase_order_id`, `asset_id`, `erp_tags`.
+- [x] User records prepared with `global_user_id` and `modules_allowed`.
+- [x] Tania pre-registered as `USR-002`.
+- [x] ACH registered as `USR-003`.
+- [x] CORS enabled in Factory3 for external dashboard requests.
 
-## Pendientes post-cierre (no bloqueantes)
+## Delivered URLs and Resources
 
-- [ ] Chat ID de Luis — se registra automático en su primer /start
-- [ ] Confirmar bucket `uc101-proy001-assets` activo en Supabase Storage
-
-## URLs entregadas
-
-| Recurso | URL |
+| Resource | Value |
 |---|---|
-| Dashboard | https://uc101-gastos.onrender.com |
-| Bot | @Duralon1_bot |
-| GitHub | https://github.com/platinoproveedora-star/uc101-proy001 |
-| Supabase schema | uc101_proy001 (proyecto ddcwdtqiupwtyltdpakm) |
-| Factory API | https://factory3.onrender.com |
+| Dashboard | `https://uc101-gastos.onrender.com` |
+| Telegram bot | `@Duralon1_bot` |
+| GitHub repo | `https://github.com/platinoproveedora-star/uc101-proy001` |
+| Supabase schema | `uc101_proy001` |
+| Factory API | `https://factory3.onrender.com` |
+| Dashboard source | `companies/EMP_DURALON/projects/PROY-001_GASTOS/dashboard/gastos/` |
+| Bot source | `factory/bots/duralon1_bot/bot.py` |
+| Runtime skill | `vertical_client_expenses/client_expenses_run` |
+| Dashboard data skill | `vertical_client_expenses/client_expenses_dashboard_data` |
+
+## Non-Blocking Post-Close Items
+
+- [ ] Luis Telegram chat ID is registered automatically after his first `/start`.
+- [ ] Confirm Supabase Storage bucket `uc101-proy001-assets` remains active for receipt assets.
+
+## Upwork Delivery Notes
+
+This module can be presented as a completed production MVP: Telegram bot, AI receipt OCR, ERP-ready database schema, and business dashboard. The public case study is in `UPWORK_CASE_STUDY.md` and avoids private client contact details.

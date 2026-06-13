@@ -1,61 +1,113 @@
-# Closeout — PROY-001 — Gastos
+# Closeout - PROY-001 - Expense Capture Bot and Dashboard
 
-**Cerrado:** 2026-06-01
-**Estado:** ERP-ready — operativo
+**Closed:** 2026-06-01
+**Status:** ERP-ready and operational
+**Documentation language:** English
+**Last documentation review:** 2026-06-13
 
-## URLs entregadas
+## Executive Summary
 
-| Recurso | URL |
+PROY-001 delivered a working expense operations module with two production-facing surfaces:
+
+- A Telegram bot for fast expense capture by field users.
+- A Next.js dashboard for expense analysis, editing, and exports.
+
+The system stores operational data in a dedicated Supabase schema and uses Factory3 skills as the reusable backend layer. The module is ready to be shown as an Upwork portfolio case study and also serves as the expense foundation for later ERP modules.
+
+## Delivered System
+
+| Area | Delivered |
 |---|---|
-| Dashboard | https://uc101-gastos.onrender.com |
-| Bot Telegram | @Duralon1_bot |
-| GitHub | https://github.com/platinoproveedora-star/uc101-proy001 |
-| Supabase schema | uc101_proy001 (ddcwdtqiupwtyltdpakm) |
-| Factory API | https://factory3.onrender.com |
+| Telegram bot | Manual capture, quick capture, receipt photo capture, user recognition, summaries |
+| AI/OCR | Receipt photo extraction and category suggestion using Anthropic Haiku vision |
+| Database | Supabase schema `uc101_proy001` with ERP-ready identity fields |
+| Dashboard | Next.js dashboard deployed on Render |
+| Analytics | Current month KPIs, category totals, prior month comparison, monthly matrix |
+| Operations | Inline CRUD, sorting, search/filter patterns, CSV export |
+| ERP readiness | Company/project/module identifiers, folios, ERP relationship fields |
 
-## Entregables completados
+## Delivered URLs
 
-- Bot Telegram con 3 modos de captura: manual paso a paso, formato rapido, OCR foto
-- Dashboard Next.js con KPIs, tablas por categoria (mes actual y anterior), comparativo mensual, matriz categoria x mes, tabla editable con CRUD completo
-- Schema Supabase ERP-ready: 5 tablas con empresa_id/project_code/module_code/folio
-- Columna vehiculo para control por unidad
-- Campos ERP en gastos para conexion futura con PROY-002 ventas, compras, activos
-- CORS habilitado en factory3 para dashboards externos
-
-## ERP Health Check — PASS (2026-06-01)
-
-| Tabla | Estado |
+| Resource | Value |
 |---|---|
-| gastos | OK |
-| usuarios | OK |
-| categorias_gasto | OK |
-| gasto_documentos | OK |
-| gasto_eventos | OK |
+| Dashboard | `https://uc101-gastos.onrender.com` |
+| Telegram bot | `@Duralon1_bot` |
+| GitHub repo | `https://github.com/platinoproveedora-star/uc101-proy001` |
+| Supabase schema | `uc101_proy001` |
+| Factory API | `https://factory3.onrender.com` |
 
-## Estructura final
+## Final Structure
 
-```
+```text
 companies/EMP_DURALON/projects/PROY-001_GASTOS/
-  dashboard/gastos/     <- Next.js (repo uc101-proy001, Render)
-  project.json
-  deliverables.md
-  closeout.md
+  dashboard/gastos/         Next.js dashboard source
+  project.json              Project context and sellable module metadata
+  PROJECT_BRIEF.md          Original internal brief
+  UPWORK_CASE_STUDY.md      Public-facing English case study
+  deliverables.md           Final delivery checklist
+  closeout.md               Technical closeout
+  notes.md                  Internal project notes in English
 
 factory/skills/internos/vertical_client_expenses/
-  client_expenses_run/
-  client_expenses_dashboard_data/
+  client_expenses_run/              Runtime skill for bot and dashboard writes
+  client_expenses_dashboard_data/   Read skill for dashboard analytics
 
-factory/bots/duralon1_bot/bot.py  <- webhook activo
+factory/bots/duralon1_bot/bot.py    Active Telegram webhook adapter
 ```
 
-## Pendientes post-cierre (no bloqueantes)
+## ERP Health Check
 
-- Chat ID de Luis -- se registra en su primer /start
-- Confirmar bucket uc101-proy001-assets activo en Supabase Storage
+**Result:** PASS
+**Date:** 2026-06-01
 
-## Conexion ERP
+| Table | Status |
+|---|---|
+| `gastos` | OK |
+| `usuarios` | OK |
+| `categorias_gasto` | OK |
+| `gasto_documentos` | OK |
+| `gasto_eventos` | OK |
 
-- `PROY-001` queda como modulo de gastos independiente y ERP-ready.
-- El ERP completo se documenta en `PROY-003_ERP_CORE`; este proyecto no debe guardar arquitectura global.
-- Campos de enlace preparados para crecer: `customer_id`, `supplier_id`, `sales_order_id`, `purchase_order_id`, `cost_center_id`, `asset_id`, `erp_tags`.
-- Estado operativo al 2026-06-06: estable; no bloquea PROY-002/003/004.
+## Operational Workflows
+
+### Expense Capture From Telegram
+
+1. User sends `/nuevo` or a quick expense message.
+2. Bot identifies the Telegram user and project context.
+3. Bot delegates business logic to `vertical_client_expenses/client_expenses_run`.
+4. Skill validates fields, resolves category, creates the expense, and returns a confirmation.
+
+### Receipt Photo Capture
+
+1. User sends a ticket or receipt image in Telegram.
+2. Bot receives the file and sends it to the expense runtime.
+3. AI/OCR extracts amount, concept, date, and suggested category.
+4. Expense is saved with receipt metadata and is available in the dashboard.
+
+### Dashboard Analytics
+
+1. Dashboard calls Factory API data endpoints.
+2. Factory3 runs `vertical_client_expenses/client_expenses_dashboard_data`.
+3. Skill reads Supabase using the project schema.
+4. Dashboard renders KPIs, tables, comparisons, and exportable data.
+
+## Post-Close Items
+
+These are not blockers for demo, delivery, or Upwork portfolio use:
+
+- Luis Telegram chat ID will be registered automatically after his first `/start`.
+- Supabase Storage bucket `uc101-proy001-assets` should be checked periodically if receipt file uploads are actively used.
+
+## ERP Connection
+
+PROY-001 remains an independent expense module and can connect with later ERP modules through prepared fields:
+
+- `customer_id`
+- `supplier_id`
+- `sales_order_id`
+- `purchase_order_id`
+- `cost_center_id`
+- `asset_id`
+- `erp_tags`
+
+The broader ERP architecture belongs in `PROY-003_ERP_CORE`; this project only documents the expense module and its integration points.
