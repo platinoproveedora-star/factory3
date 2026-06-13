@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+@layer components {
+  .input {
+    @apply h-11 w-full rounded border border-slate-300 bg-white px-3 text-sm outline-none focus:border-slate-700 focus:ring-1 focus:ring-slate-700;
+  }
+}

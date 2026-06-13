@@ -1,0 +1,6 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_pedido_create",
+  "version": "0.1.0",
+  "description": "Crea pedidos ERP de ventas sin afectar kardex, con precios IVA y pesos automaticos para logistica futura.",
+  "entrypoint": "skill.py"
+}

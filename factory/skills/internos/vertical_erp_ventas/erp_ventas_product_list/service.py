@@ -11,7 +11,7 @@ class ErpVentasProductListService:
         result = SupabaseClient(ctx).rest_select(
             "erp_products",
             filters={"active": "eq.true"},
-            select="id,folio,product_name,sku,unit,category,min_stock",
+            select="id,folio,product_name,sku,unit,category,min_stock,weight_kg,weight_unit,weight_notes",
             order="product_name.asc",
         )
         if not result.get("ok"):

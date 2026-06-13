@@ -1,0 +1,6 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_pedido_pdf",
+  "version": "0.1.0",
+  "description": "Genera HTML imprimible de pedido ERP con entrega, precios, IVA, pesos y notas.",
+  "entrypoint": "skill.py"
+}

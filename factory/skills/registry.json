@@ -12,8 +12,35 @@
     "tipo": "interno",
     "nombre": "vertical_erp_ventas/erp_ventas_product_list",
     "vertical": "vertical_erp_ventas",
-    "descripcion": "Lista productos activos desde uc101_proy002.sales_products",
+    "descripcion": "Lista productos activos compartidos desde inventario, incluyendo peso por unidad para pedidos.",
     "path": "skills/internos/vertical_erp_ventas/erp_ventas_product_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_pedido_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_pedido_create",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Crea pedidos ERP de ventas sin afectar kardex, con precios IVA y pesos automaticos para logistica futura.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_pedido_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_pedido_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_pedido_list",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Lista pedidos ERP de ventas con filtros por cliente, estado, ciudad y fechas.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_pedido_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_pedido_pdf": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_pedido_pdf",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Genera HTML imprimible de pedido ERP con entrega, precios, IVA, pesos y notas.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_pedido_pdf",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

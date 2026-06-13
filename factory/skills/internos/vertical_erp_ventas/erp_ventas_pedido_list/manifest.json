@@ -1,0 +1,6 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_pedido_list",
+  "version": "0.1.0",
+  "description": "Lista pedidos ERP de ventas con filtros por cliente, estado, ciudad y fechas.",
+  "entrypoint": "skill.py"
+}
