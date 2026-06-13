@@ -25,6 +25,7 @@ const localSkillPaths: Record<string, string> = {
   'vertical_erp_ventas/erp_ventas_remision_cancel': 'factory/skills/internos/vertical_erp_ventas/erp_ventas_remision_cancel',
   'vertical_erp_ventas/erp_ventas_key_product_matrix': 'factory/skills/internos/vertical_erp_ventas/erp_ventas_key_product_matrix',
   'vertical_erp_ventas/erp_ventas_remision_pdf': 'factory/skills/internos/vertical_erp_ventas/erp_ventas_remision_pdf',
+  'vertical_erp_ventas/erp_ventas_pedido_list': 'factory/skills/internos/vertical_erp_ventas/erp_ventas_pedido_list',
   'vertical_erp_compras/erp_compras_supplier_list': 'factory/skills/internos/vertical_erp_compras/erp_compras_supplier_list',
   'vertical_erp_compras/erp_compras_product_list': 'factory/skills/internos/vertical_erp_compras/erp_compras_product_list',
   'vertical_erp_compras/erp_compras_purchase_create': 'factory/skills/internos/vertical_erp_compras/erp_compras_purchase_create',

@@ -24,7 +24,7 @@ import { loadDashboardData, type DashboardData } from '../lib/client-data';
 import { money, qty, type KardexMovement, type Party, type Product } from '../lib/supabase';
 import projectContext from '../project-context.json';
 
-type Tab = 'inventario' | 'producto' | 'kardex' | 'proveedores' | 'clientes' | 'ventas' | 'compras';
+type Tab = 'inventario' | 'producto' | 'kardex' | 'proveedores' | 'clientes' | 'ventas' | 'pedidos' | 'compras';
 type RefreshFn = () => Promise<DashboardData | null>;
 
 type RemisionDoc = {
@@ -99,6 +99,32 @@ type PurchaseSummary = {
   canceled?: boolean;
 };
 
+type PedidoItem = {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  line_total?: number | null;
+  weight_kg_total?: number | null;
+};
+
+type PedidoRow = {
+  id: string;
+  folio: string;
+  external_folio?: string | null;
+  customer_id?: string | null;
+  customer_name_snapshot?: string | null;
+  status?: string | null;
+  document_date: string;
+  due_date?: string | null;
+  payment_method?: string | null;
+  city?: string | null;
+  city_quadrant?: string | null;
+  total_weight_kg?: number | null;
+  total?: number | null;
+  items?: PedidoItem[];
+};
+
 const emptyData: DashboardData = {
   products: [],
   customers: [],
@@ -119,12 +145,13 @@ const tabs: Array<{ id: Tab; label: string; icon: any }> = [
   { id: 'proveedores', label: 'Proveedores', icon: Truck },
   { id: 'clientes', label: 'Clientes', icon: Store },
   { id: 'ventas', label: 'Ventas / salidas', icon: ArrowUpFromLine },
+  { id: 'pedidos', label: 'Pedidos', icon: ClipboardList },
   { id: 'compras', label: 'Compras / entradas', icon: ArrowDownToLine },
 ];
 
 function savedTab(): Tab {
   if (typeof window === 'undefined') return 'inventario';
-  const value = window.localStorage.getItem('duralon_inventory_tab');
+  const value = window.localStorage.getItem(`${projectContext.company_id}_${projectContext.project_code}_inventory_tab`);
   if (tabs.some((tab) => tab.id === value)) return value as Tab;
   return 'inventario';
 }
@@ -159,7 +186,7 @@ export default function InventoryDashboard() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem('duralon_inventory_tab', activeTab);
+    window.localStorage.setItem(`${projectContext.company_id}_${projectContext.project_code}_inventory_tab`, activeTab);
   }, [activeTab]);
 
   const filteredProducts = useMemo(() => {
@@ -215,7 +242,7 @@ export default function InventoryDashboard() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase text-slate-500">{projectContext.project_label} - Kardex operativo</p>
-              <h2 className="text-2xl font-semibold text-slate-950">Duralon Inventario</h2>
+              <h2 className="text-2xl font-semibold text-slate-950">{projectContext.company_label} Inventario</h2>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -279,6 +306,7 @@ export default function InventoryDashboard() {
           {activeTab === 'ventas' && (
             <RemisionesTab setNotice={setNotice} />
           )}
+          {activeTab === 'pedidos' && <PedidosTab />}
           {activeTab === 'compras' && (
             <PurchaseTab
               products={data.products}
@@ -1325,6 +1353,193 @@ function PurchaseDetailPanel({ purchase }: { purchase: PurchaseSummary }) {
         </table>
       </div>
     </section>
+  );
+}
+
+function PedidosTab() {
+  const [pedidos, setPedidos] = useState<PedidoRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [dateFrom, setDateFrom] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  });
+  const [dateTo, setDateTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [clientFilter, setClientFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [quadrantFilter, setQuadrantFilter] = useState('');
+
+  async function loadPedidos() {
+    setLoading(true);
+    setError('');
+    try {
+      const params = new URLSearchParams();
+      params.set('limit', '300');
+      if (dateFrom) params.set('date_from', dateFrom);
+      if (dateTo) params.set('date_to', dateTo);
+      const res = await fetch(`/api/pedidos?${params.toString()}&t=${Date.now()}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudieron cargar pedidos');
+      setPedidos(json.data || []);
+    } catch (err: any) {
+      setError(err.message || 'No se pudieron cargar pedidos');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadPedidos();
+  }, []);
+
+  const clients = useMemo(() => uniqueOptions(pedidos.map((pedido) => pedido.customer_name_snapshot)), [pedidos]);
+  const cities = useMemo(() => uniqueOptions(pedidos.map((pedido) => pedido.city)), [pedidos]);
+  const quadrants = useMemo(() => uniqueOptions(pedidos.map((pedido) => pedido.city_quadrant)), [pedidos]);
+
+  const filtered = useMemo(() => {
+    return pedidos.filter((pedido) => {
+      if (clientFilter && pedido.customer_name_snapshot !== clientFilter) return false;
+      if (cityFilter && pedido.city !== cityFilter) return false;
+      if (quadrantFilter && pedido.city_quadrant !== quadrantFilter) return false;
+      return true;
+    });
+  }, [pedidos, clientFilter, cityFilter, quadrantFilter]);
+
+  const maxItems = Math.max(1, ...filtered.map((pedido) => (pedido.items || []).length));
+  const dailyTotals = useMemo(() => {
+    const map = new Map<string, { date: string; count: number; total_weight: number; total_amount: number }>();
+    for (const pedido of filtered) {
+      const date = String(pedido.document_date || '').slice(0, 10) || 'sin fecha';
+      const row = map.get(date) || { date, count: 0, total_weight: 0, total_amount: 0 };
+      row.count += 1;
+      row.total_weight += Number(pedido.total_weight_kg || 0);
+      row.total_amount += Number(pedido.total || 0);
+      map.set(date, row);
+    }
+    return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
+  }, [filtered]);
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">Pedidos</h3>
+            <p className="mt-0.5 text-xs text-slate-500">Vista compacta por pedido, partidas y totales diarios</p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-semibold text-slate-500">Desde</span>
+              <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="h-9 w-full rounded border border-slate-200 px-2 text-xs outline-none focus:border-slate-500" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[11px] font-semibold text-slate-500">Hasta</span>
+              <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="h-9 w-full rounded border border-slate-200 px-2 text-xs outline-none focus:border-slate-500" />
+            </label>
+            <CompactSelect label="Cliente" value={clientFilter} onChange={setClientFilter} options={clients} />
+            <CompactSelect label="Ciudad" value={cityFilter} onChange={setCityFilter} options={cities} />
+            <CompactSelect label="Cuadrante" value={quadrantFilter} onChange={setQuadrantFilter} options={quadrants} />
+            <button type="button" onClick={loadPedidos} className="mt-5 h-9 rounded bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-slate-800">
+              Filtrar
+            </button>
+          </div>
+        </div>
+        {error && <div className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>}
+      </section>
+
+      <section className="rounded border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 px-4 py-3">
+          <h3 className="text-sm font-semibold text-slate-950">Totales por dia</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-[620px] text-xs">
+            <thead className="border-b border-slate-200 bg-slate-50 uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-2 text-left">Fecha</th>
+                <th className="px-3 py-2 text-right">Pedidos</th>
+                <th className="px-3 py-2 text-right">Peso total</th>
+                <th className="px-3 py-2 text-right">Importe total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dailyTotals.map((row) => (
+                <tr key={row.date} className="border-b border-slate-100">
+                  <td className="px-3 py-2 font-medium text-slate-900">{row.date}</td>
+                  <td className="px-3 py-2 text-right">{row.count}</td>
+                  <td className="px-3 py-2 text-right">{qty(row.total_weight)} kg</td>
+                  <td className="px-3 py-2 text-right font-semibold">{money(row.total_amount)}</td>
+                </tr>
+              ))}
+              {!dailyTotals.length && <tr><td colSpan={4} className="px-3 py-6 text-center text-slate-500">{loading ? 'Cargando pedidos...' : 'Sin pedidos'}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 px-4 py-3">
+          <h3 className="text-sm font-semibold text-slate-950">Detalle de pedidos</h3>
+          <p className="mt-0.5 text-xs text-slate-500">{filtered.length} pedidos visibles</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-[1100px] text-[11px] leading-tight">
+            <thead className="border-b border-slate-200 bg-slate-50 uppercase text-slate-500">
+              <tr>
+                <th className="px-2 py-2 text-left">Pedido</th>
+                <th className="px-2 py-2 text-left">Fecha</th>
+                <th className="px-2 py-2 text-left">Cliente</th>
+                <th className="px-2 py-2 text-right">Peso</th>
+                {Array.from({ length: maxItems }).map((_, index) => (
+                  <th key={index} className="px-2 py-2 text-left">Partida {index + 1}</th>
+                ))}
+                <th className="px-2 py-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((pedido) => (
+                <tr key={pedido.id} className="border-b border-slate-100 align-top hover:bg-slate-50">
+                  <td className="px-2 py-2 font-mono font-semibold text-slate-900">{pedido.folio}</td>
+                  <td className="px-2 py-2 whitespace-nowrap">{pedido.document_date}</td>
+                  <td className="px-2 py-2 min-w-[160px]">{pedido.customer_name_snapshot || '-'}</td>
+                  <td className="px-2 py-2 text-right font-semibold">{qty(pedido.total_weight_kg)} kg</td>
+                  {Array.from({ length: maxItems }).map((_, index) => {
+                    const item = (pedido.items || [])[index];
+                    return (
+                      <td key={index} className="px-2 py-2 min-w-[150px]">
+                        {item ? (
+                          <>
+                            <p className="font-medium text-slate-900">{item.description}</p>
+                            <p className="text-slate-500">{qty(item.quantity)} {item.unit}</p>
+                          </>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="px-2 py-2 text-right font-semibold">{money(pedido.total)}</td>
+                </tr>
+              ))}
+              {!filtered.length && <tr><td colSpan={5 + maxItems} className="px-3 py-8 text-center text-slate-500">{loading ? 'Cargando pedidos...' : 'Sin pedidos para el filtro'}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function CompactSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: string[] }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] font-semibold text-slate-500">{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="h-9 w-full rounded border border-slate-200 bg-white px-2 text-xs outline-none focus:border-slate-500">
+        <option value="">Todos</option>
+        {options.map((option) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
