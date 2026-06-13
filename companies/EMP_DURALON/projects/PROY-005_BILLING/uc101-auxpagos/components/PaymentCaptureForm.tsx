@@ -58,6 +58,7 @@ export default function PaymentCaptureForm() {
   const [accounts, setAccounts] = useState<MoneyAccount[]>([]);
   const [remisiones, setRemisiones] = useState<Remision[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
+  const [customerOpen, setCustomerOpen] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [amount, setAmount] = useState('');
@@ -85,7 +86,7 @@ export default function PaymentCaptureForm() {
     if (!term) return customers.slice(0, 8);
     return customers
       .filter((row) => cleanText(`${row.party_name} ${row.folio || ''} ${row.phone || ''}`).includes(term))
-      .slice(0, 8);
+      .slice(0, 12);
   }, [customers, customerSearch]);
 
   async function refreshBase() {
@@ -125,6 +126,7 @@ export default function PaymentCaptureForm() {
   function selectCustomer(row: Customer) {
     setCustomer(row);
     setCustomerSearch(row.party_name);
+    setCustomerOpen(false);
     setNotice('');
   }
 
@@ -251,19 +253,25 @@ export default function PaymentCaptureForm() {
                       value={customerSearch}
                       onChange={(event) => {
                         setCustomerSearch(event.target.value);
+                        setCustomerOpen(true);
                         if (customer && event.target.value !== customer.party_name) setCustomer(null);
                       }}
+                      onFocus={() => setCustomerOpen(true)}
                       placeholder="Buscar cliente"
                       className="h-10 w-full rounded border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-slate-500"
                     />
                   </div>
                 </label>
-                {customerSearch && !customer && (
-                  <div className="mt-2 overflow-hidden rounded border border-slate-200 bg-white">
+                {customerOpen && !customer && (
+                  <div className="mt-2 overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-100 px-3 py-2 text-xs text-slate-500">
+                      {customers.length ? `${customers.length} clientes activos cargados` : loading ? 'Cargando clientes activos...' : 'No se cargaron clientes activos'}
+                    </div>
                     {filteredCustomers.map((row) => (
                       <button
                         key={row.id}
                         type="button"
+                        onMouseDown={(event) => event.preventDefault()}
                         onClick={() => selectCustomer(row)}
                         className="flex w-full items-center justify-between border-b border-slate-100 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-slate-50"
                       >
@@ -271,6 +279,7 @@ export default function PaymentCaptureForm() {
                         <span className="text-xs text-slate-400">{row.folio || row.phone || ''}</span>
                       </button>
                     ))}
+                    {customers.length > filteredCustomers.length && !customerSearch && <p className="px-3 py-2 text-xs text-slate-500">Escribe para buscar entre todos los clientes activos.</p>}
                     {!filteredCustomers.length && <p className="px-3 py-2 text-sm text-slate-500">Sin coincidencias</p>}
                   </div>
                 )}
