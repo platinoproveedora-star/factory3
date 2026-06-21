@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_compras/erp_compras_purchase_pdf",
+  "vertical": "vertical_erp_compras",
+  "descripcion": "Genera HTML imprimible de una compra/entrada para abrir, imprimir o guardar como PDF.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}
