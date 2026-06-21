@@ -400,6 +400,26 @@ class BankStatementExtractService:
             mv["confidence"] = self._calc_confidence(mv)
             movements.append(mv)
 
+        # Post-proceso: PDFs más-nuevo-primero (newest_first) necesitan delta de saldos
+        # para detectar dirección — la comparación con prev_saldo no sirve en orden invertido.
+        if profile.get("newest_first") and len(movements) > 1:
+            for i, mv in enumerate(movements):
+                if mv.get("saldo") is None:
+                    continue
+                next_saldo = next(
+                    (movements[j]["saldo"] for j in range(i + 1, len(movements))
+                     if movements[j].get("saldo") is not None),
+                    None,
+                )
+                if next_saldo is None:
+                    continue
+                diff = mv["saldo"] - next_saldo
+                if abs(diff) < 0.01:
+                    continue
+                new_dir = "deposito" if diff > 0 else "retiro"
+                mv["direction"] = new_dir
+                mv["amount"] = abs(mv["amount"]) if new_dir == "deposito" else -abs(mv["amount"])
+
         return movements, global_warnings
 
     def _parse_banorte_block(self, anchor, block, profile, year, prev_saldo, rastreo_re, ref_re):
@@ -460,7 +480,7 @@ class BankStatementExtractService:
         non_zero_ns = [a for a in non_saldo if a > 0.01]
         amount = non_zero_ns[0] if non_zero_ns else 0.0
         cargo_x_max = profile.get("cargo_x_max", 420)
-        direction = self._detect_bbva_direction(amount, pages_words, cargo_x_max, prev_saldo, saldo)
+        direction = self._detect_bbva_direction(amount, pages_words, cargo_x_max)
         full_text = "\n".join(block)
         scanned = _scanner.scan(full_text)
         meta = scanned.pop("metadata", {})
