@@ -402,6 +402,8 @@ class BankStatementExtractService:
 
         # Post-proceso: PDFs más-nuevo-primero (newest_first) necesitan delta de saldos
         # para detectar dirección — la comparación con prev_saldo no sirve en orden invertido.
+        _DEP_KW = ["DEPOSITO", "DEP ", "DEP.", "ABONO", "HOST TO HOST", "SPEI RECIB", "TRANF INT", "RECIBIDO"]
+        _RET_KW = ["PAGO ", "RETIRO", "COBRO", "SPEI ENVI", "SERV BANCA", "IMSS", "SIPARE", "ADMON"]
         if profile.get("newest_first") and len(movements) > 1:
             for i, mv in enumerate(movements):
                 if mv.get("saldo") is None:
@@ -411,12 +413,26 @@ class BankStatementExtractService:
                      if movements[j].get("saldo") is not None),
                     None,
                 )
-                if next_saldo is None:
-                    continue
-                diff = mv["saldo"] - next_saldo
-                if abs(diff) < 0.01:
-                    continue
-                new_dir = "deposito" if diff > 0 else "retiro"
+                if next_saldo is not None:
+                    diff = mv["saldo"] - next_saldo
+                    if abs(diff) < 0.01:
+                        continue
+                    new_dir = "deposito" if diff > 0 else "retiro"
+                else:
+                    # Último movimiento sin next_saldo: la descripción suele estar en las
+                    # continuaciones del bloque anterior (formato pre-ancla de BBVA portal).
+                    combined = ""
+                    if i > 0:
+                        combined = movements[i - 1].get("raw_text", "").upper()
+                    combined += " " + mv.get("raw_text", "").upper()
+                    dep = any(k in combined for k in _DEP_KW)
+                    ret = any(k in combined for k in _RET_KW)
+                    if dep and not ret:
+                        new_dir = "deposito"
+                    elif ret and not dep:
+                        new_dir = "retiro"
+                    else:
+                        continue  # ambiguo, conservar lo que dio _detect_bbva_direction
                 mv["direction"] = new_dir
                 mv["amount"] = abs(mv["amount"]) if new_dir == "deposito" else -abs(mv["amount"])
 
