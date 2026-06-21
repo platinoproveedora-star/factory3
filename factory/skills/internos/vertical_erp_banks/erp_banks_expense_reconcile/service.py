@@ -218,11 +218,7 @@ class ErpBanksExpenseReconcileService:
         return {"ok": True, "data": {"movement": movement, "reversal_result": result.get("data")}}
 
     def _active_expense_movements(self, ctx: dict, movements: list[dict]) -> dict[str, dict]:
-        reversed_ids = {
-            str(row.get("reversal_of_movement_id"))
-            for row in movements
-            if row.get("reversal_of_movement_id")
-        }
+        reversed_ids = self._reversed_assignment_ids(ctx, movements)
         linked: dict[str, dict] = {}
         for row in movements:
             metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
@@ -245,6 +241,28 @@ class ErpBanksExpenseReconcileService:
                 if key:
                     linked[str(key)] = row
         return linked
+
+    def _reversed_assignment_ids(self, ctx: dict, movements: list[dict]) -> set[str]:
+        reversed_ids: set[str] = set()
+        for row in movements:
+            metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+            if row.get("reversal_of_movement_id"):
+                reversed_ids.add(str(row.get("reversal_of_movement_id")))
+
+            is_reversal = (
+                row.get("movement_type") == "entrada"
+                and (
+                    row.get("source_module") == ctx["expense_reversal_source_module"]
+                    or row.get("source_type") == "devolucion"
+                    or metadata.get("movement_kind") == "cancelacion_retiro_gasto"
+                )
+            )
+            if not is_reversal:
+                continue
+            for key in (row.get("source_id"), metadata.get("cancelled_assignment_movement_id")):
+                if key:
+                    reversed_ids.add(str(key))
+        return reversed_ids
 
     def _movement_for_expense(self, movement_by_source: dict[str, dict], expense: dict) -> dict | None:
         for key in (expense.get("id"), expense.get("folio")):
@@ -282,7 +300,8 @@ class ErpBanksExpenseReconcileService:
         return self._find_existing_assignment(ctx, expense) if expense else None
 
     def _find_reversal(self, ctx: dict, movement_id: str) -> dict | None:
-        result = SupabaseClient({"schema": ctx["banks_schema"]}).rest_select(
+        db = SupabaseClient({"schema": ctx["banks_schema"]})
+        result = db.rest_select(
             "banks_movements",
             filters={"empresa_id": f"eq.{ctx['company_id']}", "reversal_of_movement_id": f"eq.{movement_id}"},
             select="id,folio,source_id,source_folio,source_module,source_type,movement_type,account_id,account_folio,amount,movement_date,reconciliation_status,reversal_of_movement_id,metadata,created_at",
@@ -292,7 +311,32 @@ class ErpBanksExpenseReconcileService:
         if not result.get("ok"):
             return None
         rows = result.get("data") or []
-        return rows[0] if rows else None
+        if rows:
+            return rows[0]
+
+        result = db.rest_select(
+            "banks_movements",
+            filters={
+                "empresa_id": f"eq.{ctx['company_id']}",
+                "source_id": f"eq.{movement_id}",
+                "movement_type": "eq.entrada",
+            },
+            select="id,folio,source_id,source_folio,source_module,source_type,movement_type,account_id,account_folio,amount,movement_date,reconciliation_status,reversal_of_movement_id,metadata,created_at",
+            order="created_at.desc",
+            limit=25,
+        )
+        if not result.get("ok"):
+            return None
+        for row in result.get("data") or []:
+            metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+            if (
+                row.get("source_module") == ctx["expense_reversal_source_module"]
+                or row.get("source_type") == "devolucion"
+                or metadata.get("movement_kind") == "cancelacion_retiro_gasto"
+                or metadata.get("cancelled_assignment_movement_id") == movement_id
+            ):
+                return row
+        return None
 
     def _find_expense(self, ctx: dict, context: dict) -> dict | None:
         filters = {"empresa_id": f"eq.{ctx['company_id']}"}
