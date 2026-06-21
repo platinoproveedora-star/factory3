@@ -6,6 +6,7 @@ import json
 import os
 import re
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -66,11 +67,13 @@ def upload_pdf_to_storage(bucket: str, storage_path: str, pdf_bytes: bytes) -> d
     svc_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     if not url_base or not svc_key:
         return {"ok": False, "error": "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY requeridos"}
-    url = f"{url_base}/storage/v1/object/{bucket}/{storage_path}"
+    object_path = urllib.parse.quote(storage_path.replace("\\", "/"), safe="/")
+    url = f"{url_base}/storage/v1/object/{bucket}/{object_path}"
     req = urllib.request.Request(
         url,
         data=pdf_bytes,
         headers={
+            "apikey": svc_key,
             "Authorization": f"Bearer {svc_key}",
             "Content-Type": "application/pdf",
         },
@@ -82,14 +85,17 @@ def upload_pdf_to_storage(bucket: str, storage_path: str, pdf_bytes: bytes) -> d
             return {"ok": True, "data": body}
     except urllib.error.HTTPError as exc:
         return {"ok": False, "error": f"Storage {exc.code}: {exc.read().decode()[:300]}"}
+    except Exception as exc:
+        return {"ok": False, "error": f"Storage error: {exc}"}
 
 
 def storage_exists(bucket: str, storage_path: str) -> bool:
     url_base = os.getenv("SUPABASE_URL", "").rstrip("/")
     svc_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
-    url = f"{url_base}/storage/v1/object/{bucket}/{storage_path}"
+    object_path = urllib.parse.quote(storage_path.replace("\\", "/"), safe="/")
+    url = f"{url_base}/storage/v1/object/{bucket}/{object_path}"
     req = urllib.request.Request(
-        url, headers={"Authorization": f"Bearer {svc_key}"}, method="HEAD"
+        url, headers={"apikey": svc_key, "Authorization": f"Bearer {svc_key}"}, method="HEAD"
     )
     try:
         urllib.request.urlopen(req)

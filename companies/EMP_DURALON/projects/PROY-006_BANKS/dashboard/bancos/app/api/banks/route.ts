@@ -100,8 +100,10 @@ async function factorySkill(skillPath: string, context: Record<string, any>) {
     body: JSON.stringify(context),
     cache: 'no-store'
   });
-  const result = (await response.json()) as { ok: boolean; data?: any; error?: string };
-  if (!result.ok) throw new Error(result.error || `Error en skill ${skillPath}`);
+  const result = (await response.json().catch(() => ({}))) as { ok?: boolean; data?: any; error?: string; detail?: string };
+  if (!response.ok || !result.ok) {
+    throw new Error(result.error || result.detail || `Error en skill ${skillPath}`);
+  }
   return result.data;
 }
 
