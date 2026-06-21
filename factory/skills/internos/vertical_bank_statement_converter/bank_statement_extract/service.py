@@ -489,10 +489,12 @@ class BankStatementExtractService:
         posting_iso = str(p_date) if p_date else None
         signed = -abs(amount) if direction == "retiro" else abs(amount)
         desc_group = dm.group(dm.lastindex) if dm.lastindex and dm.lastindex >= 3 else g2
+        # Quitar montos del ancla para que la descripción no quede como "$ 25,000.00 $ 46,249.88"
+        anchor_desc = re.sub(r'(\s*\$?\s*\d[\d,]*\.\d{2})+\s*$', '', desc_group).strip()
         return {
             "transaction_date": str(t_date) if t_date else None,
             "posting_date": posting_iso, "line_date": posting_iso,
-            "description": self._build_desc(desc_group, block[1:]),
+            "description": self._build_desc(anchor_desc, block[1:]),
             "direction": direction, "amount": round(signed, 2), "saldo": saldo,
             "clave_rastreo": scanned.get("clave_rastreo") or (mr.group(1) if mr else None),
             "referencia": scanned.get("referencia") or (mref.group(1) if mref else None),
