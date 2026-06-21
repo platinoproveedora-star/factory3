@@ -1,7 +1,10 @@
 {
+  "type": "skill",
   "name": "vertical_erp_compras/erp_compras_purchase_pdf",
+  "version": "0.1.0",
+  "kind": "executable",
   "vertical": "vertical_erp_compras",
-  "descripcion": "Genera HTML imprimible de una compra/entrada para abrir, imprimir o guardar como PDF.",
   "entrypoint": "skill.py",
-  "version": "0.1.0"
+  "description": "Genera HTML imprimible de una compra/entrada para abrir, imprimir o guardar como PDF.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
 }

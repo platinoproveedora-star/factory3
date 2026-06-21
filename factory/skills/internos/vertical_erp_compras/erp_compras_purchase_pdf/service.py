@@ -142,6 +142,9 @@ class ErpComprasPurchasePdfService:
             context.get("schema_inventario") or
             context.get("supabase_schema") or ""
         ).strip()
+        company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
         if not schema:
             return {"ok": False, "error": "schema requerido en context"}
-        return {"ok": True, "data": {**context, "schema": schema}}
+        if not company_id:
+            return {"ok": False, "error": "company_id requerido en context"}
+        return {"ok": True, "data": {**context, "schema": schema, "company_id": company_id}}
