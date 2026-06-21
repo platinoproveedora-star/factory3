@@ -3961,6 +3961,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_bank_statement_converter/bank_statement_field_scanner": {
+    "tipo": "interno",
+    "nombre": "vertical_bank_statement_converter/bank_statement_field_scanner",
+    "vertical": "vertical_bank_statement_converter",
+    "descripcion": "Scanner de tokens bancarios multi-banco. Extrae CLABE, RFC, nombre, clave rastreo de descripciones usando anclas de keywords universales. Sin hardcodes.",
+    "path": "skills/internos/vertical_bank_statement_converter/bank_statement_field_scanner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_bank_statement_converter/bank_statement_profile_learn": {
     "tipo": "interno",
     "nombre": "vertical_bank_statement_converter/bank_statement_profile_learn",

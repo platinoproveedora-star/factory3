@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "bank_statement_field_scanner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Scanner de tokens para descripciones bancarias. Extrae CLABE, RFC, nombre, clave rastreo usando patrones universales y anclas de keywords. Multi-banco, sin hardcodes.",
+  "requires_env": []
+}
