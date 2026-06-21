@@ -6,5 +6,9 @@
   "service_name": "uc101-bancos",
   "platform": "render",
   "statements_schema": "uc101_proy007",
-  "statements_project_code": "PROY-007"
+  "statements_project_code": "PROY-007",
+  "expenses_schema": "uc101_proy001",
+  "expenses_project_code": "PROY-001",
+  "default_expense_source_account_name": "Cobranza efectivo",
+  "expense_counterparty_name": "GastosDuralon"
 }

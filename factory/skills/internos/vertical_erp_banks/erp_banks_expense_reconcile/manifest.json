@@ -1,0 +1,24 @@
+{
+  "name": "vertical_erp_banks/erp_banks_expense_reconcile",
+  "vertical": "vertical_erp_banks",
+  "version": "0.1.0",
+  "description": "Lista gastos pendientes y registra retiros bancarios contra una cuenta origen configurable para conciliacion de gastos.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "action": {"type": "string"},
+      "banks_schema": {"type": "string"},
+      "expenses_schema": {"type": "string"},
+      "company_id": {"type": "string"},
+      "banks_project_code": {"type": "string"},
+      "expenses_project_code": {"type": "string"},
+      "default_source_account_name": {"type": "string"},
+      "expense_counterparty_name": {"type": "string"},
+      "expense_id": {"type": "string"},
+      "expense_folio": {"type": "string"},
+      "source_account_id": {"type": "string"},
+      "dry_run": {"type": "boolean"}
+    },
+    "required": ["action", "banks_schema", "expenses_schema", "company_id"]
+  }
+}

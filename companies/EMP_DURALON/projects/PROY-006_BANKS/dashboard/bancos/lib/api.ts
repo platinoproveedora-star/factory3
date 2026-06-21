@@ -108,6 +108,37 @@ export type StatementLine = {
   metadata: Record<string, any> | null;
 };
 
+export type ExpenseReconciliationRow = {
+  id: string;
+  folio: string;
+  fecha: string;
+  monto: number;
+  descripcion: string | null;
+  vehiculo: string | null;
+  usuario_id: string | null;
+  categoria_id: string | null;
+  estado: string | null;
+  linked: boolean;
+  bank_movement: Movement | null;
+};
+
+export type ExpenseReconciliationData = {
+  expenses: ExpenseReconciliationRow[];
+  default_source_account: {
+    id: string;
+    folio: string;
+    account_name: string;
+    current_balance: number;
+    status: string;
+  } | null;
+  expense_counterparty_name: string;
+  summary: {
+    total: number;
+    pending: number;
+    linked: number;
+  };
+};
+
 export type ApiResponse<T> = {
   ok: boolean;
   data?: T;

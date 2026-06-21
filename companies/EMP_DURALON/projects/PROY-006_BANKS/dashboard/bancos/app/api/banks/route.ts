@@ -81,6 +81,22 @@ function statementsProjectCode() {
   return env('STATEMENTS_PROJECT_CODE') || (projectContext as any).statements_project_code || '';
 }
 
+function expensesSchema() {
+  return env('EXPENSES_SCHEMA') || (projectContext as any).expenses_schema || '';
+}
+
+function expensesProjectCode() {
+  return env('EXPENSES_PROJECT_CODE') || (projectContext as any).expenses_project_code || '';
+}
+
+function defaultExpenseSourceAccountName() {
+  return env('DEFAULT_EXPENSE_SOURCE_ACCOUNT_NAME') || (projectContext as any).default_expense_source_account_name || '';
+}
+
+function expenseCounterpartyName() {
+  return env('EXPENSE_COUNTERPARTY_NAME') || (projectContext as any).expense_counterparty_name || '';
+}
+
 async function supabaseStatements(path: string, options: SupabaseOptions = {}) {
   const sc = statementsSchema();
   if (!sc) throw new Error('STATEMENTS_SCHEMA no configurado');
@@ -355,6 +371,38 @@ async function exportExcel(payload: Record<string, any>) {
   });
 }
 
+function expenseReconcileContext(payload: Record<string, any>) {
+  const expenseSchema = expensesSchema();
+  const expenseProject = expensesProjectCode();
+  if (!expenseSchema) throw new Error('EXPENSES_SCHEMA no configurado');
+  if (!expenseProject) throw new Error('EXPENSES_PROJECT_CODE no configurado');
+  return {
+    ...payload,
+    banks_schema: schema(),
+    expenses_schema: expenseSchema,
+    company_id: companyId(),
+    banks_project_code: projectCode(),
+    expenses_project_code: expenseProject,
+    default_source_account_name: defaultExpenseSourceAccountName(),
+    expense_counterparty_name: expenseCounterpartyName()
+  };
+}
+
+async function listExpenseReconciliation(payload: Record<string, any>) {
+  return factorySkill('vertical_erp_banks/erp_banks_expense_reconcile', expenseReconcileContext({
+    ...payload,
+    action: 'list'
+  }));
+}
+
+async function assignExpenseWithdrawal(payload: Record<string, any>) {
+  return factorySkill('vertical_erp_banks/erp_banks_expense_reconcile', expenseReconcileContext({
+    ...payload,
+    action: 'assign',
+    dry_run: false
+  }));
+}
+
 export async function POST(request: Request) {
   const authError = requireDashboardKey(request);
   if (authError) {
@@ -376,7 +424,9 @@ export async function POST(request: Request) {
       statement_lines: () => statementLines(payload),
       export_excel: () => exportExcel(payload),
       delete_statement: () => deleteStatement(payload),
-      update_statement: () => updateStatement(payload)
+      update_statement: () => updateStatement(payload),
+      list_expense_reconciliation: () => listExpenseReconciliation(payload),
+      assign_expense_withdrawal: () => assignExpenseWithdrawal(payload)
     };
 
     if (!actions[action]) {

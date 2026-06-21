@@ -3826,6 +3826,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_banks/erp_banks_expense_reconcile": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_expense_reconcile",
+    "vertical": "vertical_erp_banks",
+    "descripcion": "Lista gastos pendientes y registra retiros bancarios contra una cuenta origen configurable para conciliacion de gastos.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_expense_reconcile",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_compras/erp_compras_purchase_cancel": {
     "tipo": "interno",
     "nombre": "vertical_erp_compras/erp_compras_purchase_cancel",

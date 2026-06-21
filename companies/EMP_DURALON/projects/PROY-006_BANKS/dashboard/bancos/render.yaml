@@ -16,6 +16,14 @@ services:
         value: uc101_proy007
       - key: STATEMENTS_PROJECT_CODE
         value: PROY-007
+      - key: EXPENSES_SCHEMA
+        value: uc101_proy001
+      - key: EXPENSES_PROJECT_CODE
+        value: PROY-001
+      - key: DEFAULT_EXPENSE_SOURCE_ACCOUNT_NAME
+        value: Cobranza efectivo
+      - key: EXPENSE_COUNTERPARTY_NAME
+        value: GastosDuralon
       - key: FACTORY_API_URL
         value: https://factory3.onrender.com
       - key: FACTORY_RUN_SECRET

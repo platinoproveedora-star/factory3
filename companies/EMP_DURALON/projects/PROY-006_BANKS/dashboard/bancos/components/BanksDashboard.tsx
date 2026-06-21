@@ -31,13 +31,15 @@ import {
   type Account,
   type Authorization,
   type DashboardData,
+  type ExpenseReconciliationData,
+  type ExpenseReconciliationRow,
   type Movement,
   type StatementExtraction,
   type StatementLine
 } from '../lib/api';
 import projectContext from '../project-context.json';
 
-type Tab = 'resumen' | 'cuentas' | 'movimientos' | 'autorizaciones' | 'conciliacion' | 'converter';
+type Tab = 'resumen' | 'cuentas' | 'movimientos' | 'autorizaciones' | 'conciliacion' | 'conciliacion_gastos' | 'converter';
 
 const emptyData: DashboardData = {
   accounts: [],
@@ -59,6 +61,7 @@ const tabs: Array<{ id: Tab; label: string }> = [
   { id: 'movimientos', label: 'Movimientos' },
   { id: 'autorizaciones', label: 'Autorizacion' },
   { id: 'conciliacion', label: 'Conciliacion' },
+  { id: 'conciliacion_gastos', label: 'Conciliacion gastos' },
   { id: 'converter', label: 'Converter' }
 ];
 
@@ -343,6 +346,7 @@ export default function BanksDashboard() {
         {activeTab === 'movimientos' ? <Movimientos accounts={data.accounts} movements={data.movements} form={movementForm} setForm={setMovementForm} onSubmit={createMovement} saving={saving} accountFilter={movementAccountFilter} setAccountFilter={setMovementAccountFilter} modalOpen={movementModalOpen} setModalOpen={setMovementModalOpen} /> : null}
         {activeTab === 'autorizaciones' ? <Autorizaciones auths={pendingAuthorizations} movements={data.movements} onDecide={decide} saving={saving} /> : null}
         {activeTab === 'conciliacion' ? <Conciliacion accounts={data.accounts} movements={pendingReconciliation} authByMovement={authByMovement} onReconcile={reconcile} saving={saving} /> : null}
+        {activeTab === 'conciliacion_gastos' ? <ConciliacionGastos accounts={data.accounts} onRefreshBanks={refresh} /> : null}
         {activeTab === 'converter' ? <ConverterTab /> : null}
       </section>
     </main>
@@ -692,6 +696,126 @@ function Conciliacion({ accounts, movements, authByMovement, onReconcile, saving
         {!movements.length ? <Empty text="Sin movimientos pendientes" /> : null}
       </div>
     </Panel>
+  );
+}
+
+function ConciliacionGastos({ accounts, onRefreshBanks }: { accounts: Account[]; onRefreshBanks: () => Promise<void> }) {
+  const [data, setData] = useState<ExpenseReconciliationData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [accountByExpense, setAccountByExpense] = useState<Record<string, string>>({});
+  const [err, setErr] = useState('');
+
+  useEffect(() => { void load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    setErr('');
+    try {
+      const result = await banksApi<ExpenseReconciliationData>('list_expense_reconciliation', { limit: 300 });
+      setData(result);
+      const defaultId = result.default_source_account?.id || accounts.find((account) => account.account_name === (projectContext as any).default_expense_source_account_name)?.id || '';
+      if (defaultId) {
+        const next: Record<string, string> = {};
+        for (const expense of result.expenses) next[expense.id] = defaultId;
+        setAccountByExpense(next);
+      }
+    } catch (error: any) {
+      setErr(error.message || 'No se pudieron cargar gastos');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function assign(expense: ExpenseReconciliationRow) {
+    const sourceAccountId = accountByExpense[expense.id] || data?.default_source_account?.id || '';
+    if (!sourceAccountId) {
+      setErr('Selecciona cuenta origen para registrar el retiro');
+      return;
+    }
+    setAssigningId(expense.id);
+    setErr('');
+    try {
+      await banksApi('assign_expense_withdrawal', {
+        expense_id: expense.id,
+        source_account_id: sourceAccountId,
+        performed_by: 'conciliacion_gastos',
+        notes: expense.descripcion || expense.folio
+      });
+      await load();
+      await onRefreshBanks();
+    } catch (error: any) {
+      setErr(error.message || 'No se pudo asignar gasto');
+    } finally {
+      setAssigningId(null);
+    }
+  }
+
+  const expenses = data?.expenses || [];
+  const pending = expenses.filter((expense) => !expense.linked);
+
+  return (
+    <section className="mt-5">
+      <Panel title={
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <span>Conciliacion de gastos</span>
+          <button onClick={() => void load()} disabled={loading} className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Actualizar
+          </button>
+        </div>
+      }>
+        {err ? <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">{err}</div> : null}
+        <div className="mb-4 grid gap-3 md:grid-cols-3">
+          <Kpi icon={FileText} label="Gastos leidos" value={String(data?.summary.total || 0)} tone="bg-slate-100 text-slate-700" />
+          <Kpi icon={BadgeCheck} label="Pendientes" value={String(data?.summary.pending || 0)} tone="bg-amber-50 text-amber-700" />
+          <Kpi icon={CheckCircle2} label="Asignados" value={String(data?.summary.linked || 0)} tone="bg-emerald-50 text-emerald-700" />
+        </div>
+        {!pending.length && !loading ? <Empty text="Sin gastos pendientes por asignar" /> : null}
+        {pending.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left text-sm">
+              <thead>
+                <tr className="text-xs uppercase tracking-normal text-slate-500">
+                  <th className="border-b border-slate-200 px-3 py-2">Gasto</th>
+                  <th className="border-b border-slate-200 px-3 py-2">Fecha</th>
+                  <th className="border-b border-slate-200 px-3 py-2">Descripcion</th>
+                  <th className="border-b border-slate-200 px-3 py-2">Vehiculo</th>
+                  <th className="border-b border-slate-200 px-3 py-2 text-right">Monto</th>
+                  <th className="border-b border-slate-200 px-3 py-2">Cuenta origen</th>
+                  <th className="border-b border-slate-200 px-3 py-2">Destino</th>
+                  <th className="border-b border-slate-200 px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((expense) => (
+                  <tr key={expense.id}>
+                    <td className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-950">{expense.folio}</td>
+                    <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{expense.fecha}</td>
+                    <td className="max-w-xs truncate border-b border-slate-100 px-3 py-3 text-slate-600">{expense.descripcion || '-'}</td>
+                    <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{expense.vehiculo || '-'}</td>
+                    <td className="border-b border-slate-100 px-3 py-3 text-right font-bold text-rose-700">{money(expense.monto)}</td>
+                    <td className="border-b border-slate-100 px-3 py-3">
+                      <Select value={accountByExpense[expense.id] || ''} onChange={(event) => setAccountByExpense({ ...accountByExpense, [expense.id]: event.target.value })}>
+                        <option value="">Seleccionar</option>
+                        {accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
+                      </Select>
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{data?.expense_counterparty_name || 'Gastos'}</td>
+                    <td className="border-b border-slate-100 px-3 py-3">
+                      <button disabled={assigningId === expense.id} onClick={() => void assign(expense)} className="inline-flex h-9 items-center gap-2 rounded-md bg-teal-700 px-3 text-sm font-semibold text-white">
+                        {assigningId === expense.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                        Asignar retiro
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </Panel>
+    </section>
   );
 }
 
