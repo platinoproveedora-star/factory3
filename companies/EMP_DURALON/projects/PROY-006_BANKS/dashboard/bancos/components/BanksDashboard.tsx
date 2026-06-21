@@ -762,7 +762,6 @@ function ConverterTab() {
                         <th className="border-b border-slate-200 px-2 py-1">#</th>
                         <th className="border-b border-slate-200 px-2 py-1">Fecha</th>
                         <th className="border-b border-slate-200 px-2 py-1">Tipo</th>
-                        <th className="border-b border-slate-200 px-2 py-1">Descripción</th>
                         <th className="border-b border-slate-200 px-2 py-1">Dir</th>
                         <th className="border-b border-slate-200 px-2 py-1 text-right">Monto</th>
                         <th className="border-b border-slate-200 px-2 py-1 text-right">Saldo</th>
@@ -771,6 +770,7 @@ function ConverterTab() {
                         <th className="border-b border-slate-200 px-2 py-1">Nombre Destino</th>
                         <th className="border-b border-slate-200 px-2 py-1">Cta. Destino</th>
                         <th className="border-b border-slate-200 px-2 py-1 text-right">Conf</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Descripción</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -778,8 +778,7 @@ function ConverterTab() {
                         <tr key={ln.id} className="hover:bg-slate-50">
                           <td className="border-b border-slate-100 px-2 py-1 text-slate-400">{ln.raw_line_order}</td>
                           <td className="border-b border-slate-100 px-2 py-1 text-slate-600 whitespace-nowrap">{ln.line_date}</td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-500 whitespace-nowrap">{(ln as any).metadata?.tipo_movimiento?.replace(/_/g,' ') || '—'}</td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-700 max-w-[160px] truncate" title={ln.description || ''}>{ln.description || '—'}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-500 whitespace-nowrap">{ln.metadata?.tipo_movimiento?.replace(/_/g,' ') || '—'}</td>
                           <td className="border-b border-slate-100 px-2 py-1">
                             <span className={`inline-flex rounded px-1 py-0.5 font-semibold ${ln.direction === 'deposito' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
                               {ln.direction === 'deposito' ? 'DEP' : 'RET'}
@@ -791,13 +790,14 @@ function ConverterTab() {
                           <td className="border-b border-slate-100 px-2 py-1 text-right text-slate-600">
                             {ln.saldo != null ? money(ln.saldo) : '—'}
                           </td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 max-w-[100px] truncate" title={ln.nombre_origen || ''}>{ln.nombre_origen || '—'}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 max-w-[120px] truncate" title={ln.nombre_origen || ''}>{ln.nombre_origen || '—'}</td>
                           <td className="border-b border-slate-100 px-2 py-1 font-mono text-slate-500">{ln.cuenta_origen || '—'}</td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 max-w-[100px] truncate" title={ln.nombre_destino || ''}>{ln.nombre_destino || '—'}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 max-w-[120px] truncate" title={ln.nombre_destino || ''}>{ln.nombre_destino || '—'}</td>
                           <td className="border-b border-slate-100 px-2 py-1 font-mono text-slate-500">{ln.cuenta_destino || '—'}</td>
                           <td className={`border-b border-slate-100 px-2 py-1 text-right font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
                             {Math.round(ln.confidence * 100)}%
                           </td>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-500 max-w-[260px] truncate" title={ln.description || ''}>{ln.description || '—'}</td>
                         </tr>
                       ))}
                     </tbody>

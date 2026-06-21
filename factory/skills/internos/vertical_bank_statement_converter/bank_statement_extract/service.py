@@ -292,7 +292,9 @@ class BankStatementExtractService:
             m = re.search(r'HR LIQ:\s*(\d{2}:\d{2}:\d{2})', text)
             if m: result["metadata"]["hora_liquidacion"] = m.group(1)
             m = re.search(r'DEL\s+CLIENTE\s+(.+?)\s+DE\s+LA\s+CLABE', text)
-            if m: result["nombre_origen"] = m.group(1).strip()[:100]
+            if m:
+                raw_name = re.sub(r'\d[\d,\.]*', '', m.group(1))
+                result["nombre_origen"] = ' '.join(raw_name.split())[:100]
             m = re.search(r'CLABE\s+(\d{15,18})', text)
             if m: result["cuenta_origen"] = m.group(1)
             m = re.search(r'CON\s+RFC\s+([A-Z&]{1,4}\d{6}[A-Z0-9]{2,3})', text)
@@ -310,7 +312,9 @@ class BankStatementExtractService:
             m = re.search(r'SPEI\s+BCO:(\d{3,4})', text)
             if m: result["metadata"]["banco_destino_codigo"] = m.group(1)
             m = re.search(r'BENEF:(.+?)(?:\s*\(DATO)', text)
-            if m: result["nombre_destino"] = m.group(1).strip()[:100]
+            if m:
+                raw_name = re.sub(r'\d[\d,\.]*', '', m.group(1))
+                result["nombre_destino"] = ' '.join(raw_name.split())[:100]
             m = re.search(r'CVE\s+RASTREO:\s*(\S+)', text, re.IGNORECASE)
             if m: result["clave_rastreo"] = m.group(1)
             m = re.search(r'RFC:\s*([A-Z&]{1,4}\d{6}[A-Z0-9]{2,3})', text)

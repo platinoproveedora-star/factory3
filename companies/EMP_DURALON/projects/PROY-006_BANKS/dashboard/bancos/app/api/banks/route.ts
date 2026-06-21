@@ -273,7 +273,7 @@ async function statementLines(payload: Record<string, any>) {
   if (!payload.extraction_id) throw new Error('extraction_id requerido');
   return supabaseStatements('statement_extracted_lines', {
     query: {
-      select: 'id,folio,raw_line_order,line_date,description,direction,amount,saldo,clave_rastreo,referencia,nombre_origen,cuenta_origen,nombre_destino,cuenta_destino,confidence,parse_warnings,raw_text',
+      select: 'id,folio,raw_line_order,line_date,direction,amount,saldo,clave_rastreo,referencia,nombre_origen,cuenta_origen,nombre_destino,cuenta_destino,metadata,confidence,parse_warnings,description,raw_text',
       extraction_id: `eq.${payload.extraction_id}`,
       empresa_id: `eq.${companyId()}`,
       order: 'raw_line_order.asc',
