@@ -1,0 +1,20 @@
+{
+  "bank_profile": "bbva_maestra_pyme",
+  "profile_version": "v1",
+  "bank_name": "BBVA",
+  "detect_markers": ["MAESTRA PYME", "COD. DESCRIPCIÓN"],
+  "anchor_regex": "^(\\d{2}/[A-Z]{3})\\s+(\\d{2}/[A-Z]{3})(.*)",
+  "date_format": "%d/%b",
+  "year_source": "periodo_header",
+  "amount_strategy": "cargo_abono_two_columns",
+  "cargo_x_max": 420,
+  "abono_x_min": 421,
+  "saldo_not_on_every_row": true,
+  "rastreo_regex": "(?:CVE\\s*RAST(?:REO)?|CLAVE\\s*DE\\s*RASTREO)\\s*[:\\s]+([A-Za-z0-9]+)",
+  "referencia_regex": "Ref\\.\\s*([A-Za-z0-9]+)",
+  "summary_deposits_regex": "Dep[oó]sitos\\s*/\\s*Abonos\\s*\\(\\+\\)\\s*\\$?\\s*([0-9,]+\\.\\d{2})",
+  "summary_withdrawals_regex": "Retiros\\s*/\\s*Cargos\\s*\\(-\\)\\s*\\$?\\s*([0-9,]+\\.\\d{2})",
+  "period_regex": "(?:Periodo|Período)\\s*[:\\s]+(\\d{2}/\\d{2}/\\d{4})\\s+(?:al|a)\\s+(\\d{2}/\\d{2}/\\d{4})",
+  "account_regex": "(?:Cuenta|No\\.\\s*de\\s*cuenta)[:\\s]+([*\\d\\s-]+)",
+  "skip_line_patterns": ["^SALDO INICIAL", "^SALDO FINAL", "^TOTAL"]
+}

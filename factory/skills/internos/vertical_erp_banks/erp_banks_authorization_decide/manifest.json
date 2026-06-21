@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_banks/erp_banks_authorization_decide",
+  "vertical": "vertical_erp_banks",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Aprueba o rechaza un movimiento bancario pendiente via RPC transaccional. Multitenant.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

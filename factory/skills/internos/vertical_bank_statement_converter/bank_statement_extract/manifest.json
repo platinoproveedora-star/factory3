@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_bank_statement_converter/bank_statement_extract",
+  "version": "0.1.0",
+  "kind": "executable",
+  "vertical": "vertical_bank_statement_converter",
+  "entrypoint": "skill.py",
+  "description": "Extrae, normaliza y valida movimientos de un PDF de estado de cuenta bancario. Guarda en statement_extractions y statement_extracted_lines.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

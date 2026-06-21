@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_bank_statement_converter/bank_statement_detect_profile",
+  "version": "0.1.0",
+  "kind": "executable",
+  "vertical": "vertical_bank_statement_converter",
+  "entrypoint": "skill.py",
+  "description": "Detecta el perfil bancario (banco, layout) a partir de una muestra de texto extraido del PDF.",
+  "requires_env": []
+}

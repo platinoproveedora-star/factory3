@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_bank_statement_converter/bank_statement_profile_learn",
+  "version": "0.1.0",
+  "kind": "executable",
+  "vertical": "vertical_bank_statement_converter",
+  "entrypoint": "skill.py",
+  "description": "Crea un perfil bancario en estado borrador a partir de una muestra de texto y un mapeo de columnas confirmado por humano.",
+  "requires_env": []
+}

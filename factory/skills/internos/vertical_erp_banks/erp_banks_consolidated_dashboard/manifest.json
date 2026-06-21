@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_banks/erp_banks_consolidated_dashboard",
+  "vertical": "vertical_erp_banks",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Consolida cuentas bancarias de varios contextos ERP Banks sin joins entre schemas.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

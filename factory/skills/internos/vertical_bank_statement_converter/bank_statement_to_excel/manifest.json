@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_bank_statement_converter/bank_statement_to_excel",
+  "version": "0.1.0",
+  "kind": "executable",
+  "vertical": "vertical_bank_statement_converter",
+  "entrypoint": "skill.py",
+  "description": "Exporta una extraccion de estado de cuenta a Excel con hojas Movimientos y Resumen.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

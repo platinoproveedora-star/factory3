@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_banks/erp_banks_mark_reconciled",
+  "vertical": "vertical_erp_banks",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Marca un movimiento bancario autorizado como conciliado, en disputa o no aplica. Multitenant.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

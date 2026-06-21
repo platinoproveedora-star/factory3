@@ -1,0 +1,18 @@
+{
+  "company_id": "EMP_DURALON",
+  "project_code": "PROY-007",
+  "module_code": "bank_statement_converter",
+  "project_name": "Bank Statement Converter",
+  "schema": "uc101_proy007",
+  "supabase_schema": "uc101_proy007",
+  "platform": "render",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_ACCESS_TOKEN",
+    "ANTHROPIC_API_KEY"
+  ],
+  "status": "planned",
+  "erp_ready": false,
+  "description": "Convierte PDFs de estados de cuenta bancarios a movimientos normalizados y auditables"
+}

@@ -3793,8 +3793,36 @@
     "tipo": "interno",
     "nombre": "vertical_erp_banks/erp_banks_movement_record",
     "vertical": "vertical_erp_banks",
-    "descripcion": "Registra un movimiento en una cuenta bancaria ERP y actualiza el saldo. Multitenant.",
+    "descripcion": "Registra un movimiento bancario ERP via RPC transaccional con idempotencia y autorizaciones. Multitenant.",
     "path": "skills/internos/vertical_erp_banks/erp_banks_movement_record",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_banks/erp_banks_authorization_decide": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_authorization_decide",
+    "vertical": "vertical_erp_banks",
+    "descripcion": "Aprueba o rechaza un movimiento bancario pendiente via RPC transaccional. Multitenant.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_authorization_decide",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_banks/erp_banks_mark_reconciled": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_mark_reconciled",
+    "vertical": "vertical_erp_banks",
+    "descripcion": "Marca un movimiento bancario autorizado como conciliado, en disputa o no aplica. Multitenant.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_mark_reconciled",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_banks/erp_banks_consolidated_dashboard": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_consolidated_dashboard",
+    "vertical": "vertical_erp_banks",
+    "kind": "data",
+    "descripcion": "Consolida cuentas bancarias de varios contextos ERP Banks sin joins entre schemas.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_consolidated_dashboard",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -3912,6 +3940,42 @@
     "vertical": "factory",
     "descripcion": "Genera un proyecto nuevo dentro de una empresa Factory3 existente con project.json y estructura base sin hardcodes en codigo.",
     "path": "skills/internos/vertical_factory_utils/factory_project_scaffold",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_bank_statement_converter/bank_statement_detect_profile": {
+    "tipo": "interno",
+    "nombre": "vertical_bank_statement_converter/bank_statement_detect_profile",
+    "vertical": "vertical_bank_statement_converter",
+    "descripcion": "Detecta el perfil bancario a partir de una muestra de texto extraido del PDF.",
+    "path": "skills/internos/vertical_bank_statement_converter/bank_statement_detect_profile",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_bank_statement_converter/bank_statement_extract": {
+    "tipo": "interno",
+    "nombre": "vertical_bank_statement_converter/bank_statement_extract",
+    "vertical": "vertical_bank_statement_converter",
+    "descripcion": "Extrae, normaliza y valida movimientos de un PDF de estado de cuenta bancario.",
+    "path": "skills/internos/vertical_bank_statement_converter/bank_statement_extract",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_bank_statement_converter/bank_statement_profile_learn": {
+    "tipo": "interno",
+    "nombre": "vertical_bank_statement_converter/bank_statement_profile_learn",
+    "vertical": "vertical_bank_statement_converter",
+    "descripcion": "Crea un perfil bancario borrador a partir de mapeo de columnas confirmado por humano.",
+    "path": "skills/internos/vertical_bank_statement_converter/bank_statement_profile_learn",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_bank_statement_converter/bank_statement_to_excel": {
+    "tipo": "interno",
+    "nombre": "vertical_bank_statement_converter/bank_statement_to_excel",
+    "vertical": "vertical_bank_statement_converter",
+    "descripcion": "Exporta una extraccion de estado de cuenta a Excel con hojas Movimientos y Resumen.",
+    "path": "skills/internos/vertical_bank_statement_converter/bank_statement_to_excel",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   }
