@@ -56,6 +56,46 @@ export type DashboardData = {
   };
 };
 
+export type StatementExtraction = {
+  id: string;
+  folio: string;
+  empresa_id: string;
+  bank_profile: string;
+  bank_name: string | null;
+  account_number_mask: string | null;
+  statement_period_start: string | null;
+  statement_period_end: string | null;
+  file_name: string | null;
+  file_hash: string;
+  total_lines_extracted: number;
+  total_deposits_reported: number | null;
+  total_deposits_extracted: number | null;
+  validation_diff_deposits: number | null;
+  total_withdrawals_reported: number | null;
+  total_withdrawals_extracted: number | null;
+  validation_diff_withdrawals: number | null;
+  validation_status: string;
+  status: string;
+  warnings: string[];
+  created_at: string;
+};
+
+export type StatementLine = {
+  id: string;
+  folio: string;
+  raw_line_order: number;
+  line_date: string;
+  description: string | null;
+  direction: 'deposito' | 'retiro';
+  amount: number;
+  saldo: number | null;
+  clave_rastreo: string | null;
+  referencia: string | null;
+  confidence: number;
+  parse_warnings: string[];
+  raw_text: string;
+};
+
 export type ApiResponse<T> = {
   ok: boolean;
   data?: T;

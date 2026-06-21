@@ -4,5 +4,7 @@
   "module_code": "banks",
   "schema": "uc101_proy006",
   "service_name": "uc101-bancos",
-  "platform": "render"
+  "platform": "render",
+  "statements_schema": "uc101_proy007",
+  "statements_project_code": "PROY-007"
 }

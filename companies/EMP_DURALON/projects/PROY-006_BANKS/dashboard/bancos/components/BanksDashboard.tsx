@@ -6,6 +6,8 @@ import {
   Banknote,
   CheckCircle2,
   CircleDollarSign,
+  Download,
+  FileText,
   KeyRound,
   Landmark,
   Loader2,
@@ -25,11 +27,13 @@ import {
   type Account,
   type Authorization,
   type DashboardData,
-  type Movement
+  type Movement,
+  type StatementExtraction,
+  type StatementLine
 } from '../lib/api';
 import projectContext from '../project-context.json';
 
-type Tab = 'resumen' | 'cuentas' | 'movimientos' | 'autorizaciones' | 'conciliacion';
+type Tab = 'resumen' | 'cuentas' | 'movimientos' | 'autorizaciones' | 'conciliacion' | 'converter';
 
 const emptyData: DashboardData = {
   accounts: [],
@@ -50,7 +54,8 @@ const tabs: Array<{ id: Tab; label: string }> = [
   { id: 'cuentas', label: 'Cuentas' },
   { id: 'movimientos', label: 'Movimientos' },
   { id: 'autorizaciones', label: 'Autorizacion' },
-  { id: 'conciliacion', label: 'Conciliacion' }
+  { id: 'conciliacion', label: 'Conciliacion' },
+  { id: 'converter', label: 'Converter' }
 ];
 
 function statusClass(status: string) {
@@ -302,6 +307,7 @@ export default function BanksDashboard() {
         {activeTab === 'movimientos' ? <Movimientos accounts={data.accounts} movements={data.movements} form={movementForm} setForm={setMovementForm} onSubmit={createMovement} saving={saving} /> : null}
         {activeTab === 'autorizaciones' ? <Autorizaciones auths={pendingAuthorizations} movements={data.movements} onDecide={decide} saving={saving} /> : null}
         {activeTab === 'conciliacion' ? <Conciliacion movements={pendingReconciliation} authByMovement={authByMovement} onReconcile={reconcile} saving={saving} /> : null}
+        {activeTab === 'converter' ? <ConverterTab /> : null}
       </section>
     </main>
   );
@@ -468,7 +474,7 @@ function Conciliacion({ movements, authByMovement, onReconcile, saving }: { move
   );
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function Panel({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <h2 className="mb-4 text-base font-bold text-slate-950">{title}</h2>
@@ -517,6 +523,251 @@ function AccountTable({ accounts }: { accounts: Account[] }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+function toBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function downloadBase64(b64: string, filename: string, mime: string) {
+  const bytes = atob(b64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  const blob = new Blob([arr], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+type UploadResult = { dry_run: boolean; idempotent: boolean; extraction: { id: string; folio: string }; lines_created: number };
+
+function ConverterTab() {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+  const [extractions, setExtractions] = useState<StatementExtraction[]>([]);
+  const [loadingExtractions, setLoadingExtractions] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lines, setLines] = useState<StatementLine[]>([]);
+  const [loadingLines, setLoadingLines] = useState(false);
+  const [exportingId, setExportingId] = useState<string | null>(null);
+  const [err, setErr] = useState('');
+
+  useEffect(() => { void loadExtractions(); }, []);
+
+  async function loadExtractions() {
+    setLoadingExtractions(true);
+    setErr('');
+    try {
+      const data = await banksApi<StatementExtraction[]>('list_statements');
+      setExtractions(data || []);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setLoadingExtractions(false);
+    }
+  }
+
+  async function handleUpload(e: React.FormEvent) {
+    e.preventDefault();
+    if (!file) return;
+    setUploading(true);
+    setErr('');
+    try {
+      const b64 = await toBase64(file);
+      const result = await banksApi<UploadResult>('upload_statement', { pdf_content: b64, file_name: file.name });
+      setUploadResult(result);
+      (e.target as HTMLFormElement).reset();
+      setFile(null);
+      await loadExtractions();
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleSelect(id: string) {
+    if (selectedId === id) { setSelectedId(null); return; }
+    setSelectedId(id);
+    setLoadingLines(true);
+    setErr('');
+    try {
+      const data = await banksApi<StatementLine[]>('statement_lines', { extraction_id: id });
+      setLines(data || []);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setLoadingLines(false);
+    }
+  }
+
+  async function handleExcel(id: string) {
+    setExportingId(id);
+    setErr('');
+    try {
+      const result = await banksApi<{ xlsx_base64: string; filename: string }>('export_excel', { extraction_id: id });
+      downloadBase64(result.xlsx_base64, result.filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setExportingId(null);
+    }
+  }
+
+  const selectedExtraction = extractions.find((ex) => ex.id === selectedId);
+
+  return (
+    <section className="mt-5 grid gap-5">
+      {err ? <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{err}</div> : null}
+
+      <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
+        <Panel title={<div className="flex items-center gap-2"><FileText className="h-4 w-4 text-teal-700" /><span>Subir PDF</span></div>}>
+          <form onSubmit={handleUpload} className="grid gap-3">
+            <Field label="Archivo (Banorte / BBVA)">
+              <input
+                type="file"
+                accept=".pdf"
+                required
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm file:mr-3 file:border-0 file:bg-teal-50 file:text-xs file:font-semibold file:text-teal-700"
+              />
+            </Field>
+            <SaveButton saving={uploading} label="Procesar PDF" />
+          </form>
+          {uploadResult ? (
+            <div className={`mt-4 rounded-lg border p-3 ${uploadResult.idempotent ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
+              <p className="text-sm font-bold text-slate-950">{uploadResult.extraction.folio}</p>
+              <p className="mt-1 text-xs text-slate-600">
+                {uploadResult.idempotent ? 'Ya existia — no se duplico' : `${uploadResult.lines_created} líneas extraídas`}
+              </p>
+            </div>
+          ) : null}
+        </Panel>
+
+        <Panel title={
+          <div className="flex items-center justify-between">
+            <span>Extracciones</span>
+            <button
+              onClick={() => void loadExtractions()}
+              disabled={loadingExtractions}
+              className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+            >
+              {loadingExtractions ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              Actualizar
+            </button>
+          </div>
+        }>
+          {!extractions.length && !loadingExtractions
+            ? <Empty text="Sin extracciones todavía — sube un PDF" />
+            : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[740px] border-separate border-spacing-0 text-left text-sm">
+                  <thead>
+                    <tr className="text-xs uppercase tracking-normal text-slate-500">
+                      <th className="border-b border-slate-200 px-3 py-2">Folio</th>
+                      <th className="border-b border-slate-200 px-3 py-2">Banco</th>
+                      <th className="border-b border-slate-200 px-3 py-2">Periodo</th>
+                      <th className="border-b border-slate-200 px-3 py-2">Líneas</th>
+                      <th className="border-b border-slate-200 px-3 py-2">Validación</th>
+                      <th className="border-b border-slate-200 px-3 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {extractions.map((ex) => (
+                      <tr key={ex.id} className={selectedId === ex.id ? 'bg-teal-50' : undefined}>
+                        <td className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-950">{ex.folio}</td>
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{ex.bank_name || ex.bank_profile}</td>
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 whitespace-nowrap">
+                          {ex.statement_period_start && ex.statement_period_end
+                            ? `${ex.statement_period_start} → ${ex.statement_period_end}`
+                            : '—'}
+                        </td>
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{ex.total_lines_extracted}</td>
+                        <td className="border-b border-slate-100 px-3 py-3"><Badge value={ex.validation_status} /></td>
+                        <td className="border-b border-slate-100 px-3 py-3">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => void handleSelect(ex.id)}
+                              className={`inline-flex h-7 items-center gap-1 rounded px-2 text-xs font-semibold ${selectedId === ex.id ? 'bg-teal-700 text-white' : 'border border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+                            >
+                              {selectedId === ex.id ? 'Cerrar' : 'Ver'}
+                            </button>
+                            <button
+                              onClick={() => void handleExcel(ex.id)}
+                              disabled={exportingId === ex.id}
+                              className="inline-flex h-7 items-center gap-1 rounded border border-slate-300 px-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                            >
+                              {exportingId === ex.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                              Excel
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+        </Panel>
+      </div>
+
+      {selectedId ? (
+        <Panel title={`Movimientos — ${selectedExtraction?.folio || selectedId} · ${selectedExtraction?.bank_name || ''} · ${selectedExtraction?.statement_period_start || ''} → ${selectedExtraction?.statement_period_end || ''}`}>
+          {loadingLines
+            ? <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-teal-700" /></div>
+            : lines.length
+              ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[860px] border-separate border-spacing-0 text-left text-sm">
+                    <thead>
+                      <tr className="text-xs uppercase tracking-normal text-slate-500">
+                        <th className="border-b border-slate-200 px-3 py-2">#</th>
+                        <th className="border-b border-slate-200 px-3 py-2">Fecha</th>
+                        <th className="border-b border-slate-200 px-3 py-2">Descripción</th>
+                        <th className="border-b border-slate-200 px-3 py-2">Dir</th>
+                        <th className="border-b border-slate-200 px-3 py-2 text-right">Monto</th>
+                        <th className="border-b border-slate-200 px-3 py-2 text-right">Saldo</th>
+                        <th className="border-b border-slate-200 px-3 py-2 text-right">Conf</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lines.map((ln) => (
+                        <tr key={ln.id}>
+                          <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-400">{ln.raw_line_order}</td>
+                          <td className="border-b border-slate-100 px-3 py-2 text-slate-600 whitespace-nowrap">{ln.line_date}</td>
+                          <td className="border-b border-slate-100 px-3 py-2 text-slate-700 max-w-xs truncate">{ln.description || '—'}</td>
+                          <td className="border-b border-slate-100 px-3 py-2">
+                            <span className={`inline-flex rounded px-1.5 py-0.5 text-xs font-semibold ${ln.direction === 'deposito' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                              {ln.direction}
+                            </span>
+                          </td>
+                          <td className={`border-b border-slate-100 px-3 py-2 text-right font-bold ${ln.direction === 'deposito' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            {money(ln.amount)}
+                          </td>
+                          <td className="border-b border-slate-100 px-3 py-2 text-right text-slate-600">
+                            {ln.saldo != null ? money(ln.saldo) : '—'}
+                          </td>
+                          <td className={`border-b border-slate-100 px-3 py-2 text-right text-xs font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
+                            {Math.round(ln.confidence * 100)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+              : <Empty text="Sin movimientos cargados" />}
+        </Panel>
+      ) : null}
+    </section>
   );
 }
 

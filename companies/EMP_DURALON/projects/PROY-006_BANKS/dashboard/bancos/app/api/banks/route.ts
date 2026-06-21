@@ -41,11 +41,12 @@ function moduleCode() {
   return env('MODULE_CODE') || projectContext.module_code;
 }
 
-async function supabase(path: string, options: SupabaseOptions = {}) {
+async function supabase(path: string, options: SupabaseOptions = {}, schemaOverride?: string) {
   const url = env('SUPABASE_URL');
   const key = env('SUPABASE_SERVICE_ROLE_KEY');
   if (!url || !key) throw new Error('Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
 
+  const schemaToUse = schemaOverride ?? schema();
   const params = new URLSearchParams(options.query || {});
   const endpoint = `${url.replace(/\/$/, '')}/rest/v1/${path}${params.size ? `?${params}` : ''}`;
   const response = await fetch(endpoint, {
@@ -56,8 +57,8 @@ async function supabase(path: string, options: SupabaseOptions = {}) {
       'Content-Type': 'application/json',
       Accept: 'application/json',
       Prefer: 'return=representation',
-      'Accept-Profile': schema(),
-      'Content-Profile': schema()
+      'Accept-Profile': schemaToUse,
+      'Content-Profile': schemaToUse
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
     cache: 'no-store'
@@ -70,6 +71,38 @@ async function supabase(path: string, options: SupabaseOptions = {}) {
     throw new Error(message);
   }
   return data;
+}
+
+function statementsSchema() {
+  return env('STATEMENTS_SCHEMA') || (projectContext as any).statements_schema || '';
+}
+
+function statementsProjectCode() {
+  return env('STATEMENTS_PROJECT_CODE') || (projectContext as any).statements_project_code || '';
+}
+
+async function supabaseStatements(path: string, options: SupabaseOptions = {}) {
+  const sc = statementsSchema();
+  if (!sc) throw new Error('STATEMENTS_SCHEMA no configurado');
+  return supabase(path, options, sc);
+}
+
+async function factorySkill(skillPath: string, context: Record<string, any>) {
+  const factoryUrl = env('FACTORY_API_URL');
+  if (!factoryUrl) throw new Error('FACTORY_API_URL no configurada');
+  const secret = env('FACTORY_RUN_SECRET');
+  const response = await fetch(`${factoryUrl.replace(/\/$/, '')}/run/${skillPath}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(secret ? { Authorization: `Bearer ${secret}` } : {})
+    },
+    body: JSON.stringify(context),
+    cache: 'no-store'
+  });
+  const result = (await response.json()) as { ok: boolean; data?: any; error?: string };
+  if (!result.ok) throw new Error(result.error || `Error en skill ${skillPath}`);
+  return result.data;
 }
 
 async function rpc<T>(name: string, body: Record<string, any>) {
@@ -209,6 +242,55 @@ async function markReconciled(payload: Record<string, any>) {
   return rows?.[0] || null;
 }
 
+async function uploadStatement(payload: Record<string, any>) {
+  if (!payload.pdf_content) throw new Error('pdf_content requerido');
+  const sc = statementsSchema();
+  if (!sc) throw new Error('STATEMENTS_SCHEMA no configurado');
+  return factorySkill('vertical_bank_statement_converter/bank_statement_extract', {
+    schema: sc,
+    company_id: companyId(),
+    project_code: statementsProjectCode(),
+    pdf_content: payload.pdf_content,
+    file_name: payload.file_name || 'estado.pdf',
+    dry_run: false
+  });
+}
+
+async function listStatements() {
+  return supabaseStatements('statement_extractions', {
+    query: {
+      select: 'id,folio,empresa_id,bank_profile,bank_name,account_number_mask,statement_period_start,statement_period_end,file_name,file_hash,total_lines_extracted,total_deposits_reported,total_deposits_extracted,validation_diff_deposits,total_withdrawals_reported,total_withdrawals_extracted,validation_diff_withdrawals,validation_status,status,warnings,created_at',
+      empresa_id: `eq.${companyId()}`,
+      order: 'created_at.desc',
+      limit: '50'
+    }
+  });
+}
+
+async function statementLines(payload: Record<string, any>) {
+  if (!payload.extraction_id) throw new Error('extraction_id requerido');
+  return supabaseStatements('statement_extracted_lines', {
+    query: {
+      select: 'id,folio,raw_line_order,line_date,description,direction,amount,saldo,clave_rastreo,referencia,confidence,parse_warnings,raw_text',
+      extraction_id: `eq.${payload.extraction_id}`,
+      empresa_id: `eq.${companyId()}`,
+      order: 'raw_line_order.asc',
+      limit: '1000'
+    }
+  });
+}
+
+async function exportExcel(payload: Record<string, any>) {
+  if (!payload.extraction_id) throw new Error('extraction_id requerido');
+  const sc = statementsSchema();
+  if (!sc) throw new Error('STATEMENTS_SCHEMA no configurado');
+  return factorySkill('vertical_bank_statement_converter/bank_statement_to_excel', {
+    schema: sc,
+    company_id: companyId(),
+    extraction_id: payload.extraction_id
+  });
+}
+
 export async function POST(request: Request) {
   const authError = requireDashboardKey(request);
   if (authError) {
@@ -224,7 +306,11 @@ export async function POST(request: Request) {
       create_account: () => createAccount(payload),
       record_movement: () => recordMovement(payload),
       decide_authorization: () => decideAuthorization(payload),
-      mark_reconciled: () => markReconciled(payload)
+      mark_reconciled: () => markReconciled(payload),
+      upload_statement: () => uploadStatement(payload),
+      list_statements: listStatements,
+      statement_lines: () => statementLines(payload),
+      export_excel: () => exportExcel(payload)
     };
 
     if (!actions[action]) {
