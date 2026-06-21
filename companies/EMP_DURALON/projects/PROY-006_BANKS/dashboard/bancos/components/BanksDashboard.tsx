@@ -674,6 +674,9 @@ function ConverterTab() {
                     <tr className="text-xs uppercase tracking-normal text-slate-500">
                       <th className="border-b border-slate-200 px-3 py-2">Folio</th>
                       <th className="border-b border-slate-200 px-3 py-2">Banco</th>
+                      <th className="border-b border-slate-200 px-3 py-2">Titular</th>
+                      <th className="border-b border-slate-200 px-3 py-2">Cuenta</th>
+                      <th className="border-b border-slate-200 px-3 py-2">CLABE</th>
                       <th className="border-b border-slate-200 px-3 py-2">Periodo</th>
                       <th className="border-b border-slate-200 px-3 py-2">Líneas</th>
                       <th className="border-b border-slate-200 px-3 py-2">Validación</th>
@@ -685,7 +688,10 @@ function ConverterTab() {
                       <tr key={ex.id} className={selectedId === ex.id ? 'bg-teal-50' : undefined}>
                         <td className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-950">{ex.folio}</td>
                         <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{ex.bank_name || ex.bank_profile}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 whitespace-nowrap">
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 max-w-[140px] truncate" title={ex.holder_name || ''}>{ex.holder_name || '—'}</td>
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 font-mono text-xs">{ex.account_number_mask || '—'}</td>
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 font-mono text-xs">{ex.clabe ? ex.clabe.slice(0, 6) + '…' + ex.clabe.slice(-4) : '—'}</td>
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 whitespace-nowrap text-xs">
                           {ex.statement_period_start && ex.statement_period_end
                             ? `${ex.statement_period_start} → ${ex.statement_period_end}`
                             : '—'}
@@ -735,6 +741,10 @@ function ConverterTab() {
                         <th className="border-b border-slate-200 px-3 py-2">Dir</th>
                         <th className="border-b border-slate-200 px-3 py-2 text-right">Monto</th>
                         <th className="border-b border-slate-200 px-3 py-2 text-right">Saldo</th>
+                        <th className="border-b border-slate-200 px-3 py-2">Nombre Origen</th>
+                        <th className="border-b border-slate-200 px-3 py-2">Cta. Origen</th>
+                        <th className="border-b border-slate-200 px-3 py-2">Nombre Destino</th>
+                        <th className="border-b border-slate-200 px-3 py-2">Cta. Destino</th>
                         <th className="border-b border-slate-200 px-3 py-2 text-right">Conf</th>
                       </tr>
                     </thead>
@@ -743,7 +753,7 @@ function ConverterTab() {
                         <tr key={ln.id}>
                           <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-400">{ln.raw_line_order}</td>
                           <td className="border-b border-slate-100 px-3 py-2 text-slate-600 whitespace-nowrap">{ln.line_date}</td>
-                          <td className="border-b border-slate-100 px-3 py-2 text-slate-700 max-w-xs truncate">{ln.description || '—'}</td>
+                          <td className="border-b border-slate-100 px-3 py-2 text-slate-700 max-w-[180px] truncate">{ln.description || '—'}</td>
                           <td className="border-b border-slate-100 px-3 py-2">
                             <span className={`inline-flex rounded px-1.5 py-0.5 text-xs font-semibold ${ln.direction === 'deposito' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
                               {ln.direction}
@@ -755,6 +765,10 @@ function ConverterTab() {
                           <td className="border-b border-slate-100 px-3 py-2 text-right text-slate-600">
                             {ln.saldo != null ? money(ln.saldo) : '—'}
                           </td>
+                          <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600 max-w-[120px] truncate" title={ln.nombre_origen || ''}>{ln.nombre_origen || '—'}</td>
+                          <td className="border-b border-slate-100 px-3 py-2 text-xs font-mono text-slate-500">{ln.cuenta_origen || '—'}</td>
+                          <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600 max-w-[120px] truncate" title={ln.nombre_destino || ''}>{ln.nombre_destino || '—'}</td>
+                          <td className="border-b border-slate-100 px-3 py-2 text-xs font-mono text-slate-500">{ln.cuenta_destino || '—'}</td>
                           <td className={`border-b border-slate-100 px-3 py-2 text-right text-xs font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
                             {Math.round(ln.confidence * 100)}%
                           </td>

@@ -64,6 +64,7 @@ class BankStatementToExcelService:
         mov_headers = [
             "folio", "raw_line_order", "line_date", "transaction_date", "posting_date",
             "description", "direction", "amount", "saldo", "clave_rastreo", "referencia",
+            "nombre_origen", "cuenta_origen", "nombre_destino", "cuenta_destino",
             "confidence", "parse_warnings", "raw_text",
         ]
         ws_mov.append(mov_headers)
@@ -80,6 +81,8 @@ class BankStatementToExcelService:
                 str(line.get("posting_date") or ""), line.get("description"),
                 line.get("direction"), line.get("amount"), line.get("saldo"),
                 line.get("clave_rastreo"), line.get("referencia"),
+                line.get("nombre_origen"), line.get("cuenta_origen"),
+                line.get("nombre_destino"), line.get("cuenta_destino"),
                 line.get("confidence"),
                 json.dumps(line.get("parse_warnings") or [], ensure_ascii=False),
                 (line.get("raw_text") or "")[:500],
@@ -88,7 +91,8 @@ class BankStatementToExcelService:
         ws_res = wb.create_sheet("Resumen")
         res_headers = [
             "extraction_folio", "bank_profile", "profile_version", "bank_name",
-            "account_number_mask", "statement_period_start", "statement_period_end",
+            "holder_name", "clabe", "account_number_mask",
+            "statement_period_start", "statement_period_end",
             "file_name", "file_hash", "storage_bucket", "storage_path",
             "validation_status", "status",
             "total_deposits_reported", "total_deposits_extracted", "validation_diff_deposits",
@@ -102,7 +106,8 @@ class BankStatementToExcelService:
 
         ws_res.append([
             extraction.get("folio"), extraction.get("bank_profile"), extraction.get("profile_version"),
-            extraction.get("bank_name"), extraction.get("account_number_mask"),
+            extraction.get("bank_name"), extraction.get("holder_name"), extraction.get("clabe"),
+            extraction.get("account_number_mask"),
             str(extraction.get("statement_period_start") or ""), str(extraction.get("statement_period_end") or ""),
             extraction.get("file_name"), extraction.get("file_hash"),
             extraction.get("storage_bucket"), extraction.get("storage_path"),

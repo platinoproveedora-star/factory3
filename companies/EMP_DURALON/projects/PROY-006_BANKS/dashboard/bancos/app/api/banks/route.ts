@@ -261,7 +261,7 @@ async function uploadStatement(payload: Record<string, any>) {
 async function listStatements() {
   return supabaseStatements('statement_extractions', {
     query: {
-      select: 'id,folio,empresa_id,bank_profile,bank_name,account_number_mask,statement_period_start,statement_period_end,file_name,file_hash,total_lines_extracted,total_deposits_reported,total_deposits_extracted,validation_diff_deposits,total_withdrawals_reported,total_withdrawals_extracted,validation_diff_withdrawals,validation_status,status,warnings,created_at',
+      select: 'id,folio,empresa_id,bank_profile,bank_name,holder_name,clabe,account_number_mask,statement_period_start,statement_period_end,file_name,file_hash,total_lines_extracted,total_deposits_reported,total_deposits_extracted,validation_diff_deposits,total_withdrawals_reported,total_withdrawals_extracted,validation_diff_withdrawals,validation_status,status,warnings,created_at',
       empresa_id: `eq.${companyId()}`,
       order: 'created_at.desc',
       limit: '50'
@@ -273,7 +273,7 @@ async function statementLines(payload: Record<string, any>) {
   if (!payload.extraction_id) throw new Error('extraction_id requerido');
   return supabaseStatements('statement_extracted_lines', {
     query: {
-      select: 'id,folio,raw_line_order,line_date,description,direction,amount,saldo,clave_rastreo,referencia,confidence,parse_warnings,raw_text',
+      select: 'id,folio,raw_line_order,line_date,description,direction,amount,saldo,clave_rastreo,referencia,nombre_origen,cuenta_origen,nombre_destino,cuenta_destino,confidence,parse_warnings,raw_text',
       extraction_id: `eq.${payload.extraction_id}`,
       empresa_id: `eq.${companyId()}`,
       order: 'raw_line_order.asc',

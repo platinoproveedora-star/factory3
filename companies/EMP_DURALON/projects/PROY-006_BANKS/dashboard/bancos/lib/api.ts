@@ -62,6 +62,8 @@ export type StatementExtraction = {
   empresa_id: string;
   bank_profile: string;
   bank_name: string | null;
+  holder_name: string | null;
+  clabe: string | null;
   account_number_mask: string | null;
   statement_period_start: string | null;
   statement_period_end: string | null;
@@ -91,6 +93,10 @@ export type StatementLine = {
   saldo: number | null;
   clave_rastreo: string | null;
   referencia: string | null;
+  nombre_origen: string | null;
+  cuenta_origen: string | null;
+  nombre_destino: string | null;
+  cuenta_destino: string | null;
   confidence: number;
   parse_warnings: string[];
   raw_text: string;

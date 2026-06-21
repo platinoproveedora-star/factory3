@@ -158,6 +158,8 @@ class BankStatementExtractService:
             "bank_profile": bank_profile,
             "profile_version": profile_version,
             "bank_name": profile.get("bank_name"),
+            "holder_name": meta.get("holder_name"),
+            "clabe": meta.get("clabe"),
             "account_number_mask": meta.get("account_number_mask"),
             "statement_period_start": meta.get("period_start"),
             "statement_period_end": meta.get("period_end"),
@@ -217,6 +219,10 @@ class BankStatementExtractService:
                 "saldo": mv.get("saldo"),
                 "clave_rastreo": mv.get("clave_rastreo"),
                 "referencia": mv.get("referencia"),
+                "cuenta_origen": mv.get("cuenta_origen"),
+                "cuenta_destino": mv.get("cuenta_destino"),
+                "nombre_origen": mv.get("nombre_origen"),
+                "nombre_destino": mv.get("nombre_destino"),
                 "confidence": mv.get("confidence", 1.0),
                 "parse_warnings": pw,
                 "raw_text": mv.get("raw_text", ""),
@@ -270,8 +276,31 @@ class BankStatementExtractService:
                 best_score, best = score, p
         return best if best and best_score > 0 else None
 
+    def _extract_transfer_fields(self, full_text: str, profile: dict) -> dict:
+        result = {}
+        fields = {
+            "cuenta_origen": profile.get("origen_clabe_regex"),
+            "cuenta_destino": profile.get("destino_clabe_regex"),
+            "nombre_origen": profile.get("origen_nombre_regex"),
+            "nombre_destino": profile.get("destino_nombre_regex"),
+        }
+        for key, pat in fields.items():
+            if pat:
+                m = re.search(pat, full_text, re.IGNORECASE | re.MULTILINE)
+                if m:
+                    result[key] = m.group(1).strip()[:100]
+        return result
+
     def _extract_metadata(self, text: str, profile: dict) -> dict:
         meta: dict = {}
+        if profile.get("holder_name_regex"):
+            m = re.search(profile["holder_name_regex"], text, re.IGNORECASE | re.MULTILINE)
+            if m:
+                meta["holder_name"] = m.group(1).strip()[:150]
+        if profile.get("clabe_regex"):
+            m = re.search(profile["clabe_regex"], text, re.IGNORECASE)
+            if m:
+                meta["clabe"] = m.group(1).strip()
         if profile.get("period_regex"):
             m = re.search(profile["period_regex"], text)
             if m:
@@ -368,6 +397,7 @@ class BankStatementExtractService:
         full_text = "\n".join(block)
         mr = rastreo_re.search(full_text)
         mref = ref_re.search(full_text)
+        transfer = self._extract_transfer_fields(full_text, profile)
         signed = -abs(amount or 0) if direction == "retiro" else abs(amount or 0)
         return {
             "transaction_date": date_iso, "posting_date": date_iso, "line_date": date_iso,
@@ -375,6 +405,7 @@ class BankStatementExtractService:
             "direction": direction, "amount": round(signed, 2), "saldo": saldo,
             "clave_rastreo": mr.group(1) if mr else None,
             "referencia": mref.group(1) if mref else None,
+            **transfer,
         }
 
     def _parse_bbva_block(self, anchor, block, profile, year, pages_words, rastreo_re, ref_re):
@@ -391,6 +422,7 @@ class BankStatementExtractService:
         full_text = "\n".join(block)
         mr = rastreo_re.search(full_text)
         mref = ref_re.search(full_text)
+        transfer = self._extract_transfer_fields(full_text, profile)
         posting_iso = str(p_date) if p_date else None
         signed = -abs(amount) if direction == "retiro" else abs(amount)
         return {
@@ -400,6 +432,7 @@ class BankStatementExtractService:
             "direction": direction, "amount": round(signed, 2), "saldo": saldo,
             "clave_rastreo": mr.group(1) if mr else None,
             "referencia": mref.group(1) if mref else None,
+            **transfer,
         }
 
     def _detect_bbva_direction(self, amount: float, pages_words: list, cargo_x_max: int) -> str:
