@@ -1,0 +1,24 @@
+{
+  "bank_profile": "bbva_movimientos_portal",
+  "profile_version": "v1",
+  "document_type": "movimientos_portal",
+  "bank_name": "BBVA",
+  "detect_markers": ["Detalle de movimientos", "Concepto / Referencia"],
+  "anchor_regex": "^(\\d{2}-\\d{2})\\s+(.*)",
+  "date_format": "%d-%m",
+  "amount_strategy": "single_column_two_amounts_right_aligned",
+  "saldo_position": "last_money_value_in_anchor_line",
+  "holder_name_regex": "^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\\s&,.]{9,149})",
+  "account_regex": "Número de cuenta[:\\s]+([\\d]+)",
+  "skip_line_patterns": [
+    "^Fecha$",
+    "^Concepto",
+    "^Cargo$",
+    "^Abono$",
+    "^Saldo$",
+    "^En cumplimiento",
+    "^Cerrar$",
+    "^Imprimir$",
+    "^https?://"
+  ]
+}
