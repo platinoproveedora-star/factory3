@@ -192,6 +192,15 @@ class BankStatementExtractService:
             fr = reserve_folio(ctx, "BSL", "statement_extracted_lines")
             if not fr.get("ok"):
                 continue
+            line_date = (
+                mv.get("line_date")
+                or mv.get("posting_date")
+                or mv.get("transaction_date")
+                or str(datetime.utcnow().date())
+            )
+            pw = list(mv.get("parse_warnings") or [])
+            if not mv.get("line_date"):
+                pw.append("line_date_fallback")
             line_rows.append({
                 "folio": fr["data"]["folio"],
                 "empresa_id": ctx["company_id"],
@@ -201,7 +210,7 @@ class BankStatementExtractService:
                 "raw_line_order": mv["raw_line_order"],
                 "transaction_date": mv.get("transaction_date"),
                 "posting_date": mv.get("posting_date"),
-                "line_date": mv.get("line_date"),
+                "line_date": line_date,
                 "description": mv.get("description"),
                 "direction": mv["direction"],
                 "amount": mv["amount"],
@@ -209,7 +218,7 @@ class BankStatementExtractService:
                 "clave_rastreo": mv.get("clave_rastreo"),
                 "referencia": mv.get("referencia"),
                 "confidence": mv.get("confidence", 1.0),
-                "parse_warnings": mv.get("parse_warnings", []),
+                "parse_warnings": pw,
                 "raw_text": mv.get("raw_text", ""),
             })
 
@@ -291,11 +300,12 @@ class BankStatementExtractService:
         s = date_str.upper()
         for es, en in locale_fix.items():
             s = s.replace(es, en)
-        if "%y" not in fmt.lower() and year:
-            s = f"{s}/{year}"
+        if "%y" not in fmt.lower():
+            effective_year = year or datetime.utcnow().year
+            s = f"{s}/{effective_year}"
             fmt = f"{fmt}/%Y"
         try:
-            return datetime.strptime(s, fmt.upper()).date()
+            return datetime.strptime(s, fmt).date()
         except Exception:
             return None
 
