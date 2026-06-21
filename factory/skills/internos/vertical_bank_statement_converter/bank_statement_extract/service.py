@@ -162,7 +162,6 @@ class BankStatementExtractService:
             "project_code": ctx["project_code"],
             "module_code": ctx["module_code"],
             "source_format": "pdf",
-            "document_type": doc_type,
             "bank_profile": bank_profile,
             "profile_version": profile_version,
             "bank_name": profile.get("bank_name"),
@@ -189,6 +188,7 @@ class BankStatementExtractService:
             "validation_status": v_status,
             "status": e_status,
             "warnings": global_warnings,
+            "metadata": {"document_type": doc_type},
         }
         ins = db.rest_insert("statement_extractions", ext_row)
         if not ins.get("ok"):
