@@ -12,6 +12,14 @@ services:
         sync: false
       - key: SUPABASE_SCHEMA
         value: uc101_proy006
+      - key: STATEMENTS_SCHEMA
+        value: uc101_proy007
+      - key: STATEMENTS_PROJECT_CODE
+        value: PROY-007
+      - key: FACTORY_API_URL
+        value: https://factory3.onrender.com
+      - key: FACTORY_RUN_SECRET
+        sync: false
       - key: DASHBOARD_KEY
         sync: false
       - key: DEFAULT_AUTHORIZER_USER_ID
