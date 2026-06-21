@@ -127,10 +127,10 @@ async function loadDashboard() {
     order: 'account_name.asc'
   };
   const movementQuery = {
-    select: 'id,folio,account_id,account_folio,movement_type,source_type,source_module,source_id,source_folio,amount,balance_before,balance_after,movement_date,authorization_status,authorization_id,reconciliation_status,notes,created_at',
+    select: 'id,folio,account_id,account_folio,movement_type,source_type,source_module,source_id,source_folio,amount,balance_before,balance_after,movement_date,authorization_status,authorization_id,reconciliation_status,notes,metadata,created_at',
     empresa_id: `eq.${companyId()}`,
     order: 'movement_date.desc,created_at.desc',
-    limit: '80'
+    limit: '1000'
   };
   const authQuery = {
     select: 'id,folio,movement_id,status,requested_at,decided_at,decision_notes',
@@ -222,6 +222,7 @@ async function recordMovement(payload: Record<string, any>) {
     third_party_name: payload.third_party_name || null,
     third_party_account: payload.third_party_account || null,
     third_party_clabe: payload.third_party_clabe || null,
+    performed_by: payload.performed_by || null,
     counterparty_role: isWithdrawal ? 'destination' : 'origin'
   };
   return rpc<any>('banks_record_movement', {

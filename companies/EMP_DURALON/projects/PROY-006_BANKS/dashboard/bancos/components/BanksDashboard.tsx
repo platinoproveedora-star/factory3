@@ -139,6 +139,7 @@ export default function BanksDashboard() {
     third_party_name: '',
     third_party_account: '',
     third_party_clabe: '',
+    performed_by: '',
     source_type: 'pago',
     amount: '',
     movement_date: today(),
@@ -221,7 +222,7 @@ export default function BanksDashboard() {
     setError('');
     try {
       await banksApi('record_movement', movementForm);
-      setMovementForm((current) => ({ ...current, amount: '', notes: '', movement_date: today(), third_party_name: '', third_party_account: '', third_party_clabe: '' }));
+      setMovementForm((current) => ({ ...current, amount: '', notes: '', movement_date: today(), third_party_name: '', third_party_account: '', third_party_clabe: '', performed_by: '' }));
       await refresh();
       setMovementModalOpen(false);
       setActiveTab('movimientos');
@@ -340,7 +341,7 @@ export default function BanksDashboard() {
         {activeTab === 'cuentas' ? <Cuentas accounts={data.accounts} form={accountForm} setForm={setAccountForm} onSubmit={createAccount} saving={saving} modalOpen={accountModalOpen} setModalOpen={setAccountModalOpen} /> : null}
         {activeTab === 'movimientos' ? <Movimientos accounts={data.accounts} movements={data.movements} form={movementForm} setForm={setMovementForm} onSubmit={createMovement} saving={saving} accountFilter={movementAccountFilter} setAccountFilter={setMovementAccountFilter} modalOpen={movementModalOpen} setModalOpen={setMovementModalOpen} /> : null}
         {activeTab === 'autorizaciones' ? <Autorizaciones auths={pendingAuthorizations} movements={data.movements} onDecide={decide} saving={saving} /> : null}
-        {activeTab === 'conciliacion' ? <Conciliacion movements={pendingReconciliation} authByMovement={authByMovement} onReconcile={reconcile} saving={saving} /> : null}
+        {activeTab === 'conciliacion' ? <Conciliacion accounts={data.accounts} movements={pendingReconciliation} authByMovement={authByMovement} onReconcile={reconcile} saving={saving} /> : null}
         {activeTab === 'converter' ? <ConverterTab /> : null}
       </section>
     </main>
@@ -403,72 +404,78 @@ function Cuentas({ accounts, form, setForm, onSubmit, saving, modalOpen, setModa
         <AccountTable accounts={accounts} />
       </Panel>
       {modalOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 py-6">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
-            <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/45 px-3 py-4">
+          <div className="flex max-h-[92vh] w-full max-w-md flex-col rounded-lg border border-slate-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
               <h2 className="text-base font-bold text-slate-950">Nueva cuenta</h2>
               <button onClick={() => setModalOpen(false)} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="Cerrar">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <form onSubmit={onSubmit} className="grid gap-3">
-              <Field label="Nombre interno">
-                <TextInput required value={form.account_name} onChange={(event) => setForm({ ...form, account_name: event.target.value })} placeholder="BBVA principal" />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Banco">
-                  <TextInput required value={form.bank_name} onChange={(event) => setForm({ ...form, bank_name: event.target.value })} placeholder="BBVA" />
-                </Field>
-                <Field label="Tipo">
-                  <Select value={form.account_type} onChange={(event) => setForm({ ...form, account_type: event.target.value })}>
-                    <option value="bank">Bancaria</option>
-                    <option value="cash">Caja</option>
-                    <option value="wallet">Wallet</option>
-                    <option value="review">Revision</option>
-                  </Select>
-                </Field>
+            <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                <div className="grid gap-2">
+                  <Field label="Nombre interno">
+                    <TextInput required value={form.account_name} onChange={(event) => setForm({ ...form, account_name: event.target.value })} placeholder="BBVA principal" />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Banco">
+                      <TextInput required value={form.bank_name} onChange={(event) => setForm({ ...form, bank_name: event.target.value })} placeholder="BBVA" />
+                    </Field>
+                    <Field label="Tipo">
+                      <Select value={form.account_type} onChange={(event) => setForm({ ...form, account_type: event.target.value })}>
+                        <option value="bank">Bancaria</option>
+                        <option value="cash">Caja</option>
+                        <option value="wallet">Wallet</option>
+                        <option value="review">Revision</option>
+                      </Select>
+                    </Field>
+                  </div>
+                  <Field label="Titular">
+                    <TextInput value={form.holder_name} onChange={(event) => setForm({ ...form, holder_name: event.target.value })} placeholder="Razon social / titular" />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Cuenta">
+                      <TextInput value={form.account_number} onChange={(event) => setForm({ ...form, account_number: event.target.value })} placeholder="Numero completo" />
+                    </Field>
+                    <Field label="Visible">
+                      <TextInput value={form.account_number_mask} onChange={(event) => setForm({ ...form, account_number_mask: event.target.value })} placeholder="****1234" />
+                    </Field>
+                  </div>
+                  <Field label="Cuenta CLABE">
+                    <TextInput value={form.clabe} onChange={(event) => setForm({ ...form, clabe: event.target.value })} placeholder="18 digitos" />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Moneda">
+                      <Select value={form.currency} onChange={(event) => setForm({ ...form, currency: event.target.value })}>
+                        <option value="MXN">MXN</option>
+                        <option value="USD">USD</option>
+                      </Select>
+                    </Field>
+                    <Field label="Estado">
+                      <Select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
+                        <option value="active">Activa</option>
+                        <option value="inactive">Desactivada</option>
+                        <option value="closed">Cerrada</option>
+                      </Select>
+                    </Field>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Saldo inicial">
+                      <TextInput type="number" step="0.01" value={form.opening_balance} onChange={(event) => setForm({ ...form, opening_balance: event.target.value })} />
+                    </Field>
+                    <Field label="Responsable">
+                      <TextInput value={form.responsible_user} onChange={(event) => setForm({ ...form, responsible_user: event.target.value })} placeholder="Usuario" />
+                    </Field>
+                  </div>
+                  <Field label="Notas">
+                    <TextInput value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder="Uso de la cuenta" />
+                  </Field>
+                </div>
               </div>
-              <Field label="Titular">
-                <TextInput value={form.holder_name} onChange={(event) => setForm({ ...form, holder_name: event.target.value })} placeholder="Razon social / titular" />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Cuenta">
-                  <TextInput value={form.account_number} onChange={(event) => setForm({ ...form, account_number: event.target.value })} placeholder="Numero completo" />
-                </Field>
-                <Field label="Visible">
-                  <TextInput value={form.account_number_mask} onChange={(event) => setForm({ ...form, account_number_mask: event.target.value })} placeholder="****1234" />
-                </Field>
+              <div className="border-t border-slate-200 bg-white px-4 py-3">
+                <SaveButton saving={saving} label="Crear cuenta" />
               </div>
-              <Field label="Cuenta CLABE">
-                <TextInput value={form.clabe} onChange={(event) => setForm({ ...form, clabe: event.target.value })} placeholder="18 digitos" />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Moneda">
-                  <Select value={form.currency} onChange={(event) => setForm({ ...form, currency: event.target.value })}>
-                    <option value="MXN">MXN</option>
-                    <option value="USD">USD</option>
-                  </Select>
-                </Field>
-                <Field label="Estado">
-                  <Select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
-                    <option value="active">Activa</option>
-                    <option value="inactive">Desactivada</option>
-                    <option value="closed">Cerrada</option>
-                  </Select>
-                </Field>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Saldo inicial">
-                  <TextInput type="number" step="0.01" value={form.opening_balance} onChange={(event) => setForm({ ...form, opening_balance: event.target.value })} />
-                </Field>
-                <Field label="Responsable">
-                  <TextInput value={form.responsible_user} onChange={(event) => setForm({ ...form, responsible_user: event.target.value })} placeholder="Usuario" />
-                </Field>
-              </div>
-              <Field label="Notas">
-                <TextInput value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder="Uso de la cuenta" />
-              </Field>
-              <SaveButton saving={saving} label="Crear cuenta" />
             </form>
           </div>
         </div>
@@ -478,9 +485,14 @@ function Cuentas({ accounts, form, setForm, onSubmit, saving, modalOpen, setModa
 }
 
 function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, accountFilter, setAccountFilter, modalOpen, setModalOpen }: any) {
-  const filteredMovements = accountFilter
-    ? movements.filter((movement: Movement) => movement.account_id === accountFilter)
-    : movements;
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const filteredMovements = movements.filter((movement: Movement) => {
+    if (accountFilter && movement.account_id !== accountFilter) return false;
+    if (dateFrom && movement.movement_date < dateFrom) return false;
+    if (dateTo && movement.movement_date > dateTo) return false;
+    return true;
+  });
   const selectedAccount = accounts.find((account: Account) => account.id === accountFilter);
   const isDeposit = form.movement_kind === 'deposito';
   return (
@@ -488,11 +500,13 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
       <Panel title={
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <span>{selectedAccount ? `Movimientos - ${selectedAccount.account_name}` : 'Movimientos recientes'}</span>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2 lg:flex-row">
             <Select value={accountFilter || ''} onChange={(event) => setAccountFilter(event.target.value)} aria-label="Filtrar movimientos por cuenta">
               <option value="">Todas las cuentas</option>
               {accounts.map((account: Account) => <option key={account.id} value={account.id}>{account.account_name} / {account.folio}</option>)}
             </Select>
+            <TextInput type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} aria-label="Fecha inicial" />
+            <TextInput type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} aria-label="Fecha final" />
             <button onClick={() => setModalOpen(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white">
               <Plus className="h-4 w-4" />
               Nuevo movimiento
@@ -500,82 +514,91 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
           </div>
         </div>
       }>
-        <MovementTable movements={filteredMovements} />
+        <MovementTable accounts={accounts} movements={filteredMovements} />
       </Panel>
       {modalOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 py-6">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
-            <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/45 px-3 py-4">
+          <div className="flex max-h-[92vh] w-full max-w-md flex-col rounded-lg border border-slate-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
               <h2 className="text-base font-bold text-slate-950">Nuevo movimiento</h2>
               <button onClick={() => setModalOpen(false)} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="Cerrar">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <form onSubmit={onSubmit} className="grid gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Tipo">
-                  <Select value={form.movement_kind} onChange={(event) => setForm({ ...form, movement_kind: event.target.value })}>
-                    <option value="deposito">Deposito</option>
-                    <option value="retiro">Retiro</option>
-                  </Select>
-                </Field>
-                <Field label="Origen">
-                  <Select value={form.source_type} onChange={(event) => setForm({ ...form, source_type: event.target.value })}>
-                    <option value="pago">Pago</option>
-                    <option value="ajuste">Ajuste</option>
-                    <option value="apertura">Apertura</option>
-                    <option value="devolucion">Devolucion</option>
-                  </Select>
-                </Field>
-              </div>
-              {!isDeposit ? (
-                <Field label="Cuenta origen propia">
-                  <Select required value={form.origin_account_id} onChange={(event) => setForm({ ...form, origin_account_id: event.target.value })}>
-                    <option value="">Seleccionar</option>
-                    {accounts.map((account: Account) => <option key={account.id} value={account.id}>{account.account_name} / {account.folio}</option>)}
-                  </Select>
-                </Field>
-              ) : null}
-              {isDeposit ? (
-                <Field label="Cuenta destino propia">
-                  <Select required value={form.destination_account_id} onChange={(event) => setForm({ ...form, destination_account_id: event.target.value })}>
-                    <option value="">Seleccionar</option>
-                    {accounts.map((account: Account) => <option key={account.id} value={account.id}>{account.account_name} / {account.folio}</option>)}
-                  </Select>
-                </Field>
-              ) : null}
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <Field label={isDeposit ? 'Cuenta tercero origen' : 'Cuenta tercero destino'}>
-                  <Select value={form.third_party_account_id} onChange={(event) => setForm({ ...form, third_party_account_id: event.target.value })}>
-                    <option value="manual">Captura manual</option>
-                  </Select>
-                </Field>
-                <div className="mt-3 grid gap-3">
-                  <Field label="Nombre tercero">
-                    <TextInput value={form.third_party_name} onChange={(event) => setForm({ ...form, third_party_name: event.target.value })} placeholder="Nombre / razon social" />
-                  </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Cuenta tercero">
-                      <TextInput value={form.third_party_account} onChange={(event) => setForm({ ...form, third_party_account: event.target.value })} placeholder="Cuenta" />
+            <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                <div className="grid gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Tipo">
+                      <Select value={form.movement_kind} onChange={(event) => setForm({ ...form, movement_kind: event.target.value })}>
+                        <option value="deposito">Deposito</option>
+                        <option value="retiro">Retiro</option>
+                      </Select>
                     </Field>
-                    <Field label="CLABE tercero">
-                      <TextInput value={form.third_party_clabe} onChange={(event) => setForm({ ...form, third_party_clabe: event.target.value })} placeholder="CLABE" />
+                    <Field label="Origen">
+                      <Select value={form.source_type} onChange={(event) => setForm({ ...form, source_type: event.target.value })}>
+                        <option value="pago">Pago</option>
+                        <option value="ajuste">Ajuste</option>
+                        <option value="apertura">Apertura</option>
+                        <option value="devolucion">Devolucion</option>
+                      </Select>
                     </Field>
                   </div>
+                  {!isDeposit ? (
+                    <Field label="Cuenta origen propia">
+                      <Select required value={form.origin_account_id} onChange={(event) => setForm({ ...form, origin_account_id: event.target.value })}>
+                        <option value="">Seleccionar</option>
+                        {accounts.map((account: Account) => <option key={account.id} value={account.id}>{account.account_name} / {account.folio}</option>)}
+                      </Select>
+                    </Field>
+                  ) : null}
+                  {isDeposit ? (
+                    <Field label="Cuenta destino propia">
+                      <Select required value={form.destination_account_id} onChange={(event) => setForm({ ...form, destination_account_id: event.target.value })}>
+                        <option value="">Seleccionar</option>
+                        {accounts.map((account: Account) => <option key={account.id} value={account.id}>{account.account_name} / {account.folio}</option>)}
+                      </Select>
+                    </Field>
+                  ) : null}
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                    <Field label={isDeposit ? 'Cuenta tercero origen' : 'Cuenta tercero destino'}>
+                      <Select value={form.third_party_account_id} onChange={(event) => setForm({ ...form, third_party_account_id: event.target.value })}>
+                        <option value="manual">Captura manual</option>
+                      </Select>
+                    </Field>
+                    <div className="mt-2 grid gap-2">
+                      <Field label="Nombre tercero">
+                        <TextInput value={form.third_party_name} onChange={(event) => setForm({ ...form, third_party_name: event.target.value })} placeholder="Nombre / razon social" />
+                      </Field>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Field label="Cuenta tercero">
+                          <TextInput value={form.third_party_account} onChange={(event) => setForm({ ...form, third_party_account: event.target.value })} placeholder="Cuenta" />
+                        </Field>
+                        <Field label="CLABE tercero">
+                          <TextInput value={form.third_party_clabe} onChange={(event) => setForm({ ...form, third_party_clabe: event.target.value })} placeholder="CLABE" />
+                        </Field>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Monto">
+                      <TextInput required type="number" min="0.01" step="0.01" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} />
+                    </Field>
+                    <Field label="Fecha">
+                      <TextInput required type="date" value={form.movement_date} onChange={(event) => setForm({ ...form, movement_date: event.target.value })} />
+                    </Field>
+                  </div>
+                  <Field label="Notas">
+                    <TextInput value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder="Referencia interna" />
+                  </Field>
+                  <Field label="Quien realizo">
+                    <TextInput value={form.performed_by} onChange={(event) => setForm({ ...form, performed_by: event.target.value })} placeholder="Nombre del usuario" />
+                  </Field>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Monto">
-                  <TextInput required type="number" min="0.01" step="0.01" value={form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value })} />
-                </Field>
-                <Field label="Fecha">
-                  <TextInput required type="date" value={form.movement_date} onChange={(event) => setForm({ ...form, movement_date: event.target.value })} />
-                </Field>
+              <div className="border-t border-slate-200 bg-white px-4 py-3">
+                <SaveButton saving={saving} label="Registrar" />
               </div>
-              <Field label="Notas">
-                <TextInput value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder="Referencia interna" />
-              </Field>
-              <SaveButton saving={saving} label="Registrar" />
             </form>
           </div>
         </div>
@@ -618,7 +641,30 @@ function Autorizaciones({ auths, movements, onDecide, saving }: { auths: Authori
   );
 }
 
-function Conciliacion({ movements, authByMovement, onReconcile, saving }: { movements: Movement[]; authByMovement: Map<string, Authorization>; onReconcile: (movement: Movement) => void; saving: boolean }) {
+function accountLabel(accounts: Account[], accountId?: string | null, fallback?: string | null) {
+  const account = accounts.find((row) => row.id === accountId);
+  return account?.account_name || fallback || '-';
+}
+
+function movementOrigin(accounts: Account[], movement: Movement) {
+  if (movement.movement_type === 'salida') {
+    return accountLabel(accounts, movement.metadata?.origin_account_id || movement.account_id, movement.account_folio);
+  }
+  return movement.metadata?.third_party_name || movement.metadata?.third_party_account || 'Tercero';
+}
+
+function movementDestination(accounts: Account[], movement: Movement) {
+  if (movement.movement_type === 'entrada') {
+    return accountLabel(accounts, movement.metadata?.destination_account_id || movement.account_id, movement.account_folio);
+  }
+  return movement.metadata?.third_party_name || movement.metadata?.third_party_account || 'Tercero';
+}
+
+function movementKindLabel(movement: Movement) {
+  return movement.metadata?.movement_kind || (movement.movement_type === 'entrada' ? 'deposito' : 'retiro');
+}
+
+function Conciliacion({ accounts, movements, authByMovement, onReconcile, saving }: { accounts: Account[]; movements: Movement[]; authByMovement: Map<string, Authorization>; onReconcile: (movement: Movement) => void; saving: boolean }) {
   return (
     <Panel title="Movimientos por conciliar">
       <div className="grid gap-3">
@@ -627,7 +673,13 @@ function Conciliacion({ movements, authByMovement, onReconcile, saving }: { move
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="font-bold text-slate-950">{movement.folio} / {money(movement.amount)}</p>
-                <p className="text-sm text-slate-500">{movement.account_folio} / {movement.movement_date} / {authByMovement.get(movement.id)?.folio || 'sin autorizacion'}</p>
+                <div className="mt-2 grid gap-1 text-sm text-slate-600 md:grid-cols-2 xl:grid-cols-4">
+                  <span><b>Origen:</b> {movementOrigin(accounts, movement)}</span>
+                  <span><b>Destino:</b> {movementDestination(accounts, movement)}</span>
+                  <span><b>Tipo:</b> {movementKindLabel(movement)}</span>
+                  <span><b>Realizo:</b> {movement.metadata?.performed_by || '-'}</span>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">{movement.movement_date} / {authByMovement.get(movement.id)?.folio || 'sin autorizacion'}</p>
               </div>
               <button disabled={saving} onClick={() => onReconcile(movement)} className="inline-flex h-9 items-center gap-2 rounded-md bg-teal-700 px-3 text-sm font-semibold text-white">
                 <BadgeCheck className="h-4 w-4" />
@@ -999,7 +1051,7 @@ function ConverterTab() {
   );
 }
 
-function MovementTable({ movements, compact = false }: { movements: Movement[]; compact?: boolean }) {
+function MovementTable({ accounts, movements, compact = false }: { accounts: Account[]; movements: Movement[]; compact?: boolean }) {
   if (!movements.length) return <Empty text="Sin movimientos registrados" />;
   return (
     <div className="overflow-x-auto">
@@ -1020,7 +1072,7 @@ function MovementTable({ movements, compact = false }: { movements: Movement[]; 
             <tr key={movement.id}>
               <td className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-950">{movement.folio}</td>
               <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{movement.movement_date}</td>
-              <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{movement.account_folio}</td>
+              <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{accountLabel(accounts, movement.account_id, movement.account_folio)}</td>
               <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{movement.movement_type}</td>
               <td className={`border-b border-slate-100 px-3 py-3 font-bold ${movement.movement_type === 'entrada' ? 'text-emerald-700' : 'text-rose-700'}`}>{money(movement.amount)}</td>
               <td className="border-b border-slate-100 px-3 py-3"><Badge value={movement.authorization_status} /></td>

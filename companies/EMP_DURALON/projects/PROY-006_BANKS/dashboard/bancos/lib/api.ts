@@ -33,6 +33,7 @@ export type Movement = {
   authorization_id: string | null;
   reconciliation_status: string;
   notes: string | null;
+  metadata: Record<string, any> | null;
   created_at: string;
 };
 
