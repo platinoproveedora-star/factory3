@@ -311,6 +311,7 @@ export default function InventoryDashboard() {
             <PurchaseTab
               products={data.products}
               suppliers={data.suppliers}
+              lotStock={data.lot_stock || []}
               saving={saving}
               setSaving={setSaving}
               refresh={refresh}
@@ -893,6 +894,7 @@ function PartyTab({
 function PurchaseTab({
   products,
   suppliers,
+  lotStock,
   saving,
   setSaving,
   refresh,
@@ -900,6 +902,7 @@ function PurchaseTab({
 }: {
   products: Product[];
   suppliers: Party[];
+  lotStock: NonNullable<DashboardData['lot_stock']>;
   saving: boolean;
   setSaving: (value: boolean) => void;
   refresh: RefreshFn;
@@ -913,6 +916,7 @@ function PurchaseTab({
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<PurchaseLine[]>([newPurchaseLine()]);
   const [purchases, setPurchases] = useState<PurchaseSummary[]>([]);
+  const [supplierFilter, setSupplierFilter] = useState('');
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
@@ -923,6 +927,10 @@ function PurchaseTab({
   const [selectedPurchase, setSelectedPurchase] = useState<PurchaseSummary | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
   const [canceling, setCanceling] = useState(false);
+
+  const existingLots = useMemo(() => uniqueOptions(lotStock.map((row) => row.lot_code)), [lotStock]);
+  const supplierNames = useMemo(() => uniqueOptions(purchases.map((p) => p.supplier_name_snapshot || '')), [purchases]);
+  const filteredPurchases = useMemo(() => supplierFilter ? purchases.filter((p) => p.supplier_name_snapshot === supplierFilter) : purchases, [purchases, supplierFilter]);
 
   useEffect(() => {
     loadPurchases();
@@ -1057,6 +1065,9 @@ function PurchaseTab({
           </label>
         </div>
 
+        <datalist id="existing-lot-codes">
+          {existingLots.map((lot) => <option key={lot} value={lot} />)}
+        </datalist>
         <div className="overflow-x-auto px-4">
           <table className="min-w-[1240px] text-sm">
             <thead className="border-y border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
@@ -1085,7 +1096,7 @@ function PurchaseTab({
                       </select>
                     </td>
                     <td className="px-3 py-2">
-                      <input value={item.lot_code} onChange={(event) => updateItem(item.id, 'lot_code', event.target.value)} placeholder="GENERAL" className="h-10 w-full rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
+                      <input value={item.lot_code} onChange={(event) => updateItem(item.id, 'lot_code', event.target.value)} placeholder="GENERAL" list="existing-lot-codes" className="h-10 w-full rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
                     </td>
                     <td className="px-3 py-2">
                       <input type="number" step="0.01" value={item.quantity} onChange={(event) => updateItem(item.id, 'quantity', event.target.value)} required className="h-10 w-full rounded border border-slate-200 px-3 text-right text-sm outline-none focus:border-slate-500" />
@@ -1156,6 +1167,10 @@ function PurchaseTab({
           <div className="flex flex-wrap gap-2">
             <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
             <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
+            <select value={supplierFilter} onChange={(event) => setSupplierFilter(event.target.value)} className="h-10 rounded border border-slate-200 bg-white px-3 text-sm outline-none">
+              <option value="">Todos los proveedores</option>
+              {supplierNames.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
             <button type="button" onClick={loadPurchases} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800">
               <RefreshCw size={15} />
               Ver
@@ -1163,7 +1178,7 @@ function PurchaseTab({
           </div>
         </div>
         <PurchaseTable
-          purchases={purchases}
+          purchases={filteredPurchases}
           selectedFolio={selectedPurchase?.source_folio ?? null}
           onSelect={(p) => setSelectedPurchase((prev) => prev?.source_folio === p.source_folio ? null : p)}
           cancelConfirm={cancelConfirm}
@@ -1232,6 +1247,7 @@ function PurchaseTable({
             <th className="px-4 py-3 text-left">Fecha</th>
             <th className="px-4 py-3 text-left">Proveedor</th>
             <th className="px-4 py-3 text-left">Folio prov.</th>
+            <th className="px-4 py-3 text-left">Lotes</th>
             <th className="px-4 py-3 text-right">Renglones</th>
             <th className="px-4 py-3 text-right">Neto</th>
             <th className="px-4 py-3 text-right">IVA</th>
@@ -1257,6 +1273,7 @@ function PurchaseTable({
                 <td className="px-4 py-3 text-slate-500">{purchase.movement_date}</td>
                 <td className="px-4 py-3 text-slate-700">{purchase.supplier_name_snapshot}</td>
                 <td className="px-4 py-3 text-slate-500">{purchase.external_folio || '-'}</td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-500">{[...new Set((purchase.items || []).map((i) => i.lot_code || 'GENERAL'))].join(', ') || '-'}</td>
                 <td className="px-4 py-3 text-right">{purchase.line_count}</td>
                 <td className="px-4 py-3 text-right">{money(purchaseNetAmount(purchase))}</td>
                 <td className="px-4 py-3 text-right">{money(purchaseTaxAmount(purchase))}</td>
@@ -1265,41 +1282,51 @@ function PurchaseTable({
                 <td className="px-4 py-3 text-right">{money(purchase.balance_amount)}</td>
                 <td className="px-4 py-3 text-slate-500">{isCanceled ? 'cancelada' : purchase.payment_status}</td>
                 <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                  {!isCanceled && (
-                    isConfirming ? (
-                      <span className="inline-flex items-center gap-1">
+                  <div className="inline-flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => window.open(`/api/purchases/pdf?folio=${encodeURIComponent(purchase.source_folio)}`, '_blank', 'noopener,noreferrer')}
+                      title="Imprimir PDF"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    >
+                      <Printer size={13} />
+                    </button>
+                    {!isCanceled && (
+                      isConfirming ? (
+                        <span className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={canceling}
+                            onClick={() => onCancelConfirm(purchase.source_folio)}
+                            className="inline-flex h-7 items-center rounded bg-red-600 px-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                          >
+                            {canceling ? '...' : 'Si'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={onCancelAbort}
+                            className="inline-flex h-7 items-center rounded border border-slate-200 bg-white px-2 text-xs text-slate-600 hover:bg-slate-50"
+                          >
+                            No
+                          </button>
+                        </span>
+                      ) : (
                         <button
                           type="button"
-                          disabled={canceling}
-                          onClick={() => onCancelConfirm(purchase.source_folio)}
-                          className="inline-flex h-7 items-center rounded bg-red-600 px-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                          onClick={() => onCancelRequest(purchase.source_folio)}
+                          title="Cancelar compra"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded border border-red-200 bg-white text-red-500 hover:bg-red-50"
                         >
-                          {canceling ? '...' : 'Si'}
+                          <Trash2 size={13} />
                         </button>
-                        <button
-                          type="button"
-                          onClick={onCancelAbort}
-                          className="inline-flex h-7 items-center rounded border border-slate-200 bg-white px-2 text-xs text-slate-600 hover:bg-slate-50"
-                        >
-                          No
-                        </button>
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onCancelRequest(purchase.source_folio)}
-                        title="Cancelar compra"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded border border-red-200 bg-white text-red-500 hover:bg-red-50"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    )
-                  )}
+                      )
+                    )}
+                  </div>
                 </td>
               </tr>
             );
           })}
-          {purchases.length === 0 && <tr><td colSpan={12} className="px-4 py-8 text-center text-sm text-slate-500">Sin compras para mostrar</td></tr>}
+          {purchases.length === 0 && <tr><td colSpan={13} className="px-4 py-8 text-center text-sm text-slate-500">Sin compras para mostrar</td></tr>}
         </tbody>
       </table>
     </div>
@@ -1758,16 +1785,19 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
   const [matrix, setMatrix] = useState<MatrixData | null>(null);
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 7);
-    return d.toISOString().slice(0, 10);
+    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
   });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [clientFilter, setClientFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/remisiones?limit=100&t=${Date.now()}`, { cache: 'no-store' });
+      const params = new URLSearchParams({ limit: '300', t: String(Date.now()) });
+      if (startDate) params.set('start_date', startDate);
+      if (endDate) params.set('end_date', endDate);
+      const res = await fetch(`/api/remisiones?${params.toString()}`, { cache: 'no-store' });
       const json = await res.json();
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudieron cargar remisiones');
       const rows = json.data || [];
@@ -1824,22 +1854,29 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
     window.open(`/api/remisiones/pdf?id=${encodeURIComponent(remision.id)}&hide_prices=true`, '_blank', 'noopener,noreferrer');
   }
 
+  const clientOptions = useMemo(() => uniqueOptions(remisiones.map((r) => r.customer_name_snapshot)), [remisiones]);
+  const filteredRemisiones = useMemo(() => clientFilter ? remisiones.filter((r) => r.customer_name_snapshot === clientFilter) : remisiones, [remisiones, clientFilter]);
+
   return (
     <div className="space-y-5">
     <section className="rounded border border-slate-200 bg-white">
-      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h3 className="text-sm font-semibold text-slate-950">Remisiones</h3>
-          <p className="mt-0.5 text-xs text-slate-500">{loading ? 'Cargando...' : `${remisiones.length} documentos desde ${projectContext.sales_project_label}`}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{loading ? 'Cargando...' : `${filteredRemisiones.length} de ${remisiones.length} documentos`}</p>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          className="flex h-9 items-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <RefreshCw size={15} />
-          Actualizar
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-9 rounded border border-slate-200 px-2 text-sm" />
+          <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="h-9 rounded border border-slate-200 px-2 text-sm" />
+          <select value={clientFilter} onChange={(event) => setClientFilter(event.target.value)} className="h-9 rounded border border-slate-200 bg-white px-2 text-sm outline-none">
+            <option value="">Todos los clientes</option>
+            {clientOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <button type="button" onClick={load} className="h-9 rounded bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800">Filtrar</button>
+          <button type="button" onClick={load} className="flex h-9 items-center gap-1 rounded border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <RefreshCw size={14} />
+          </button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-[1120px] text-sm">
@@ -1857,7 +1894,7 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
             </tr>
           </thead>
           <tbody>
-            {remisiones.map((remision) => (
+            {filteredRemisiones.map((remision) => (
               <RemisionRow
                 key={remision.id}
                 remision={remision}
@@ -1872,7 +1909,7 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
                 onSelect={() => setSelectedId(remision.id)}
               />
             ))}
-            {!loading && remisiones.length === 0 && (
+            {!loading && filteredRemisiones.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-4 py-8 text-center text-sm text-slate-500">
                   Sin remisiones registradas
@@ -1934,37 +1971,8 @@ async function cancelRemision(remision: RemisionDoc, reload: () => Promise<void>
 }
 
 function RemisionRow({ remision, reload, setNotice, onPrint, onPrintSinPrecio, onSelect }: { remision: RemisionDoc; reload: () => Promise<void>; setNotice: (value: string) => void; onPrint: () => void; onPrintSinPrecio: () => void; onSelect: () => void }) {
-  const [draft, setDraft] = useState({
-    status: remision.status || 'emitida',
-    delivery_address: remision.delivery_address || '',
-    external_folio: remision.external_folio || '',
-    notes: remision.notes || '',
-  });
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const isCanceled = remision.status === 'cancelada';
-  const inputClass = 'h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500';
-
-  async function save() {
-    setSaving(true);
-    try {
-      const res = await fetch('/api/remisiones', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: remision.id, ...draft }),
-      });
-      const json = await res.json();
-      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo actualizar remision');
-      await reload();
-      setEditing(false);
-      setNotice(`Remision actualizada: ${remision.folio}`);
-    } catch (err: any) {
-      window.alert(err.message || 'No se pudo actualizar remision');
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function cancel() {
     setCanceling(true);
@@ -1978,35 +1986,17 @@ function RemisionRow({ remision, reload, setNotice, onPrint, onPrintSinPrecio, o
   }
 
   return (
-    <tr className={`border-b border-slate-100 align-top ${isCanceled ? 'bg-slate-50 text-slate-500' : ''}`}>
+    <tr className={`border-b border-slate-100 ${isCanceled ? 'bg-slate-50 text-slate-500' : ''}`}>
       <td className="px-4 py-3 font-medium text-slate-900"><button type="button" onClick={onSelect} className="text-left font-semibold text-slate-900 hover:underline">{remision.folio}</button></td>
       <td className="px-4 py-3 text-slate-500">{remision.document_date}</td>
       <td className="px-4 py-3 text-slate-700">{remision.customer_name_snapshot}</td>
-      <td className="px-3 py-2">
-        {editing ? <input className={inputClass} value={draft.delivery_address} onChange={(event) => setDraft((current) => ({ ...current, delivery_address: event.target.value }))} /> : <span className="block py-2 text-slate-600">{draft.delivery_address || '-'}</span>}
-      </td>
-      <td className="px-3 py-2">
-        {editing ? <select className={inputClass} value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}>
-          <option value="emitida">Emitida</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="pagada">Pagada</option>
-        </select> : <span className="block py-2 text-slate-600">{draft.status}</span>}
-      </td>
-      <td className="px-3 py-2">
-        {editing ? <input className={inputClass} value={draft.external_folio} onChange={(event) => setDraft((current) => ({ ...current, external_folio: event.target.value }))} /> : <span className="block py-2 text-slate-600">{draft.external_folio || '-'}</span>}
-      </td>
-      <td className="px-3 py-2">
-        {editing ? <input className={inputClass} value={draft.notes} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} /> : <span className="block py-2 text-slate-600">{draft.notes || '-'}</span>}
-      </td>
+      <td className="px-4 py-3 text-slate-600">{remision.delivery_address || '-'}</td>
+      <td className="px-4 py-3 text-slate-600">{remision.status}</td>
+      <td className="px-4 py-3 text-slate-500">{remision.external_folio || '-'}</td>
+      <td className="px-4 py-3 text-slate-500">{remision.notes || '-'}</td>
       <td className="px-4 py-3 text-right">{money(remision.total)}</td>
       <td className="px-3 py-2 text-right">
         <div className="flex justify-end gap-1">
-          <button type="button" onClick={() => { setEditing(true); onSelect(); }} disabled={isCanceled} title="Editar" className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
-            <Pencil size={15} />
-          </button>
-          <button type="button" onClick={save} disabled={saving || isCanceled} title="Guardar" className="inline-flex h-8 w-8 items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">
-            <Save size={15} />
-          </button>
           <button type="button" onClick={cancel} disabled={canceling || isCanceled} title="Cancelar remision" className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-200 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
             <XCircle size={15} />
           </button>
@@ -2043,61 +2033,7 @@ function RemisionDetailEditor({
   onPrintSinPrecio: () => void;
   onCancel: () => Promise<void>;
 }) {
-  const [saving, setSaving] = useState(false);
   const [canceling, setCanceling] = useState(false);
-  const [draft, setDraft] = useState<RemisionDetail | null>(detail);
-
-  useEffect(() => {
-    setDraft(detail);
-  }, [detail]);
-
-  function patchHeader(patch: Partial<RemisionDoc>) {
-    setDraft((current) => (current ? { ...current, remision: { ...current.remision, ...patch } } : current));
-  }
-
-  function patchItem(itemId: string, patch: Partial<RemisionItem>) {
-    setDraft((current) => {
-      if (!current) return current;
-      return { ...current, items: current.items.map((item) => (item.id === itemId ? recalcItem({ ...item, ...patch }) : item)) };
-    });
-  }
-
-  async function save() {
-    if (!draft) return;
-    setSaving(true);
-    try {
-      const res = await fetch('/api/remisiones', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: draft.remision.id,
-          document_date: draft.remision.document_date,
-          external_folio: draft.remision.external_folio || '',
-          delivery_address: draft.remision.delivery_address || '',
-          status: draft.remision.status,
-          notes: draft.remision.notes || '',
-          items: draft.items.map((item) => ({
-            id: item.id,
-            product_id: item.inventory_product_id || item.product_id,
-            description: item.description,
-            quantity: item.quantity,
-            unit: item.unit,
-            unit_price: item.unit_price,
-            lot_code: item.lot_code,
-            tax_rate: item.tax_rate,
-          })),
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo guardar detalle');
-      await reload();
-      setNotice(`Remision actualizada: ${draft.remision.folio}`);
-    } catch (err: any) {
-      window.alert(err.message || 'No se pudo guardar detalle');
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function cancel() {
     setCanceling(true);
@@ -2114,8 +2050,8 @@ function RemisionDetailEditor({
     <section className="rounded border border-slate-200 bg-white">
       <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-slate-950">Editar remision y renglones</h3>
-          <p className="mt-0.5 text-xs text-slate-500">Encabezado, direccion, IVA, cantidades y precios ligados al kardex</p>
+          <h3 className="text-sm font-semibold text-slate-950">Detalle de remision</h3>
+          <p className="mt-0.5 text-xs text-slate-500">Informacion y renglones del documento seleccionado</p>
         </div>
         <select value={selectedId} onChange={(event) => setSelectedId(event.target.value)} className="h-10 rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
           <option value="">Seleccionar remision</option>
@@ -2124,22 +2060,14 @@ function RemisionDetailEditor({
           ))}
         </select>
       </div>
-      {draft ? (
+      {detail ? (
         <div className="p-4">
-          <div className="grid gap-3 lg:grid-cols-5">
-            <Field label="Fecha" name="document_date" type="date" value={draft.remision.document_date || ''} onChange={(event) => patchHeader({ document_date: event.target.value })} />
-            <Field label="Folio externo" name="external_folio" value={draft.remision.external_folio || ''} onChange={(event) => patchHeader({ external_folio: event.target.value })} />
-            <label className="mt-3 block">
-              <span className="text-xs font-medium text-slate-600">Estado</span>
-              <select value={draft.remision.status || 'emitida'} onChange={(event) => patchHeader({ status: event.target.value })} className="mt-1 h-10 w-full rounded border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-500">
-                <option value="emitida">Emitida</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="pagada">Pagada</option>
-                {draft.remision.status === 'cancelada' && <option value="cancelada">Cancelada</option>}
-              </select>
-            </label>
-            <Field label="Dir de entrega" name="delivery_address" value={draft.remision.delivery_address || ''} onChange={(event) => patchHeader({ delivery_address: event.target.value })} />
-            <Field label="Notas" name="notes" value={draft.remision.notes || ''} onChange={(event) => patchHeader({ notes: event.target.value })} />
+          <div className="grid gap-3 text-sm lg:grid-cols-5">
+            <div><p className="text-xs font-medium text-slate-500">Fecha</p><p className="mt-1 text-slate-900">{detail.remision.document_date || '-'}</p></div>
+            <div><p className="text-xs font-medium text-slate-500">Folio externo</p><p className="mt-1 text-slate-900">{detail.remision.external_folio || '-'}</p></div>
+            <div><p className="text-xs font-medium text-slate-500">Estado</p><p className="mt-1 text-slate-900">{detail.remision.status || '-'}</p></div>
+            <div><p className="text-xs font-medium text-slate-500">Dir de entrega</p><p className="mt-1 text-slate-900">{detail.remision.delivery_address || '-'}</p></div>
+            <div><p className="text-xs font-medium text-slate-500">Notas</p><p className="mt-1 text-slate-900">{detail.remision.notes || '-'}</p></div>
           </div>
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-[980px] text-sm">
@@ -2156,19 +2084,14 @@ function RemisionDetailEditor({
                 </tr>
               </thead>
               <tbody>
-                {draft.items.map((item) => (
+                {detail.items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-100">
-                    <td className="px-3 py-2"><input value={item.description || ''} onChange={(event) => patchItem(item.id, { description: event.target.value })} className="h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500" /></td>
+                    <td className="px-3 py-3 text-slate-900">{item.description || '-'}</td>
                     <td className="px-3 py-3 font-mono text-xs text-slate-600">{item.lot_code || 'GENERAL'}</td>
-                    <td className="px-3 py-2"><input type="number" step="0.01" value={item.quantity || 0} onChange={(event) => patchItem(item.id, { quantity: Number(event.target.value) })} className="h-9 w-full rounded border border-slate-200 px-2 text-right text-sm outline-none focus:border-slate-500" /></td>
-                    <td className="px-3 py-2"><input value={item.unit || ''} onChange={(event) => patchItem(item.id, { unit: event.target.value })} className="h-9 w-full rounded border border-slate-200 px-2 text-sm outline-none focus:border-slate-500" /></td>
-                    <td className="px-3 py-2"><input type="number" step="0.01" value={item.unit_price || 0} onChange={(event) => patchItem(item.id, { unit_price: Number(event.target.value) })} className="h-9 w-full rounded border border-slate-200 px-2 text-right text-sm outline-none focus:border-slate-500" /></td>
-                    <td className="px-3 py-2">
-                      <select value={item.tax_rate || 0} onChange={(event) => patchItem(item.id, { tax_rate: Number(event.target.value) })} className="h-9 w-full rounded border border-slate-200 bg-white px-2 text-sm outline-none focus:border-slate-500">
-                        <option value={0}>0%</option>
-                        <option value={0.16}>16%</option>
-                      </select>
-                    </td>
+                    <td className="px-3 py-3 text-right">{qty(item.quantity)}</td>
+                    <td className="px-3 py-3 text-slate-600">{item.unit}</td>
+                    <td className="px-3 py-3 text-right">{money(item.unit_price)}</td>
+                    <td className="px-3 py-3 text-right text-slate-500">{item.tax_rate ? `${Math.round(item.tax_rate * 100)}%` : '0%'}</td>
                     <td className="px-3 py-3 text-right text-slate-500">{money(item.tax_amount)}</td>
                     <td className="px-3 py-3 text-right font-semibold text-slate-900">{money(item.line_total)}</td>
                   </tr>
@@ -2185,13 +2108,9 @@ function RemisionDetailEditor({
               <Printer size={16} />
               Sin precio
             </button>
-            <button type="button" onClick={cancel} disabled={canceling || draft.remision.status === 'cancelada'} className="inline-flex h-10 items-center gap-2 rounded border border-red-200 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
+            <button type="button" onClick={cancel} disabled={canceling || detail.remision.status === 'cancelada'} className="inline-flex h-10 items-center gap-2 rounded border border-red-200 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40">
               <XCircle size={16} />
               Cancelar
-            </button>
-            <button type="button" onClick={save} disabled={saving || draft.remision.status === 'cancelada'} className="inline-flex h-10 items-center gap-2 rounded bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">
-              <Save size={16} />
-              Guardar todo
             </button>
           </div>
         </div>
@@ -2286,35 +2205,44 @@ function KeyProductMatrixPanel({
 
 function KeyProductMatrix({ matrix }: { matrix: MatrixData | null }) {
   if (!matrix) return <div className="px-4 py-8 text-center text-sm text-slate-500">Carga un rango de fechas</div>;
+
+  const dateMap = new Map<string, { date: string; products: Record<string, number>; row_total: number }>();
+  for (const row of matrix.rows) {
+    const date = row.document_date || 'sin fecha';
+    const entry = dateMap.get(date) || { date, products: {}, row_total: 0 };
+    for (const product of matrix.products) {
+      entry.products[product.id] = (entry.products[product.id] || 0) + (row.products[product.id] || 0);
+    }
+    entry.row_total += row.row_total;
+    dateMap.set(date, entry);
+  }
+  const dateRows = Array.from(dateMap.values()).sort((a, b) => b.date.localeCompare(a.date));
+
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-[980px] text-sm">
+      <table className="min-w-[600px] text-sm">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
-            <th className="px-4 py-3 text-left">Remision</th>
             <th className="px-4 py-3 text-left">Fecha</th>
-            <th className="px-4 py-3 text-left">Cliente</th>
             {matrix.products.map((product) => <th key={product.id} className="px-4 py-3 text-right">{product.product_name}</th>)}
             <th className="px-4 py-3 text-right">Total</th>
           </tr>
         </thead>
         <tbody>
-          {matrix.rows.map((row) => (
-            <tr key={row.id} className="border-b border-slate-100">
-              <td className="px-4 py-3 font-medium text-slate-900">{row.folio}</td>
-              <td className="px-4 py-3 text-slate-500">{row.document_date}</td>
-              <td className="px-4 py-3 text-slate-600">{row.customer_name_snapshot}</td>
-              {matrix.products.map((product) => <td key={product.id} className="px-4 py-3 text-right">{money(row.products[product.id])}</td>)}
+          {dateRows.map((row) => (
+            <tr key={row.date} className="border-b border-slate-100">
+              <td className="px-4 py-3 font-medium text-slate-900">{row.date}</td>
+              {matrix.products.map((product) => <td key={product.id} className="px-4 py-3 text-right">{money(row.products[product.id] || 0)}</td>)}
               <td className="px-4 py-3 text-right font-semibold">{money(row.row_total)}</td>
             </tr>
           ))}
           <tr className="bg-slate-50 font-semibold">
-            <td className="px-4 py-3" colSpan={3}>Totales</td>
+            <td className="px-4 py-3">Totales</td>
             {matrix.products.map((product) => <td key={product.id} className="px-4 py-3 text-right">{money(matrix.totals[product.id])}</td>)}
             <td className="px-4 py-3 text-right">{money(matrix.grand_total)}</td>
           </tr>
           {matrix.rows.length === 0 && (
-            <tr><td colSpan={matrix.products.length + 4} className="px-4 py-8 text-center text-sm text-slate-500">Sin ventas de productos clave en este rango</td></tr>
+            <tr><td colSpan={matrix.products.length + 2} className="px-4 py-8 text-center text-sm text-slate-500">Sin ventas de productos clave en este rango</td></tr>
           )}
         </tbody>
       </table>
@@ -2333,6 +2261,7 @@ function KardexTab({ products }: { products: Product[] }) {
   });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
+  const [lotCode, setLotCode] = useState('');
 
   useEffect(() => {
     loadLatest();
@@ -2371,6 +2300,7 @@ function KardexTab({ products }: { products: Product[] }) {
     setLoading(true);
     try {
       const params = new URLSearchParams({ product_id: productId, start_date: startDate, end_date: endDate, limit: '500', t: String(Date.now()) });
+      if (lotCode.trim()) params.set('lot_code', lotCode.trim());
       const res = await fetch(`/api/kardex?${params.toString()}`, { cache: 'no-store' });
       const json = await res.json();
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo cargar kardex filtrado');
@@ -2395,6 +2325,7 @@ function KardexTab({ products }: { products: Product[] }) {
               <option value="">Seleccionar producto</option>
               {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
             </select>
+            <input value={lotCode} onChange={(event) => setLotCode(event.target.value)} placeholder="Lote (opcional)" className="h-10 w-40 rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
             <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
             <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
             <button type="button" onClick={loadFiltered} disabled={loading} className="h-10 rounded bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800">Ver</button>
