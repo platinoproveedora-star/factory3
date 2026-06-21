@@ -398,8 +398,10 @@ class BankStatementExtractService:
         parsed_date = self._parse_date_str(dm.group(1), profile, year)
         date_iso = str(parsed_date) if parsed_date else None
         amounts = parse_all_money(anchor)
-        saldo = amounts[-1] if len(amounts) >= 2 else None
-        amount = amounts[-2] if len(amounts) >= 2 else (amounts[0] if amounts else None)
+        saldo = amounts[-1] if amounts else None
+        non_saldo = amounts[:-1] if len(amounts) >= 2 else []
+        non_zero = [a for a in non_saldo if a > 0.01]
+        amount = non_zero[-1] if non_zero else (non_saldo[-1] if non_saldo else None)
 
         direction = "deposito"
         if amount is not None and saldo is not None and prev_saldo is not None:

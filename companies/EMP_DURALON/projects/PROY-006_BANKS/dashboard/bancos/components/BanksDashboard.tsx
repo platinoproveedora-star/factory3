@@ -1072,7 +1072,6 @@ function ConverterTab() {
                       <th className="border-b border-slate-200 px-3 py-2">Banco</th>
                       <th className="border-b border-slate-200 px-3 py-2">Titular</th>
                       <th className="border-b border-slate-200 px-3 py-2">Cuenta</th>
-                      <th className="border-b border-slate-200 px-3 py-2">CLABE</th>
                       <th className="border-b border-slate-200 px-3 py-2">Periodo</th>
                       <th className="border-b border-slate-200 px-3 py-2">Líneas</th>
                       <th className="border-b border-slate-200 px-3 py-2">Validación</th>
@@ -1084,57 +1083,86 @@ function ConverterTab() {
                       <tr key={ex.id} className={selectedId === ex.id ? 'bg-teal-50' : undefined}>
                         <td className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-950">{ex.folio}</td>
                         <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{ex.bank_name || ex.bank_profile}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 max-w-[140px] truncate" title={ex.holder_name || ''}>{ex.holder_name || '—'}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 font-mono text-xs">{ex.account_number_mask || '—'}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 font-mono text-xs">{ex.clabe ? ex.clabe.slice(0, 6) + '…' + ex.clabe.slice(-4) : '—'}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 whitespace-nowrap text-xs">
-                          {ex.statement_period_start && ex.statement_period_end
-                            ? `${ex.statement_period_start} → ${ex.statement_period_end}`
-                            : '—'}
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 max-w-[160px]" title={ex.holder_name || ''}>
+                          {editingExtraction?.id === ex.id
+                            ? <input className="h-7 w-full rounded border border-slate-300 px-2 text-xs" value={editForm.holder_name || ''} onChange={(e) => setEditForm({ ...editForm, holder_name: e.target.value })} />
+                            : <span className="block truncate">{ex.holder_name || '—'}</span>}
+                        </td>
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 font-mono text-xs">
+                          {editingExtraction?.id === ex.id
+                            ? <input className="h-7 w-28 rounded border border-slate-300 px-2 text-xs font-mono" value={editForm.account_number_mask || ''} onChange={(e) => setEditForm({ ...editForm, account_number_mask: e.target.value })} />
+                            : ex.account_number_mask || '—'}
+                        </td>
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 text-xs">
+                          {editingExtraction?.id === ex.id
+                            ? <div className="flex gap-1">
+                                <input type="date" className="h-7 rounded border border-slate-300 px-1 text-xs" value={editForm.statement_period_start || ''} onChange={(e) => setEditForm({ ...editForm, statement_period_start: e.target.value })} />
+                                <input type="date" className="h-7 rounded border border-slate-300 px-1 text-xs" value={editForm.statement_period_end || ''} onChange={(e) => setEditForm({ ...editForm, statement_period_end: e.target.value })} />
+                              </div>
+                            : ex.statement_period_start && ex.statement_period_end
+                              ? `${ex.statement_period_start} → ${ex.statement_period_end}`
+                              : '—'}
                         </td>
                         <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{ex.total_lines_extracted}</td>
                         <td className="border-b border-slate-100 px-3 py-3"><Badge value={ex.validation_status} /></td>
                         <td className="border-b border-slate-100 px-3 py-3">
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => void handleSelect(ex.id)}
-                              className={`inline-flex h-7 items-center gap-1 rounded px-2 text-xs font-semibold ${selectedId === ex.id ? 'bg-teal-700 text-white' : 'border border-slate-300 text-slate-700 hover:bg-slate-50'}`}
-                            >
-                              {selectedId === ex.id ? 'Cerrar' : 'Ver'}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setEditingExtraction(ex);
-                                setEditForm({
-                                  holder_name: ex.holder_name || '',
-                                  bank_name: ex.bank_name || '',
-                                  account_number_mask: ex.account_number_mask || '',
-                                  clabe: ex.clabe || '',
-                                  statement_period_start: ex.statement_period_start || '',
-                                  statement_period_end: ex.statement_period_end || '',
-                                });
-                              }}
-                              className="inline-flex h-7 items-center gap-1 rounded border border-slate-300 px-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                              title="Editar campos"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={() => void handleExcel(ex.id)}
-                              disabled={exportingId === ex.id}
-                              className="inline-flex h-7 items-center gap-1 rounded border border-slate-300 px-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                            >
-                              {exportingId === ex.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                              Excel
-                            </button>
-                            <button
-                              onClick={() => void handleDelete(ex.id, ex.folio)}
-                              disabled={deletingId === ex.id}
-                              className="inline-flex h-7 items-center gap-1 rounded border border-rose-200 px-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
-                            >
-                              {deletingId === ex.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                            </button>
-                          </div>
+                          {editingExtraction?.id === ex.id ? (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => void handleEditSave()}
+                                disabled={editSaving}
+                                className="inline-flex h-7 items-center gap-1 rounded bg-teal-700 px-2 text-xs font-semibold text-white disabled:opacity-50"
+                              >
+                                {editSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+                                Guardar
+                              </button>
+                              <button
+                                onClick={() => setEditingExtraction(null)}
+                                className="inline-flex h-7 items-center gap-1 rounded border border-slate-300 px-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => void handleSelect(ex.id)}
+                                className={`inline-flex h-7 items-center gap-1 rounded px-2 text-xs font-semibold ${selectedId === ex.id ? 'bg-teal-700 text-white' : 'border border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+                              >
+                                {selectedId === ex.id ? 'Cerrar' : 'Ver'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingExtraction(ex);
+                                  setEditForm({
+                                    holder_name: ex.holder_name || '',
+                                    account_number_mask: ex.account_number_mask || '',
+                                    statement_period_start: ex.statement_period_start || '',
+                                    statement_period_end: ex.statement_period_end || '',
+                                  });
+                                }}
+                                className="inline-flex h-7 items-center gap-1 rounded border border-slate-300 px-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                                title="Editar campos"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={() => void handleExcel(ex.id)}
+                                disabled={exportingId === ex.id}
+                                className="inline-flex h-7 items-center gap-1 rounded border border-slate-300 px-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                              >
+                                {exportingId === ex.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                                Excel
+                              </button>
+                              <button
+                                onClick={() => void handleDelete(ex.id, ex.folio)}
+                                disabled={deletingId === ex.id}
+                                className="inline-flex h-7 items-center gap-1 rounded border border-rose-200 px-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                              >
+                                {deletingId === ex.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -1145,48 +1173,6 @@ function ConverterTab() {
         </Panel>
       </div>
 
-      {editingExtraction ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 py-6">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-base font-bold text-slate-950">Editar — {editingExtraction.folio}</h2>
-              <button onClick={() => setEditingExtraction(null)} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="grid gap-3">
-              <Field label="Titular">
-                <TextInput value={editForm.holder_name || ''} onChange={(e) => setEditForm({ ...editForm, holder_name: e.target.value })} placeholder="Nombre del titular" />
-              </Field>
-              <Field label="Banco">
-                <TextInput value={editForm.bank_name || ''} onChange={(e) => setEditForm({ ...editForm, bank_name: e.target.value })} placeholder="Nombre del banco" />
-              </Field>
-              <Field label="Cuenta visible">
-                <TextInput value={editForm.account_number_mask || ''} onChange={(e) => setEditForm({ ...editForm, account_number_mask: e.target.value })} placeholder="****1234" />
-              </Field>
-              <Field label="CLABE">
-                <TextInput value={editForm.clabe || ''} onChange={(e) => setEditForm({ ...editForm, clabe: e.target.value })} placeholder="18 dígitos" />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Período inicio">
-                  <TextInput type="date" value={editForm.statement_period_start || ''} onChange={(e) => setEditForm({ ...editForm, statement_period_start: e.target.value })} />
-                </Field>
-                <Field label="Período fin">
-                  <TextInput type="date" value={editForm.statement_period_end || ''} onChange={(e) => setEditForm({ ...editForm, statement_period_end: e.target.value })} />
-                </Field>
-              </div>
-              <button
-                disabled={editSaving}
-                onClick={() => void handleEditSave()}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white"
-              >
-                {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
-                Guardar cambios
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {selectedId ? (
         <Panel title={`Movimientos — ${selectedExtraction?.folio || selectedId} · ${selectedExtraction?.bank_name || ''} · ${selectedExtraction?.statement_period_start || ''} → ${selectedExtraction?.statement_period_end || ''}`}>
