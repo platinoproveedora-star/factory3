@@ -1,6 +1,7 @@
 {
   "bank_profile": "banorte_enlace_global",
   "profile_version": "v1",
+  "document_type": "estado_de_cuenta",
   "bank_name": "Banorte",
   "detect_markers": ["ENLACE GLOBAL PM", "MONTO DEL DEPOSITO"],
   "anchor_regex": "^(\\d{2}-[A-Z]{3}-\\d{2})(.*)",

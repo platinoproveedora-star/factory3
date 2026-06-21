@@ -149,9 +149,11 @@ class BankStatementExtractService:
         v_status = validation["validation_status"]
         e_status = "extraido" if v_status in ("validado", "no_validable") else "con_errores"
 
-        folio_res = reserve_folio(ctx, "BSE", "statement_extractions")
+        doc_type = profile.get("document_type", "estado_de_cuenta")
+        ext_prefix = "BMP" if doc_type == "movimientos_portal" else "BSE"
+        folio_res = reserve_folio(ctx, ext_prefix, "statement_extractions")
         if not folio_res.get("ok"):
-            return {"ok": False, "error": f"folio BSE: {folio_res.get('error')}"}
+            return {"ok": False, "error": f"folio {ext_prefix}: {folio_res.get('error')}"}
         ext_folio = folio_res["data"]["folio"]
 
         ext_row = {
@@ -160,6 +162,7 @@ class BankStatementExtractService:
             "project_code": ctx["project_code"],
             "module_code": ctx["module_code"],
             "source_format": "pdf",
+            "document_type": doc_type,
             "bank_profile": bank_profile,
             "profile_version": profile_version,
             "bank_name": profile.get("bank_name"),

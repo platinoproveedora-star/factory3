@@ -13,6 +13,7 @@ import {
   Landmark,
   Loader2,
   LogOut,
+  Pencil,
   Plus,
   RefreshCw,
   ShieldCheck,
@@ -793,6 +794,9 @@ function ConverterTab() {
   const [loadingLines, setLoadingLines] = useState(false);
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingExtraction, setEditingExtraction] = useState<StatementExtraction | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [editSaving, setEditSaving] = useState(false);
   const [err, setErr] = useState('');
 
   useEffect(() => { void loadExtractions(); }, []);
@@ -856,6 +860,21 @@ function ConverterTab() {
       setErr(e.message);
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleEditSave() {
+    if (!editingExtraction) return;
+    setEditSaving(true);
+    setErr('');
+    try {
+      await banksApi('update_statement', { extraction_id: editingExtraction.id, ...editForm });
+      setEditingExtraction(null);
+      await loadExtractions();
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -952,12 +971,29 @@ function ConverterTab() {
                         <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{ex.total_lines_extracted}</td>
                         <td className="border-b border-slate-100 px-3 py-3"><Badge value={ex.validation_status} /></td>
                         <td className="border-b border-slate-100 px-3 py-3">
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             <button
                               onClick={() => void handleSelect(ex.id)}
                               className={`inline-flex h-7 items-center gap-1 rounded px-2 text-xs font-semibold ${selectedId === ex.id ? 'bg-teal-700 text-white' : 'border border-slate-300 text-slate-700 hover:bg-slate-50'}`}
                             >
                               {selectedId === ex.id ? 'Cerrar' : 'Ver'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingExtraction(ex);
+                                setEditForm({
+                                  holder_name: ex.holder_name || '',
+                                  bank_name: ex.bank_name || '',
+                                  account_number_mask: ex.account_number_mask || '',
+                                  clabe: ex.clabe || '',
+                                  statement_period_start: ex.statement_period_start || '',
+                                  statement_period_end: ex.statement_period_end || '',
+                                });
+                              }}
+                              className="inline-flex h-7 items-center gap-1 rounded border border-slate-300 px-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                              title="Editar campos"
+                            >
+                              <Pencil className="h-3 w-3" />
                             </button>
                             <button
                               onClick={() => void handleExcel(ex.id)}
@@ -984,6 +1020,49 @@ function ConverterTab() {
             )}
         </Panel>
       </div>
+
+      {editingExtraction ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 py-6">
+          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-4 shadow-xl">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-base font-bold text-slate-950">Editar — {editingExtraction.folio}</h2>
+              <button onClick={() => setEditingExtraction(null)} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid gap-3">
+              <Field label="Titular">
+                <TextInput value={editForm.holder_name || ''} onChange={(e) => setEditForm({ ...editForm, holder_name: e.target.value })} placeholder="Nombre del titular" />
+              </Field>
+              <Field label="Banco">
+                <TextInput value={editForm.bank_name || ''} onChange={(e) => setEditForm({ ...editForm, bank_name: e.target.value })} placeholder="Nombre del banco" />
+              </Field>
+              <Field label="Cuenta visible">
+                <TextInput value={editForm.account_number_mask || ''} onChange={(e) => setEditForm({ ...editForm, account_number_mask: e.target.value })} placeholder="****1234" />
+              </Field>
+              <Field label="CLABE">
+                <TextInput value={editForm.clabe || ''} onChange={(e) => setEditForm({ ...editForm, clabe: e.target.value })} placeholder="18 dígitos" />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Período inicio">
+                  <TextInput type="date" value={editForm.statement_period_start || ''} onChange={(e) => setEditForm({ ...editForm, statement_period_start: e.target.value })} />
+                </Field>
+                <Field label="Período fin">
+                  <TextInput type="date" value={editForm.statement_period_end || ''} onChange={(e) => setEditForm({ ...editForm, statement_period_end: e.target.value })} />
+                </Field>
+              </div>
+              <button
+                disabled={editSaving}
+                onClick={() => void handleEditSave()}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white"
+              >
+                {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
+                Guardar cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {selectedId ? (
         <Panel title={`Movimientos — ${selectedExtraction?.folio || selectedId} · ${selectedExtraction?.bank_name || ''} · ${selectedExtraction?.statement_period_start || ''} → ${selectedExtraction?.statement_period_end || ''}`}>
@@ -1017,6 +1096,7 @@ function ConverterTab() {
                         <th className="border-b border-slate-200 px-2 py-1">Dir</th>
                         <th className="border-b border-slate-200 px-2 py-1 text-right whitespace-nowrap">Monto</th>
                         <th className="border-b border-slate-200 px-2 py-1 text-right whitespace-nowrap">Saldo</th>
+                        <th className="border-b border-slate-200 px-2 py-1 text-right">Conf%</th>
                         <th className="border-b border-slate-200 px-2 py-1">Descripción</th>
                       </tr>
                     </thead>
@@ -1036,6 +1116,9 @@ function ConverterTab() {
                           </td>
                           <td className="border-b border-slate-100 px-2 py-1 text-right text-slate-600">
                             {ln.saldo != null ? money(ln.saldo) : '—'}
+                          </td>
+                          <td className={`border-b border-slate-100 px-2 py-1 text-right font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
+                            {Math.round((ln.confidence ?? 0) * 100)}%
                           </td>
                           <td className="border-b border-slate-100 px-2 py-1 text-slate-500">{ln.description || '—'}</td>
                         </tr>

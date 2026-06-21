@@ -1,6 +1,7 @@
 {
   "bank_profile": "bbva_maestra_pyme",
   "profile_version": "v1",
+  "document_type": "estado_de_cuenta",
   "bank_name": "BBVA",
   "detect_markers": ["MAESTRA PYME", "COD. DESCRIPCIÓN"],
   "anchor_regex": "^(\\d{2}/[A-Z]{3})\\s+(\\d{2}/[A-Z]{3})(.*)",

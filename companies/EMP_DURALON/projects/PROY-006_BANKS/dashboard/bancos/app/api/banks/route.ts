@@ -311,6 +311,24 @@ async function statementLines(payload: Record<string, any>) {
   });
 }
 
+async function updateStatement(payload: Record<string, any>) {
+  const id = String(payload.extraction_id || '').trim();
+  if (!id) throw new Error('extraction_id requerido');
+  const allowed = ['holder_name', 'account_number_mask', 'clabe', 'statement_period_start', 'statement_period_end', 'bank_name'];
+  const updates = Object.fromEntries(
+    Object.entries(payload).filter(([k, v]) => allowed.includes(k) && v !== undefined && v !== null)
+  );
+  if (!Object.keys(updates).length) throw new Error('Sin campos para actualizar');
+  const sc = statementsSchema();
+  if (!sc) throw new Error('STATEMENTS_SCHEMA no configurado');
+  const rows = await supabase('statement_extractions', {
+    method: 'PATCH',
+    query: { id: `eq.${id}`, empresa_id: `eq.${companyId()}` },
+    body: updates
+  }, sc);
+  return rows?.[0] || { updated: true };
+}
+
 async function deleteStatement(payload: Record<string, any>) {
   if (!payload.extraction_id) throw new Error('extraction_id requerido');
   const sc = statementsSchema();
@@ -357,7 +375,8 @@ export async function POST(request: Request) {
       list_statements: listStatements,
       statement_lines: () => statementLines(payload),
       export_excel: () => exportExcel(payload),
-      delete_statement: () => deleteStatement(payload)
+      delete_statement: () => deleteStatement(payload),
+      update_statement: () => updateStatement(payload)
     };
 
     if (!actions[action]) {
