@@ -550,7 +550,7 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
                     </Field>
                   </div>
                   {!isDeposit ? (
-                    <Field label="Cuenta origen propia">
+                    <Field label="Cuenta de retiro">
                       <Select required value={form.origin_account_id} onChange={(event) => setForm({ ...form, origin_account_id: event.target.value })}>
                         <option value="">Seleccionar</option>
                         {accounts.map((account: Account) => <option key={account.id} value={account.id}>{account.account_name} / {account.folio}</option>)}
