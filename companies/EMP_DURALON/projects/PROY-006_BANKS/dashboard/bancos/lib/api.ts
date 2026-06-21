@@ -4,11 +4,15 @@ export type Account = {
   account_type: string;
   account_name: string;
   bank_name: string | null;
+  account_number: string | null;
   account_number_mask: string | null;
+  holder_name: string | null;
   currency: string;
+  responsible_user: string | null;
   current_balance: number;
   opening_balance: number;
   status: string;
+  metadata: Record<string, any> | null;
 };
 
 export type Movement = {

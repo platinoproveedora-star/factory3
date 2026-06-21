@@ -122,7 +122,7 @@ function monthStart() {
 
 async function loadDashboard() {
   const accountQuery = {
-    select: 'id,folio,account_type,account_name,bank_name,account_number_mask,currency,current_balance,opening_balance,status',
+    select: 'id,folio,account_type,account_name,bank_name,account_number,account_number_mask,holder_name,currency,responsible_user,current_balance,opening_balance,status,metadata',
     empresa_id: `eq.${companyId()}`,
     order: 'account_name.asc'
   };
@@ -163,6 +163,10 @@ async function loadDashboard() {
 }
 
 async function createAccount(payload: Record<string, any>) {
+  const accountNumber = String(payload.account_number || '').trim();
+  const accountNumberMask = String(payload.account_number_mask || '').trim()
+    || (accountNumber ? `****${accountNumber.slice(-4)}` : '');
+  const clabe = String(payload.clabe || '').trim();
   const folio = await rpc<string>('reserve_erp_folio', {
     p_scope: 'banks_accounts',
     p_prefix: 'BAC',
@@ -182,26 +186,50 @@ async function createAccount(payload: Record<string, any>) {
       account_type: payload.account_type || 'bank',
       account_name: payload.account_name,
       bank_name: payload.bank_name || null,
-      account_number_mask: payload.account_number_mask || null,
+      account_number: accountNumber || null,
+      account_number_mask: accountNumberMask || null,
       holder_name: payload.holder_name || null,
       currency: payload.currency || 'MXN',
+      responsible_user: payload.responsible_user || null,
       opening_balance: numberValue(payload.opening_balance),
       current_balance: numberValue(payload.opening_balance),
-      status: 'active',
-      metadata: {}
+      status: payload.status || 'active',
+      metadata: {
+        clabe,
+        notes: payload.notes || null
+      }
     }
   });
   return rows?.[0] || null;
 }
 
 async function recordMovement(payload: Record<string, any>) {
+  const movementKind = String(payload.movement_kind || '').trim() || (payload.movement_type === 'salida' ? 'retiro' : 'deposito');
+  const isWithdrawal = movementKind === 'retiro';
+  const accountId = isWithdrawal
+    ? (payload.origin_account_id || payload.account_id || null)
+    : (payload.destination_account_id || payload.account_id || null);
+  if (!accountId) {
+    throw new Error(isWithdrawal ? 'cuenta origen requerida para retiro' : 'cuenta destino requerida para deposito');
+  }
   const sourceId = payload.source_id || `dashboard-${crypto.randomUUID()}`;
+  const metadata = {
+    ...(payload.metadata || {}),
+    movement_kind: movementKind,
+    origin_account_id: payload.origin_account_id || null,
+    destination_account_id: payload.destination_account_id || null,
+    third_party_account_id: payload.third_party_account_id || null,
+    third_party_name: payload.third_party_name || null,
+    third_party_account: payload.third_party_account || null,
+    third_party_clabe: payload.third_party_clabe || null,
+    counterparty_role: isWithdrawal ? 'destination' : 'origin'
+  };
   return rpc<any>('banks_record_movement', {
-    p_account_id: payload.account_id || null,
+    p_account_id: accountId,
     p_account_folio: payload.account_folio || null,
-    p_movement_type: payload.movement_type,
-    p_source_type: payload.source_type || 'ajuste',
-    p_source_module: payload.source_module || 'dashboard',
+    p_movement_type: isWithdrawal ? 'salida' : 'entrada',
+    p_source_type: payload.source_type || 'pago',
+    p_source_module: payload.source_module || 'dashboard_manual',
     p_source_id: sourceId,
     p_source_folio: payload.source_folio || null,
     p_amount: numberValue(payload.amount),
@@ -211,7 +239,7 @@ async function recordMovement(payload: Record<string, any>) {
     p_clave_rastreo: payload.clave_rastreo || null,
     p_value_date: payload.value_date || null,
     p_notes: payload.notes || null,
-    p_metadata: payload.metadata || {},
+    p_metadata: metadata,
     p_empresa_id: companyId(),
     p_project_code: projectCode(),
     p_module_code: moduleCode(),
