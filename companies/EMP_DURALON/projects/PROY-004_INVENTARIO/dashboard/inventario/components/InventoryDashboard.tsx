@@ -919,7 +919,7 @@ function PurchaseTab({
   const [supplierFilter, setSupplierFilter] = useState('');
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 30);
+    d.setDate(d.getDate() - 90);
     return d.toISOString().slice(0, 10);
   });
   const [endDate, setEndDate] = useState(today);
@@ -1006,7 +1006,7 @@ function PurchaseTab({
   async function loadPurchases() {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ start_date: startDate, end_date: endDate, limit: '20', t: String(Date.now()) });
+      const params = new URLSearchParams({ start_date: startDate, end_date: endDate, limit: '500', t: String(Date.now()) });
       const res = await fetch(`/api/purchases?${params.toString()}`, { cache: 'no-store' });
       const json = await res.json();
       if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudieron cargar compras');
