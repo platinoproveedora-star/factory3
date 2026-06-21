@@ -1,8 +1,12 @@
 {
+  "type": "skill",
   "name": "vertical_erp_banks/erp_banks_expense_reconcile",
   "vertical": "vertical_erp_banks",
   "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
   "description": "Lista gastos pendientes y registra retiros bancarios contra una cuenta origen configurable para conciliacion de gastos.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
   "input_schema": {
     "type": "object",
     "properties": {
