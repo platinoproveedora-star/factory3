@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: uc101-bancos
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_SCHEMA
+        value: uc101_proy006
+      - key: DASHBOARD_KEY
+        sync: false
+      - key: DEFAULT_AUTHORIZER_USER_ID
+        sync: false
+      - key: COMPANY_ID
+        value: EMP_DURALON
+      - key: PROJECT_CODE
+        value: PROY-006
+      - key: MODULE_CODE
+        value: banks

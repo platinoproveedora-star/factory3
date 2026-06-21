@@ -1,0 +1,30 @@
+{
+  "company_id": "EMP_DURALON",
+  "legacy_client_id": "UC-101",
+  "project_code": "PROY-006",
+  "module_code": "banks",
+  "project_name": "Banks, cuentas, movimientos y autorizacion de dinero",
+  "status": "in_progress",
+  "erp_ready": false,
+  "erp_identity": {
+    "empresa_id": "EMP_DURALON",
+    "company_id": "EMP_DURALON",
+    "project_code": "PROY-006",
+    "module_code": "banks",
+    "legacy_client_id": "UC-101",
+    "supabase_schema": "uc101_proy006"
+  },
+  "scope": "Modulo generico de bancos para cuentas, movimientos, autorizaciones, conciliacion y conexion con billing, compras y reconciliation.",
+  "platform": "interno",
+  "supabase_schema": "uc101_proy006",
+  "schema": "uc101_proy006",
+  "folder": "companies/EMP_DURALON/projects/PROY-006_BANKS",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "depends_on": [],
+  "source_document": "VERTICAL_ERP_BANKS_DEFINITIVO.md",
+  "created_at": "2026-06-21T00:00:00Z",
+  "updated_at": "2026-06-21T13:50:00Z"
+}
