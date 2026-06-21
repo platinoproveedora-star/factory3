@@ -1,0 +1,26 @@
+{
+  "bank_profile": "bbva_movimientos_ach",
+  "profile_version": "v1",
+  "document_type": "movimientos_portal",
+  "bank_name": "BBVA",
+  "detect_markers": ["DETALLE DE MOVIMIENTOS", "ABONO CARGO SALDO"],
+  "anchor_regex": "^(\\d{1,2}\\s+[a-záéíóúñ]{3,10}(?:\\s+\\d{4})?)(.*)",
+  "date_format": "%d %b",
+  "date_locale_fix": {
+    "ENE": "JAN", "FEB": "FEB", "MAR": "MAR", "ABR": "APR",
+    "MAY": "MAY", "JUN": "JUN", "JUL": "JUL", "AGO": "AUG",
+    "SEP": "SEP", "OCT": "OCT", "NOV": "NOV", "DIC": "DEC"
+  },
+  "amount_strategy": "signed_cargo_abono",
+  "holder_name_regex": "^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\\s]{5,100})$",
+  "account_regex": "Cuenta:[^\\d]*(\\d+)",
+  "skip_line_patterns": [
+    "^FECHA\\s+DESCRIPCI",
+    "^En cumplimiento",
+    "^BBVA\\s*M",
+    "^about:blank",
+    "^Periodo:",
+    "^Saldo disponible",
+    "^\\d{1,2}/\\d{1,2}/\\d{2,4},\\s"
+  ]
+}

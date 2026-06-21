@@ -26,6 +26,7 @@ from factory.engine import SupabaseClient
 
 _STORAGE_BUCKET = "bank-statements"
 _MIN_TEXT_LEN = 500
+_SIGNED_AMT_RE = re.compile(r'-?\$\s*[\d,]+\.\d{2}')
 
 
 _scanner = _FieldScanner()
@@ -380,6 +381,8 @@ class BankStatementExtractService:
                 mv = self._parse_banorte_block(anchor, block, profile, year, prev_saldo, rastreo_re, ref_re)
             elif strategy == "cargo_abono_two_columns":
                 mv = self._parse_bbva_block(anchor, block, profile, year, pages_words, rastreo_re, ref_re, prev_saldo)
+            elif strategy == "signed_cargo_abono":
+                mv = self._parse_ach_block(anchor, block, profile, year, rastreo_re, ref_re)
             else:
                 mv = self._parse_generic_block(anchor, block, profile, year, prev_saldo)
 
@@ -511,6 +514,59 @@ class BankStatementExtractService:
             "transaction_date": str(t_date) if t_date else None,
             "posting_date": posting_iso, "line_date": posting_iso,
             "description": self._build_desc(anchor_desc, block[1:]),
+            "direction": direction, "amount": round(signed, 2), "saldo": saldo,
+            "clave_rastreo": scanned.get("clave_rastreo") or (mr.group(1) if mr else None),
+            "referencia": scanned.get("referencia") or (mref.group(1) if mref else None),
+            "nombre_origen": scanned.get("nombre_origen"),
+            "cuenta_origen": scanned.get("cuenta_origen"),
+            "nombre_destino": scanned.get("nombre_destino"),
+            "cuenta_destino": scanned.get("cuenta_destino"),
+            "metadata": meta,
+        }
+
+    def _parse_ach_block(self, anchor, block, profile, year, rastreo_re, ref_re):
+        """BBVA ACH / cuenta personal: montos con signo explícito -$X = retiro, $X = abono."""
+        dm = re.match(profile["anchor_regex"], anchor)
+        if not dm:
+            return None
+        g1 = dm.group(1)  # "25 may 2026" o "20 may"
+        ym = re.search(r'\b(\d{4})\b', g1)
+        eff_year = int(ym.group(1)) if ym else year
+        date_str = re.sub(r'\s*\d{4}\s*', ' ', g1).strip()
+        t_date = self._parse_date_str(date_str, profile, eff_year)
+        date_iso = str(t_date) if t_date else None
+
+        full_text = "\n".join(block)
+        # Extraer montos con signo: -$X = cargo, $X = abono
+        raw_amts = _SIGNED_AMT_RE.findall(full_text)
+        amounts = [float(a.replace('$', '').replace(',', '').replace(' ', '')) for a in raw_amts]
+
+        saldo = amounts[-1] if amounts else None
+        txn = amounts[-2] if len(amounts) >= 2 else None
+        if txn is not None:
+            direction = "retiro" if txn < 0 else "deposito"
+            amount = abs(txn)
+        else:
+            direction = "deposito"
+            amount = 0.0
+        signed = -amount if direction == "retiro" else amount
+
+        g2 = dm.group(2) if dm.lastindex and dm.lastindex >= 2 else ""
+        anchor_desc = re.sub(r'(\s*-?\$?\s*\d[\d,]*\.\d{2})+\s*$', '', g2).strip()
+        # Filtrar continuaciones que sean sólo montos o líneas que empiezan con año
+        amt_only_re = re.compile(r'^[\s\-\$\d,\.]+$')
+        year_line_re = re.compile(r'^\d{4}\b')
+        clean_conts = [
+            l for l in block[1:]
+            if not amt_only_re.match(l) and not year_line_re.match(l.strip())
+        ]
+        scanned = _scanner.scan(full_text)
+        meta = scanned.pop("metadata", {})
+        mr = rastreo_re.search(full_text)
+        mref = ref_re.search(full_text)
+        return {
+            "transaction_date": date_iso, "posting_date": date_iso, "line_date": date_iso,
+            "description": self._build_desc(anchor_desc, clean_conts),
             "direction": direction, "amount": round(signed, 2), "saldo": saldo,
             "clave_rastreo": scanned.get("clave_rastreo") or (mr.group(1) if mr else None),
             "referencia": scanned.get("referencia") or (mref.group(1) if mref else None),

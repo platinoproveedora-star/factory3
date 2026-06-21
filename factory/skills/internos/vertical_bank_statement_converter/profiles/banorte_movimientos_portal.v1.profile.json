@@ -3,7 +3,7 @@
   "profile_version": "v1",
   "document_type": "movimientos_portal",
   "bank_name": "Banorte",
-  "detect_markers": ["FECHA DEOPERACIÓN", "COD.TRANSAC", "DESCRIPCIÓN DETALLADA"],
+  "detect_markers": ["BANCO MERCANTIL DEL NORTE", "DESCRIPCIÓN DETALLADA"],
   "anchor_regex": "^\\d{10}\\s+(\\d{2}/\\d{2}/\\d{4})\\s+\\d{2}/\\d{2}/\\d{4}(.*)",
   "date_format": "%d/%m/%Y",
   "amount_strategy": "single_column_two_amounts_right_aligned",
