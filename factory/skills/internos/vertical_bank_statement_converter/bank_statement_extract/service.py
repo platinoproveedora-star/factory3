@@ -226,6 +226,7 @@ class BankStatementExtractService:
                 "confidence": mv.get("confidence", 1.0),
                 "parse_warnings": pw,
                 "raw_text": mv.get("raw_text", ""),
+                "metadata": mv.get("metadata") or {},
             })
 
         if line_rows:
@@ -275,6 +276,96 @@ class BankStatementExtractService:
             if score > best_score:
                 best_score, best = score, p
         return best if best and best_score > 0 else None
+
+    def _parse_description_fields(self, raw_text: str) -> dict:
+        text = " ".join(raw_text.split())
+        result: dict = {"metadata": {}}
+
+        if "SPEI RECIBIDO" in text:
+            result["metadata"]["tipo_movimiento"] = "SPEI_RECIBIDO"
+            m = re.search(r'(\S+)\s+SPEI RECIBIDO', text)
+            if m: result["clave_rastreo"] = m.group(1)
+            m = re.search(r'BCO:(\d{3,4})\s+([A-Z][A-Z\s]+?)(?:\s+HR)', text)
+            if m:
+                result["metadata"]["banco_origen_codigo"] = m.group(1)
+                result["metadata"]["banco_origen_nombre"] = m.group(2).strip()
+            m = re.search(r'HR LIQ:\s*(\d{2}:\d{2}:\d{2})', text)
+            if m: result["metadata"]["hora_liquidacion"] = m.group(1)
+            m = re.search(r'DEL\s+CLIENTE\s+(.+?)\s+DE\s+LA\s+CLABE', text)
+            if m: result["nombre_origen"] = m.group(1).strip()[:100]
+            m = re.search(r'CLABE\s+(\d{15,18})', text)
+            if m: result["cuenta_origen"] = m.group(1)
+            m = re.search(r'CON\s+RFC\s+([A-Z&]{1,4}\d{6}[A-Z0-9]{2,3})', text)
+            if m: result["metadata"]["rfc_origen"] = m.group(1)
+            m = re.search(r'CONCEPTO:\s*(.+?)\s+REFERENCIA:', text, re.IGNORECASE)
+            if m: result["metadata"]["concepto"] = m.group(1).strip()[:200]
+            m = re.search(r'REFERENCIA:\s*(\S+)', text, re.IGNORECASE)
+            if m: result["referencia"] = m.group(1)
+            return result
+
+        if "COMPRA ORDEN DE PAGO SPEI" in text or "ORDEN DE PAGO SPEI" in text:
+            result["metadata"]["tipo_movimiento"] = "SPEI_ENVIADO"
+            m = re.search(r'CTA/CLABE:\s*(\d{15,18})', text)
+            if m: result["cuenta_destino"] = m.group(1)
+            m = re.search(r'SPEI\s+BCO:(\d{3,4})', text)
+            if m: result["metadata"]["banco_destino_codigo"] = m.group(1)
+            m = re.search(r'BENEF:(.+?)(?:\s*\(DATO)', text)
+            if m: result["nombre_destino"] = m.group(1).strip()[:100]
+            m = re.search(r'CVE\s+RASTREO:\s*(\S+)', text, re.IGNORECASE)
+            if m: result["clave_rastreo"] = m.group(1)
+            m = re.search(r'RFC:\s*([A-Z&]{1,4}\d{6}[A-Z0-9]{2,3})', text)
+            if m: result["metadata"]["rfc_destino"] = m.group(1)
+            m = re.search(r'IVA:[\d.,]+\s+([A-Z][A-Z\s]+?)\s+HORA LIQ:\s*(\d{2}:\d{2}:\d{2})', text)
+            if m:
+                result["metadata"]["banco_destino_nombre"] = m.group(1).strip()
+                result["metadata"]["hora_liquidacion"] = m.group(2)
+            m = re.search(r'PAGO SPEI\s+(\d+)\s+=REFERENCIA', text)
+            if m: result["referencia"] = m.group(1)
+            return result
+
+        if re.search(r'deposito en efectivo', text, re.IGNORECASE):
+            result["metadata"]["tipo_movimiento"] = "EFECTIVO_DEPOSITO"
+            m = re.search(r'\*{2}(\d{4})', text)
+            if m: result["metadata"]["cuenta_mask"] = f'**{m.group(1)}'
+            m = re.search(r'tarjeta \*+\d+\s+de\s+(.+?)\s+en el cajero', text, re.IGNORECASE)
+            if m: result["nombre_destino"] = m.group(1).strip()[:100]
+            m = re.search(r'en el cajero de\s+(.+?)\s+a las', text, re.IGNORECASE)
+            if m: result["metadata"]["sucursal"] = m.group(1).strip()[:200]
+            m = re.search(r'a las\s+(\d{1,2}:\d{2})', text, re.IGNORECASE)
+            if m: result["metadata"]["hora_liquidacion"] = m.group(1)
+            m = re.search(r'-\s*(N\d+)', text)
+            if m: result["referencia"] = m.group(1)
+            return result
+
+        if "TRANSFERENCIA" in text and "ENVIO" in text:
+            result["metadata"]["tipo_movimiento"] = "TRANSFERENCIA_ENVIO"
+            m = re.search(r'REFERENCIA:\s*(\S+)', text, re.IGNORECASE)
+            if m: result["referencia"] = m.group(1)
+            return result
+
+        if "I.V.A. ORDEN DE PAGO SPEI" in text:
+            result["metadata"]["tipo_movimiento"] = "IVA_SPEI"
+            m = re.search(r'REFERENCIA:\s*(\S+)', text, re.IGNORECASE)
+            if m: result["referencia"] = m.group(1)
+            return result
+
+        if "COMISION POR RENTA MENSUAL" in text:
+            result["metadata"]["tipo_movimiento"] = "COMISION_RENTA"
+            m = re.search(r'(MES\s+\w+)', text, re.IGNORECASE)
+            if m: result["metadata"]["periodo"] = m.group(1).upper()
+            m = re.search(r'(\d{7,12})\s+[\d,]+\.\d{2}\s+[\d,]+\.\d{2}', text)
+            if m: result["referencia"] = m.group(1)
+            return result
+
+        if "IVA POR RENTA MENSUAL" in text:
+            result["metadata"]["tipo_movimiento"] = "IVA_RENTA"
+            m = re.search(r'(MES\s+\w+)', text, re.IGNORECASE)
+            if m: result["metadata"]["periodo"] = m.group(1).upper()
+            m = re.search(r'(\d{7,12})\s+[\d,]+\.\d{2}\s+[\d,]+\.\d{2}', text)
+            if m: result["referencia"] = m.group(1)
+            return result
+
+        return result
 
     def _extract_transfer_fields(self, full_text: str, profile: dict) -> dict:
         result = {}
@@ -395,17 +486,22 @@ class BankStatementExtractService:
             direction = "deposito" if saldo > prev_saldo else "retiro"
 
         full_text = "\n".join(block)
+        parsed = self._parse_description_fields(full_text)
+        transfer_meta = parsed.pop("metadata", {})
         mr = rastreo_re.search(full_text)
         mref = ref_re.search(full_text)
-        transfer = self._extract_transfer_fields(full_text, profile)
         signed = -abs(amount or 0) if direction == "retiro" else abs(amount or 0)
         return {
             "transaction_date": date_iso, "posting_date": date_iso, "line_date": date_iso,
             "description": self._build_desc(dm.group(2), block[1:]),
             "direction": direction, "amount": round(signed, 2), "saldo": saldo,
-            "clave_rastreo": mr.group(1) if mr else None,
-            "referencia": mref.group(1) if mref else None,
-            **transfer,
+            "clave_rastreo": parsed.get("clave_rastreo") or (mr.group(1) if mr else None),
+            "referencia": parsed.get("referencia") or (mref.group(1) if mref else None),
+            "nombre_origen": parsed.get("nombre_origen"),
+            "cuenta_origen": parsed.get("cuenta_origen"),
+            "nombre_destino": parsed.get("nombre_destino"),
+            "cuenta_destino": parsed.get("cuenta_destino"),
+            "metadata": transfer_meta,
         }
 
     def _parse_bbva_block(self, anchor, block, profile, year, pages_words, rastreo_re, ref_re):

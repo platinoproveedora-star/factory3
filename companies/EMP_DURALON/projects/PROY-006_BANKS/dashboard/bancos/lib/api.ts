@@ -100,6 +100,7 @@ export type StatementLine = {
   confidence: number;
   parse_warnings: string[];
   raw_text: string;
+  metadata: Record<string, any> | null;
 };
 
 export type ApiResponse<T> = {

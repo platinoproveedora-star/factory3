@@ -6,7 +6,7 @@ export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
 type SupabaseOptions = {
-  method?: 'GET' | 'POST' | 'PATCH';
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   query?: Record<string, string>;
   body?: Record<string, any>;
 };
@@ -282,6 +282,21 @@ async function statementLines(payload: Record<string, any>) {
   });
 }
 
+async function deleteStatement(payload: Record<string, any>) {
+  if (!payload.extraction_id) throw new Error('extraction_id requerido');
+  const sc = statementsSchema();
+  if (!sc) throw new Error('STATEMENTS_SCHEMA no configurado');
+  await supabase('statement_extracted_lines', {
+    method: 'DELETE',
+    query: { extraction_id: `eq.${payload.extraction_id}`, empresa_id: `eq.${companyId()}` }
+  }, sc);
+  await supabase('statement_extractions', {
+    method: 'DELETE',
+    query: { id: `eq.${payload.extraction_id}`, empresa_id: `eq.${companyId()}` }
+  }, sc);
+  return { deleted: true };
+}
+
 async function exportExcel(payload: Record<string, any>) {
   if (!payload.extraction_id) throw new Error('extraction_id requerido');
   const sc = statementsSchema();
@@ -312,7 +327,8 @@ export async function POST(request: Request) {
       upload_statement: () => uploadStatement(payload),
       list_statements: listStatements,
       statement_lines: () => statementLines(payload),
-      export_excel: () => exportExcel(payload)
+      export_excel: () => exportExcel(payload),
+      delete_statement: () => deleteStatement(payload)
     };
 
     if (!actions[action]) {

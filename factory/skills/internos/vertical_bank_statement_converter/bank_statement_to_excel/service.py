@@ -59,36 +59,72 @@ class BankStatementToExcelService:
 
         wb = openpyxl.Workbook()
 
+        header_fill = PatternFill("solid", fgColor="1F4E79")
+        info_fill = PatternFill("solid", fgColor="D6E4F0")
+
         ws_mov = wb.active
         ws_mov.title = "Movimientos"
+
+        period_str = f"{extraction.get('statement_period_start') or ''} - {extraction.get('statement_period_end') or ''}".strip(" -")
+        info_rows = [
+            ["Cuenta:", extraction.get("account_number_mask") or ""],
+            ["CLABE:", extraction.get("clabe") or ""],
+            ["Titular:", extraction.get("holder_name") or ""],
+            ["Período:", period_str],
+            ["Banco:", extraction.get("bank_name") or extraction.get("bank_profile") or ""],
+            [],
+        ]
+        for row in info_rows:
+            ws_mov.append(row)
+            if row:
+                ws_mov.cell(row=ws_mov.max_row, column=1).font = Font(bold=True)
+                ws_mov.cell(row=ws_mov.max_row, column=1).fill = info_fill
+
         mov_headers = [
-            "folio", "raw_line_order", "line_date", "transaction_date", "posting_date",
-            "description", "direction", "amount", "saldo", "clave_rastreo", "referencia",
-            "nombre_origen", "cuenta_origen", "nombre_destino", "cuenta_destino",
-            "confidence", "parse_warnings", "raw_text",
+            "folio", "raw_line_order", "line_date", "direction", "amount", "saldo",
+            "tipo_movimiento",
+            "description",
+            "clave_rastreo", "referencia",
+            "nombre_origen", "cuenta_origen",
+            "nombre_destino", "cuenta_destino",
+            "banco_origen", "banco_destino", "rfc_origen", "rfc_destino",
+            "hora_liquidacion", "concepto", "sucursal",
+            "confidence", "parse_warnings",
         ]
         ws_mov.append(mov_headers)
-        header_font = Font(bold=True)
-        header_fill = PatternFill("solid", fgColor="1F4E79")
-        for cell in ws_mov[1]:
+        for cell in ws_mov[ws_mov.max_row]:
             cell.font = Font(bold=True, color="FFFFFF")
             cell.fill = header_fill
 
         for line in lines:
+            meta = line.get("metadata") or {}
+            banco_origen = " ".join(filter(None, [meta.get("banco_origen_codigo"), meta.get("banco_origen_nombre")])) or ""
+            banco_destino = " ".join(filter(None, [meta.get("banco_destino_codigo"), meta.get("banco_destino_nombre")])) or ""
             ws_mov.append([
                 line.get("folio"), line.get("raw_line_order"),
-                str(line.get("line_date") or ""), str(line.get("transaction_date") or ""),
-                str(line.get("posting_date") or ""), line.get("description"),
+                str(line.get("line_date") or ""),
                 line.get("direction"), line.get("amount"), line.get("saldo"),
+                meta.get("tipo_movimiento"),
+                line.get("description"),
                 line.get("clave_rastreo"), line.get("referencia"),
                 line.get("nombre_origen"), line.get("cuenta_origen"),
                 line.get("nombre_destino"), line.get("cuenta_destino"),
+                banco_origen, banco_destino,
+                meta.get("rfc_origen"), meta.get("rfc_destino"),
+                meta.get("hora_liquidacion"),
+                meta.get("concepto"),
+                meta.get("sucursal"),
                 line.get("confidence"),
                 json.dumps(line.get("parse_warnings") or [], ensure_ascii=False),
-                (line.get("raw_text") or "")[:500],
             ])
 
         ws_res = wb.create_sheet("Resumen")
+        for row in info_rows:
+            ws_res.append(row)
+            if row:
+                ws_res.cell(row=ws_res.max_row, column=1).font = Font(bold=True)
+                ws_res.cell(row=ws_res.max_row, column=1).fill = info_fill
+
         res_headers = [
             "extraction_folio", "bank_profile", "profile_version", "bank_name",
             "holder_name", "clabe", "account_number_mask",
@@ -100,7 +136,7 @@ class BankStatementToExcelService:
             "warnings", "total_lines_extracted",
         ]
         ws_res.append(res_headers)
-        for cell in ws_res[1]:
+        for cell in ws_res[ws_res.max_row]:
             cell.font = Font(bold=True, color="FFFFFF")
             cell.fill = header_fill
 

@@ -15,6 +15,7 @@ import {
   Plus,
   RefreshCw,
   ShieldCheck,
+  Trash2,
   XCircle
 } from 'lucide-react';
 import {
@@ -558,6 +559,7 @@ function ConverterTab() {
   const [lines, setLines] = useState<StatementLine[]>([]);
   const [loadingLines, setLoadingLines] = useState(false);
   const [exportingId, setExportingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [err, setErr] = useState('');
 
   useEffect(() => { void loadExtractions(); }, []);
@@ -606,6 +608,21 @@ function ConverterTab() {
       setErr(e.message);
     } finally {
       setLoadingLines(false);
+    }
+  }
+
+  async function handleDelete(id: string, folio: string) {
+    if (!window.confirm(`¿Borrar extracción ${folio}? Se eliminarán todas sus líneas.`)) return;
+    setDeletingId(id);
+    setErr('');
+    try {
+      await banksApi('delete_statement', { extraction_id: id });
+      if (selectedId === id) { setSelectedId(null); setLines([]); }
+      await loadExtractions();
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -714,6 +731,13 @@ function ConverterTab() {
                               {exportingId === ex.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
                               Excel
                             </button>
+                            <button
+                              onClick={() => void handleDelete(ex.id, ex.folio)}
+                              disabled={deletingId === ex.id}
+                              className="inline-flex h-7 items-center gap-1 rounded border border-rose-200 px-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                            >
+                              {deletingId === ex.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -732,44 +756,46 @@ function ConverterTab() {
             : lines.length
               ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[860px] border-separate border-spacing-0 text-left text-sm">
+                  <table className="w-full min-w-[1400px] border-separate border-spacing-0 text-left text-[11px]">
                     <thead>
-                      <tr className="text-xs uppercase tracking-normal text-slate-500">
-                        <th className="border-b border-slate-200 px-3 py-2">#</th>
-                        <th className="border-b border-slate-200 px-3 py-2">Fecha</th>
-                        <th className="border-b border-slate-200 px-3 py-2">Descripción</th>
-                        <th className="border-b border-slate-200 px-3 py-2">Dir</th>
-                        <th className="border-b border-slate-200 px-3 py-2 text-right">Monto</th>
-                        <th className="border-b border-slate-200 px-3 py-2 text-right">Saldo</th>
-                        <th className="border-b border-slate-200 px-3 py-2">Nombre Origen</th>
-                        <th className="border-b border-slate-200 px-3 py-2">Cta. Origen</th>
-                        <th className="border-b border-slate-200 px-3 py-2">Nombre Destino</th>
-                        <th className="border-b border-slate-200 px-3 py-2">Cta. Destino</th>
-                        <th className="border-b border-slate-200 px-3 py-2 text-right">Conf</th>
+                      <tr className="uppercase tracking-normal text-slate-500" style={{fontSize:'10px'}}>
+                        <th className="border-b border-slate-200 px-2 py-1">#</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Fecha</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Tipo</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Descripción</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Dir</th>
+                        <th className="border-b border-slate-200 px-2 py-1 text-right">Monto</th>
+                        <th className="border-b border-slate-200 px-2 py-1 text-right">Saldo</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Nombre Origen</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Cta. Origen</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Nombre Destino</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Cta. Destino</th>
+                        <th className="border-b border-slate-200 px-2 py-1 text-right">Conf</th>
                       </tr>
                     </thead>
                     <tbody>
                       {lines.map((ln) => (
-                        <tr key={ln.id}>
-                          <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-400">{ln.raw_line_order}</td>
-                          <td className="border-b border-slate-100 px-3 py-2 text-slate-600 whitespace-nowrap">{ln.line_date}</td>
-                          <td className="border-b border-slate-100 px-3 py-2 text-slate-700 max-w-[180px] truncate">{ln.description || '—'}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">
-                            <span className={`inline-flex rounded px-1.5 py-0.5 text-xs font-semibold ${ln.direction === 'deposito' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-                              {ln.direction}
+                        <tr key={ln.id} className="hover:bg-slate-50">
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-400">{ln.raw_line_order}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 whitespace-nowrap">{ln.line_date}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-500 whitespace-nowrap">{(ln as any).metadata?.tipo_movimiento?.replace(/_/g,' ') || '—'}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-700 max-w-[160px] truncate" title={ln.description || ''}>{ln.description || '—'}</td>
+                          <td className="border-b border-slate-100 px-2 py-1">
+                            <span className={`inline-flex rounded px-1 py-0.5 font-semibold ${ln.direction === 'deposito' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                              {ln.direction === 'deposito' ? 'DEP' : 'RET'}
                             </span>
                           </td>
-                          <td className={`border-b border-slate-100 px-3 py-2 text-right font-bold ${ln.direction === 'deposito' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                          <td className={`border-b border-slate-100 px-2 py-1 text-right font-bold ${ln.direction === 'deposito' ? 'text-emerald-700' : 'text-rose-700'}`}>
                             {money(ln.amount)}
                           </td>
-                          <td className="border-b border-slate-100 px-3 py-2 text-right text-slate-600">
+                          <td className="border-b border-slate-100 px-2 py-1 text-right text-slate-600">
                             {ln.saldo != null ? money(ln.saldo) : '—'}
                           </td>
-                          <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600 max-w-[120px] truncate" title={ln.nombre_origen || ''}>{ln.nombre_origen || '—'}</td>
-                          <td className="border-b border-slate-100 px-3 py-2 text-xs font-mono text-slate-500">{ln.cuenta_origen || '—'}</td>
-                          <td className="border-b border-slate-100 px-3 py-2 text-xs text-slate-600 max-w-[120px] truncate" title={ln.nombre_destino || ''}>{ln.nombre_destino || '—'}</td>
-                          <td className="border-b border-slate-100 px-3 py-2 text-xs font-mono text-slate-500">{ln.cuenta_destino || '—'}</td>
-                          <td className={`border-b border-slate-100 px-3 py-2 text-right text-xs font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 max-w-[100px] truncate" title={ln.nombre_origen || ''}>{ln.nombre_origen || '—'}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 font-mono text-slate-500">{ln.cuenta_origen || '—'}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 max-w-[100px] truncate" title={ln.nombre_destino || ''}>{ln.nombre_destino || '—'}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 font-mono text-slate-500">{ln.cuenta_destino || '—'}</td>
+                          <td className={`border-b border-slate-100 px-2 py-1 text-right font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
                             {Math.round(ln.confidence * 100)}%
                           </td>
                         </tr>
