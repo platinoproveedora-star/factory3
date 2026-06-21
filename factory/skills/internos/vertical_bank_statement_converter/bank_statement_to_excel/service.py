@@ -81,30 +81,39 @@ class BankStatementToExcelService:
                 ws_mov.cell(row=ws_mov.max_row, column=1).fill = info_fill
 
         mov_headers = [
-            "folio", "raw_line_order", "line_date", "direction", "amount", "saldo",
-            "tipo_movimiento",
-            "description",
-            "clave_rastreo", "referencia",
-            "nombre_origen", "cuenta_origen",
-            "nombre_destino", "cuenta_destino",
-            "banco_origen", "banco_destino", "rfc_origen", "rfc_destino",
-            "hora_liquidacion", "concepto", "sucursal",
-            "confidence", "parse_warnings",
+            "#", "Fecha", "Tipo", "Dir", "Monto", "Saldo",
+            "Descripcion",
+            "Clave Rastreo", "Referencia",
+            "Nombre Origen", "Cuenta Origen",
+            "Nombre Destino", "Cuenta Destino",
+            "Banco Origen", "Banco Destino",
+            "RFC Origen", "RFC Destino",
+            "Hora Liquidacion", "Concepto", "Sucursal",
+            "Confianza", "Advertencias", "Folio",
         ]
         ws_mov.append(mov_headers)
         for cell in ws_mov[ws_mov.max_row]:
             cell.font = Font(bold=True, color="FFFFFF")
             cell.fill = header_fill
 
+        total_dep = 0.0
+        total_ret = 0.0
         for line in lines:
             meta = line.get("metadata") or {}
             banco_origen = " ".join(filter(None, [meta.get("banco_origen_codigo"), meta.get("banco_origen_nombre")])) or ""
             banco_destino = " ".join(filter(None, [meta.get("banco_destino_codigo"), meta.get("banco_destino_nombre")])) or ""
+            monto = line.get("amount") or 0
+            if line.get("direction") == "deposito":
+                total_dep += abs(monto)
+            else:
+                total_ret += abs(monto)
             ws_mov.append([
-                line.get("folio"), line.get("raw_line_order"),
+                line.get("raw_line_order"),
                 str(line.get("line_date") or ""),
-                line.get("direction"), line.get("amount"), line.get("saldo"),
                 meta.get("tipo_movimiento"),
+                line.get("direction"),
+                monto,
+                line.get("saldo"),
                 line.get("description"),
                 line.get("clave_rastreo"), line.get("referencia"),
                 line.get("nombre_origen"), line.get("cuenta_origen"),
@@ -116,7 +125,19 @@ class BankStatementToExcelService:
                 meta.get("sucursal"),
                 line.get("confidence"),
                 json.dumps(line.get("parse_warnings") or [], ensure_ascii=False),
+                line.get("folio"),
             ])
+
+        # Totales al final
+        balance_fill = PatternFill("solid", fgColor="E8F5E9")
+        ws_mov.append([])
+        for label, value in [("Total Depósitos", total_dep), ("Total Retiros", total_ret), ("Balance", total_dep - total_ret)]:
+            ws_mov.append([label, "", "", "", value])
+            row = ws_mov.max_row
+            ws_mov.cell(row=row, column=1).font = Font(bold=True)
+            ws_mov.cell(row=row, column=1).fill = balance_fill
+            ws_mov.cell(row=row, column=5).font = Font(bold=True)
+            ws_mov.cell(row=row, column=5).fill = balance_fill
 
         ws_res = wb.create_sheet("Resumen")
         for row in info_rows:

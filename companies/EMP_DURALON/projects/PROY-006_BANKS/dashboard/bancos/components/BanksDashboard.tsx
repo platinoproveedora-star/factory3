@@ -935,25 +935,36 @@ function ConverterTab() {
 
       {selectedId ? (
         <Panel title={`Movimientos — ${selectedExtraction?.folio || selectedId} · ${selectedExtraction?.bank_name || ''} · ${selectedExtraction?.statement_period_start || ''} → ${selectedExtraction?.statement_period_end || ''}`}>
+          {lines.length > 0 ? (
+            <div className="mb-4 grid grid-cols-3 gap-3">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-normal text-emerald-600">Total Depósitos</p>
+                <p className="mt-1 text-xl font-bold text-emerald-700">{money(totalDepositos)}</p>
+              </div>
+              <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-normal text-rose-600">Total Retiros</p>
+                <p className="mt-1 text-xl font-bold text-rose-700">{money(totalRetiros)}</p>
+              </div>
+              <div className={`rounded-lg border px-4 py-3 ${stmtBalance >= 0 ? 'border-teal-200 bg-teal-50' : 'border-amber-200 bg-amber-50'}`}>
+                <p className="text-xs font-semibold uppercase tracking-normal text-slate-600">Balance del período</p>
+                <p className={`mt-1 text-xl font-bold ${stmtBalance >= 0 ? 'text-teal-700' : 'text-amber-700'}`}>{money(stmtBalance)}</p>
+              </div>
+            </div>
+          ) : null}
           {loadingLines
             ? <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-teal-700" /></div>
             : lines.length
               ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1400px] border-separate border-spacing-0 text-left text-[11px]">
+                  <table className="w-full min-w-[860px] border-separate border-spacing-0 text-left text-[11px]">
                     <thead>
                       <tr className="uppercase tracking-normal text-slate-500" style={{fontSize:'10px'}}>
-                        <th className="border-b border-slate-200 px-2 py-1">#</th>
-                        <th className="border-b border-slate-200 px-2 py-1">Fecha</th>
-                        <th className="border-b border-slate-200 px-2 py-1">Tipo</th>
+                        <th className="border-b border-slate-200 px-2 py-1 w-8">#</th>
+                        <th className="border-b border-slate-200 px-2 py-1 whitespace-nowrap">Fecha</th>
+                        <th className="border-b border-slate-200 px-2 py-1 whitespace-nowrap">Tipo</th>
                         <th className="border-b border-slate-200 px-2 py-1">Dir</th>
-                        <th className="border-b border-slate-200 px-2 py-1 text-right">Monto</th>
-                        <th className="border-b border-slate-200 px-2 py-1 text-right">Saldo</th>
-                        <th className="border-b border-slate-200 px-2 py-1">Nombre Origen</th>
-                        <th className="border-b border-slate-200 px-2 py-1">Cta. Origen</th>
-                        <th className="border-b border-slate-200 px-2 py-1">Nombre Destino</th>
-                        <th className="border-b border-slate-200 px-2 py-1">Cta. Destino</th>
-                        <th className="border-b border-slate-200 px-2 py-1 text-right">Conf</th>
+                        <th className="border-b border-slate-200 px-2 py-1 text-right whitespace-nowrap">Monto</th>
+                        <th className="border-b border-slate-200 px-2 py-1 text-right whitespace-nowrap">Saldo</th>
                         <th className="border-b border-slate-200 px-2 py-1">Descripción</th>
                       </tr>
                     </thead>
@@ -974,14 +985,7 @@ function ConverterTab() {
                           <td className="border-b border-slate-100 px-2 py-1 text-right text-slate-600">
                             {ln.saldo != null ? money(ln.saldo) : '—'}
                           </td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 max-w-[120px] truncate" title={ln.nombre_origen || ''}>{ln.nombre_origen || '—'}</td>
-                          <td className="border-b border-slate-100 px-2 py-1 font-mono text-slate-500">{ln.cuenta_origen || '—'}</td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 max-w-[120px] truncate" title={ln.nombre_destino || ''}>{ln.nombre_destino || '—'}</td>
-                          <td className="border-b border-slate-100 px-2 py-1 font-mono text-slate-500">{ln.cuenta_destino || '—'}</td>
-                          <td className={`border-b border-slate-100 px-2 py-1 text-right font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
-                            {Math.round(ln.confidence * 100)}%
-                          </td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-500 max-w-[260px] truncate" title={ln.description || ''}>{ln.description || '—'}</td>
+                          <td className="border-b border-slate-100 px-2 py-1 text-slate-500">{ln.description || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
