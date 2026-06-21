@@ -11,7 +11,7 @@ _HORA  = re.compile(r'\b(\d{2}:\d{2}:\d{2})\b')
 _A = {
     'cve_rast':    re.compile(r'CVE\s*\.?\s*RAST(?:REO)?:\s*(\S+)', re.I),
     'referencia':  re.compile(r'REFERENCIA:\s*(\S+)', re.I),
-    'cta_clabe':   re.compile(r'CTA/CLABE:\s*(\d{15,18})', re.I),
+    'cta_clabe':   re.compile(r'CTA\s*/\s*CLABE\s*:\s*(\d{15,18})', re.I),
     'clabe':       re.compile(r'CLABE\s+(\d{15,18})', re.I),
     'del_cliente': re.compile(r'DEL\s+CLIENTE\s+(.+?)\s+DE\s+LA\s+CLABE', re.I),
     'benef':       re.compile(r'BENEF(?:ICIARIO)?:\s*(.+?)(?=\s*\(DATO|\s*,\s*[A-Z]{3}|\s*$)', re.I),

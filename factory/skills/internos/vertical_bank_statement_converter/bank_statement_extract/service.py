@@ -303,6 +303,13 @@ class BankStatementExtractService:
             m = re.search(profile["holder_name_regex"], text, re.IGNORECASE | re.MULTILINE)
             if m:
                 meta["holder_name"] = m.group(1).strip()[:150]
+        # Fallback: primera línea sin etiqueta (Banorte pone el nombre directo)
+        if not meta.get("holder_name"):
+            for line in text.splitlines():
+                line = line.strip()
+                if len(line) >= 10 and re.match(r'^[A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s&,.]+$', line):
+                    meta["holder_name"] = line[:150]
+                    break
         if profile.get("clabe_regex"):
             m = re.search(profile["clabe_regex"], text, re.IGNORECASE)
             if m:
@@ -406,9 +413,11 @@ class BankStatementExtractService:
         mr = rastreo_re.search(full_text)
         mref = ref_re.search(full_text)
         signed = -abs(amount or 0) if direction == "retiro" else abs(amount or 0)
+        # Limpiar monto+saldo del renglón ancla antes de usarlo como descripción
+        anchor_desc = re.sub(r'(\s+\d[\d,]*\.\d{2})+\s*$', '', dm.group(2)).strip()
         return {
             "transaction_date": date_iso, "posting_date": date_iso, "line_date": date_iso,
-            "description": self._build_desc(dm.group(2), block[1:]),
+            "description": self._build_desc(anchor_desc, block[1:]),
             "direction": direction, "amount": round(signed, 2), "saldo": saldo,
             "clave_rastreo": scanned.get("clave_rastreo") or (mr.group(1) if mr else None),
             "referencia": scanned.get("referencia") or (mref.group(1) if mref else None),

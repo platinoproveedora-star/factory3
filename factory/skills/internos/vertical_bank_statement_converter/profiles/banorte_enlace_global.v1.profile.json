@@ -13,7 +13,7 @@
   "amount_strategy": "single_column_two_amounts_right_aligned",
   "saldo_position": "last_money_value_in_anchor_line",
   "saldo_required_each_row": true,
-  "holder_name_regex": "(?:Nombre|Raz[oó]n Social)[:\\s]+([A-ZÁÉÍÓÚÑ][^\\n]{5,80})",
+  "holder_name_regex": "^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\\s&,.]{9,149})",
   "clabe_regex": "CLABE[:\\s]+([0-9]{18})",
   "rastreo_regex": "CVE\\s*RAST(?:REO)?\\s*[:\\s]+([A-Za-z0-9]+)",
   "referencia_regex": "REFERENCIA\\s*[:\\s]+([A-Za-z0-9]+)",
