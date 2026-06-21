@@ -302,7 +302,7 @@ export default function InventoryDashboard() {
           )}
           {activeTab === 'proveedores' && <PartyTab type="supplier" parties={data.suppliers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
           {activeTab === 'clientes' && <PartyTab type="customer" parties={data.customers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
-          {activeTab === 'kardex' && <KardexTab products={data.products} />}
+          {activeTab === 'kardex' && <KardexTab products={data.products} lotStock={data.lot_stock || []} />}
           {activeTab === 'ventas' && (
             <RemisionesTab setNotice={setNotice} />
           )}
@@ -919,8 +919,7 @@ function PurchaseTab({
   const [supplierFilter, setSupplierFilter] = useState('');
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 90);
-    return d.toISOString().slice(0, 10);
+    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
   });
   const [endDate, setEndDate] = useState(today);
   const [loading, setLoading] = useState(false);
@@ -1004,6 +1003,10 @@ function PurchaseTab({
   }
 
   async function loadPurchases() {
+    if (startDate && endDate) {
+      const diff = (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000;
+      if (diff > 90) { window.alert('El rango maximo permitido es de 90 dias'); return; }
+    }
     setLoading(true);
     try {
       const params = new URLSearchParams({ start_date: startDate, end_date: endDate, limit: '500', t: String(Date.now()) });
@@ -1792,6 +1795,10 @@ function RemisionesTab({ setNotice }: { setNotice: (value: string) => void }) {
   const [loading, setLoading] = useState(true);
 
   async function load() {
+    if (startDate && endDate) {
+      const diff = (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000;
+      if (diff > 90) { window.alert('El rango maximo permitido es de 90 dias'); return; }
+    }
     setLoading(true);
     try {
       const params = new URLSearchParams({ limit: '300', t: String(Date.now()) });
@@ -2250,7 +2257,7 @@ function KeyProductMatrix({ matrix }: { matrix: MatrixData | null }) {
   );
 }
 
-function KardexTab({ products }: { products: Product[] }) {
+function KardexTab({ products, lotStock }: { products: Product[]; lotStock: NonNullable<DashboardData['lot_stock']> }) {
   const [latest, setLatest] = useState<KardexMovement[]>([]);
   const [filtered, setFiltered] = useState<KardexMovement[]>([]);
   const [productId, setProductId] = useState(products[0]?.id || '');
@@ -2262,6 +2269,11 @@ function KardexTab({ products }: { products: Product[] }) {
   const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
   const [lotCode, setLotCode] = useState('');
+
+  const availableLots = useMemo(
+    () => [...new Set(lotStock.filter((r) => r.product_id === productId).map((r) => r.lot_code).filter(Boolean))].sort() as string[],
+    [lotStock, productId],
+  );
 
   useEffect(() => {
     loadLatest();
@@ -2325,7 +2337,10 @@ function KardexTab({ products }: { products: Product[] }) {
               <option value="">Seleccionar producto</option>
               {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
             </select>
-            <input value={lotCode} onChange={(event) => setLotCode(event.target.value)} placeholder="Lote (opcional)" className="h-10 w-40 rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
+            <datalist id="kardex-lot-codes">
+              {availableLots.map((lot) => <option key={lot} value={lot} />)}
+            </datalist>
+            <input list="kardex-lot-codes" value={lotCode} onChange={(event) => setLotCode(event.target.value)} placeholder="Lote (opcional)" className="h-10 w-40 rounded border border-slate-200 px-3 text-sm outline-none focus:border-slate-500" />
             <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
             <input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="h-10 rounded border border-slate-200 px-3 text-sm" />
             <button type="button" onClick={loadFiltered} disabled={loading} className="h-10 rounded bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800">Ver</button>

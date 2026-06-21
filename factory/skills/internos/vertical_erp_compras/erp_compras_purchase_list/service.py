@@ -19,8 +19,8 @@ class ErpComprasPurchaseListService:
             end = self._as_date(end_date)
             if not start or not end:
                 return {"ok": False, "error": "rango de fechas invalido"}
-            if (end - start).days > 365:
-                return {"ok": False, "error": "el rango maximo permitido es de 1 ano"}
+            if (end - start).days > 90:
+                return {"ok": False, "error": "el rango maximo permitido es de 90 dias"}
 
         filters = {"source_type": "compra"}
         if start_date:
@@ -30,7 +30,7 @@ class ErpComprasPurchaseListService:
             return result
         rows = result.get("data") or []
         if end_date:
-            rows = [row for row in rows if str(row.get("movement_date") or "") <= end_date]
+            rows = [row for row in rows if str(row.get("movement_date") or "")[:10] <= end_date]
         grouped = self._group(rows)
         return {"ok": True, "data": {"purchases": grouped[:limit], "movements": rows[:limit], "start_date": start_date or None, "end_date": end_date or None}}
 

@@ -25,8 +25,12 @@ export async function GET(req: Request) {
       });
       return NextResponse.json({ ok: true, data: result }, { headers: noStore });
     }
-    const limit = params.get('limit') || '100';
-    const result = await runFactorySkill<{ remisiones: any[] }>('vertical_erp_ventas/erp_ventas_remision_list', { limit });
+    const limit = params.get('limit') || '300';
+    const result = await runFactorySkill<{ remisiones: any[] }>('vertical_erp_ventas/erp_ventas_remision_list', {
+      limit,
+      start_date: params.get('start_date') || undefined,
+      end_date: params.get('end_date') || undefined,
+    });
     return NextResponse.json({ ok: true, data: result.remisiones || [] }, { headers: noStore });
   } catch (error: any) {
     return NextResponse.json({ ok: false, error: error.message || 'Error cargando remisiones' }, { status: 500, headers: noStore });
