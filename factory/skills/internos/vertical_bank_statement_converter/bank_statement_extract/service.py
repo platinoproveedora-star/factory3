@@ -151,7 +151,8 @@ class BankStatementExtractService:
 
         doc_type = profile.get("document_type", "estado_de_cuenta")
         ext_prefix = "BMP" if doc_type == "movimientos_portal" else "BSE"
-        folio_res = reserve_folio(ctx, ext_prefix, "statement_extractions")
+        folio_scope = f"stmt_ext_{doc_type}"
+        folio_res = reserve_folio(ctx, ext_prefix, "statement_extractions", scope=folio_scope)
         if not folio_res.get("ok"):
             return {"ok": False, "error": f"folio {ext_prefix}: {folio_res.get('error')}"}
         ext_folio = folio_res["data"]["folio"]

@@ -37,7 +37,7 @@ def resolve_statement_context(context: dict) -> dict:
     }
 
 
-def reserve_folio(ctx: dict, prefix: str, table: str) -> dict:
+def reserve_folio(ctx: dict, prefix: str, table: str, scope: str | None = None) -> dict:
     service_path = (
         Path(__file__).resolve().parent.parent
         / "vertical_erp"
@@ -53,7 +53,7 @@ def reserve_folio(ctx: dict, prefix: str, table: str) -> dict:
         {
             **ctx,
             "prefix": prefix,
-            "scope": table,
+            "scope": scope or table,
             "table": table,
             "folio_column": "folio",
             "digits": 5,
