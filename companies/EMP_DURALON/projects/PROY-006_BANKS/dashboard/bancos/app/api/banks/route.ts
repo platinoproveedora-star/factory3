@@ -303,6 +303,21 @@ async function uploadStatement(payload: Record<string, any>) {
   });
 }
 
+async function previewPdf(payload: Record<string, any>) {
+  if (!payload.pdf_content) throw new Error('pdf_content requerido');
+  const sc = statementsSchema();
+  if (!sc) throw new Error('STATEMENTS_SCHEMA no configurado');
+  return factorySkill('vertical_bank_statement_converter/bank_statement_extract', {
+    schema: sc,
+    company_id: companyId(),
+    project_code: statementsProjectCode(),
+    pdf_content: payload.pdf_content,
+    file_name: payload.file_name || 'preview.pdf',
+    dry_run: true,
+    raw_preview: true,
+  });
+}
+
 async function listStatements() {
   return supabaseStatements('statement_extractions', {
     query: {
@@ -332,7 +347,10 @@ async function updateStatement(payload: Record<string, any>) {
   if (!id) throw new Error('extraction_id requerido');
   const allowed = ['holder_name', 'account_number_mask', 'clabe', 'statement_period_start', 'statement_period_end', 'bank_name'];
   const updates = Object.fromEntries(
-    Object.entries(payload).filter(([k, v]) => allowed.includes(k) && v !== undefined && v !== null)
+    Object.entries(payload)
+      .filter(([k]) => allowed.includes(k))
+      .map(([k, v]): [string, any] => [k, v === '' ? null : v])
+      .filter(([, v]) => v !== undefined && v !== null)
   );
   if (!Object.keys(updates).length) throw new Error('Sin campos para actualizar');
   const sc = statementsSchema();
@@ -403,6 +421,14 @@ async function assignExpenseWithdrawal(payload: Record<string, any>) {
   }));
 }
 
+async function cancelExpenseAssignment(payload: Record<string, any>) {
+  return factorySkill('vertical_erp_banks/erp_banks_expense_reconcile', expenseReconcileContext({
+    ...payload,
+    action: 'cancel',
+    dry_run: false
+  }));
+}
+
 export async function POST(request: Request) {
   const authError = requireDashboardKey(request);
   if (authError) {
@@ -420,13 +446,15 @@ export async function POST(request: Request) {
       decide_authorization: () => decideAuthorization(payload),
       mark_reconciled: () => markReconciled(payload),
       upload_statement: () => uploadStatement(payload),
+      preview_pdf: () => previewPdf(payload),
       list_statements: listStatements,
       statement_lines: () => statementLines(payload),
       export_excel: () => exportExcel(payload),
       delete_statement: () => deleteStatement(payload),
       update_statement: () => updateStatement(payload),
       list_expense_reconciliation: () => listExpenseReconciliation(payload),
-      assign_expense_withdrawal: () => assignExpenseWithdrawal(payload)
+      assign_expense_withdrawal: () => assignExpenseWithdrawal(payload),
+      cancel_expense_assignment: () => cancelExpenseAssignment(payload)
     };
 
     if (!actions[action]) {

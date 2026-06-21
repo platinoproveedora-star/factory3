@@ -703,6 +703,7 @@ function ConciliacionGastos({ accounts, onRefreshBanks }: { accounts: Account[];
   const [data, setData] = useState<ExpenseReconciliationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [accountByExpense, setAccountByExpense] = useState<Record<string, string>>({});
   const [err, setErr] = useState('');
 
@@ -751,8 +752,33 @@ function ConciliacionGastos({ accounts, onRefreshBanks }: { accounts: Account[];
     }
   }
 
+  async function cancelAssignment(expense: ExpenseReconciliationRow) {
+    const movementId = expense.bank_movement?.id;
+    if (!movementId) {
+      setErr('No se encontro el movimiento ligado para cancelar');
+      return;
+    }
+    setCancelingId(expense.id);
+    setErr('');
+    try {
+      await banksApi('cancel_expense_assignment', {
+        expense_id: expense.id,
+        movement_id: movementId,
+        performed_by: 'conciliacion_gastos',
+        reason: 'cancelacion_manual_desde_dashboard'
+      });
+      await load();
+      await onRefreshBanks();
+    } catch (error: any) {
+      setErr(error.message || 'No se pudo cancelar asignacion');
+    } finally {
+      setCancelingId(null);
+    }
+  }
+
   const expenses = data?.expenses || [];
   const pending = expenses.filter((expense) => !expense.linked);
+  const linked = expenses.filter((expense) => expense.linked);
 
   return (
     <section className="mt-5">
@@ -771,12 +797,13 @@ function ConciliacionGastos({ accounts, onRefreshBanks }: { accounts: Account[];
           <Kpi icon={BadgeCheck} label="Pendientes" value={String(data?.summary.pending || 0)} tone="bg-amber-50 text-amber-700" />
           <Kpi icon={CheckCircle2} label="Asignados" value={String(data?.summary.linked || 0)} tone="bg-emerald-50 text-emerald-700" />
         </div>
-        {!pending.length && !loading ? <Empty text="Sin gastos pendientes por asignar" /> : null}
-        {pending.length ? (
+        {!expenses.length && !loading ? <Empty text="Sin gastos para revisar" /> : null}
+        {expenses.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left text-sm">
+            <table className="w-full min-w-[1100px] border-separate border-spacing-0 text-left text-sm">
               <thead>
                 <tr className="text-xs uppercase tracking-normal text-slate-500">
+                  <th className="border-b border-slate-200 px-3 py-2">Estado</th>
                   <th className="border-b border-slate-200 px-3 py-2">Gasto</th>
                   <th className="border-b border-slate-200 px-3 py-2">Fecha</th>
                   <th className="border-b border-slate-200 px-3 py-2">Descripcion</th>
@@ -784,36 +811,63 @@ function ConciliacionGastos({ accounts, onRefreshBanks }: { accounts: Account[];
                   <th className="border-b border-slate-200 px-3 py-2 text-right">Monto</th>
                   <th className="border-b border-slate-200 px-3 py-2">Cuenta origen</th>
                   <th className="border-b border-slate-200 px-3 py-2">Destino</th>
+                  <th className="border-b border-slate-200 px-3 py-2">Movimiento</th>
                   <th className="border-b border-slate-200 px-3 py-2"></th>
                 </tr>
               </thead>
               <tbody>
-                {pending.map((expense) => (
-                  <tr key={expense.id}>
+                {expenses.map((expense) => {
+                  const assignedAccount = accounts.find((account) => account.id === expense.bank_movement?.account_id);
+                  return (
+                  <tr key={expense.id} className={expense.linked ? 'bg-emerald-50/70' : undefined}>
+                    <td className="border-b border-slate-100 px-3 py-3">
+                      <Badge value={expense.linked ? 'asignado' : 'pendiente'} />
+                    </td>
                     <td className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-950">{expense.folio}</td>
                     <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{expense.fecha}</td>
                     <td className="max-w-xs truncate border-b border-slate-100 px-3 py-3 text-slate-600">{expense.descripcion || '-'}</td>
                     <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{expense.vehiculo || '-'}</td>
                     <td className="border-b border-slate-100 px-3 py-3 text-right font-bold text-rose-700">{money(expense.monto)}</td>
                     <td className="border-b border-slate-100 px-3 py-3">
-                      <Select value={accountByExpense[expense.id] || ''} onChange={(event) => setAccountByExpense({ ...accountByExpense, [expense.id]: event.target.value })}>
-                        <option value="">Seleccionar</option>
-                        {accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
-                      </Select>
+                      {expense.linked ? (
+                        <span className="font-semibold text-slate-700">{assignedAccount?.account_name || expense.bank_movement?.account_folio || '-'}</span>
+                      ) : (
+                        <Select value={accountByExpense[expense.id] || ''} onChange={(event) => setAccountByExpense({ ...accountByExpense, [expense.id]: event.target.value })}>
+                          <option value="">Seleccionar</option>
+                          {accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
+                        </Select>
+                      )}
                     </td>
                     <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{data?.expense_counterparty_name || 'Gastos'}</td>
+                    <td className="border-b border-slate-100 px-3 py-3 text-slate-600">
+                      {expense.bank_movement ? (
+                        <div>
+                          <p className="font-semibold text-slate-800">{expense.bank_movement.folio}</p>
+                          <p className="text-xs text-slate-500">{expense.bank_movement.movement_date}</p>
+                        </div>
+                      ) : '-'}
+                    </td>
                     <td className="border-b border-slate-100 px-3 py-3">
-                      <button disabled={assigningId === expense.id} onClick={() => void assign(expense)} className="inline-flex h-9 items-center gap-2 rounded-md bg-teal-700 px-3 text-sm font-semibold text-white">
-                        {assigningId === expense.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                        Asignar retiro
-                      </button>
+                      {expense.linked ? (
+                        <button disabled={cancelingId === expense.id} onClick={() => void cancelAssignment(expense)} className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-700 hover:bg-rose-50">
+                          {cancelingId === expense.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                          Cancelar
+                        </button>
+                      ) : (
+                        <button disabled={assigningId === expense.id} onClick={() => void assign(expense)} className="inline-flex h-9 items-center gap-2 rounded-md bg-teal-700 px-3 text-sm font-semibold text-white">
+                          {assigningId === expense.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                          Asignar retiro
+                        </button>
+                      )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
         ) : null}
+        {linked.length ? <p className="mt-3 text-xs font-semibold text-slate-500">{linked.length} gasto(s) ya asignado(s) se muestran sombreados. Cancelar crea la reversa del retiro y libera el gasto.</p> : null}
       </Panel>
     </section>
   );
@@ -921,6 +975,8 @@ function ConverterTab() {
   const [editingExtraction, setEditingExtraction] = useState<StatementExtraction | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
   const [editSaving, setEditSaving] = useState(false);
+  const [rawLines, setRawLines] = useState<string[] | null>(null);
+  const [rawPreviewing, setRawPreviewing] = useState(false);
   const [err, setErr] = useState('');
 
   useEffect(() => { void loadExtractions(); }, []);
@@ -1002,6 +1058,22 @@ function ConverterTab() {
     }
   }
 
+  async function handleRawPreview() {
+    if (!file) return;
+    setRawPreviewing(true);
+    setRawLines(null);
+    setErr('');
+    try {
+      const b64 = await toBase64(file);
+      const result = await banksApi<{ lines: string[]; total_lines: number }>('preview_pdf', { pdf_content: b64, file_name: file.name });
+      setRawLines(result.lines || []);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setRawPreviewing(false);
+    }
+  }
+
   async function handleExcel(id: string) {
     setExportingId(id);
     setErr('');
@@ -1036,7 +1108,18 @@ function ConverterTab() {
                 className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm file:mr-3 file:border-0 file:bg-teal-50 file:text-xs file:font-semibold file:text-teal-700"
               />
             </Field>
-            <SaveButton saving={uploading} label="Procesar PDF" />
+            <div className="flex gap-2">
+              <SaveButton saving={uploading} label="Procesar PDF" />
+              <button
+                type="button"
+                disabled={!file || rawPreviewing}
+                onClick={() => void handleRawPreview()}
+                className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm disabled:opacity-50"
+              >
+                {rawPreviewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                Ver raw
+              </button>
+            </div>
           </form>
           {uploadResult ? (
             <div className={`mt-4 rounded-lg border p-3 ${uploadResult.idempotent ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
@@ -1044,6 +1127,17 @@ function ConverterTab() {
               <p className="mt-1 text-xs text-slate-600">
                 {uploadResult.idempotent ? 'Ya existia — no se duplico' : `${uploadResult.lines_created} líneas extraídas`}
               </p>
+            </div>
+          ) : null}
+          {rawLines ? (
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-950 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-300">Texto raw — {rawLines.length} líneas</p>
+                <button onClick={() => setRawLines(null)} className="text-xs text-slate-400 hover:text-white">✕</button>
+              </div>
+              <pre className="max-h-72 overflow-y-auto text-[10px] leading-4 text-emerald-300 whitespace-pre-wrap break-all">
+                {rawLines.map((l, i) => `${String(i + 1).padStart(3, ' ')}  ${l}`).join('\n')}
+              </pre>
             </div>
           ) : null}
         </Panel>
@@ -1083,9 +1177,9 @@ function ConverterTab() {
                       <tr key={ex.id} className={selectedId === ex.id ? 'bg-teal-50' : undefined}>
                         <td className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-950">{ex.folio}</td>
                         <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{ex.bank_name || ex.bank_profile}</td>
-                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 max-w-[160px]" title={ex.holder_name || ''}>
+                        <td className="border-b border-slate-100 px-3 py-3 text-slate-600 min-w-[220px]" title={editingExtraction?.id === ex.id ? editForm.holder_name : (ex.holder_name || '')}>
                           {editingExtraction?.id === ex.id
-                            ? <input className="h-7 w-full rounded border border-slate-300 px-2 text-xs" value={editForm.holder_name || ''} onChange={(e) => setEditForm({ ...editForm, holder_name: e.target.value })} />
+                            ? <input className="h-7 w-full min-w-[200px] rounded border border-slate-300 px-2 text-xs" value={editForm.holder_name || ''} onChange={(e) => setEditForm({ ...editForm, holder_name: e.target.value })} />
                             : <span className="block truncate">{ex.holder_name || '—'}</span>}
                         </td>
                         <td className="border-b border-slate-100 px-3 py-3 text-slate-600 font-mono text-xs">

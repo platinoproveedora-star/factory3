@@ -59,6 +59,17 @@ class BankStatementExtractService:
                 "data": {"source_format": "pdf", "text_length": len(full_text.strip()), "supported_in_v1": False},
             }
 
+        if context.get("raw_preview"):
+            non_empty = [l for l in full_text.splitlines() if l.strip()]
+            return {
+                "ok": True,
+                "data": {
+                    "raw_preview": True,
+                    "total_lines": len(non_empty),
+                    "lines": non_empty[:60],
+                },
+            }
+
         bank_profile = str(context.get("bank_profile") or "").strip()
         profile_version = str(context.get("profile_version") or "v1").strip()
 
@@ -368,7 +379,7 @@ class BankStatementExtractService:
             if strategy == "single_column_two_amounts_right_aligned":
                 mv = self._parse_banorte_block(anchor, block, profile, year, prev_saldo, rastreo_re, ref_re)
             elif strategy == "cargo_abono_two_columns":
-                mv = self._parse_bbva_block(anchor, block, profile, year, pages_words, rastreo_re, ref_re)
+                mv = self._parse_bbva_block(anchor, block, profile, year, pages_words, rastreo_re, ref_re, prev_saldo)
             else:
                 mv = self._parse_generic_block(anchor, block, profile, year, prev_saldo)
 
@@ -434,17 +445,22 @@ class BankStatementExtractService:
             "metadata": meta,
         }
 
-    def _parse_bbva_block(self, anchor, block, profile, year, pages_words, rastreo_re, ref_re):
+    def _parse_bbva_block(self, anchor, block, profile, year, pages_words, rastreo_re, ref_re, prev_saldo=None):
         dm = re.match(profile["anchor_regex"], anchor)
         if not dm:
             return None
         t_date = self._parse_date_str(dm.group(1), profile, year)
-        p_date = self._parse_date_str(dm.group(2), profile, year)
+        # grupo 2 puede ser vacío (portal: una sola fecha) — fallback a t_date
+        g2 = (dm.group(2) or "").strip()
+        p_date = self._parse_date_str(g2, profile, year) if g2 else None
+        p_date = p_date or t_date
         amounts = parse_all_money(anchor)
-        amount = amounts[0] if amounts else 0.0
-        saldo = amounts[1] if len(amounts) >= 2 else None
+        saldo = amounts[-1] if amounts else None
+        non_saldo = amounts[:-1] if len(amounts) >= 2 else []
+        non_zero_ns = [a for a in non_saldo if a > 0.01]
+        amount = non_zero_ns[0] if non_zero_ns else 0.0
         cargo_x_max = profile.get("cargo_x_max", 420)
-        direction = self._detect_bbva_direction(amount, pages_words, cargo_x_max)
+        direction = self._detect_bbva_direction(amount, pages_words, cargo_x_max, prev_saldo, saldo)
         full_text = "\n".join(block)
         scanned = _scanner.scan(full_text)
         meta = scanned.pop("metadata", {})
@@ -452,10 +468,11 @@ class BankStatementExtractService:
         mref = ref_re.search(full_text)
         posting_iso = str(p_date) if p_date else None
         signed = -abs(amount) if direction == "retiro" else abs(amount)
+        desc_group = dm.group(dm.lastindex) if dm.lastindex and dm.lastindex >= 3 else g2
         return {
             "transaction_date": str(t_date) if t_date else None,
             "posting_date": posting_iso, "line_date": posting_iso,
-            "description": self._build_desc(dm.group(3), block[1:]),
+            "description": self._build_desc(desc_group, block[1:]),
             "direction": direction, "amount": round(signed, 2), "saldo": saldo,
             "clave_rastreo": scanned.get("clave_rastreo") or (mr.group(1) if mr else None),
             "referencia": scanned.get("referencia") or (mref.group(1) if mref else None),

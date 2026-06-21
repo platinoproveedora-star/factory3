@@ -4,10 +4,10 @@
   "document_type": "movimientos_portal",
   "bank_name": "BBVA",
   "detect_markers": ["Detalle de movimientos", "Concepto / Referencia"],
-  "anchor_regex": "^(\\d{2}-\\d{2})\\s+(.*)",
+  "anchor_regex": "^(\\d{2}-\\d{2})\\s+()(.*)",
   "date_format": "%d-%m",
-  "amount_strategy": "single_column_two_amounts_right_aligned",
-  "saldo_position": "last_money_value_in_anchor_line",
+  "amount_strategy": "cargo_abono_two_columns",
+  "cargo_x_max": 420,
   "holder_name_regex": "^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\\s&,.]{9,149})",
   "account_regex": "Número de cuenta[:\\s]+([\\d]+)",
   "skip_line_patterns": [
