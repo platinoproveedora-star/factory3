@@ -350,7 +350,7 @@ export default function BanksDashboard() {
         {activeTab === 'autorizaciones' ? <Autorizaciones auths={pendingAuthorizations} movements={data.movements} onDecide={decide} saving={saving} /> : null}
         {activeTab === 'conciliacion' ? <Conciliacion accounts={data.accounts} movements={pendingReconciliation} onStatusChange={updateReconciliationStatus} saving={saving} /> : null}
         {activeTab === 'conciliacion_gastos' ? <ConciliacionGastos accounts={data.accounts} onRefreshBanks={refresh} /> : null}
-        {activeTab === 'converter' ? <ConverterTab /> : null}
+        {activeTab === 'converter' ? <ConverterTab accounts={data.accounts} /> : null}
       </section>
     </main>
   );
@@ -1034,7 +1034,9 @@ function downloadBase64(b64: string, filename: string, mime: string) {
 
 type UploadResult = { dry_run: boolean; idempotent: boolean; extraction: { id: string; folio: string }; lines_created: number };
 
-function ConverterTab() {
+type ImportLineResult = { status: 'imported' | 'exists' | 'error'; folio?: string };
+
+function ConverterTab({ accounts }: { accounts: Account[] }) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
@@ -1050,6 +1052,10 @@ function ConverterTab() {
   const [editSaving, setEditSaving] = useState(false);
   const [rawLines, setRawLines] = useState<string[] | null>(null);
   const [rawPreviewing, setRawPreviewing] = useState(false);
+  const [importAccount, setImportAccount] = useState('');
+  const [selectedLineIds, setSelectedLineIds] = useState<Set<string>>(new Set());
+  const [importResults, setImportResults] = useState<Map<string, ImportLineResult>>(new Map());
+  const [importing, setImporting] = useState(false);
   const [err, setErr] = useState('');
 
   useEffect(() => { void loadExtractions(); }, []);
@@ -1087,8 +1093,10 @@ function ConverterTab() {
   }
 
   async function handleSelect(id: string) {
-    if (selectedId === id) { setSelectedId(null); return; }
+    if (selectedId === id) { setSelectedId(null); setLines([]); return; }
     setSelectedId(id);
+    setSelectedLineIds(new Set());
+    setImportResults(new Map());
     setLoadingLines(true);
     setErr('');
     try {
@@ -1099,6 +1107,44 @@ function ConverterTab() {
     } finally {
       setLoadingLines(false);
     }
+  }
+
+  async function handleImport() {
+    if (!importAccount) { setErr('Selecciona la cuenta de destino antes de importar'); return; }
+    const lineIds = Array.from(selectedLineIds);
+    if (!lineIds.length) { setErr('Selecciona al menos un movimiento'); return; }
+    setImporting(true);
+    setErr('');
+    try {
+      const result = await banksApi<{ results: Array<{ line_id: string; status: string; folio?: string }> }>(
+        'import_statement_movements',
+        { extraction_id: selectedId, account_folio: importAccount, line_ids: lineIds }
+      );
+      const next = new Map(importResults);
+      for (const r of result.results || []) {
+        next.set(r.line_id, { status: r.status as ImportLineResult['status'], folio: r.folio });
+      }
+      setImportResults(next);
+      setSelectedLineIds(new Set());
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function toggleLine(id: string) {
+    if (importResults.has(id)) return;
+    const next = new Set(selectedLineIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedLineIds(next);
+  }
+
+  function toggleAll() {
+    const importable = lines.filter((ln) => !importResults.has(ln.id));
+    const allSelected = importable.length > 0 && importable.every((ln) => selectedLineIds.has(ln.id));
+    if (allSelected) setSelectedLineIds(new Set());
+    else setSelectedLineIds(new Set(importable.map((ln) => ln.id)));
   }
 
   async function handleDelete(id: string, folio: string) {
@@ -1359,14 +1405,53 @@ function ConverterTab() {
               </div>
             </div>
           ) : null}
+
+          {lines.length > 0 ? (
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <select
+                value={importAccount}
+                onChange={(e) => setImportAccount(e.target.value)}
+                className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm"
+              >
+                <option value="">-- Cuenta destino --</option>
+                {accounts.map((a) => <option key={a.folio} value={a.folio}>{a.account_name} / {a.folio}</option>)}
+              </select>
+              <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded"
+                  checked={lines.filter((ln) => !importResults.has(ln.id)).every((ln) => selectedLineIds.has(ln.id)) && lines.some((ln) => !importResults.has(ln.id))}
+                  onChange={toggleAll}
+                />
+                Seleccionar todos
+              </label>
+              <span className="text-sm text-slate-500">{selectedLineIds.size} seleccionado(s)</span>
+              <button
+                disabled={importing || selectedLineIds.size === 0 || !importAccount}
+                onClick={() => void handleImport()}
+                className="inline-flex h-9 items-center gap-2 rounded-md bg-teal-700 px-4 text-sm font-semibold text-white shadow-sm disabled:opacity-40"
+              >
+                {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                Importar seleccionados ({selectedLineIds.size})
+              </button>
+              {importResults.size > 0 ? (
+                <span className="text-xs font-semibold text-slate-500">
+                  {Array.from(importResults.values()).filter((r) => r.status === 'imported').length} importados ·{' '}
+                  {Array.from(importResults.values()).filter((r) => r.status === 'exists').length} ya existían
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
           {loadingLines
             ? <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-teal-700" /></div>
             : lines.length
               ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[860px] border-separate border-spacing-0 text-left text-[11px]">
+                  <table className="w-full min-w-[920px] border-separate border-spacing-0 text-left text-[11px]">
                     <thead>
                       <tr className="uppercase tracking-normal text-slate-500" style={{fontSize:'10px'}}>
+                        <th className="border-b border-slate-200 px-2 py-1 w-6"></th>
                         <th className="border-b border-slate-200 px-2 py-1 w-8">#</th>
                         <th className="border-b border-slate-200 px-2 py-1 whitespace-nowrap">Fecha</th>
                         <th className="border-b border-slate-200 px-2 py-1 whitespace-nowrap">Tipo</th>
@@ -1375,31 +1460,53 @@ function ConverterTab() {
                         <th className="border-b border-slate-200 px-2 py-1 text-right whitespace-nowrap">Saldo</th>
                         <th className="border-b border-slate-200 px-2 py-1 text-right">Conf%</th>
                         <th className="border-b border-slate-200 px-2 py-1">Descripción</th>
+                        <th className="border-b border-slate-200 px-2 py-1">Estado</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {lines.map((ln) => (
-                        <tr key={ln.id} className="hover:bg-slate-50">
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-400">{ln.raw_line_order}</td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-600 whitespace-nowrap">{ln.line_date}</td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-500 whitespace-nowrap">{ln.metadata?.tipo_movimiento?.replace(/_/g,' ') || '—'}</td>
-                          <td className="border-b border-slate-100 px-2 py-1">
-                            <span className={`inline-flex rounded px-1 py-0.5 font-semibold ${ln.direction === 'deposito' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-                              {ln.direction === 'deposito' ? 'DEP' : 'RET'}
-                            </span>
-                          </td>
-                          <td className={`border-b border-slate-100 px-2 py-1 text-right font-bold ${ln.direction === 'deposito' ? 'text-emerald-700' : 'text-rose-700'}`}>
-                            {money(ln.amount)}
-                          </td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-right text-slate-600">
-                            {ln.saldo != null ? money(ln.saldo) : '—'}
-                          </td>
-                          <td className={`border-b border-slate-100 px-2 py-1 text-right font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
-                            {Math.round((ln.confidence ?? 0) * 100)}%
-                          </td>
-                          <td className="border-b border-slate-100 px-2 py-1 text-slate-500">{ln.description || '—'}</td>
-                        </tr>
-                      ))}
+                      {lines.map((ln) => {
+                        const result = importResults.get(ln.id);
+                        const isImported = !!result;
+                        const isSelected = selectedLineIds.has(ln.id);
+                        return (
+                          <tr key={ln.id} className={isImported ? 'bg-slate-50 opacity-60' : isSelected ? 'bg-teal-50' : 'hover:bg-slate-50'}>
+                            <td className="border-b border-slate-100 px-2 py-1">
+                              <input
+                                type="checkbox"
+                                disabled={isImported}
+                                checked={isSelected}
+                                onChange={() => toggleLine(ln.id)}
+                                className="h-3.5 w-3.5 rounded"
+                              />
+                            </td>
+                            <td className="border-b border-slate-100 px-2 py-1 text-slate-400">{ln.raw_line_order}</td>
+                            <td className="border-b border-slate-100 px-2 py-1 text-slate-600 whitespace-nowrap">{ln.line_date}</td>
+                            <td className="border-b border-slate-100 px-2 py-1 text-slate-500 whitespace-nowrap">{ln.metadata?.tipo_movimiento?.replace(/_/g,' ') || '—'}</td>
+                            <td className="border-b border-slate-100 px-2 py-1">
+                              <span className={`inline-flex rounded px-1 py-0.5 font-semibold ${ln.direction === 'deposito' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                                {ln.direction === 'deposito' ? 'DEP' : 'RET'}
+                              </span>
+                            </td>
+                            <td className={`border-b border-slate-100 px-2 py-1 text-right font-bold ${ln.direction === 'deposito' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                              {money(ln.amount)}
+                            </td>
+                            <td className="border-b border-slate-100 px-2 py-1 text-right text-slate-600">
+                              {ln.saldo != null ? money(ln.saldo) : '—'}
+                            </td>
+                            <td className={`border-b border-slate-100 px-2 py-1 text-right font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
+                              {Math.round((ln.confidence ?? 0) * 100)}%
+                            </td>
+                            <td className="border-b border-slate-100 px-2 py-1 text-slate-500">{ln.description || '—'}</td>
+                            <td className="border-b border-slate-100 px-2 py-1">
+                              {result ? (
+                                <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${result.status === 'imported' ? 'bg-emerald-50 text-emerald-700' : result.status === 'exists' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>
+                                  {result.status === 'imported' ? `✓ ${result.folio || 'importado'}` : result.status === 'exists' ? 'ya existe' : 'error'}
+                                </span>
+                              ) : null}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

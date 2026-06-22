@@ -433,6 +433,20 @@ async function cancelExpenseAssignment(payload: Record<string, any>) {
   }));
 }
 
+async function importStatementMovements(payload: Record<string, any>) {
+  const sc = statementsSchema();
+  if (!sc) throw new Error('STATEMENTS_SCHEMA no configurado');
+  return factorySkill('vertical_erp_banks/erp_banks_statement_import', {
+    ...payload,
+    banks_schema: schema(),
+    statements_schema: sc,
+    company_id: companyId(),
+    project_code: projectCode(),
+    module_code: moduleCode(),
+    dry_run: false,
+  });
+}
+
 export async function POST(request: Request) {
   const authError = requireDashboardKey(request);
   if (authError) {
@@ -458,7 +472,8 @@ export async function POST(request: Request) {
       update_statement: () => updateStatement(payload),
       list_expense_reconciliation: () => listExpenseReconciliation(payload),
       assign_expense_withdrawal: () => assignExpenseWithdrawal(payload),
-      cancel_expense_assignment: () => cancelExpenseAssignment(payload)
+      cancel_expense_assignment: () => cancelExpenseAssignment(payload),
+      import_statement_movements: () => importStatementMovements(payload)
     };
 
     if (!actions[action]) {

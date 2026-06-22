@@ -3811,8 +3811,17 @@
     "tipo": "interno",
     "nombre": "vertical_erp_banks/erp_banks_mark_reconciled",
     "vertical": "vertical_erp_banks",
-    "descripcion": "Marca un movimiento bancario autorizado como conciliado, en disputa o no aplica. Multitenant.",
+    "descripcion": "Marca un movimiento bancario como pendiente, revisado, conciliado o revisado_conciliado. Multitenant.",
     "path": "skills/internos/vertical_erp_banks/erp_banks_mark_reconciled",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_banks/erp_banks_statement_import": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_statement_import",
+    "vertical": "vertical_erp_banks",
+    "descripcion": "Importa líneas de estado de cuenta (statement_extracted_lines) como movimientos bancarios (banks_movements). Soporta importación total o por line_ids seleccionados.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_statement_import",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

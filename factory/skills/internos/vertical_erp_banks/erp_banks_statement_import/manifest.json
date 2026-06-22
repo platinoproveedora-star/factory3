@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_banks_statement_import",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Importa líneas de estado de cuenta (statement_extracted_lines) como movimientos bancarios (banks_movements). Soporta importación total o por line_ids seleccionados.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
