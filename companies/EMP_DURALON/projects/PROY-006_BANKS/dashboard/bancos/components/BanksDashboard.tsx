@@ -151,14 +151,8 @@ export default function BanksDashboard() {
   };
   const [movementForm, setMovementForm] = useState(emptyMovementForm);
 
-  const authByMovement = useMemo(() => {
-    const map = new Map<string, Authorization>();
-    data.authorizations.forEach((auth) => map.set(auth.movement_id, auth));
-    return map;
-  }, [data.authorizations]);
-
   const pendingAuthorizations = data.authorizations.filter((auth) => auth.status === 'pendiente');
-  const pendingReconciliation = data.movements.filter((movement) => movement.reconciliation_status === 'pendiente' && movement.authorization_status !== 'rechazado');
+  const pendingReconciliation = data.movements.filter((movement) => ['pendiente', 'revisado'].includes(movement.reconciliation_status) && movement.authorization_status !== 'rechazado');
 
   useEffect(() => {
     const saved = getStoredKey();
@@ -256,14 +250,17 @@ export default function BanksDashboard() {
     }
   }
 
-  async function reconcile(movement: Movement) {
+  async function updateReconciliationStatus(movementId: string, status: string) {
     setSaving(true);
     setError('');
     try {
-      await banksApi('mark_reconciled', { movement_id: movement.id, reconciliation_status: 'conciliado' });
-      await refresh();
+      await banksApi('mark_reconciled', { movement_id: movementId, reconciliation_status: status });
+      setData((prev) => ({
+        ...prev,
+        movements: prev.movements.map((m) => m.id === movementId ? { ...m, reconciliation_status: status } : m),
+      }));
     } catch (err: any) {
-      setError(err.message || 'No se pudo conciliar');
+      setError(err.message || 'No se pudo actualizar conciliacion');
     } finally {
       setSaving(false);
     }
@@ -349,9 +346,9 @@ export default function BanksDashboard() {
 
         {activeTab === 'resumen' ? <Resumen accounts={data.accounts} onOpenMovements={openAccountMovements} /> : null}
         {activeTab === 'cuentas' ? <Cuentas accounts={data.accounts} form={accountForm} setForm={setAccountForm} onSubmit={createAccount} saving={saving} modalOpen={accountModalOpen} setModalOpen={setAccountModalOpen} /> : null}
-        {activeTab === 'movimientos' ? <Movimientos accounts={data.accounts} movements={data.movements} form={movementForm} setForm={setMovementForm} onSubmit={createMovement} saving={saving} accountFilter={movementAccountFilter} setAccountFilter={setMovementAccountFilter} modalOpen={movementModalOpen} setModalOpen={setMovementModalOpen} /> : null}
+        {activeTab === 'movimientos' ? <Movimientos accounts={data.accounts} movements={data.movements} form={movementForm} setForm={setMovementForm} onSubmit={createMovement} saving={saving} accountFilter={movementAccountFilter} setAccountFilter={setMovementAccountFilter} modalOpen={movementModalOpen} setModalOpen={setMovementModalOpen} onStatusChange={updateReconciliationStatus} /> : null}
         {activeTab === 'autorizaciones' ? <Autorizaciones auths={pendingAuthorizations} movements={data.movements} onDecide={decide} saving={saving} /> : null}
-        {activeTab === 'conciliacion' ? <Conciliacion accounts={data.accounts} movements={pendingReconciliation} authByMovement={authByMovement} onReconcile={reconcile} saving={saving} /> : null}
+        {activeTab === 'conciliacion' ? <Conciliacion accounts={data.accounts} movements={pendingReconciliation} onStatusChange={updateReconciliationStatus} saving={saving} /> : null}
         {activeTab === 'conciliacion_gastos' ? <ConciliacionGastos accounts={data.accounts} onRefreshBanks={refresh} /> : null}
         {activeTab === 'converter' ? <ConverterTab /> : null}
       </section>
@@ -495,10 +492,22 @@ function Cuentas({ accounts, form, setForm, onSubmit, saving, modalOpen, setModa
   );
 }
 
-function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, accountFilter, setAccountFilter, modalOpen, setModalOpen }: any) {
+function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, accountFilter, setAccountFilter, modalOpen, setModalOpen, onStatusChange }: any) {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [hideReversals, setHideReversals] = useState(false);
+  const reversalPairIds = useMemo(() => {
+    const ids = new Set<string>();
+    movements.forEach((m: Movement) => {
+      if (m.reversal_of_movement_id) {
+        ids.add(m.id);
+        ids.add(m.reversal_of_movement_id);
+      }
+    });
+    return ids;
+  }, [movements]);
   const filteredMovements = movements.filter((movement: Movement) => {
+    if (hideReversals && reversalPairIds.has(movement.id)) return false;
     if (accountFilter && movement.account_id !== accountFilter) return false;
     if (dateFrom && movement.movement_date < dateFrom) return false;
     if (dateTo && movement.movement_date > dateTo) return false;
@@ -525,6 +534,10 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
             </Select>
             <TextInput type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} aria-label="Fecha inicial" />
             <TextInput type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} aria-label="Fecha final" />
+            <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
+              <input type="checkbox" checked={hideReversals} onChange={(e) => setHideReversals(e.target.checked)} className="h-4 w-4 rounded" />
+              Ocultar cancelaciones
+            </label>
             <button onClick={() => setModalOpen(true)} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white">
               <Plus className="h-4 w-4" />
               Nuevo movimiento
@@ -546,7 +559,7 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
             <p className={`mt-0.5 text-base font-bold ${balanceRango >= 0 ? 'text-teal-800' : 'text-amber-800'}`}>{money(balanceRango)}</p>
           </div>
         </div>
-        <MovementTable accounts={accounts} movements={filteredMovements} />
+        <MovementTable accounts={accounts} movements={filteredMovements} onStatusChange={onStatusChange} />
       </Panel>
       {modalOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/45 px-3 py-4">
@@ -673,6 +686,14 @@ function Autorizaciones({ auths, movements, onDecide, saving }: { auths: Authori
   );
 }
 
+const RECONCILIATION_STATUSES = ['pendiente', 'revisado', 'conciliado', 'revisado_conciliado'] as const;
+const RECONCILIATION_LABELS: Record<string, string> = {
+  pendiente: 'pendiente',
+  revisado: 'revisado',
+  conciliado: 'conciliado',
+  revisado_conciliado: 'revisado/conciliado',
+};
+
 function accountLabel(accounts: Account[], accountId?: string | null, fallback?: string | null) {
   const account = accounts.find((row) => row.id === accountId);
   return account?.account_name || fallback || '-';
@@ -712,7 +733,7 @@ function movementConcept(movement: Movement) {
   );
 }
 
-function Conciliacion({ accounts, movements, authByMovement, onReconcile, saving }: { accounts: Account[]; movements: Movement[]; authByMovement: Map<string, Authorization>; onReconcile: (movement: Movement) => void; saving: boolean }) {
+function Conciliacion({ accounts, movements, onStatusChange, saving }: { accounts: Account[]; movements: Movement[]; onStatusChange: (id: string, status: string) => void; saving: boolean }) {
   return (
     <Panel title="Movimientos por conciliar">
       <div className="grid gap-3">
@@ -727,12 +748,18 @@ function Conciliacion({ accounts, movements, authByMovement, onReconcile, saving
                   <span><b>Tipo:</b> {movementKindLabel(movement)}</span>
                   <span><b>Realizo:</b> {movement.metadata?.performed_by || '-'}</span>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">{movement.movement_date} / {authByMovement.get(movement.id)?.folio || 'sin autorizacion'}</p>
+                <p className="mt-1 text-xs text-slate-500">{movement.movement_date} / {movement.source_folio || movement.source_module || '-'}</p>
               </div>
-              <button disabled={saving} onClick={() => onReconcile(movement)} className="inline-flex h-9 items-center gap-2 rounded-md bg-teal-700 px-3 text-sm font-semibold text-white">
-                <BadgeCheck className="h-4 w-4" />
-                Conciliar
-              </button>
+              <select
+                disabled={saving}
+                value={movement.reconciliation_status}
+                onChange={(e) => onStatusChange(movement.id, e.target.value)}
+                className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm"
+              >
+                {RECONCILIATION_STATUSES.map((s) => (
+                  <option key={s} value={s}>{RECONCILIATION_LABELS[s]}</option>
+                ))}
+              </select>
             </div>
           </div>
         ))}
@@ -1384,20 +1411,20 @@ function ConverterTab() {
   );
 }
 
-function MovementTable({ accounts, movements, compact = false }: { accounts: Account[]; movements: Movement[]; compact?: boolean }) {
+function MovementTable({ accounts, movements, compact = false, onStatusChange }: { accounts: Account[]; movements: Movement[]; compact?: boolean; onStatusChange?: (id: string, status: string) => void }) {
   if (!movements.length) return <Empty text="Sin movimientos registrados" />;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left text-[11px]">
+      <table className="w-full min-w-[1020px] border-separate border-spacing-0 text-left text-[9px]">
         <thead>
-          <tr className="text-[10px] uppercase tracking-normal text-slate-500">
+          <tr className="text-[8px] uppercase tracking-normal text-slate-500">
             <th className="border-b border-slate-200 px-2 py-1.5">Folio</th>
             <th className="border-b border-slate-200 px-2 py-1.5">Fecha</th>
             <th className="border-b border-slate-200 px-2 py-1.5">Cuenta</th>
             <th className="border-b border-slate-200 px-2 py-1.5">Concepto</th>
             <th className="border-b border-slate-200 px-2 py-1.5">Tipo</th>
+            <th className="border-b border-slate-200 px-2 py-1.5">Origen</th>
             <th className="border-b border-slate-200 px-2 py-1.5 text-right">Monto</th>
-            <th className="border-b border-slate-200 px-2 py-1.5">Auth</th>
             {!compact ? <th className="border-b border-slate-200 px-2 py-1.5">Conciliacion</th> : null}
           </tr>
         </thead>
@@ -1407,13 +1434,34 @@ function MovementTable({ accounts, movements, compact = false }: { accounts: Acc
               <td className="whitespace-nowrap border-b border-slate-100 px-2 py-1.5 font-semibold text-slate-950">{movement.folio}</td>
               <td className="whitespace-nowrap border-b border-slate-100 px-2 py-1.5 text-slate-600">{movement.movement_date}</td>
               <td className="border-b border-slate-100 px-2 py-1.5 text-slate-600">{accountLabel(accounts, movement.account_id, movement.account_folio)}</td>
-              <td className="max-w-[260px] border-b border-slate-100 px-2 py-1.5 text-slate-600">
+              <td className="max-w-[220px] border-b border-slate-100 px-2 py-1.5 text-slate-600">
                 <span className="block truncate" title={String(movementConcept(movement))}>{movementConcept(movement)}</span>
               </td>
               <td className="border-b border-slate-100 px-2 py-1.5 text-slate-600">{movement.movement_type}</td>
+              <td className="border-b border-slate-100 px-2 py-1.5 text-slate-500">
+                <span className="block max-w-[110px] truncate" title={movement.source_id || ''}>
+                  {movement.source_folio || (movement.source_id ? movement.source_id.slice(0, 8) + '…' : '-')}
+                </span>
+                {movement.source_module ? <span className="block text-slate-400">{movement.source_module}</span> : null}
+              </td>
               <td className={`whitespace-nowrap border-b border-slate-100 px-2 py-1.5 text-right font-bold ${movement.movement_type === 'entrada' ? 'text-emerald-700' : 'text-rose-700'}`}>{money(movement.amount)}</td>
-              <td className="border-b border-slate-100 px-2 py-1.5"><Badge value={movement.authorization_status} /></td>
-              {!compact ? <td className="border-b border-slate-100 px-2 py-1.5"><Badge value={movement.reconciliation_status} /></td> : null}
+              {!compact ? (
+                <td className="border-b border-slate-100 px-2 py-1.5">
+                  {onStatusChange ? (
+                    <select
+                      value={movement.reconciliation_status}
+                      onChange={(e) => onStatusChange(movement.id, e.target.value)}
+                      className="rounded border border-slate-200 bg-white px-1 py-0.5 text-[9px] text-slate-700"
+                    >
+                      {RECONCILIATION_STATUSES.map((s) => (
+                        <option key={s} value={s}>{RECONCILIATION_LABELS[s]}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Badge value={RECONCILIATION_LABELS[movement.reconciliation_status] || movement.reconciliation_status} />
+                  )}
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>

@@ -7,7 +7,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from _banks_common import SupabaseClient, blank, resolve_banks_context, utc_now  # noqa: E402
 
 
-VALID_RECONCILIATION_STATUS = {"conciliado", "en_disputa", "no_aplica"}
+VALID_RECONCILIATION_STATUS = {"pendiente", "revisado", "conciliado", "revisado_conciliado"}
+ALLOWED_AUTH_STATUS = {"autorizado", "no_requerida"}
 
 
 class ErpBanksMarkReconciledService:
@@ -22,11 +23,14 @@ class ErpBanksMarkReconciledService:
         if not movement_id:
             return {"ok": False, "error": "movement_id requerido"}
         if status not in VALID_RECONCILIATION_STATUS:
-            return {"ok": False, "error": "reconciliation_status invalido. Opciones: conciliado, en_disputa, no_aplica"}
+            return {"ok": False, "error": "reconciliation_status invalido. Opciones: pendiente, revisado, conciliado, revisado_conciliado"}
 
+        reconciled_at = blank(context.get("reconciled_at"))
+        if not reconciled_at and status in {"conciliado", "revisado_conciliado"}:
+            reconciled_at = utc_now()
         values = {
             "reconciliation_status": status,
-            "reconciled_at": blank(context.get("reconciled_at")) or (utc_now() if status == "conciliado" else None),
+            "reconciled_at": reconciled_at,
             "updated_at": utc_now(),
         }
         if context.get("dry_run", True):
@@ -48,8 +52,8 @@ class ErpBanksMarkReconciledService:
         rows = movement_result.get("data") or []
         if not rows:
             return {"ok": False, "error": "movimiento no encontrado"}
-        if str(rows[0].get("authorization_status") or "") != "autorizado":
-            return {"ok": False, "error": "solo movimientos autorizados pueden conciliarse"}
+        if str(rows[0].get("authorization_status") or "") not in ALLOWED_AUTH_STATUS:
+            return {"ok": False, "error": "movimiento no autorizado ni exento de autorizacion"}
 
         result = db.rest_update("banks_movements", values, {"id": movement_id, "empresa_id": ctx["company_id"]})
         if not result.get("ok"):

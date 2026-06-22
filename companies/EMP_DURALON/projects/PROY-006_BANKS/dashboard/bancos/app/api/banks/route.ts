@@ -275,16 +275,20 @@ async function decideAuthorization(payload: Record<string, any>) {
 }
 
 async function markReconciled(payload: Record<string, any>) {
+  const validStatuses = ['pendiente', 'revisado', 'conciliado', 'revisado_conciliado'];
+  const status = String(payload.reconciliation_status || 'conciliado');
+  if (!validStatuses.includes(status)) throw new Error('reconciliation_status invalido');
+  const body: Record<string, any> = {
+    reconciliation_status: status,
+    updated_at: new Date().toISOString()
+  };
+  if (status === 'conciliado' || status === 'revisado_conciliado') {
+    body.reconciled_at = new Date().toISOString();
+  }
   const rows = await supabase('banks_movements', {
     method: 'PATCH',
-    query: {
-      id: `eq.${payload.movement_id}`,
-      empresa_id: `eq.${companyId()}`
-    },
-    body: {
-      reconciliation_status: payload.reconciliation_status || 'conciliado',
-      reconciled_at: new Date().toISOString()
-    }
+    query: { id: `eq.${payload.movement_id}`, empresa_id: `eq.${companyId()}` },
+    body
   });
   return rows?.[0] || null;
 }
