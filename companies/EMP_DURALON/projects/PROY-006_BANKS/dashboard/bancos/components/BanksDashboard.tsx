@@ -499,12 +499,24 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
   const reversalPairIds = useMemo(() => {
     const ids = new Set<string>();
     movements.forEach((m: Movement) => {
+      // Explicit reversal link
       if (m.reversal_of_movement_id) {
         ids.add(m.id);
         ids.add(m.reversal_of_movement_id);
       }
+      // source_type=devolucion: movimiento creado por cancelación de gasto
+      if (m.source_type === 'devolucion' && m.source_id) {
+        ids.add(m.id);
+        ids.add(m.source_id);
+      }
+      // metadata.movement_kind marker del skill de cancelación
+      const meta = (m.metadata || {}) as Record<string, any>;
+      if (meta.movement_kind === 'cancelacion_retiro_gasto') {
+        ids.add(m.id);
+        if (meta.cancelled_assignment_movement_id) ids.add(meta.cancelled_assignment_movement_id);
+      }
     });
-    // Secondary: same clave_rastreo with opposite direction = reversal pair
+    // clave_rastreo duplicada con dirección opuesta (estados de cuenta)
     const byClave: Record<string, Movement[]> = {};
     movements.forEach((m: Movement) => {
       if (m.clave_rastreo) {
