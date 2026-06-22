@@ -27,7 +27,7 @@ function catsByMonth(gastos: Gasto[], month: string): { cats: StatCategoria[]; t
 
 async function getData() {
   try {
-    const [stats, gastos, bankAccounts] = await Promise.all([getStats(), getGastos(500), getBankAccounts()]);
+    const [stats, gastos, bankAccounts] = await Promise.all([getStats(), getGastos(2000), getBankAccounts()]);
     return { stats, gastos, bankAccounts, error: null };
   } catch (e: any) {
     return {

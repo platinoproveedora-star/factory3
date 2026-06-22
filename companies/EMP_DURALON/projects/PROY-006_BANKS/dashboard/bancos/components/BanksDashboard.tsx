@@ -168,6 +168,12 @@ export default function BanksDashboard() {
     }
   }, []);
 
+  useEffect(() => {
+    if (authenticated && activeTab === 'movimientos') {
+      void refresh();
+    }
+  }, [activeTab, authenticated]);
+
   async function refresh() {
     setLoading(true);
     setError('');
@@ -498,6 +504,13 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
     if (dateTo && movement.movement_date > dateTo) return false;
     return true;
   });
+  const totalDepositos = filteredMovements
+    .filter((movement: Movement) => movement.movement_type === 'entrada')
+    .reduce((sum: number, movement: Movement) => sum + Number(movement.amount || 0), 0);
+  const totalGastos = filteredMovements
+    .filter((movement: Movement) => movement.movement_type === 'salida')
+    .reduce((sum: number, movement: Movement) => sum + Number(movement.amount || 0), 0);
+  const balanceRango = totalDepositos - totalGastos;
   const selectedAccount = accounts.find((account: Account) => account.id === accountFilter);
   const isDeposit = form.movement_kind === 'deposito';
   return (
@@ -519,6 +532,20 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
           </div>
         </div>
       }>
+        <div className="mb-3 grid gap-2 md:grid-cols-3">
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-normal text-emerald-700">Depositos del rango</p>
+            <p className="mt-0.5 text-base font-bold text-emerald-800">{money(totalDepositos)}</p>
+          </div>
+          <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-normal text-rose-700">Gastos del rango</p>
+            <p className="mt-0.5 text-base font-bold text-rose-800">{money(totalGastos)}</p>
+          </div>
+          <div className={`rounded-md border px-3 py-2 ${balanceRango >= 0 ? 'border-teal-200 bg-teal-50' : 'border-amber-200 bg-amber-50'}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-normal text-slate-600">Balance del rango</p>
+            <p className={`mt-0.5 text-base font-bold ${balanceRango >= 0 ? 'text-teal-800' : 'text-amber-800'}`}>{money(balanceRango)}</p>
+          </div>
+        </div>
         <MovementTable accounts={accounts} movements={filteredMovements} />
       </Panel>
       {modalOpen ? (
@@ -669,6 +696,22 @@ function movementKindLabel(movement: Movement) {
   return movement.metadata?.movement_kind || (movement.movement_type === 'entrada' ? 'deposito' : 'retiro');
 }
 
+function movementConcept(movement: Movement) {
+  const metadata = movement.metadata || {};
+  return (
+    movement.notes
+    || metadata.expense_description
+    || metadata.description
+    || metadata.concepto
+    || metadata.reference
+    || metadata.third_party_name
+    || metadata.expense_folio
+    || movement.source_folio
+    || movement.source_type
+    || '-'
+  );
+}
+
 function Conciliacion({ accounts, movements, authByMovement, onReconcile, saving }: { accounts: Account[]; movements: Movement[]; authByMovement: Map<string, Authorization>; onReconcile: (movement: Movement) => void; saving: boolean }) {
   return (
     <Panel title="Movimientos por conciliar">
@@ -723,6 +766,7 @@ function ConciliacionGastos({ accounts, onRefreshBanks }: { accounts: Account[];
         next[expense.id] = expenseAccountId || defaultId;
       }
       setAccountByExpense(next);
+      await onRefreshBanks();
     } catch (error: any) {
       setErr(error.message || 'No se pudieron cargar gastos');
     } finally {
@@ -1344,28 +1388,32 @@ function MovementTable({ accounts, movements, compact = false }: { accounts: Acc
   if (!movements.length) return <Empty text="Sin movimientos registrados" />;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[860px] border-separate border-spacing-0 text-left text-sm">
+      <table className="w-full min-w-[980px] border-separate border-spacing-0 text-left text-[11px]">
         <thead>
-          <tr className="text-xs uppercase tracking-normal text-slate-500">
-            <th className="border-b border-slate-200 px-3 py-2">Folio</th>
-            <th className="border-b border-slate-200 px-3 py-2">Fecha</th>
-            <th className="border-b border-slate-200 px-3 py-2">Cuenta</th>
-            <th className="border-b border-slate-200 px-3 py-2">Tipo</th>
-            <th className="border-b border-slate-200 px-3 py-2">Monto</th>
-            <th className="border-b border-slate-200 px-3 py-2">Auth</th>
-            {!compact ? <th className="border-b border-slate-200 px-3 py-2">Conciliacion</th> : null}
+          <tr className="text-[10px] uppercase tracking-normal text-slate-500">
+            <th className="border-b border-slate-200 px-2 py-1.5">Folio</th>
+            <th className="border-b border-slate-200 px-2 py-1.5">Fecha</th>
+            <th className="border-b border-slate-200 px-2 py-1.5">Cuenta</th>
+            <th className="border-b border-slate-200 px-2 py-1.5">Concepto</th>
+            <th className="border-b border-slate-200 px-2 py-1.5">Tipo</th>
+            <th className="border-b border-slate-200 px-2 py-1.5 text-right">Monto</th>
+            <th className="border-b border-slate-200 px-2 py-1.5">Auth</th>
+            {!compact ? <th className="border-b border-slate-200 px-2 py-1.5">Conciliacion</th> : null}
           </tr>
         </thead>
         <tbody>
           {movements.map((movement) => (
-            <tr key={movement.id}>
-              <td className="border-b border-slate-100 px-3 py-3 font-semibold text-slate-950">{movement.folio}</td>
-              <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{movement.movement_date}</td>
-              <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{accountLabel(accounts, movement.account_id, movement.account_folio)}</td>
-              <td className="border-b border-slate-100 px-3 py-3 text-slate-600">{movement.movement_type}</td>
-              <td className={`border-b border-slate-100 px-3 py-3 font-bold ${movement.movement_type === 'entrada' ? 'text-emerald-700' : 'text-rose-700'}`}>{money(movement.amount)}</td>
-              <td className="border-b border-slate-100 px-3 py-3"><Badge value={movement.authorization_status} /></td>
-              {!compact ? <td className="border-b border-slate-100 px-3 py-3"><Badge value={movement.reconciliation_status} /></td> : null}
+            <tr key={movement.id} className="hover:bg-slate-50">
+              <td className="whitespace-nowrap border-b border-slate-100 px-2 py-1.5 font-semibold text-slate-950">{movement.folio}</td>
+              <td className="whitespace-nowrap border-b border-slate-100 px-2 py-1.5 text-slate-600">{movement.movement_date}</td>
+              <td className="border-b border-slate-100 px-2 py-1.5 text-slate-600">{accountLabel(accounts, movement.account_id, movement.account_folio)}</td>
+              <td className="max-w-[260px] border-b border-slate-100 px-2 py-1.5 text-slate-600">
+                <span className="block truncate" title={String(movementConcept(movement))}>{movementConcept(movement)}</span>
+              </td>
+              <td className="border-b border-slate-100 px-2 py-1.5 text-slate-600">{movement.movement_type}</td>
+              <td className={`whitespace-nowrap border-b border-slate-100 px-2 py-1.5 text-right font-bold ${movement.movement_type === 'entrada' ? 'text-emerald-700' : 'text-rose-700'}`}>{money(movement.amount)}</td>
+              <td className="border-b border-slate-100 px-2 py-1.5"><Badge value={movement.authorization_status} /></td>
+              {!compact ? <td className="border-b border-slate-100 px-2 py-1.5"><Badge value={movement.reconciliation_status} /></td> : null}
             </tr>
           ))}
         </tbody>

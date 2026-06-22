@@ -81,6 +81,21 @@ async function assignExpenseWithdrawal(expense: { id?: string; folio?: string },
   }, BANKS_RECONCILE_SKILL, BANKS_RECONCILE_CTX);
 }
 
+async function cancelExpenseWithdrawal(expense: { id?: string; folio?: string }, reason: string) {
+  if (!expense.id && !expense.folio) return;
+  try {
+    await skillPost('cancel', {
+      expense_id: expense.id,
+      expense_folio: expense.folio,
+      performed_by: 'dashboard_gastos',
+      reason,
+    }, BANKS_RECONCILE_SKILL, BANKS_RECONCILE_CTX);
+  } catch (error: any) {
+    const message = String(error?.message || '').toLowerCase();
+    if (!message.includes('asignacion no encontrada')) throw error;
+  }
+}
+
 type EditDraft = { monto: string; fecha: string; descripcion: string; categoria: string; vehiculo: string; cta_retiro_id: string };
 
 export default function ExpenseTable({ gastos: initialGastos, bankAccounts }: Props) {
@@ -161,6 +176,11 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts }: Pr
   async function saveEdit(folio: string) {
     setSaving(true); setError('');
     try {
+      const previous = gastos.find(g => g.folio === folio);
+      const previousAccountId = previous?.cta_retiro_id || '';
+      const nextAccountId = draft.cta_retiro_id || '';
+      const accountChanged = previousAccountId !== nextAccountId;
+
       const updateResult = await skillPost('update_expense', {
         folio,
         monto:       parseFloat(draft.monto),
@@ -172,9 +192,13 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts }: Pr
         cta_retiro_folio: accountById.get(draft.cta_retiro_id)?.folio || null,
         cta_retiro_nombre: accountById.get(draft.cta_retiro_id)?.account_name || null,
       });
-      if (draft.cta_retiro_id) {
-        const updated = skillData(updateResult).gasto ?? {};
-        await assignExpenseWithdrawal({ id: updated.id, folio: updated.folio ?? folio }, draft.cta_retiro_id, draft.descripcion);
+      const updated = skillData(updateResult).gasto ?? {};
+      const expenseRef = { id: updated.id, folio: updated.folio ?? folio };
+      if (accountChanged && previousAccountId) {
+        await cancelExpenseWithdrawal(expenseRef, 'cambio_cta_retiro_desde_gastos');
+      }
+      if (nextAccountId) {
+        await assignExpenseWithdrawal(expenseRef, nextAccountId, draft.descripcion);
       }
       setGastos(prev => prev.map(g =>
         g.folio === folio

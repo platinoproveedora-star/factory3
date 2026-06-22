@@ -120,6 +120,7 @@ class ErpBanksExpenseReconcileService:
 
         existing = self._find_existing_assignment(ctx, expense)
         if existing:
+            self._sync_expense_with_account(ctx, expense, _text(existing.get("account_id")))
             return {"ok": True, "data": {"expense": expense, "movement_result": {"movement": existing, "idempotent": True}}}
 
         source_account_id = _text(context.get("source_account_id") or expense.get("cta_retiro_id"))
@@ -165,6 +166,7 @@ class ErpBanksExpenseReconcileService:
         result = service.ejecutar(movement_context)
         if not result.get("ok"):
             return result
+        self._sync_expense_with_account(ctx, expense, source_account_id)
         return {"ok": True, "data": {"expense": expense, "movement_result": result.get("data")}}
 
     def _cancel(self, ctx: dict, context: dict) -> dict:
@@ -391,6 +393,46 @@ class ErpBanksExpenseReconcileService:
             return None
         rows = result.get("data") or []
         return rows[0] if rows else None
+
+    def _find_account_by_id(self, ctx: dict, account_id: str | None) -> dict | None:
+        account_id = _text(account_id)
+        if not account_id:
+            return None
+        result = SupabaseClient({"schema": ctx["banks_schema"]}).rest_select(
+            "banks_accounts",
+            filters={"empresa_id": f"eq.{ctx['company_id']}", "id": f"eq.{account_id}"},
+            select="id,folio,account_name,current_balance,status",
+            limit=1,
+        )
+        if not result.get("ok"):
+            return None
+        rows = result.get("data") or []
+        return rows[0] if rows else None
+
+    def _sync_expense_with_account(self, ctx: dict, expense: dict, account_id: str | None) -> None:
+        account = self._find_account_by_id(ctx, account_id)
+        if not account:
+            return
+        updates = {
+            "cta_retiro_id": account.get("id"),
+            "cta_retiro_folio": account.get("folio"),
+            "cta_retiro_nombre": account.get("account_name"),
+        }
+        current = {
+            "cta_retiro_id": expense.get("cta_retiro_id"),
+            "cta_retiro_folio": expense.get("cta_retiro_folio"),
+            "cta_retiro_nombre": expense.get("cta_retiro_nombre"),
+        }
+        if current == updates:
+            return
+        filters = {"empresa_id": f"eq.{ctx['company_id']}"}
+        if expense.get("id"):
+            filters["id"] = f"eq.{expense['id']}"
+        elif expense.get("folio"):
+            filters["folio"] = f"eq.{expense['folio']}"
+        else:
+            return
+        SupabaseClient({"schema": ctx["expenses_schema"]}).rest_update("gastos", updates, filters)
 
     def _movement_service(self):
         service_path = Path(__file__).resolve().parents[1] / "erp_banks_movement_record" / "service.py"
