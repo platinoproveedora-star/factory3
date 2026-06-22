@@ -29,6 +29,8 @@ export type Movement = {
   balance_before: number | null;
   balance_after: number | null;
   movement_date: string;
+  reversal_of_movement_id: string | null;
+  transfer_group_id: string | null;
   authorization_status: string;
   authorization_id: string | null;
   reconciliation_status: string;

@@ -143,7 +143,7 @@ async function loadDashboard() {
     order: 'account_name.asc'
   };
   const movementQuery = {
-    select: 'id,folio,account_id,account_folio,movement_type,source_type,source_module,source_id,source_folio,amount,balance_before,balance_after,movement_date,authorization_status,authorization_id,reconciliation_status,notes,metadata,created_at',
+    select: 'id,folio,account_id,account_folio,movement_type,source_type,source_module,source_id,source_folio,amount,balance_before,balance_after,movement_date,reversal_of_movement_id,transfer_group_id,authorization_status,authorization_id,reconciliation_status,notes,metadata,created_at',
     empresa_id: `eq.${companyId()}`,
     order: 'movement_date.desc,created_at.desc',
     limit: '1000'
