@@ -81,7 +81,7 @@ class ErpBanksStatementImportService:
                 "p_source_module": "bank_statement",
                 "p_source_id": line["id"],
                 "p_source_folio": blank(line.get("folio")),
-                "p_amount": float(line.get("amount") or 0),
+                "p_amount": abs(float(line.get("amount") or 0)),
                 "p_movement_date": line.get("line_date"),
                 "p_clave_rastreo": blank(line.get("clave_rastreo")),
                 "p_notes": blank(line.get("description")),

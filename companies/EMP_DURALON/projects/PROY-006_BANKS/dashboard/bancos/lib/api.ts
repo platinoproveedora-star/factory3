@@ -31,6 +31,7 @@ export type Movement = {
   movement_date: string;
   reversal_of_movement_id: string | null;
   transfer_group_id: string | null;
+  clave_rastreo: string | null;
   authorization_status: string;
   authorization_id: string | null;
   reconciliation_status: string;

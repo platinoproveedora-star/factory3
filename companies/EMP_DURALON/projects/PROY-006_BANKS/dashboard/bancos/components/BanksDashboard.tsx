@@ -504,6 +504,20 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
         ids.add(m.reversal_of_movement_id);
       }
     });
+    // Secondary: same clave_rastreo with opposite direction = reversal pair
+    const byClave: Record<string, Movement[]> = {};
+    movements.forEach((m: Movement) => {
+      if (m.clave_rastreo) {
+        if (!byClave[m.clave_rastreo]) byClave[m.clave_rastreo] = [];
+        byClave[m.clave_rastreo].push(m);
+      }
+    });
+    Object.values(byClave).forEach((group) => {
+      if (group.length < 2) return;
+      const hasEntrada = group.some((m) => m.movement_type === 'entrada');
+      const hasSalida = group.some((m) => m.movement_type === 'salida');
+      if (hasEntrada && hasSalida) group.forEach((m) => ids.add(m.id));
+    });
     return ids;
   }, [movements]);
   const filteredMovements = movements.filter((movement: Movement) => {
@@ -1459,7 +1473,7 @@ function ConverterTab({ accounts }: { accounts: Account[] }) {
                         <th className="border-b border-slate-200 px-2 py-1 text-right whitespace-nowrap">Monto</th>
                         <th className="border-b border-slate-200 px-2 py-1 text-right whitespace-nowrap">Saldo</th>
                         <th className="border-b border-slate-200 px-2 py-1 text-right">Conf%</th>
-                        <th className="border-b border-slate-200 px-2 py-1">Descripción</th>
+                        <th className="border-b border-slate-200 px-2 py-1 min-w-[260px]">Descripción</th>
                         <th className="border-b border-slate-200 px-2 py-1">Estado</th>
                       </tr>
                     </thead>
@@ -1496,7 +1510,9 @@ function ConverterTab({ accounts }: { accounts: Account[] }) {
                             <td className={`border-b border-slate-100 px-2 py-1 text-right font-semibold ${ln.confidence >= 0.9 ? 'text-emerald-700' : ln.confidence >= 0.5 ? 'text-amber-700' : 'text-rose-700'}`}>
                               {Math.round((ln.confidence ?? 0) * 100)}%
                             </td>
-                            <td className="border-b border-slate-100 px-2 py-1 text-slate-500">{ln.description || '—'}</td>
+                            <td className="border-b border-slate-100 px-2 py-1 max-w-[280px] min-w-[180px]">
+                              <p className="line-clamp-2 leading-tight text-[10px] text-slate-500">{ln.description || '—'}</p>
+                            </td>
                             <td className="border-b border-slate-100 px-2 py-1">
                               {result ? (
                                 <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${result.status === 'imported' ? 'bg-emerald-50 text-emerald-700' : result.status === 'exists' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>
