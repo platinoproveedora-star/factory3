@@ -2,21 +2,32 @@
 
 import { useState, useMemo } from 'react';
 import { Search, Download, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Check, X, ChevronUp, ChevronDown } from 'lucide-react';
-import type { Gasto } from '../lib/db';
+import type { BankAccount, Gasto } from '../lib/db';
 import { gastosToCSV, downloadCSV } from '../lib/export';
 import projectContext from '../project-context.json';
 
-type Props = { gastos: Gasto[] };
+type Props = { gastos: Gasto[]; bankAccounts: BankAccount[] };
 
 const PAGE_SIZE = 50;
 const FACTORY_URL = process.env.NEXT_PUBLIC_FACTORY_API_URL ?? '';
 const WRITE_KEY   = process.env.NEXT_PUBLIC_WRITE_KEY ?? '';
 const SKILL = 'vertical_client_expenses/client_expenses_run';
+const BANKS_RECONCILE_SKILL = 'vertical_erp_banks/erp_banks_expense_reconcile';
 const BASE_CTX = {
   schema: projectContext.schema,
   empresa_id: projectContext.company_id,
   project_code: projectContext.project_code,
   module_code: projectContext.module_code,
+  dry_run: false,
+};
+const BANKS_RECONCILE_CTX = {
+  banks_schema: (projectContext as any).banks_schema,
+  expenses_schema: projectContext.schema,
+  company_id: projectContext.company_id,
+  banks_project_code: (projectContext as any).banks_project_code,
+  banks_module_code: (projectContext as any).banks_module_code ?? 'banks',
+  expenses_project_code: projectContext.project_code,
+  expense_module_code: projectContext.module_code,
   dry_run: false,
 };
 
@@ -41,22 +52,38 @@ function fmtDate(s: string) {
   return `${d} ${months[Number(m) - 1]} ${y}`;
 }
 
-async function skillPost(action: string, extra: object) {
+async function skillPost(action: string, extra: object, skill = SKILL, baseCtx: Record<string, unknown> = BASE_CTX) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (WRITE_KEY) headers['x-write-key'] = WRITE_KEY;
-  const res = await fetch(`${FACTORY_URL}/data/${SKILL}`, {
+  const res = await fetch(`${FACTORY_URL}/data/${skill}`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ ...BASE_CTX, action, ...extra }),
+    body: JSON.stringify({ ...baseCtx, action, ...extra }),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.detail ?? 'Error');
+  if (json?.ok === false) throw new Error(json.error ?? 'Error en skill');
   return json;
 }
 
-type EditDraft = { monto: string; fecha: string; descripcion: string; categoria: string; vehiculo: string };
+function skillData(result: any) {
+  return result?.data ?? result ?? {};
+}
 
-export default function ExpenseTable({ gastos: initialGastos }: Props) {
+async function assignExpenseWithdrawal(expense: { id?: string; folio?: string }, accountId: string, notes?: string) {
+  if (!accountId || (!expense.id && !expense.folio)) return;
+  await skillPost('assign', {
+    expense_id: expense.id,
+    expense_folio: expense.folio,
+    source_account_id: accountId,
+    performed_by: 'dashboard_gastos',
+    notes,
+  }, BANKS_RECONCILE_SKILL, BANKS_RECONCILE_CTX);
+}
+
+type EditDraft = { monto: string; fecha: string; descripcion: string; categoria: string; vehiculo: string; cta_retiro_id: string };
+
+export default function ExpenseTable({ gastos: initialGastos, bankAccounts }: Props) {
   const [gastos, setGastos]     = useState<Gasto[]>(initialGastos);
   const [q, setQ]               = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -65,7 +92,7 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
   const [sortCol, setSortCol]   = useState<keyof Gasto>('fecha');
   const [sortDir, setSortDir]   = useState<'asc'|'desc'>('desc');
   const [editingFolio, setEdit] = useState<string | null>(null);
-  const [draft, setDraft]       = useState<EditDraft>({ monto: '', fecha: '', descripcion: '', categoria: '', vehiculo: '' });
+  const [draft, setDraft]       = useState<EditDraft>({ monto: '', fecha: '', descripcion: '', categoria: '', vehiculo: '', cta_retiro_id: '' });
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState('');
   const [adding, setAdding]     = useState(false);
@@ -78,8 +105,10 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
 
   const [newRow, setNewRow] = useState<EditDraft>({
     monto: '', fecha: new Date().toISOString().slice(0,10),
-    descripcion: '', categoria: CATEGORIES_DEFAULT[0], vehiculo: '',
+    descripcion: '', categoria: CATEGORIES_DEFAULT[0], vehiculo: '', cta_retiro_id: '',
   });
+
+  const accountById = useMemo(() => new Map(bankAccounts.map(account => [account.id, account])), [bankAccounts]);
 
   const filtered = useMemo(() => {
     const lq = q.toLowerCase().trim();
@@ -123,7 +152,7 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
 
   function startEdit(g: Gasto) {
     setEdit(g.folio);
-    setDraft({ monto: String(g.monto), fecha: g.fecha, descripcion: g.descripcion, categoria: g.categoria, vehiculo: g.vehiculo ?? '' });
+    setDraft({ monto: String(g.monto), fecha: g.fecha, descripcion: g.descripcion, categoria: g.categoria, vehiculo: g.vehiculo ?? '', cta_retiro_id: g.cta_retiro_id ?? '' });
     setError('');
   }
 
@@ -132,17 +161,34 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
   async function saveEdit(folio: string) {
     setSaving(true); setError('');
     try {
-      await skillPost('update_expense', {
+      const updateResult = await skillPost('update_expense', {
         folio,
         monto:       parseFloat(draft.monto),
         fecha:       draft.fecha,
         descripcion: draft.descripcion,
         categoria:   draft.categoria,
         vehiculo:    draft.vehiculo || null,
+        cta_retiro_id: draft.cta_retiro_id || null,
+        cta_retiro_folio: accountById.get(draft.cta_retiro_id)?.folio || null,
+        cta_retiro_nombre: accountById.get(draft.cta_retiro_id)?.account_name || null,
       });
+      if (draft.cta_retiro_id) {
+        const updated = skillData(updateResult).gasto ?? {};
+        await assignExpenseWithdrawal({ id: updated.id, folio: updated.folio ?? folio }, draft.cta_retiro_id, draft.descripcion);
+      }
       setGastos(prev => prev.map(g =>
         g.folio === folio
-          ? { ...g, monto: parseFloat(draft.monto), fecha: draft.fecha, descripcion: draft.descripcion, categoria: draft.categoria, vehiculo: draft.vehiculo || null }
+          ? {
+              ...g,
+              monto: parseFloat(draft.monto),
+              fecha: draft.fecha,
+              descripcion: draft.descripcion,
+              categoria: draft.categoria,
+              vehiculo: draft.vehiculo || null,
+              cta_retiro_id: draft.cta_retiro_id || null,
+              cta_retiro_folio: accountById.get(draft.cta_retiro_id)?.folio || null,
+              cta_retiro_nombre: accountById.get(draft.cta_retiro_id)?.account_name || null,
+            }
           : g
       ));
       setEdit(null);
@@ -186,9 +232,15 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
         descripcion:    newRow.descripcion,
         categoria:      newRow.categoria,
         vehiculo:       newRow.vehiculo || null,
+        cta_retiro_id:  newRow.cta_retiro_id || null,
+        cta_retiro_folio: accountById.get(newRow.cta_retiro_id)?.folio || null,
+        cta_retiro_nombre: accountById.get(newRow.cta_retiro_id)?.account_name || null,
         metodo_captura: 'dashboard',
       });
-      const saved = result.gasto ?? {};
+      const saved = skillData(result).gasto ?? {};
+      if (newRow.cta_retiro_id) {
+        await assignExpenseWithdrawal({ id: saved.id, folio: saved.folio }, newRow.cta_retiro_id, newRow.descripcion);
+      }
       setGastos(prev => [{
         folio:          saved.folio ?? '—',
         fecha:          newRow.fecha,
@@ -197,9 +249,12 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
         metodo_captura: 'dashboard',
         categoria:      newRow.categoria,
         vehiculo:       newRow.vehiculo || null,
+        cta_retiro_id:  newRow.cta_retiro_id || null,
+        cta_retiro_folio: accountById.get(newRow.cta_retiro_id)?.folio || null,
+        cta_retiro_nombre: accountById.get(newRow.cta_retiro_id)?.account_name || null,
         nombre_usuario: 'dashboard',
       }, ...prev]);
-      setNewRow({ monto: '', fecha: new Date().toISOString().slice(0,10), descripcion: '', categoria: 'combustible', vehiculo: '' });
+      setNewRow({ monto: '', fecha: new Date().toISOString().slice(0,10), descripcion: '', categoria: 'combustible', vehiculo: '', cta_retiro_id: '' });
       setAdding(false);
     } catch (e: any) {
       setError(e.message);
@@ -290,6 +345,15 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
                 onChange={e => setNewRow(p => ({...p, vehiculo: e.target.value}))}
                 className="block rounded border border-slate-200 px-2 py-1.5 text-sm mt-0.5 w-32" />
             </div>
+            <div>
+              <label className="text-xs text-slate-500">Cta retiro</label>
+              <select value={newRow.cta_retiro_id}
+                onChange={e => setNewRow(p => ({...p, cta_retiro_id: e.target.value}))}
+                className="block rounded border border-slate-200 px-2 py-1.5 text-sm mt-0.5 min-w-[180px]">
+                <option value="">Sin asignar</option>
+                {bankAccounts.map(account => <option key={account.id} value={account.id}>{account.account_name}</option>)}
+              </select>
+            </div>
             <div className="flex-1 min-w-[160px]">
               <label className="text-xs text-slate-500">Descripción</label>
               <input type="text" placeholder="opcional" value={newRow.descripcion}
@@ -315,7 +379,7 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
             <tr>
               {([
                 ['Folio','folio'],['Fecha','fecha'],['Categoría','categoria'],
-                ['Vehículo','vehiculo'],['Descripción','descripcion'],
+                ['Vehículo','vehiculo'],['Cta retiro','cta_retiro_nombre'],['Descripción','descripcion'],
                 ['Usuario','nombre_usuario'],['Método','metodo_captura'],['Monto','monto'],['','']
               ] as [string, string][]).map(([label, col]) => (
                 <th key={label}
@@ -330,7 +394,7 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
             {slice.length === 0 ? (
-              <tr><td colSpan={9} className="py-10 text-center text-sm text-slate-400">Sin resultados</td></tr>
+              <tr><td colSpan={10} className="py-10 text-center text-sm text-slate-400">Sin resultados</td></tr>
             ) : slice.map(g => {
               const isEditing = editingFolio === g.folio;
               return (
@@ -364,6 +428,18 @@ export default function ExpenseTable({ gastos: initialGastos }: Props) {
                           onChange={e => setDraft(p => ({...p, vehiculo: e.target.value}))}
                           className="rounded border border-slate-300 px-1 py-0.5 text-xs w-24" />
                       : <span className="text-xs text-slate-600">{g.vehiculo || '—'}</span>}
+                  </td>
+
+                  {/* Cuenta retiro */}
+                  <td className="px-3 py-2">
+                    {isEditing
+                      ? <select value={draft.cta_retiro_id}
+                          onChange={e => setDraft(p => ({...p, cta_retiro_id: e.target.value}))}
+                          className="rounded border border-slate-300 px-1 py-0.5 text-xs min-w-[150px]">
+                          <option value="">Sin asignar</option>
+                          {bankAccounts.map(account => <option key={account.id} value={account.id}>{account.account_name}</option>)}
+                        </select>
+                      : <span className="text-xs text-slate-600">{g.cta_retiro_nombre || 'Sin asignar'}</span>}
                   </td>
 
                   {/* Descripción */}

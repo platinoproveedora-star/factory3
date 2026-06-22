@@ -31,7 +31,13 @@ ALTER TABLE uc101_proy001.gastos
   ADD COLUMN IF NOT EXISTS sales_order_id    uuid  NULL,
   ADD COLUMN IF NOT EXISTS purchase_order_id uuid  NULL,
   ADD COLUMN IF NOT EXISTS asset_id          uuid  NULL,
+  ADD COLUMN IF NOT EXISTS cta_retiro_id     uuid  NULL,
+  ADD COLUMN IF NOT EXISTS cta_retiro_folio  text  NULL,
+  ADD COLUMN IF NOT EXISTS cta_retiro_nombre text  NULL,
   ADD COLUMN IF NOT EXISTS erp_tags          jsonb NOT NULL DEFAULT '{}';
+
+CREATE INDEX IF NOT EXISTS gastos_cta_retiro_id_idx
+  ON uc101_proy001.gastos (cta_retiro_id);
 
 -- GASTO_DOCUMENTOS: identidad ERP
 ALTER TABLE uc101_proy001.gasto_documentos

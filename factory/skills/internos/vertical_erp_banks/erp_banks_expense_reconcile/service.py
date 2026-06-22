@@ -75,16 +75,7 @@ class ErpBanksExpenseReconcileService:
         expenses_db = SupabaseClient({"schema": ctx["expenses_schema"]})
         banks_db = SupabaseClient({"schema": ctx["banks_schema"]})
 
-        expenses_res = expenses_db.rest_select(
-            "gastos",
-            filters={
-                "empresa_id": f"eq.{ctx['company_id']}",
-                "project_code": f"eq.{ctx['expenses_project_code']}",
-            },
-            select="id,folio,fecha,monto,descripcion,vehiculo,usuario_id,categoria_id,estado,created_at",
-            order="fecha.desc,created_at.desc",
-            limit=limit,
-        )
+        expenses_res = self._select_expenses(expenses_db, ctx, limit)
         if not expenses_res.get("ok"):
             return expenses_res
 
@@ -131,7 +122,7 @@ class ErpBanksExpenseReconcileService:
         if existing:
             return {"ok": True, "data": {"expense": expense, "movement_result": {"movement": existing, "idempotent": True}}}
 
-        source_account_id = _text(context.get("source_account_id"))
+        source_account_id = _text(context.get("source_account_id") or expense.get("cta_retiro_id"))
         if not source_account_id:
             account = self._find_account_by_name(ctx, ctx.get("default_source_account_name"))
             source_account_id = _text((account or {}).get("id"))
@@ -159,6 +150,9 @@ class ErpBanksExpenseReconcileService:
                 "expense_vehicle": expense.get("vehiculo"),
                 "expense_category_id": expense.get("categoria_id"),
                 "expense_user_id": expense.get("usuario_id"),
+                "expense_cta_retiro_id": expense.get("cta_retiro_id"),
+                "expense_cta_retiro_folio": expense.get("cta_retiro_folio"),
+                "expense_cta_retiro_nombre": expense.get("cta_retiro_nombre"),
                 "expense_counterparty_name": ctx.get("expense_counterparty_name"),
                 "performed_by": context.get("performed_by") or "expense_reconciliation",
                 "movement_kind": "retiro",
@@ -348,16 +342,41 @@ class ErpBanksExpenseReconcileService:
             filters["folio"] = f"eq.{expense_folio}"
         else:
             return None
-        result = SupabaseClient({"schema": ctx["expenses_schema"]}).rest_select(
-            "gastos",
+        result = self._select_expenses(
+            SupabaseClient({"schema": ctx["expenses_schema"]}),
+            ctx,
+            1,
             filters=filters,
-            select="id,folio,fecha,monto,descripcion,vehiculo,usuario_id,categoria_id,estado,created_at",
-            limit=1,
         )
         if not result.get("ok"):
             raise RuntimeError(result.get("error") or "error leyendo gasto")
         rows = result.get("data") or []
         return rows[0] if rows else None
+
+    def _select_expenses(self, db: SupabaseClient, ctx: dict, limit: int, filters: dict | None = None) -> dict:
+        base_filters = filters or {
+            "empresa_id": f"eq.{ctx['company_id']}",
+            "project_code": f"eq.{ctx['expenses_project_code']}",
+        }
+        result = db.rest_select(
+            "gastos",
+            filters=base_filters,
+            select="id,folio,fecha,monto,descripcion,vehiculo,usuario_id,categoria_id,estado,created_at,cta_retiro_id,cta_retiro_folio,cta_retiro_nombre",
+            order="fecha.desc,created_at.desc" if limit != 1 else None,
+            limit=limit,
+        )
+        if result.get("ok"):
+            return result
+        error = str(result.get("error") or "").lower()
+        if "cta_retiro" not in error and "schema cache" not in error and "pgrst204" not in error:
+            return result
+        return db.rest_select(
+            "gastos",
+            filters=base_filters,
+            select="id,folio,fecha,monto,descripcion,vehiculo,usuario_id,categoria_id,estado,created_at",
+            order="fecha.desc,created_at.desc" if limit != 1 else None,
+            limit=limit,
+        )
 
     def _find_account_by_name(self, ctx: dict, name: str | None) -> dict | None:
         if not name:

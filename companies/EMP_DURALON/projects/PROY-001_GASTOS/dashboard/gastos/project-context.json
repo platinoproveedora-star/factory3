@@ -3,6 +3,9 @@
   "project_code": "PROY-001",
   "module_code": "gastos",
   "schema": "uc101_proy001",
+  "banks_schema": "uc101_proy006",
+  "banks_project_code": "PROY-006",
+  "banks_module_code": "banks",
   "company_label": "EMP_DURALON",
   "project_label": "PROY-001",
   "schema_label": "uc101_proy001"

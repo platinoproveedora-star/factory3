@@ -1,7 +1,7 @@
 import type { Gasto } from './db';
 
 export function gastosToCSV(gastos: Gasto[]): string {
-  const header = 'folio,fecha,monto,descripcion,metodo_captura,vehiculo,categoria,nombre_usuario';
+  const header = 'folio,fecha,monto,descripcion,metodo_captura,vehiculo,cta_retiro,categoria,nombre_usuario';
   const rows = gastos.map((g) =>
     [
       g.folio,
@@ -10,6 +10,7 @@ export function gastosToCSV(gastos: Gasto[]): string {
       `"${(g.descripcion ?? '').replace(/"/g, '""')}"`,
       g.metodo_captura,
       `"${g.vehiculo ?? ''}"`,
+      `"${g.cta_retiro_nombre ?? ''}"`,
       `"${g.categoria}"`,
       `"${g.nombre_usuario}"`,
     ].join(',')

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getStats, getGastos, type Gasto, type StatCategoria } from '../../lib/db';
+import { getStats, getGastos, getBankAccounts, type Gasto, type StatCategoria } from '../../lib/db';
 import KpiGrid              from '../../components/KpiGrid';
 import CategoryTable        from '../../components/CategoryTable';
 import MonthlyTable         from '../../components/MonthlyTable';
@@ -27,19 +27,20 @@ function catsByMonth(gastos: Gasto[], month: string): { cats: StatCategoria[]; t
 
 async function getData() {
   try {
-    const [stats, gastos] = await Promise.all([getStats(), getGastos(500)]);
-    return { stats, gastos, error: null };
+    const [stats, gastos, bankAccounts] = await Promise.all([getStats(), getGastos(500), getBankAccounts()]);
+    return { stats, gastos, bankAccounts, error: null };
   } catch (e: any) {
     return {
       stats: { total: 0, count: 0, avg: 0, totalMes: 0, totalMesAnt: 0, variacion: 0, por_categoria: [] },
       gastos: [],
+      bankAccounts: [],
       error: e?.message ?? 'Error al cargar datos',
     };
   }
 }
 
 export default async function DashboardPage() {
-  const { stats, gastos, error } = await getData();
+  const { stats, gastos, bankAccounts, error } = await getData();
 
   const today       = new Date();
   const currentMonth = today.toISOString().slice(0, 7);
@@ -137,7 +138,7 @@ export default async function DashboardPage() {
         <div id="gastos" className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Movimientos</h3>
           <Suspense fallback={<div className="h-64 animate-pulse rounded bg-slate-100" />}>
-            <ExpenseTable gastos={gastos} />
+            <ExpenseTable gastos={gastos} bankAccounts={bankAccounts} />
           </Suspense>
         </div>
 

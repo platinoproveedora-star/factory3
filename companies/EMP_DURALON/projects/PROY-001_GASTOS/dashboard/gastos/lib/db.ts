@@ -31,6 +31,19 @@ export type Gasto = {
   categoria: string;
   nombre_usuario: string;
   vehiculo: string | null;
+  cta_retiro_id?: string | null;
+  cta_retiro_folio?: string | null;
+  cta_retiro_nombre?: string | null;
+};
+
+export type BankAccount = {
+  id: string;
+  folio: string;
+  account_name: string;
+  bank_name: string | null;
+  account_number_mask: string | null;
+  status: string;
+  current_balance: number;
 };
 
 export type StatCategoria = { categoria: string; total: number; count: number };
@@ -67,4 +80,24 @@ export async function getStats(): Promise<Stats> {
     'vertical_client_expenses/client_expenses_dashboard_data',
     baseParams({ action: 'stats' })
   );
+}
+
+export async function getBankAccounts(): Promise<BankAccount[]> {
+  const banksSchema = process.env.BANKS_SCHEMA ?? (projectContext as any).banks_schema ?? '';
+  const banksProjectCode = process.env.BANKS_PROJECT_CODE ?? (projectContext as any).banks_project_code ?? '';
+  const banksModuleCode = process.env.BANKS_MODULE_CODE ?? (projectContext as any).banks_module_code ?? 'banks';
+  if (!banksSchema || !banksProjectCode) return [];
+
+  const data = await factoryGet<{ accounts: BankAccount[] }>(
+    'vertical_erp_banks/erp_banks_account_list',
+    {
+      schema: banksSchema,
+      company_id: projectContext.company_id,
+      project_code: banksProjectCode,
+      module_code: banksModuleCode,
+      status: 'active',
+      limit: '500',
+    }
+  );
+  return data.accounts ?? [];
 }

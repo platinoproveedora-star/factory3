@@ -118,6 +118,9 @@ export type ExpenseReconciliationRow = {
   usuario_id: string | null;
   categoria_id: string | null;
   estado: string | null;
+  cta_retiro_id?: string | null;
+  cta_retiro_folio?: string | null;
+  cta_retiro_nombre?: string | null;
   linked: boolean;
   bank_movement: Movement | null;
 };

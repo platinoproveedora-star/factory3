@@ -566,9 +566,9 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
                     </Field>
                   ) : null}
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
-                    <Field label={isDeposit ? 'Cuenta tercero origen' : 'Cuenta tercero destino'}>
+                    <Field label={isDeposit ? 'Cuenta origen nueva/tercero' : 'Cuenta destino nueva/tercero'}>
                       <Select value={form.third_party_account_id} onChange={(event) => setForm({ ...form, third_party_account_id: event.target.value })}>
-                        <option value="manual">Captura manual</option>
+                        <option value="manual">Captura nueva/manual</option>
                       </Select>
                     </Field>
                     <div className="mt-2 grid gap-2">
@@ -716,11 +716,13 @@ function ConciliacionGastos({ accounts, onRefreshBanks }: { accounts: Account[];
       const result = await banksApi<ExpenseReconciliationData>('list_expense_reconciliation', { limit: 300 });
       setData(result);
       const defaultId = result.default_source_account?.id || accounts.find((account) => account.account_name === (projectContext as any).default_expense_source_account_name)?.id || '';
-      if (defaultId) {
-        const next: Record<string, string> = {};
-        for (const expense of result.expenses) next[expense.id] = defaultId;
-        setAccountByExpense(next);
+      const activeAccountIds = new Set(accounts.map((account) => account.id));
+      const next: Record<string, string> = {};
+      for (const expense of result.expenses) {
+        const expenseAccountId = expense.cta_retiro_id && activeAccountIds.has(expense.cta_retiro_id) ? expense.cta_retiro_id : '';
+        next[expense.id] = expenseAccountId || defaultId;
       }
+      setAccountByExpense(next);
     } catch (error: any) {
       setErr(error.message || 'No se pudieron cargar gastos');
     } finally {

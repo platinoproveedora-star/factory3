@@ -3,6 +3,7 @@ import os
 import base64
 import json
 import importlib.util as _ilu
+import urllib.error
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone, date
@@ -67,6 +68,19 @@ def _rest_post(schema: str, table: str, data: dict) -> list:
         return json.loads(resp.read())
 
 
+def _rest_post_with_optional_fields(schema: str, table: str, data: dict, optional_fields: set[str]) -> list:
+    try:
+        return _rest_post(schema, table, data)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").lower()
+        missing_optional = any(field.lower() in body for field in optional_fields)
+        missing_column = "column" in body or "schema cache" in body or "pgrst204" in body
+        if not missing_optional or not missing_column:
+            raise
+        fallback = {key: value for key, value in data.items() if key not in optional_fields}
+        return _rest_post(schema, table, fallback)
+
+
 def _rest_patch(schema: str, table: str, data: dict, filter_param: str) -> list:
     url = f"{_url()}/rest/v1/{table}?{filter_param}"
     req = urllib.request.Request(
@@ -77,6 +91,38 @@ def _rest_patch(schema: str, table: str, data: dict, filter_param: str) -> list:
     )
     with urllib.request.urlopen(req, timeout=10) as resp:
         return json.loads(resp.read())
+
+
+def _rest_patch_with_optional_fields(schema: str, table: str, data: dict, filter_param: str, optional_fields: set[str]) -> list:
+    try:
+        return _rest_patch(schema, table, data, filter_param)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").lower()
+        missing_optional = any(field.lower() in body for field in optional_fields)
+        missing_column = "column" in body or "schema cache" in body or "pgrst204" in body
+        if not missing_optional or not missing_column:
+            raise
+        fallback = {key: value for key, value in data.items() if key not in optional_fields}
+        return _rest_patch(schema, table, fallback, filter_param)
+
+
+def _cta_retiro_fields(ctx: dict) -> dict:
+    return {
+        "cta_retiro_id": ctx.get("cta_retiro_id") or ctx.get("bank_account_id") or ctx.get("withdrawal_account_id") or None,
+        "cta_retiro_folio": ctx.get("cta_retiro_folio") or ctx.get("bank_account_folio") or None,
+        "cta_retiro_nombre": ctx.get("cta_retiro_nombre") or ctx.get("bank_account_name") or None,
+    }
+
+
+def _identity(ctx: dict) -> tuple[str, str, str]:
+    empresa_id = (ctx.get("empresa_id") or ctx.get("company_id") or "").strip()
+    project_code = (ctx.get("project_code") or "").strip()
+    module_code = (ctx.get("module_code") or "gastos").strip()
+    return empresa_id, project_code, module_code
+
+
+def _sql_literal(value: str) -> str:
+    return value.replace("'", "''")
 
 
 # ---------------------------------------------------------------------------
@@ -137,9 +183,7 @@ def _register_user(schema: str, ctx: dict, dry_run: bool) -> dict:
         return {"ok": False, "error": "nombre y telegram_chat_id requeridos"}
     if dry_run:
         return {"ok": True, "data": {"dry_run": True, "nombre": nombre, "chat_id": chat_id}}
-    empresa_id   = ctx.get("empresa_id") or ctx.get("company_id") or "EMP_DURALON"
-    project_code = ctx.get("project_code", "PROY-001")
-    module_code  = ctx.get("module_code", "gastos")
+    empresa_id, project_code, module_code = _identity(ctx)
     try:
         # Si ya existe con ese telegram_chat_id, retornarlo directamente
         rows_existing = _rest_get(
@@ -213,12 +257,10 @@ def _save_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
             return {"ok": False, "error": f"Categoria no encontrada: {ctx['categoria']}"}
         categoria_id = rows[0]["id"]
 
-        empresa_id   = ctx.get("empresa_id") or ctx.get("company_id") or "EMP_DURALON"
-        project_code = ctx.get("project_code", "PROY-001")
-        module_code  = ctx.get("module_code", "gastos")
+        empresa_id, project_code, module_code = _identity(ctx)
 
         folio = _next_folio(schema, "gastos", "GAS")
-        gasto = _rest_post(schema, "gastos", {
+        gasto_payload = {
             "folio":            folio,
             "usuario_id":       ctx["usuario_id"],
             "categoria_id":     categoria_id,
@@ -237,7 +279,14 @@ def _save_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
             "purchase_order_id": ctx.get("purchase_order_id"),
             "asset_id":         ctx.get("asset_id"),
             "erp_tags":         ctx.get("erp_tags", {}),
-        })
+            **_cta_retiro_fields(ctx),
+        }
+        gasto = _rest_post_with_optional_fields(
+            schema,
+            "gastos",
+            gasto_payload,
+            {"cta_retiro_id", "cta_retiro_folio", "cta_retiro_nombre"},
+        )
 
         _rest_post(schema, "gasto_eventos", {
             "folio":       _next_folio(schema, "gasto_eventos", "EVT"),
@@ -307,9 +356,13 @@ def _get_stats(schema: str, ctx: dict) -> dict:
 
 def _get_schema_sql(schema: str, ctx: dict) -> dict:
     """Retorna el SQL DDL para crear todas las tablas del schema (ERP-ready)."""
+    empresa_id, project_code, module_code = _identity(ctx)
+    empresa_sql = _sql_literal(empresa_id)
+    project_sql = _sql_literal(project_code)
+    module_sql = _sql_literal(module_code)
     sql = f"""-- ============================================================
 -- Schema: {schema}
--- Empresa: EMP_DURALON (legacy: UC-101) / PROY-001 / gastos
+-- Empresa: {empresa_sql} / {project_sql} / {module_sql}
 -- ERP-Ready: empresa_id + project_code + module_code en todas las tablas
 -- ============================================================
 
@@ -323,9 +376,9 @@ CREATE TABLE IF NOT EXISTS {schema}.usuarios (
     telegram_chat_id TEXT UNIQUE,
     rol              TEXT NOT NULL DEFAULT 'capturista',
     activo           BOOLEAN NOT NULL DEFAULT true,
-    empresa_id       TEXT NOT NULL DEFAULT 'EMP_DURALON',
-    project_code     TEXT NOT NULL DEFAULT 'PROY-001',
-    module_code      TEXT NOT NULL DEFAULT 'gastos',
+    empresa_id       TEXT NOT NULL DEFAULT '{empresa_sql}',
+    project_code     TEXT NOT NULL DEFAULT '{project_sql}',
+    module_code      TEXT NOT NULL DEFAULT '{module_sql}',
     global_user_id   UUID NULL,
     phone            TEXT NULL,
     email            TEXT NULL,
@@ -339,9 +392,9 @@ CREATE TABLE IF NOT EXISTS {schema}.categorias_gasto (
     folio        TEXT UNIQUE NOT NULL,
     nombre       TEXT UNIQUE NOT NULL,
     activo       BOOLEAN NOT NULL DEFAULT true,
-    empresa_id   TEXT NOT NULL DEFAULT 'EMP_DURALON',
-    project_code TEXT NOT NULL DEFAULT 'PROY-001',
-    module_code  TEXT NOT NULL DEFAULT 'gastos',
+    empresa_id   TEXT NOT NULL DEFAULT '{empresa_sql}',
+    project_code TEXT NOT NULL DEFAULT '{project_sql}',
+    module_code  TEXT NOT NULL DEFAULT '{module_sql}',
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -356,9 +409,9 @@ CREATE TABLE IF NOT EXISTS {schema}.gastos (
     fecha             DATE NOT NULL,
     metodo_captura    TEXT NOT NULL DEFAULT 'manual',
     estado            TEXT NOT NULL DEFAULT 'registrado',
-    empresa_id        TEXT NOT NULL DEFAULT 'EMP_DURALON',
-    project_code      TEXT NOT NULL DEFAULT 'PROY-001',
-    module_code       TEXT NOT NULL DEFAULT 'gastos',
+    empresa_id        TEXT NOT NULL DEFAULT '{empresa_sql}',
+    project_code      TEXT NOT NULL DEFAULT '{project_sql}',
+    module_code       TEXT NOT NULL DEFAULT '{module_sql}',
     cost_center_id    UUID NULL,
     customer_id       UUID NULL,
     supplier_id       UUID NULL,
@@ -366,6 +419,9 @@ CREATE TABLE IF NOT EXISTS {schema}.gastos (
     purchase_order_id UUID NULL,
     asset_id          UUID NULL,
     vehiculo          TEXT NULL,
+    cta_retiro_id     UUID NULL,
+    cta_retiro_folio  TEXT NULL,
+    cta_retiro_nombre TEXT NULL,
     erp_tags          JSONB NOT NULL DEFAULT '{{}}',
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -378,9 +434,9 @@ CREATE TABLE IF NOT EXISTS {schema}.gasto_documentos (
     url          TEXT NOT NULL,
     tipo         TEXT NOT NULL DEFAULT 'ticket',
     storage_path TEXT,
-    empresa_id   TEXT NOT NULL DEFAULT 'EMP_DURALON',
-    project_code TEXT NOT NULL DEFAULT 'PROY-001',
-    module_code  TEXT NOT NULL DEFAULT 'gastos',
+    empresa_id   TEXT NOT NULL DEFAULT '{empresa_sql}',
+    project_code TEXT NOT NULL DEFAULT '{project_sql}',
+    module_code  TEXT NOT NULL DEFAULT '{module_sql}',
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -392,9 +448,9 @@ CREATE TABLE IF NOT EXISTS {schema}.gasto_eventos (
     usuario_id   UUID REFERENCES {schema}.usuarios(id),
     evento       TEXT NOT NULL,
     detalle      JSONB,
-    empresa_id   TEXT NOT NULL DEFAULT 'EMP_DURALON',
-    project_code TEXT NOT NULL DEFAULT 'PROY-001',
-    module_code  TEXT NOT NULL DEFAULT 'gastos',
+    empresa_id   TEXT NOT NULL DEFAULT '{empresa_sql}',
+    project_code TEXT NOT NULL DEFAULT '{project_sql}',
+    module_code  TEXT NOT NULL DEFAULT '{module_sql}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -586,6 +642,14 @@ def _update_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
     if "vehiculo" in ctx:
         updatable["vehiculo"] = ctx["vehiculo"] or None
 
+    cta_fields = _cta_retiro_fields(ctx)
+    if "cta_retiro_id" in ctx or "bank_account_id" in ctx or "withdrawal_account_id" in ctx:
+        updatable["cta_retiro_id"] = cta_fields["cta_retiro_id"]
+    if "cta_retiro_folio" in ctx or "bank_account_folio" in ctx:
+        updatable["cta_retiro_folio"] = cta_fields["cta_retiro_folio"]
+    if "cta_retiro_nombre" in ctx or "bank_account_name" in ctx:
+        updatable["cta_retiro_nombre"] = cta_fields["cta_retiro_nombre"]
+
     if not updatable:
         return {"ok": False, "error": "Sin campos para actualizar"}
 
@@ -594,11 +658,15 @@ def _update_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
 
     try:
         filter_param = f"id=eq.{gasto_id}" if gasto_id else f"folio=eq.{folio}"
-        updated = _rest_patch(schema, "gastos", updatable, filter_param)
+        updated = _rest_patch_with_optional_fields(
+            schema,
+            "gastos",
+            updatable,
+            filter_param,
+            {"cta_retiro_id", "cta_retiro_folio", "cta_retiro_nombre"},
+        )
 
-        empresa_id   = ctx.get("empresa_id") or ctx.get("company_id") or "EMP_DURALON"
-        project_code = ctx.get("project_code", "PROY-001")
-        module_code  = ctx.get("module_code", "gastos")
+        empresa_id, project_code, module_code = _identity(ctx)
         gasto_ref    = updated[0] if updated else {}
 
         _rest_post(schema, "gasto_eventos", {
@@ -639,9 +707,7 @@ def _delete_expense(schema: str, ctx: dict, dry_run: bool) -> dict:
             return {"ok": False, "error": "Gasto no encontrado"}
 
         gasto = rows[0]
-        empresa_id   = ctx.get("empresa_id") or ctx.get("company_id") or "EMP_DURALON"
-        project_code = ctx.get("project_code", "PROY-001")
-        module_code  = ctx.get("module_code", "gastos")
+        empresa_id, project_code, module_code = _identity(ctx)
 
         # Log auditoría ANTES de borrar (sin gasto_id para evitar FK al borrar el evento después)
         _rest_post(schema, "gasto_eventos", {
@@ -690,7 +756,7 @@ class ClientExpensesService:
         if not action:
             return {"ok": False, "error": "action requerida: get_categories | get_user | register_user | save_expense | list_expenses | get_stats | get_schema_sql"}
         if not schema:
-            return {"ok": False, "error": "schema requerido (ej: uc101_proy001)"}
+            return {"ok": False, "error": "schema requerido"}
 
         actions = {
             "get_categories":  lambda: _get_categories(schema, context),

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import date
@@ -61,7 +62,7 @@ class ClientExpensesDashboardDataService:
         return config_schemas | configured
 
     def _project_config(self, context: dict) -> dict:
-        # Acepta company_id=EMP_DURALON o client_id=UC-101 (legacy)
+        # Acepta company_id actual o client_id legacy.
         company_id = (
             str(context.get("company_id") or context.get("empresa_id") or "").strip()
             or str(context.get("client_id") or "").strip()
@@ -106,8 +107,10 @@ class ClientExpensesDashboardDataService:
 
     def _list(self, schema: str, context: dict) -> dict:
         limit = max(1, min(int(context.get("limit", 200)), 2000))
+        select_with_bank = "folio,fecha,monto,descripcion,metodo_captura,vehiculo,cta_retiro_id,cta_retiro_folio,cta_retiro_nombre,categorias_gasto(nombre),usuarios(nombre)"
+        select_basic = "folio,fecha,monto,descripcion,metodo_captura,vehiculo,categorias_gasto(nombre),usuarios(nombre)"
         params = [
-            "select=folio,fecha,monto,descripcion,metodo_captura,vehiculo,categorias_gasto(nombre),usuarios(nombre)",
+            f"select={select_with_bank}",
             "order=fecha.desc",
             f"limit={limit}",
         ]
@@ -116,7 +119,13 @@ class ClientExpensesDashboardDataService:
         if context.get("fecha_hasta"):
             params.append(f"fecha=lte.{urllib.parse.quote(str(context['fecha_hasta']))}")
 
-        rows = self._get(schema, "gastos?" + "&".join(params))
+        try:
+            rows = self._get(schema, "gastos?" + "&".join(params))
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace").lower()
+            if "cta_retiro" not in body and "schema cache" not in body and "pgrst204" not in body:
+                raise
+            rows = self._get(schema, "gastos?" + "&".join([f"select={select_basic}", *params[1:]]))
         gastos = [self._format_gasto(row) for row in rows]
         return {"ok": True, "data": {"gastos": gastos, "total": len(gastos), "schema": schema}}
 
@@ -180,6 +189,9 @@ class ClientExpensesDashboardDataService:
             "descripcion": row.get("descripcion") or "",
             "metodo_captura": row.get("metodo_captura") or "manual",
             "vehiculo": row.get("vehiculo") or None,
+            "cta_retiro_id": row.get("cta_retiro_id"),
+            "cta_retiro_folio": row.get("cta_retiro_folio"),
+            "cta_retiro_nombre": row.get("cta_retiro_nombre"),
             "categoria": (row.get("categorias_gasto") or {}).get("nombre") or "",
             "nombre_usuario": (row.get("usuarios") or {}).get("nombre") or "",
         }
