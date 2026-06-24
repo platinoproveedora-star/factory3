@@ -17,7 +17,15 @@ class SupabaseExposeSchemaService:
 
         # 1. Leer schemas actualmente expuestos
         result = db.management_query(
-            "SELECT current_setting('pgrst.db_schemas', true) AS schemas;",
+            """
+SELECT replace(setting, 'pgrst.db_schemas=', '') AS schemas
+FROM pg_db_role_setting s
+JOIN pg_roles r ON r.oid = s.setrole
+CROSS JOIN LATERAL unnest(s.setconfig) AS setting
+WHERE r.rolname = 'authenticator'
+  AND setting LIKE 'pgrst.db_schemas=%'
+LIMIT 1;
+""",
             read_only=True,
         )
         if not result.get("ok"):

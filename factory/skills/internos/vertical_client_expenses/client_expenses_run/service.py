@@ -32,6 +32,7 @@ def _headers_get(schema: str) -> dict:
     return {
         "apikey": _key(),
         "Authorization": f"Bearer {_key()}",
+        "Accept": "application/json",
         "Accept-Profile": schema,
         "Content-Type": "application/json",
     }
@@ -41,6 +42,7 @@ def _headers_write(schema: str) -> dict:
     return {
         "apikey": _key(),
         "Authorization": f"Bearer {_key()}",
+        "Accept": "application/json",
         "Content-Profile": schema,
         "Content-Type": "application/json",
         "Prefer": "return=representation",
