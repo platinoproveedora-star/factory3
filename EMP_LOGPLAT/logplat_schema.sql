@@ -81,3 +81,9 @@ CREATE TABLE IF NOT EXISTS logplat.viaje_docs (
     nombre      text,
     created_at  timestamptz DEFAULT now()
 );
+
+-- PASO FINAL OBLIGATORIO: exponer schema en Data API (PostgREST)
+-- NO ejecutar este ALTER manualmente — sobrescribiría otros schemas expuestos.
+-- Usar el skill:
+--   supabase_expose_schema  { "schema": "logplat", "dry_run": false }
+-- El skill hace append seguro sin tocar schemas existentes.
