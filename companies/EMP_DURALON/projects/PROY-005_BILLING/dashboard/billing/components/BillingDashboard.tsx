@@ -172,6 +172,7 @@ export default function BillingDashboard() {
   // Tab 6 – Clientes
   const [ranking, setRanking] = useState<ClientRankingData | null>(null);
   const [rankFilter, setRankFilter] = useState<'todos' | '8' | '15' | '21'>('todos');
+  const [rankSort, setRankSort] = useState<{ col: string; dir: 'desc' | 'asc' }>({ col: 'm_actual', dir: 'desc' });
   const [productInput, setProductInput] = useState('');
   const [productStats, setProductStats] = useState<{ label: string; por_cliente: Record<string, number> } | null>(null);
   const [productLoading, setProductLoading] = useState(false);
@@ -424,12 +425,29 @@ export default function BillingDashboard() {
     return true;
   });
 
-  const filteredClientes = ranking?.clientes.filter((c) => {
-    if (rankFilter === '8') return (c.dias_sin_comprar ?? 0) >= 8;
-    if (rankFilter === '15') return (c.dias_sin_comprar ?? 0) >= 15;
-    if (rankFilter === '21') return (c.dias_sin_comprar ?? 0) >= 21;
-    return true;
-  }) ?? [];
+  const filteredClientes = (() => {
+    const base = ranking?.clientes.filter((c) => {
+      if (rankFilter === '8') return (c.dias_sin_comprar ?? 0) >= 8;
+      if (rankFilter === '15') return (c.dias_sin_comprar ?? 0) >= 15;
+      if (rankFilter === '21') return (c.dias_sin_comprar ?? 0) >= 21;
+      return true;
+    }) ?? [];
+    const { col, dir } = rankSort;
+    return [...base].sort((a, b) => {
+      let av: number | string = 0;
+      let bv: number | string = 0;
+      if (col === 'dias_sin_comprar') { av = a.dias_sin_comprar ?? 9999; bv = b.dias_sin_comprar ?? 9999; }
+      else if (col === 'm_actual') { av = a.m_actual; bv = b.m_actual; }
+      else if (col === 'm1') { av = a.m1; bv = b.m1; }
+      else if (col === 'm2') { av = a.m2; bv = b.m2; }
+      else if (col === 'ultima_compra') { av = a.ultima_compra ?? ''; bv = b.ultima_compra ?? ''; }
+      else if (col === 'ticket_promedio') { av = a.ticket_promedio; bv = b.ticket_promedio; }
+      else if (col === 'producto') { av = productStats?.por_cliente[a.customer_name] ?? 0; bv = productStats?.por_cliente[b.customer_name] ?? 0; }
+      if (av < bv) return dir === 'asc' ? -1 : 1;
+      if (av > bv) return dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  })();
 
   // Índice pago → remisiones aplicadas
   const appsMap = paymentApplications.reduce<Record<string, string[]>>((acc, a) => {
@@ -887,13 +905,13 @@ export default function BillingDashboard() {
                   <th className="text-center px-3 py-3">#</th>
                   <th className="text-center px-3 py-3" />
                   <th className="text-left px-3 py-3">Cliente</th>
-                  <th className="text-center px-3 py-3">Sin comprar</th>
-                  <th className="text-right px-3 py-3">Mes actual</th>
-                  <th className="text-right px-3 py-3">M-1</th>
-                  <th className="text-right px-3 py-3">M-2</th>
-                  <th className="text-center px-3 py-3">Última compra</th>
-                  {productStats && <th className="text-right px-3 py-3 text-blue-700">{productStats.label}</th>}
-                  <th className="text-right px-3 py-3">Ticket Prom.</th>
+                  <SortTh col="dias_sin_comprar" sort={rankSort} onSort={setRankSort} align="center">Sin comprar</SortTh>
+                  <SortTh col="m_actual" sort={rankSort} onSort={setRankSort} align="right">Mes actual</SortTh>
+                  <SortTh col="m1" sort={rankSort} onSort={setRankSort} align="right">M-1</SortTh>
+                  <SortTh col="m2" sort={rankSort} onSort={setRankSort} align="right">M-2</SortTh>
+                  <SortTh col="ultima_compra" sort={rankSort} onSort={setRankSort} align="center">Última compra</SortTh>
+                  {productStats && <SortTh col="producto" sort={rankSort} onSort={setRankSort} align="right" className="text-blue-700">{productStats.label}</SortTh>}
+                  <SortTh col="ticket_promedio" sort={rankSort} onSort={setRankSort} align="right">Ticket Prom.</SortTh>
                 </tr>
               </thead>
               <tbody>
@@ -1436,6 +1454,28 @@ function Section({ title, children, highlight }: { title: string; children: Reac
       </button>
       {open && <div className="bg-white">{children}</div>}
     </div>
+  );
+}
+
+function SortTh({
+  col, sort, onSort, align = 'left', className = '', children,
+}: {
+  col: string;
+  sort: { col: string; dir: 'asc' | 'desc' };
+  onSort: (s: { col: string; dir: 'asc' | 'desc' }) => void;
+  align?: 'left' | 'right' | 'center';
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const active = sort.col === col;
+  return (
+    <th
+      className={`px-3 py-3 cursor-pointer select-none whitespace-nowrap text-${align} ${className} hover:text-gray-800 ${active ? 'text-blue-600' : ''}`}
+      onClick={() => onSort({ col, dir: active && sort.dir === 'desc' ? 'asc' : 'desc' })}
+    >
+      {children}
+      <span className="ml-0.5 opacity-60">{active ? (sort.dir === 'desc' ? ' ↓' : ' ↑') : ' ↕'}</span>
+    </th>
   );
 }
 
