@@ -1,9 +1,7 @@
 from __future__ import annotations
 import importlib.util
-import json
 import os
 import sys
-import urllib.request
 from datetime import date
 from pathlib import Path
 
@@ -21,23 +19,18 @@ def _load_service(skill_dir: str, class_name: str):
     return getattr(m, class_name)
 
 
+def _load_internal_service(relative_dir: str, class_name: str):
+    path = Path(__file__).resolve().parents[2] / relative_dir / "service.py"
+    spec = importlib.util.spec_from_file_location(f"_auto_{relative_dir.replace('/', '_')}", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"no se pudo cargar {relative_dir}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return getattr(module, class_name)
+
+
 def _fmt(n: float) -> str:
     return f"${n:,.2f}"
-
-
-def _send_telegram(token: str, chat_id: str, text: str) -> dict:
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return json.loads(r.read().decode("utf-8"))
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
 
 
 class ErpBillingCashCutAutoService:
@@ -47,11 +40,12 @@ class ErpBillingCashCutAutoService:
             return ctx_result
         ctx = ctx_result["data"]
 
+        dry_run = bool(context.get("dry_run", True))
         cut_date = str(context.get("cut_date") or today_iso())
         bot_token = os.getenv("FACTORY3_ADMIN_BOT_TOKEN") or str(context.get("bot_token") or "")
         chat_id = os.getenv("TELEGRAM_OWNER_CHAT_ID") or str(context.get("chat_id") or "")
 
-        if not bot_token or not chat_id:
+        if not dry_run and (not bot_token or not chat_id):
             return {"ok": False, "error": "FACTORY3_ADMIN_BOT_TOKEN y TELEGRAM_OWNER_CHAT_ID son requeridos"}
 
         # 1. ¿Ya existe un corte para hoy?
@@ -72,7 +66,7 @@ class ErpBillingCashCutAutoService:
                 **context,
                 **ctx,
                 "cut_date": cut_date,
-                "dry_run": False,
+                "dry_run": dry_run,
                 "notes": "Corte automático 7pm",
             })
             if not open_result.get("ok"):
@@ -125,7 +119,17 @@ class ErpBillingCashCutAutoService:
         texto = "\n".join(lineas)
 
         # 4. Enviar
-        tg_result = _send_telegram(bot_token, chat_id, texto)
+        if dry_run:
+            tg_result = {"ok": True, "data": {"dry_run": True}}
+        else:
+            TelegramService = _load_internal_service("vertical_telegram/telegram_send_message", "TelegramSendMessageService")
+            tg_result = TelegramService().ejecutar({
+                "token": bot_token,
+                "chat_id": chat_id,
+                "text": texto,
+                "parse_mode": "Markdown",
+                "dry_run": False,
+            })
 
         return {
             "ok": True,
@@ -133,7 +137,9 @@ class ErpBillingCashCutAutoService:
                 "cut_date": cut_date,
                 "corte_folio": corte_folio,
                 "corte_created": corte_created,
-                "telegram_sent": bool(tg_result.get("ok")),
+                "dry_run": dry_run,
+                "telegram_preview": texto if dry_run else None,
+                "telegram_sent": False if dry_run else bool(tg_result.get("ok")),
                 "telegram_error": tg_result.get("error") if not tg_result.get("ok") else None,
                 "totales": t,
             },

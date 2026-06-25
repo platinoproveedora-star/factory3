@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "factory_schedule_runner",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Ejecuta schedules vencidos de factory_schedules y recalcula next_run_at.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

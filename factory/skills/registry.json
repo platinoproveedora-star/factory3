@@ -4138,5 +4138,32 @@
     "path": "skills/internos/vertical_erp_billing/erp_billing_conciliacion_match",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_factory_scheduler/factory_schedule_schema_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_factory_scheduler/factory_schedule_schema_plan",
+    "vertical": "vertical_factory_scheduler",
+    "descripcion": "Genera SQL para tablas genericas de schedules Factory.",
+    "path": "skills/internos/vertical_factory_scheduler/factory_schedule_schema_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factory_scheduler/factory_schedule_upsert": {
+    "tipo": "interno",
+    "nombre": "vertical_factory_scheduler/factory_schedule_upsert",
+    "vertical": "vertical_factory_scheduler",
+    "descripcion": "Crea o actualiza un schedule generico para ejecutar cualquier skill Factory por hora o intervalo.",
+    "path": "skills/internos/vertical_factory_scheduler/factory_schedule_upsert",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factory_scheduler/factory_schedule_runner": {
+    "tipo": "interno",
+    "nombre": "vertical_factory_scheduler/factory_schedule_runner",
+    "vertical": "vertical_factory_scheduler",
+    "descripcion": "Ejecuta schedules vencidos desde factory_schedules y recalcula next_run_at.",
+    "path": "skills/internos/vertical_factory_scheduler/factory_schedule_runner",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

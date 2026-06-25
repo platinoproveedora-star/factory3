@@ -256,6 +256,16 @@ def _get_data_runner():
     return _data_runner
 
 
+def _require_cron_auth(request: Request) -> None:
+    secret = os.getenv("CRON_SECRET") or os.getenv("FACTORY_CRON_SECRET") or os.getenv("FACTORY_RUN_SECRET")
+    if not secret:
+        raise HTTPException(status_code=500, detail="CRON_SECRET o FACTORY_RUN_SECRET requerido")
+    auth = request.headers.get("Authorization", "")
+    query_secret = request.query_params.get("secret", "")
+    if auth != f"Bearer {secret}" and query_secret != secret:
+        raise HTTPException(status_code=401, detail="cron secret invalido")
+
+
 @app.get("/")
 def root():
     return {"ok": True, "service": "factory_api", "docs": "/docs"}
@@ -330,8 +340,9 @@ def cron_tasks(request: Request):
 
 
 @app.post("/cron/billing-cut")
-def cron_billing_cut():
+def cron_billing_cut(request: Request):
     """Render Cron — corte de caja automático 7pm. Configura ERP_BILLING_* env vars en Render."""
+    _require_cron_auth(request)
     from factory.engine import SkillLoader, SkillRunner
     skills_dir = FACTORY_DIR / "skills"
     ext = skills_dir / "externos"
@@ -342,13 +353,33 @@ def cron_billing_cut():
         "company_id": os.getenv("ERP_BILLING_COMPANY_ID", ""),
         "schema": os.getenv("ERP_BILLING_SCHEMA", ""),
         "sales_schema": os.getenv("ERP_BILLING_SALES_SCHEMA", ""),
-        "project_code": os.getenv("ERP_BILLING_PROJECT_CODE", "PROY-005"),
-        "module_code": os.getenv("ERP_BILLING_MODULE_CODE", "billing"),
+        "project_code": os.getenv("ERP_BILLING_PROJECT_CODE", ""),
+        "module_code": os.getenv("ERP_BILLING_MODULE_CODE", ""),
         "dry_run": False,
     }
-    if not context["company_id"] or not context["schema"]:
-        return {"ok": False, "error": "ERP_BILLING_COMPANY_ID y ERP_BILLING_SCHEMA requeridos como env vars"}
+    missing = [key for key in ("company_id", "schema", "sales_schema", "project_code", "module_code") if not context.get(key)]
+    if missing:
+        return {"ok": False, "error": f"env vars billing requeridas faltantes: {', '.join(missing)}"}
     result = runner.run("vertical_erp_billing/erp_billing_cash_cut_auto", context)
+    return {"ok": result.get("ok"), "data": result.get("data"), "error": result.get("error")}
+
+
+@app.post("/cron/schedules")
+def cron_schedules(request: Request):
+    """Render Cron generico — ejecuta schedules vencidos desde factory_schedules."""
+    _require_cron_auth(request)
+    from factory.engine import SkillLoader, SkillRunner
+    skills_dir = FACTORY_DIR / "skills"
+    ext = skills_dir / "externos"
+    ext.mkdir(parents=True, exist_ok=True)
+    loader = SkillLoader(internal_root=skills_dir / "internos", external_root=ext)
+    runner = SkillRunner(loader)
+    context = {
+        "scheduler_schema": os.getenv("FACTORY_SCHEDULER_SCHEMA", "public"),
+        "limit": int(os.getenv("FACTORY_SCHEDULER_BATCH", "20")),
+        "dry_run": False,
+    }
+    result = runner.run("vertical_factory_scheduler/factory_schedule_runner", context)
     return {"ok": result.get("ok"), "data": result.get("data"), "error": result.get("error")}
 
 

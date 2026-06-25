@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "factory_schedule_upsert",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea o actualiza un schedule generico para ejecutar cualquier skill Factory a una hora o intervalo.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

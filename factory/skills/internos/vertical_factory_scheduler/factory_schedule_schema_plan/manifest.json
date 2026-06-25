@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "factory_schedule_schema_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera SQL para tablas genericas de schedules Factory: factory_schedules y factory_schedule_runs.",
+  "requires_env": []
+}
