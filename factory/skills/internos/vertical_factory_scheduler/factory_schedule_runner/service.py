@@ -36,6 +36,56 @@ def _next_after(schedule: dict, base: datetime) -> str | None:
     return candidate.astimezone(timezone.utc).isoformat()
 
 
+def _parse_hhmm(value: str) -> tuple[int, int]:
+    hour, minute = [int(part) for part in str(value or "").split(":", 1)]
+    if hour < 0 or hour > 23 or minute < 0 or minute > 59:
+        raise ValueError("hora invalida")
+    return hour, minute
+
+
+def _active_window(schedule: dict) -> dict:
+    metadata = schedule.get("metadata") if isinstance(schedule.get("metadata"), dict) else {}
+    window = metadata.get("active_window") if isinstance(metadata.get("active_window"), dict) else {}
+    if not window:
+        return {}
+    start = str(window.get("start") or "").strip()
+    end = str(window.get("end") or "").strip()
+    if not start or not end:
+        return {}
+    return {
+        "start": start,
+        "end": end,
+        "timezone": str(window.get("timezone") or schedule.get("timezone") or "America/Mexico_City"),
+    }
+
+
+def _is_inside_window(schedule: dict, now: datetime) -> bool:
+    window = _active_window(schedule)
+    if not window:
+        return True
+    local_now = now.astimezone(ZoneInfo(window["timezone"]))
+    start_hour, start_minute = _parse_hhmm(window["start"])
+    end_hour, end_minute = _parse_hhmm(window["end"])
+    start = local_now.replace(hour=start_hour, minute=start_minute, second=0, microsecond=0)
+    end = local_now.replace(hour=end_hour, minute=end_minute, second=0, microsecond=0)
+    if start <= end:
+        return start <= local_now <= end
+    return local_now >= start or local_now <= end
+
+
+def _next_window_start(schedule: dict, now: datetime) -> str:
+    window = _active_window(schedule)
+    if not window:
+        next_run_at = _next_after(schedule, now)
+        return next_run_at or now.isoformat()
+    local_now = now.astimezone(ZoneInfo(window["timezone"]))
+    start_hour, start_minute = _parse_hhmm(window["start"])
+    candidate = local_now.replace(hour=start_hour, minute=start_minute, second=0, microsecond=0)
+    if candidate <= local_now:
+        candidate += timedelta(days=1)
+    return candidate.astimezone(timezone.utc).isoformat()
+
+
 class FactoryScheduleRunnerService:
     def ejecutar(self, context: dict) -> dict:
         schema = str(context.get("scheduler_schema") or context.get("schema") or "public").strip()
@@ -63,6 +113,20 @@ class FactoryScheduleRunnerService:
             skill_name = schedule.get("skill_name")
             source = schedule.get("skill_source") or "internos"
             skill_context = schedule.get("context") if isinstance(schedule.get("context"), dict) else {}
+            if not _is_inside_window(schedule, now):
+                next_run_at = _next_window_start(schedule, now)
+                db.rest_update(
+                    "factory_schedules",
+                    {
+                        "last_status": "skipped_outside_window",
+                        "last_error": None,
+                        "next_run_at": next_run_at,
+                        "updated_at": _utc_now().isoformat(),
+                    },
+                    {"id": f"eq.{schedule['id']}"},
+                )
+                processed.append({"schedule": schedule.get("schedule_name"), "skill": skill_name, "status": "skipped_outside_window", "next_run_at": next_run_at})
+                continue
             started_at = _utc_now()
             run_folio = self._next_run_folio(db)
             run_row = {
