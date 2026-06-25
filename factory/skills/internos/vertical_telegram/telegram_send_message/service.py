@@ -18,18 +18,19 @@ class TelegramSendMessageService:
     def _validar(self, context: dict) -> tuple[bool, str | None]:
         if not isinstance(context, dict):
             return False, "context debe ser un diccionario"
-        for field in ("chat_id", "text"):
-            if not context.get(field):
-                return False, f"{field} es requerido"
-        token = context.get("token") or os.getenv("TELEGRAM_TOKEN")
+        if not self._chat_id(context):
+            return False, "chat_id es requerido o configura chat_id_env"
+        if not context.get("text"):
+            return False, "text es requerido"
+        token = self._token(context)
         if not token:
-            return False, "token es requerido o configura TELEGRAM_TOKEN"
+            return False, "token es requerido o configura token_env"
         return True, None
 
     def _ejecutar(self, context: dict) -> dict:
-        token = context.get("token") or os.getenv("TELEGRAM_TOKEN")
+        token = self._token(context)
         payload: dict = {
-            "chat_id": context["chat_id"],
+            "chat_id": self._chat_id(context),
             "text": context["text"],
         }
         if context.get("parse_mode"):
@@ -63,3 +64,11 @@ class TelegramSendMessageService:
         )
         with urllib.request.urlopen(req, timeout=30) as response:
             return json.loads(response.read().decode("utf-8"))
+
+    def _token(self, context: dict) -> str:
+        token_env = str(context.get("token_env") or "").strip()
+        return str(context.get("token") or (os.getenv(token_env) if token_env else "") or os.getenv("TELEGRAM_TOKEN") or "").strip()
+
+    def _chat_id(self, context: dict) -> str:
+        chat_id_env = str(context.get("chat_id_env") or "").strip()
+        return str(context.get("chat_id") or (os.getenv(chat_id_env) if chat_id_env else "") or "").strip()

@@ -1,0 +1,9 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_documents_window_telegram",
+  "version": "0.1.0",
+  "description": "Envia por Telegram pedidos o remisiones emitidos dentro de una ventana reciente de horas.",
+  "entrypoint": "skill.py",
+  "kind": "executable",
+  "vertical": "vertical_erp_ventas",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "FACTORY3_ADMIN_BOT_TOKEN", "TELEGRAM_OWNER_CHAT_ID"]
+}

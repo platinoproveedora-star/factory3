@@ -62,6 +62,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_ventas/erp_ventas_documents_window_telegram": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_documents_window_telegram",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Envia por Telegram pedidos o remisiones emitidos dentro de una ventana reciente de horas.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_documents_window_telegram",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_ventas/erp_ventas_customer_get_or_create": {
     "tipo": "interno",
     "nombre": "vertical_erp_ventas/erp_ventas_customer_get_or_create",
