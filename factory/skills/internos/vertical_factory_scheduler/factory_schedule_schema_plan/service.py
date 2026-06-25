@@ -22,7 +22,7 @@ create table if not exists {schema}.factory_schedules (
   skill_source text not null default 'internos',
   context jsonb not null default '{{}}',
   timezone text not null default 'America/Mexico_City',
-  schedule_type text not null default 'daily' check (schedule_type in ('daily','hourly','interval_minutes')),
+  schedule_type text not null default 'daily' check (schedule_type in ('daily','hourly','interval_minutes','once')),
   local_time text,
   interval_minutes integer,
   status text not null default 'active' check (status in ('active','paused','disabled')),

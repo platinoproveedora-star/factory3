@@ -18,8 +18,10 @@ def _parse_dt(value: str) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
-def _next_after(schedule: dict, base: datetime) -> str:
+def _next_after(schedule: dict, base: datetime) -> str | None:
     schedule_type = str(schedule.get("schedule_type") or "daily")
+    if schedule_type == "once":
+        return None
     if schedule_type == "hourly":
         return (base + timedelta(hours=1)).isoformat()
     if schedule_type == "interval_minutes":
@@ -84,6 +86,7 @@ class FactoryScheduleRunnerService:
             finished_at = _utc_now()
             status = "ok" if result_run.get("ok") else "error"
             next_run_at = _next_after(schedule, finished_at)
+            next_status = "disabled" if (schedule.get("schedule_type") == "once") else "active"
             error = None if result_run.get("ok") else str(result_run.get("error") or "error")
             db.rest_update(
                 "factory_schedule_runs",
@@ -98,6 +101,7 @@ class FactoryScheduleRunnerService:
                     "last_error": error,
                     "last_result": result_run,
                     "next_run_at": next_run_at,
+                    "status": next_status,
                     "updated_at": finished_at.isoformat(),
                 },
                 {"id": f"eq.{schedule['id']}"},

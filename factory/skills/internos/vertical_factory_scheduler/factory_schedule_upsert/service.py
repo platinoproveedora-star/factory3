@@ -26,6 +26,8 @@ def _parse_local_time(value: str) -> tuple[int, int]:
 
 def _next_run_at(schedule_type: str, local_time: str, tz_name: str, interval_minutes: int | None) -> str:
     now = _utc_now()
+    if schedule_type == "once":
+        return now.isoformat()
     if schedule_type == "hourly":
         return (now + timedelta(hours=1)).isoformat()
     if schedule_type == "interval_minutes":
