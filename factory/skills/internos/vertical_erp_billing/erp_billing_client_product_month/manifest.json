@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_client_product_month",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Total vendido de un producto por cliente en un rango de fechas (default: mes actual). Busqueda por product_name_snapshot ilike.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

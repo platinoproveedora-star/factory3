@@ -38,6 +38,7 @@ import type {
   Devolucion,
   MoneyAccount,
   Payment,
+  PaymentApplication,
   Remision,
 } from '../lib/api';
 
@@ -153,6 +154,7 @@ export default function BillingDashboard() {
 
   // Tab 2 – Pagos
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [paymentApplications, setPaymentApplications] = useState<PaymentApplication[]>([]);
   const [payFilter, setPayFilter] = useState({ date_from: '', date_to: '', confirmation_status: '' });
 
   // Tab 3 – Anticipos
@@ -170,6 +172,9 @@ export default function BillingDashboard() {
   // Tab 6 – Clientes
   const [ranking, setRanking] = useState<ClientRankingData | null>(null);
   const [rankFilter, setRankFilter] = useState<'todos' | '8' | '15' | '21'>('todos');
+  const [productInput, setProductInput] = useState('');
+  const [productStats, setProductStats] = useState<{ label: string; por_cliente: Record<string, number> } | null>(null);
+  const [productLoading, setProductLoading] = useState(false);
 
   // Tab 7 – Corte
   const [cutDate, setCutDate] = useState(todayISO());
@@ -220,6 +225,7 @@ export default function BillingDashboard() {
         } else if (t === 'pagos') {
           const d = await api.getDashboardData(200);
           setPayments(d.payments ?? []);
+          setPaymentApplications(d.payment_applications ?? []);
         } else if (t === 'anticipos') {
           setAnticipos(await api.getAnticipos({ limit: 100 }));
         } else if (t === 'devoluciones') {
@@ -424,6 +430,15 @@ export default function BillingDashboard() {
     return true;
   }) ?? [];
 
+  // Índice pago → remisiones aplicadas
+  const appsMap = paymentApplications.reduce<Record<string, string[]>>((acc, a) => {
+    if (a.payment_id && a.sales_folio) {
+      if (!acc[a.payment_id]) acc[a.payment_id] = [];
+      acc[a.payment_id].push(a.sales_folio);
+    }
+    return acc;
+  }, {});
+
   // Nombres de clientes de remisiones para autocompletado
   const customerNames = Array.from(new Set(remisiones.map((r) => r.customer_name_snapshot).filter(Boolean) as string[])).sort();
 
@@ -574,13 +589,14 @@ export default function BillingDashboard() {
                   <th className="text-left px-4 py-3">Método</th>
                   <th className="text-right px-4 py-3">Importe</th>
                   <th className="text-right px-4 py-3">Sin aplicar</th>
+                  <th className="text-left px-4 py-3">Remisión</th>
                   <th className="text-center px-4 py-3">Confirmación</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
                 {filteredPay.length === 0 && (
-                  <tr><td colSpan={8} className="text-center py-10 text-gray-400">Sin registros</td></tr>
+                  <tr><td colSpan={9} className="text-center py-10 text-gray-400">Sin registros</td></tr>
                 )}
                 {filteredPay.map((p) => (
                   <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
@@ -590,6 +606,7 @@ export default function BillingDashboard() {
                     <td className="px-4 py-3">{METODO_LABEL[p.payment_method] ?? p.payment_method}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmt(p.amount)}</td>
                     <td className="px-4 py-3 text-right text-orange-600">{fmt(p.unapplied_amount)}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500">{(appsMap[p.id] ?? []).join(', ') || '—'}</td>
                     <td className="px-4 py-3 text-center"><StatusBadge status={p.confirmation_status ?? 'confirmado'} /></td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-end">
@@ -810,11 +827,44 @@ export default function BillingDashboard() {
             <KpiCard label={`Mes actual (${ranking.meses.m_actual})`} value={fmt(ranking.totales.m_actual)} />
             <KpiCard label={`M-1 (${ranking.meses.m1})`} value={fmt(ranking.totales.m1)} />
             <KpiCard label={`M-2 (${ranking.meses.m2})`} value={fmt(ranking.totales.m2)} />
-            <KpiCard
-              label="Proyección próx. mes"
-              value={fmt(ranking.totales.proyeccion)}
-              sub={`${ranking.totales.tendencia_pct >= 0 ? '+' : ''}${ranking.totales.tendencia_pct}% vs M-2`}
+            <KpiCard label="Proyección" value={fmt(ranking.totales.proyeccion)} sub={`${ranking.totales.tendencia_pct >= 0 ? '+' : ''}${ranking.totales.tendencia_pct}% vs M-2`} />
+          </div>
+
+          {/* Filtro por producto */}
+          <div className="flex gap-2 mb-4 items-center">
+            <input
+              placeholder="Producto a analizar (ej. varilla 3/8)..."
+              className={`${inputCls} flex-1 max-w-sm`}
+              value={productInput}
+              onChange={(e) => setProductInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && productInput.trim()) {
+                  setProductLoading(true);
+                  api.getClientProductMonth({ product_name: productInput.trim() })
+                    .then((d) => setProductStats({ label: d.product_name, por_cliente: d.por_cliente }))
+                    .catch((e) => setErr(e.message))
+                    .finally(() => setProductLoading(false));
+                }
+              }}
             />
+            <button
+              className={btnPrimary}
+              disabled={productLoading || !productInput.trim()}
+              onClick={() => {
+                setProductLoading(true);
+                api.getClientProductMonth({ product_name: productInput.trim() })
+                  .then((d) => setProductStats({ label: d.product_name, por_cliente: d.por_cliente }))
+                  .catch((e) => setErr(e.message))
+                  .finally(() => setProductLoading(false));
+              }}
+            >
+              {productLoading ? 'Cargando...' : 'Ver columna'}
+            </button>
+            {productStats && (
+              <button className={btnSecondary} onClick={() => { setProductStats(null); setProductInput(''); }}>
+                Quitar columna
+              </button>
+            )}
           </div>
 
           {/* Filters */}
@@ -837,7 +887,8 @@ export default function BillingDashboard() {
                   <th className="text-right px-3 py-3">Mes actual</th>
                   <th className="text-right px-3 py-3">M-1</th>
                   <th className="text-right px-3 py-3">M-2</th>
-                  <th className="text-right px-3 py-3">Total</th>
+                  <th className="text-center px-3 py-3">Última compra</th>
+                  {productStats && <th className="text-right px-3 py-3 text-blue-700">{productStats.label}</th>}
                   <th className="text-right px-3 py-3">Ticket Prom.</th>
                 </tr>
               </thead>
@@ -854,7 +905,12 @@ export default function BillingDashboard() {
                     <td className="px-3 py-2.5 text-right font-semibold text-blue-700">{c.m_actual > 0 ? fmt(c.m_actual) : <span className="text-gray-300">—</span>}</td>
                     <td className="px-3 py-2.5 text-right">{c.m1 > 0 ? fmt(c.m1) : <span className="text-gray-300">—</span>}</td>
                     <td className="px-3 py-2.5 text-right">{c.m2 > 0 ? fmt(c.m2) : <span className="text-gray-300">—</span>}</td>
-                    <td className="px-3 py-2.5 text-right font-semibold">{fmt(c.m_actual + c.m1 + c.m2)}</td>
+                    <td className="px-3 py-2.5 text-center text-gray-500 text-xs">{c.ultima_compra ? fmtDate(c.ultima_compra) : '—'}</td>
+                    {productStats && (
+                      <td className="px-3 py-2.5 text-right text-blue-700 font-medium">
+                        {productStats.por_cliente[c.customer_name] ? fmt(productStats.por_cliente[c.customer_name]) : <span className="text-gray-300">—</span>}
+                      </td>
+                    )}
                     <td className="px-3 py-2.5 text-right text-gray-600">{c.ticket_promedio > 0 ? fmt(c.ticket_promedio) : <span className="text-gray-300">—</span>}</td>
                   </tr>
                 ))}

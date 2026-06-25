@@ -143,33 +143,33 @@ export type ClientRankingRow = {
   customer_key: string;
   customer_name: string;
   semaforo: 'verde' | 'amarillo' | 'rojo';
-  ultimo_pago?: string | null;
-  dias_sin_pagar?: number | null;
   ultima_compra?: string | null;
   dias_sin_comprar?: number | null;
   ticket_promedio: number;
-  pago_promedio_mes: number;
   m_actual: number;
   m1: number;
   m2: number;
-  m3: number;
-  total_3m: number;
 };
 
 export type ClientRankingData = {
   clientes: ClientRankingRow[];
   total_clientes: number;
-  meses: { m_actual: string; m1: string; m2: string; m3: string };
+  meses: { m_actual: string; m1: string; m2: string };
   totales: {
     m_actual: number;
     m1: number;
     m2: number;
-    m3: number;
-    total_3m: number;
     promedio_mensual: number;
     proyeccion: number;
     tendencia_pct: number;
   };
+};
+
+export type ClientProductMonthData = {
+  product_name: string;
+  date_from: string;
+  date_to: string;
+  por_cliente: Record<string, number>;
 };
 
 export type CashCut = {
@@ -460,6 +460,18 @@ export async function getClientStatement(
 
 export async function getClientRanking(): Promise<ClientRankingData> {
   return request<ClientRankingData>('vertical_erp_billing/erp_billing_client_ranking', {}, 'GET');
+}
+
+export async function getClientProductMonth(filters: {
+  product_name: string;
+  date_from?: string;
+  date_to?: string;
+}): Promise<ClientProductMonthData> {
+  return request<ClientProductMonthData>(
+    'vertical_erp_billing/erp_billing_client_product_month',
+    { ...filters },
+    'GET'
+  );
 }
 
 // ─── Corte de Caja ────────────────────────────────────────────────────────────

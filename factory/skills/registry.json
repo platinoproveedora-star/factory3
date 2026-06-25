@@ -4076,8 +4076,18 @@
     "nombre": "vertical_erp_billing/erp_billing_client_ranking",
     "vertical": "vertical_erp_billing",
     "kind": "data",
-    "descripcion": "Ranking de clientes por cobranza ultimos 3 meses con semaforo de actividad y proyeccion.",
+    "descripcion": "Ranking de clientes por ventas (remisiones) ultimos 3 meses con semaforo, ultima compra y ticket historico.",
     "path": "skills/internos/vertical_erp_billing/erp_billing_client_ranking",
+    "entrypoint": "skill.py",
+    "version": "0.2.0"
+  },
+  "vertical_erp_billing/erp_billing_client_product_month": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_client_product_month",
+    "vertical": "vertical_erp_billing",
+    "kind": "data",
+    "descripcion": "Total vendido de un producto (product_name ilike) por cliente en un rango de fechas. Default: mes actual.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_client_product_month",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
