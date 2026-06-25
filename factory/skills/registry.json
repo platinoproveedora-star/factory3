@@ -4165,5 +4165,14 @@
     "path": "skills/internos/vertical_factory_scheduler/factory_schedule_runner",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "render_create_cron_job": {
+    "tipo": "interno",
+    "nombre": "render_create_cron_job",
+    "vertical": "factory_render",
+    "descripcion": "Crea o actualiza un Cron Job en Render para ejecutar comandos programados desde un repo.",
+    "path": "skills/internos/vertical_render/render_create_cron_job",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "render_create_cron_job",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un Cron Job en Render para ejecutar comandos programados desde un repo.",
+  "vertical": "factory_render",
+  "requires_env": ["RENDER_API_KEY"]
+}
