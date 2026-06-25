@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_billing/erp_billing_client_ranking",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Ranking de clientes con KPIs de cobranza: pagos M-1/M-2/M-3, dias sin comprar, ticket promedio y proyeccion.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

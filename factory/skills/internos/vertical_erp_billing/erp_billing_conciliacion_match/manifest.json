@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_conciliacion_match",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea o cancela un cruce manual entre un movimiento bancario y un pago de cobranza. action: ensure_table | create | cancel.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ACCESS_TOKEN"]
+}

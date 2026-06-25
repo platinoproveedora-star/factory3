@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_conciliacion_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Cruza movimientos bancarios (uc101_banks) con pagos de cobranza (uc101_proy005) por folio, clave_rastreo o importe+fecha. Devuelve matched/solo_banco/solo_billing.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

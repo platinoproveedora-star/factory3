@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_billing/erp_billing_cash_cut_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Datos para el corte de caja: ventas del dia, pagos recibidos hoy, CXC anteriores y transferencias por confirmar.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

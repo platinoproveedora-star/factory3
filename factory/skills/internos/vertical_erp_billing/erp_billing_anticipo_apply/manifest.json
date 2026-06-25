@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_billing/erp_billing_anticipo_apply",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Aplica un anticipo disponible a una remision de ventas, actualizando saldos en ambos lados.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

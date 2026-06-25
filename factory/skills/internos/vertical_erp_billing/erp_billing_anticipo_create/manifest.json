@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_billing/erp_billing_anticipo_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Registra un anticipo de cliente (pago sin remision). Genera folio ANT-xxxxx y actualiza cuenta bancaria en Banks.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

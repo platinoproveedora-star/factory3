@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_billing/erp_billing_devolucion_apply",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Aplica una devolucion aprobada: abona a la remision original o convierte en anticipo disponible.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

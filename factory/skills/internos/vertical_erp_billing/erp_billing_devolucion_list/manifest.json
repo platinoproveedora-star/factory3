@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_billing_devolucion_list",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Lista devoluciones de clientes con filtros por status, cliente y fecha.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

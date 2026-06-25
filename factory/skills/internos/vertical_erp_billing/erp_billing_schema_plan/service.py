@@ -24,6 +24,8 @@ class ErpBillingSchemaPlanService:
                     "billing_collection_folios",
                     "billing_payments",
                     "billing_payment_applications",
+                    "billing_anticipos",
+                    "billing_devoluciones",
                     "billing_cash_cuts",
                     "billing_events",
                 ],
@@ -230,6 +232,61 @@ create table if not exists {schema}.billing_payment_applications (
   created_at timestamptz not null default now(),
   updated_at timestamptz
 );
+
+alter table if exists {schema}.billing_payments
+  add column if not exists confirmation_status text not null default 'confirmado',
+  add column if not exists bank_reference text,
+  add column if not exists confirmed_at timestamptz,
+  add column if not exists cash_cut_id uuid;
+
+create table if not exists {schema}.billing_anticipos (
+  id uuid primary key default gen_random_uuid(),
+  folio text unique not null,
+  empresa_id text not null,
+  project_code text not null,
+  module_code text not null,
+  customer_id uuid,
+  customer_name text,
+  amount numeric(14,2) not null,
+  unapplied_amount numeric(14,2) not null default 0,
+  payment_method text not null check (payment_method in ('cash','transfer','deposit','card','check','other')),
+  payment_date date not null default current_date,
+  destination_money_account_id uuid references {schema}.billing_money_accounts(id),
+  bank_name text,
+  reference text,
+  tracking_key text,
+  receipt_file_url text,
+  notes text,
+  status text not null default 'disponible',
+  metadata jsonb not null default '{{}}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
+
+create table if not exists {schema}.billing_devoluciones (
+  id uuid primary key default gen_random_uuid(),
+  folio text unique not null,
+  empresa_id text not null,
+  project_code text not null,
+  module_code text not null,
+  customer_id uuid,
+  customer_name text,
+  sales_schema text,
+  sales_document_id uuid,
+  sales_folio text,
+  amount numeric(14,2) not null,
+  reason text,
+  status text not null default 'pendiente',
+  resolution text,
+  anticipo_id uuid,
+  notes text,
+  metadata jsonb not null default '{{}}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
+
+create index if not exists idx_billing_anticipos_customer on {schema}.billing_anticipos (empresa_id, customer_id, status);
+create index if not exists idx_billing_devoluciones_customer on {schema}.billing_devoluciones (empresa_id, customer_id, status);
 
 create table if not exists {schema}.billing_cash_cuts (
   id uuid primary key default gen_random_uuid(),

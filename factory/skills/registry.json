@@ -4005,5 +4005,119 @@
     "path": "skills/internos/vertical_bank_statement_converter/bank_statement_to_excel",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_anticipo_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_anticipo_create",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Crea un anticipo de cliente con folio ANT-xxxxx y opcionalmente registra movimiento en bancos.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_anticipo_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_anticipo_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_anticipo_list",
+    "vertical": "vertical_erp_billing",
+    "kind": "data",
+    "descripcion": "Lista anticipos por cliente o estado. Retorna total_disponible.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_anticipo_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_anticipo_apply": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_anticipo_apply",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Aplica un anticipo disponible a un documento de ventas y actualiza saldos.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_anticipo_apply",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_devolucion_create": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_devolucion_create",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Crea una devolucion de cliente con folio DEV-xxxxx, estado pendiente.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_devolucion_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_devolucion_apply": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_devolucion_apply",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Resuelve una devolucion aprobada: crea anticipo nuevo o abona directo a remision.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_devolucion_apply",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_payment_confirm": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_payment_confirm",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Confirma un pago por_confirmar (transferencia/deposito) registrando referencia bancaria.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_payment_confirm",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_client_statement": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_client_statement",
+    "vertical": "vertical_erp_billing",
+    "kind": "data",
+    "descripcion": "Estado de cuenta completo por cliente: KPIs, remisiones, pagos, anticipos disponibles y kardex cronologico.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_client_statement",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_client_ranking": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_client_ranking",
+    "vertical": "vertical_erp_billing",
+    "kind": "data",
+    "descripcion": "Ranking de clientes por cobranza ultimos 3 meses con semaforo de actividad y proyeccion.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_client_ranking",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_cash_cut_data": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_cash_cut_data",
+    "vertical": "vertical_erp_billing",
+    "kind": "data",
+    "descripcion": "Datos completos del corte de caja: ventas del dia, pagos, CXC anteriores, transferencias por confirmar y cortes abiertos.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_cash_cut_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_devolucion_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_devolucion_list",
+    "vertical": "vertical_erp_billing",
+    "kind": "data",
+    "descripcion": "Lista devoluciones con filtros por status, cliente y fecha.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_devolucion_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_conciliacion_data": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_conciliacion_data",
+    "vertical": "vertical_erp_billing",
+    "kind": "data",
+    "descripcion": "Cruza movimientos bancarios (uc101_banks) con pagos de cobranza. Devuelve matched/solo_banco/solo_billing con auto-cruce por folio, clave_rastreo e importe+fecha.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_conciliacion_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_billing/erp_billing_conciliacion_match": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_conciliacion_match",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Crea o cancela un cruce manual entre movimiento bancario y pago de cobranza. action: ensure_table | create | cancel.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_conciliacion_match",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

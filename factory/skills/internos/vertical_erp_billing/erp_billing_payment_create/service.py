@@ -11,6 +11,7 @@ _SKILLS_ROOT = Path(__file__).resolve().parents[2]
 
 
 VALID_METHODS = {"cash", "transfer", "deposit", "card", "check", "other"}
+_AUTO_CONFIRM = {"cash", "card"}  # efectivo y terminal se confirman al instante
 
 
 class ErpBillingPaymentCreateService:
@@ -70,6 +71,7 @@ class ErpBillingPaymentCreateService:
             "receipt_file_bucket": blank(context.get("receipt_file_bucket") or context.get("document_file_bucket")),
             "ocr_status": str(context.get("ocr_status") or ("pending" if receipt_file_url else "not_required")).strip(),
             "validation_status": str(context.get("validation_status") or "manual").strip(),
+            "confirmation_status": "confirmado" if payment_method in _AUTO_CONFIRM else "por_confirmar",
             "status": str(context.get("status") or "sin_aplicar").strip(),
             "notes": blank(context.get("notes")),
             "metadata": metadata,

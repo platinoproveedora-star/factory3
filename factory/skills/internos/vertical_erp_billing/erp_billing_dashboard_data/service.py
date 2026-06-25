@@ -18,7 +18,7 @@ class ErpBillingDashboardDataService:
         payments_result = db.rest_select(
             "billing_payments",
             filters={"empresa_id": ctx["company_id"]},
-            select="id,folio,collection_folio,customer_id,customer_name,payment_method,amount,unapplied_amount,payment_date,source_money_account_id,destination_money_account_id,bank_name,reference,tracking_key,receipt_file_url,receipt_file_path,receipt_file_bucket,status,validation_status,ocr_status,metadata,created_at",
+            select="id,folio,collection_folio,customer_id,customer_name,payment_method,amount,unapplied_amount,payment_date,source_money_account_id,destination_money_account_id,bank_name,reference,tracking_key,receipt_file_url,receipt_file_path,receipt_file_bucket,status,confirmation_status,bank_reference,notes,validation_status,ocr_status,metadata,created_at",
             order="payment_date.desc,created_at.desc",
             limit=limit,
         )
