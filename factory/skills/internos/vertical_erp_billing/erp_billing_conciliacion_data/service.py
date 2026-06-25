@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -6,9 +7,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from _common import SupabaseClient, blank, money, resolve_billing_context  # noqa: E402
 
-
-def _banks_ctx(ctx: dict, banks_schema: str) -> dict:
-    return {**ctx, "schema": banks_schema, "company_id": ctx.get("company_id") or ctx.get("empresa_id")}
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_UUID_RE = re.compile(r"^[0-9a-f\-]{36}$", re.I)
 
 
 class ErpBillingConciliacionDataService:
@@ -27,13 +27,13 @@ class ErpBillingConciliacionDataService:
         date_from = blank(context.get("date_from")) or (today - timedelta(days=30)).isoformat()
         account_id = blank(context.get("account_id"))
 
-        # ── Pagos de cobranza (billing schema) ─────────────────────────────────
+        # ── Pagos de cobranza (billing schema — REST funciona) ──────────────────
         billing_db = SupabaseClient(ctx)
         pay_r = billing_db.rest_select(
             "billing_payments",
             filters={},
-            select="id,folio,customer_name,amount,payment_date,payment_method,confirmation_status,tracking_key,status",
-            limit=500,
+            select="id,folio,customer_name,amount,payment_date,payment_method,confirmation_status,status",
+            limit=1000,
             order="payment_date.desc",
         )
         all_payments = pay_r.get("data") or [] if pay_r.get("ok") else []
@@ -43,28 +43,29 @@ class ErpBillingConciliacionDataService:
             and p.get("status") != "cancelado"
         ]
 
-        # ── Movimientos bancarios (banks schema) ────────────────────────────────
-        banks_db = SupabaseClient(_banks_ctx(ctx, banks_schema))
-        mov_filters: dict = {"movement_type": "eq.entrada", "source_type": "eq.pago"}
-        if account_id:
-            mov_filters["account_id"] = f"eq.{account_id}"
+        # ── Movimientos bancarios (banks schema — Management API requerido) ──────
+        # uc101_banks no está expuesto en Data API; usamos management_query
+        account_clause = ""
+        if account_id and _UUID_RE.match(account_id):
+            account_clause = f" AND account_id = '{account_id}'"
 
-        mov_r = banks_db.rest_select(
-            "banks_movements",
-            filters=mov_filters,
-            select="id,folio,account_id,account_folio,amount,movement_date,source_folio,source_id,clave_rastreo,reconciliation_status,notes",
-            limit=500,
-            order="movement_date.desc",
-        )
-        all_movements = mov_r.get("data") or [] if mov_r.get("ok") else []
-        movements = [
-            m for m in all_movements
-            if date_from <= (m.get("movement_date") or "") <= date_to
-        ]
+        sql = f"""
+            SELECT id, folio, account_id, account_folio, amount::float,
+                   movement_date, source_folio, source_id, source_type, notes, metadata
+            FROM {banks_schema}.banks_movements
+            WHERE movement_type = 'entrada'
+              AND movement_date >= '{date_from}'
+              AND movement_date <= '{date_to}'
+              {account_clause}
+            ORDER BY movement_date DESC
+            LIMIT 500
+        """
+        mov_r = SupabaseClient(ctx).management_query(sql)
+        movements = mov_r.get("data") or [] if mov_r.get("ok") else []
 
-        # ── Cruces manuales existentes ──────────────────────────────────────────
-        manual_matched_mov_ids: set = set()
-        manual_matched_pay_ids: set = set()
+        # ── Cruces manuales ya registrados ──────────────────────────────────────
+        # Guardamos dict {movement_id: payment_id} para reconstruir correctamente
+        manual_map: dict = {}  # movement_id → payment_id
         try:
             mc_r = billing_db.rest_select(
                 "billing_conciliacion_matches",
@@ -74,53 +75,44 @@ class ErpBillingConciliacionDataService:
             )
             if mc_r.get("ok"):
                 for mm in (mc_r.get("data") or []):
-                    manual_matched_mov_ids.add(mm.get("movement_id"))
-                    manual_matched_pay_ids.add(mm.get("payment_id"))
+                    mid = mm.get("movement_id")
+                    pid = mm.get("payment_id")
+                    if mid and pid:
+                        manual_map[mid] = pid
         except Exception:
             pass
 
-        # ── Índices ─────────────────────────────────────────────────────────────
         payments_by_folio = {p["folio"]: p for p in payments if p.get("folio")}
-        payments_by_tracking = {p["tracking_key"]: p for p in payments if p.get("tracking_key")}
         payments_by_id = {p["id"]: p for p in payments}
-        used_payment_ids: set = set(manual_matched_pay_ids)
+        used_payment_ids: set = set(manual_map.values())
 
-        # ── Auto-cruce ──────────────────────────────────────────────────────────
+        # ── Construir matched ────────────────────────────────────────────────────
         matched = []
         solo_banco = []
 
-        # Primero los cruces manuales ya registrados
-        for mid in manual_matched_mov_ids:
-            mov = next((m for m in movements if m["id"] == mid), None)
-            pay = payments_by_id.get(list(manual_matched_pay_ids)[list(manual_matched_mov_ids).index(mid)] if mid in manual_matched_mov_ids else "")
-            if mov:
-                matched.append({**mov, "payment": pay or {}, "match_type": "manual"})
-
+        # 1. Cruces manuales registrados
         for mov in movements:
-            if mov["id"] in manual_matched_mov_ids:
+            if mov["id"] in manual_map:
+                pay = payments_by_id.get(manual_map[mov["id"]]) or {}
+                matched.append({**mov, "payment": pay, "match_type": "manual"})
+
+        # 2. Auto-cruce para el resto
+        for mov in movements:
+            if mov["id"] in manual_map:
                 continue
 
             payment = None
             match_type = None
 
-            # 1. source_folio → payment folio
-            sf = mov.get("source_folio")
+            # Ronda 1: source_folio = folio del pago (más confiable — lo crea el bridge)
+            sf = mov.get("source_folio") or ""
             if sf and sf in payments_by_folio:
                 p = payments_by_folio[sf]
                 if p["id"] not in used_payment_ids:
                     payment = p
                     match_type = "auto_folio"
 
-            # 2. clave_rastreo → tracking_key
-            if not payment:
-                cr = mov.get("clave_rastreo")
-                if cr and cr in payments_by_tracking:
-                    p = payments_by_tracking[cr]
-                    if p["id"] not in used_payment_ids:
-                        payment = p
-                        match_type = "auto_clave"
-
-            # 3. Importe + fecha (±2 días)
+            # Ronda 2: importe + fecha ±2 días (fallback para movimientos importados)
             if not payment:
                 mov_amt = money(mov.get("amount"))
                 mov_date = mov.get("movement_date") or ""
@@ -130,7 +122,7 @@ class ErpBillingConciliacionDataService:
                     if money(p.get("amount")) != mov_amt:
                         continue
                     p_date = p.get("payment_date") or ""
-                    if mov_date and p_date:
+                    if mov_date and p_date and _DATE_RE.match(mov_date) and _DATE_RE.match(p_date):
                         diff = abs((date.fromisoformat(mov_date) - date.fromisoformat(p_date)).days)
                         if diff <= 2:
                             payment = p
