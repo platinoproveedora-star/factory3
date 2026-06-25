@@ -121,6 +121,7 @@ export type ClientStatementData = {
     total_facturado: number;
     total_cobrado: number;
     saldo_pendiente: number;
+    saldo_pedidos?: number;
     anticipos_disponibles: number;
     remisiones_vencidas: number;
     ultimo_pago?: string | null;
@@ -132,6 +133,7 @@ export type ClientStatementData = {
     frecuencia_compra_dias?: number | null;
   };
   remisiones: Remision[];
+  pedidos?: Remision[];
   payments: Payment[];
   anticipos_disponibles: Anticipo[];
   kardex: KardexEntry[];
@@ -159,6 +161,7 @@ export type ClientRankingData = {
   total_clientes: number;
   meses: { m_actual: string; m1: string; m2: string; m3: string };
   totales: {
+    m_actual: number;
     m1: number;
     m2: number;
     m3: number;

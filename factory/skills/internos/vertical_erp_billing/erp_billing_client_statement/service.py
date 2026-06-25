@@ -57,8 +57,11 @@ class ErpBillingClientStatementService:
                 rem_filters["document_date"] = f"gte.{date_from}"
             if date_to:
                 rem_filters["document_date"] = f"lte.{date_to}"
-            rem_r = SupabaseClient(sales_ctx).rest_select("sales_documents", filters=rem_filters, select="id,folio,document_date,total,paid_total,balance_total,status,customer_name_snapshot", limit=500, order="document_date.asc")
-            remisiones = rem_r.get("data") or [] if rem_r.get("ok") else []
+            rem_r = SupabaseClient(sales_ctx).rest_select("sales_documents", filters=rem_filters, select="id,folio,document_type,document_date,total,paid_total,balance_total,status,customer_name_snapshot", limit=500, order="document_date.asc")
+            all_docs = rem_r.get("data") or [] if rem_r.get("ok") else []
+            # Separar pedidos de remisiones; pedidos van al kardex como referencia (sin cargo)
+            remisiones = [d for d in all_docs if (d.get("document_type") or "remision") != "pedido"]
+            pedidos = [d for d in all_docs if d.get("document_type") == "pedido"]
 
         # Kardex cronologico
         kardex = []
@@ -66,6 +69,8 @@ class ErpBillingClientStatementService:
         events = []
         for r in remisiones:
             events.append(("remision", r.get("document_date") or "", r))
+        for p in pedidos:
+            events.append(("pedido", p.get("document_date") or "", p))
         for p in payments:
             events.append(("pago", p.get("payment_date") or "", p))
         for a in anticipos:
@@ -77,6 +82,9 @@ class ErpBillingClientStatementService:
                 cargo = money(row.get("total"))
                 saldo_acum = round(saldo_acum + cargo, 2)
                 kardex.append({"fecha": evt_date, "tipo": "Remisión", "folio": row.get("folio"), "concepto": f"Venta {row.get('folio')}", "cargo": cargo, "abono": 0, "saldo": saldo_acum, "status": row.get("status")})
+            elif kind == "pedido":
+                # Pedido es referencia informativa — no modifica el saldo
+                kardex.append({"fecha": evt_date, "tipo": "Pedido", "folio": row.get("folio"), "concepto": f"Pedido {row.get('folio')} (referencia)", "cargo": 0, "abono": 0, "saldo": saldo_acum, "status": row.get("status")})
             elif kind == "pago":
                 abono = money(row.get("amount"))
                 saldo_acum = round(saldo_acum - abono, 2)
@@ -90,6 +98,7 @@ class ErpBillingClientStatementService:
         total_facturado = sum(money(r.get("total")) for r in remisiones)
         total_cobrado = sum(money(r.get("paid_total")) for r in remisiones)
         saldo_pendiente = sum(money(r.get("balance_total") if r.get("balance_total") is not None else r.get("total")) for r in remisiones if r.get("status") not in ("cancelada", "pagada"))
+        saldo_pedidos = sum(money(p.get("balance_total") if p.get("balance_total") is not None else p.get("total")) for p in pedidos if p.get("status") not in ("cancelada", "pagada"))
         anticipos_total = sum(money(a.get("unapplied_amount")) for a in anticipos_disp)
         vencidas = sum(1 for r in remisiones if r.get("status") not in ("cancelada", "pagada") and money(r.get("balance_total") if r.get("balance_total") is not None else r.get("total")) > 0)
 
@@ -116,14 +125,25 @@ class ErpBillingClientStatementService:
         ultima_compra = max(rem_fechas) if rem_fechas else None
         dias_sin_comprar = (today - date.fromisoformat(ultima_compra)).days if ultima_compra else None
 
+        # Nombre real del cliente desde los datos (no el parámetro de búsqueda)
+        actual_name = ""
+        if remisiones:
+            actual_name = (remisiones[0].get("customer_name_snapshot") or "").strip()
+        if not actual_name and pedidos:
+            actual_name = (pedidos[0].get("customer_name_snapshot") or "").strip()
+        if not actual_name and payments:
+            actual_name = (payments[0].get("customer_name") or "").strip()
+        actual_name = actual_name or customer_name or customer_id or ""
+
         return {
             "ok": True,
             "data": {
-                "customer_name": customer_name or (remisiones[0].get("customer_name_snapshot") if remisiones else ""),
+                "customer_name": actual_name,
                 "kpis": {
                     "total_facturado": total_facturado,
                     "total_cobrado": total_cobrado,
                     "saldo_pendiente": saldo_pendiente,
+                    "saldo_pedidos": saldo_pedidos,
                     "anticipos_disponibles": anticipos_total,
                     "remisiones_vencidas": vencidas,
                     "ultimo_pago": ultimo_pago,
@@ -135,6 +155,7 @@ class ErpBillingClientStatementService:
                     "frecuencia_compra_dias": frecuencia_dias,
                 },
                 "remisiones": remisiones,
+                "pedidos": pedidos,
                 "payments": payments,
                 "anticipos_disponibles": anticipos_disp,
                 "kardex": kardex,

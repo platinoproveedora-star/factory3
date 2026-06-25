@@ -424,6 +424,9 @@ export default function BillingDashboard() {
     return true;
   }) ?? [];
 
+  // Nombres de clientes de remisiones para autocompletado
+  const customerNames = Array.from(new Set(remisiones.map((r) => r.customer_name_snapshot).filter(Boolean) as string[])).sort();
+
   // ─── Remision picker for apply modals ────────────────────────────────────────
   const RemisionSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
@@ -442,6 +445,11 @@ export default function BillingDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Autocompletado de clientes — disponible en todos los inputs con list="billing-customers" */}
+      <datalist id="billing-customers">
+        {customerNames.map((n) => <option key={n} value={n} />)}
+      </datalist>
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div>
@@ -490,6 +498,7 @@ export default function BillingDashboard() {
             <input placeholder="Cliente..." className={`${inputCls} w-48`} value={remFilter.customer} onChange={(e) => setRemFilter((p) => ({ ...p, customer: e.target.value }))} />
             <select className={`${inputCls} w-40`} value={remFilter.status} onChange={(e) => setRemFilter((p) => ({ ...p, status: e.target.value }))}>
               <option value="">Todos los estados</option>
+              <option value="emitida">Emitida</option>
               <option value="pendiente">Pendiente</option>
               <option value="parcial">Parcial</option>
               <option value="pagada">Pagada</option>
@@ -723,8 +732,9 @@ export default function BillingDashboard() {
         <div className="p-6 max-w-5xl">
           <div className="flex gap-2 mb-6">
             <input
-              placeholder="Nombre del cliente..."
+              placeholder="Seleccionar o escribir cliente..."
               className={`${inputCls} flex-1`}
+              list="billing-customers"
               value={stmtQuery}
               onChange={(e) => setStmtQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && stmtQuery) api.getClientStatement(stmtQuery).then(setStatement).catch((e) => setErr(e.message)); }}
@@ -743,7 +753,10 @@ export default function BillingDashboard() {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
                 <KpiCard label="Total Facturado" value={fmt(statement.kpis.total_facturado)} />
                 <KpiCard label="Total Cobrado" value={fmt(statement.kpis.total_cobrado)} />
-                <KpiCard label="Saldo Pendiente" value={fmt(statement.kpis.saldo_pendiente)} />
+                <KpiCard label="Saldo Remisiones" value={fmt(statement.kpis.saldo_pendiente)} />
+                {(statement.kpis.saldo_pedidos ?? 0) > 0 && (
+                  <KpiCard label="Saldo Pedidos" value={fmt(statement.kpis.saldo_pedidos)} sub="órdenes sin remisionar" />
+                )}
                 <KpiCard label="Anticipos Disponibles" value={fmt(statement.kpis.anticipos_disponibles)} />
                 <KpiCard label="Último Pago" value={fmtDate(statement.kpis.ultimo_pago)} sub={statement.kpis.dias_sin_pagar != null ? `${statement.kpis.dias_sin_pagar} días` : undefined} />
                 <KpiCard label="Última Compra" value={fmtDate(statement.kpis.ultima_compra)} sub={statement.kpis.dias_sin_comprar != null ? `${statement.kpis.dias_sin_comprar} días` : undefined} />
@@ -770,7 +783,9 @@ export default function BillingDashboard() {
                       <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
                         <td className="px-4 py-2 text-gray-600">{fmtDate(k.fecha)}</td>
                         <td className="px-4 py-2">
-                          <span className="text-xs bg-gray-100 rounded px-2 py-0.5">{k.tipo}</span>
+                          {k.tipo === 'Pedido'
+                            ? <span className="text-xs bg-blue-50 text-blue-600 rounded px-2 py-0.5">{k.tipo} (ref)</span>
+                            : <span className="text-xs bg-gray-100 rounded px-2 py-0.5">{k.tipo}</span>}
                         </td>
                         <td className="px-4 py-2 font-mono text-xs text-gray-500">{k.folio}</td>
                         <td className="px-4 py-2">{k.concepto}</td>
@@ -792,13 +807,13 @@ export default function BillingDashboard() {
         <div className="p-6">
           {/* Totales */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            <KpiCard label={`Mes actual (${ranking.meses.m_actual})`} value={fmt(ranking.totales.m_actual)} />
             <KpiCard label={`M-1 (${ranking.meses.m1})`} value={fmt(ranking.totales.m1)} />
             <KpiCard label={`M-2 (${ranking.meses.m2})`} value={fmt(ranking.totales.m2)} />
-            <KpiCard label={`M-3 (${ranking.meses.m3})`} value={fmt(ranking.totales.m3)} />
             <KpiCard
               label="Proyección próx. mes"
               value={fmt(ranking.totales.proyeccion)}
-              sub={`${ranking.totales.tendencia_pct >= 0 ? '+' : ''}${ranking.totales.tendencia_pct}% vs M-3`}
+              sub={`${ranking.totales.tendencia_pct >= 0 ? '+' : ''}${ranking.totales.tendencia_pct}% vs M-2`}
             />
           </div>
 
@@ -819,10 +834,10 @@ export default function BillingDashboard() {
                   <th className="text-center px-3 py-3" />
                   <th className="text-left px-3 py-3">Cliente</th>
                   <th className="text-center px-3 py-3">Sin comprar</th>
+                  <th className="text-right px-3 py-3">Mes actual</th>
                   <th className="text-right px-3 py-3">M-1</th>
                   <th className="text-right px-3 py-3">M-2</th>
-                  <th className="text-right px-3 py-3">M-3</th>
-                  <th className="text-right px-3 py-3">Total 3M</th>
+                  <th className="text-right px-3 py-3">Total</th>
                   <th className="text-right px-3 py-3">Ticket Prom.</th>
                 </tr>
               </thead>
@@ -836,11 +851,11 @@ export default function BillingDashboard() {
                     <td className="px-3 py-2.5 text-center"><Semaforo semaforo={c.semaforo} /></td>
                     <td className="px-3 py-2.5 font-medium">{c.customer_name}</td>
                     <td className="px-3 py-2.5 text-center text-gray-600">{c.dias_sin_comprar != null ? `${c.dias_sin_comprar}d` : '-'}</td>
-                    <td className="px-3 py-2.5 text-right">{fmt(c.m1)}</td>
-                    <td className="px-3 py-2.5 text-right">{fmt(c.m2)}</td>
-                    <td className="px-3 py-2.5 text-right">{fmt(c.m3)}</td>
-                    <td className="px-3 py-2.5 text-right font-semibold">{fmt(c.total_3m)}</td>
-                    <td className="px-3 py-2.5 text-right text-gray-600">{fmt(c.ticket_promedio)}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold text-blue-700">{c.m_actual > 0 ? fmt(c.m_actual) : <span className="text-gray-300">—</span>}</td>
+                    <td className="px-3 py-2.5 text-right">{c.m1 > 0 ? fmt(c.m1) : <span className="text-gray-300">—</span>}</td>
+                    <td className="px-3 py-2.5 text-right">{c.m2 > 0 ? fmt(c.m2) : <span className="text-gray-300">—</span>}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold">{fmt(c.m_actual + c.m1 + c.m2)}</td>
+                    <td className="px-3 py-2.5 text-right text-gray-600">{c.ticket_promedio > 0 ? fmt(c.ticket_promedio) : <span className="text-gray-300">—</span>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1183,7 +1198,7 @@ export default function BillingDashboard() {
       {modal?.kind === 'nuevo_anticipo' && (
         <Modal title="Nuevo Anticipo" onClose={() => setModal(null)}>
           <Field label="Cliente">
-            <input className={inputCls} value={form.customer ?? ''} onChange={(e) => setF('customer', e.target.value)} />
+            <input className={inputCls} list="billing-customers" placeholder="Seleccionar cliente..." value={form.customer ?? ''} onChange={(e) => setF('customer', e.target.value)} />
           </Field>
           <Field label="Importe">
             <input type="number" className={inputCls} placeholder="0.00" value={form.amount ?? ''} onChange={(e) => setF('amount', e.target.value)} />
@@ -1230,7 +1245,7 @@ export default function BillingDashboard() {
       {modal?.kind === 'nueva_dev' && (
         <Modal title="Nueva Devolución" onClose={() => setModal(null)}>
           <Field label="Cliente">
-            <input className={inputCls} value={form.customer ?? ''} onChange={(e) => setF('customer', e.target.value)} />
+            <input className={inputCls} list="billing-customers" placeholder="Seleccionar cliente..." value={form.customer ?? ''} onChange={(e) => setF('customer', e.target.value)} />
           </Field>
           <Field label="Folio de remisión (opcional)">
             <input className={inputCls} placeholder="REM-00001" value={form.sales_folio ?? ''} onChange={(e) => setF('sales_folio', e.target.value)} />
