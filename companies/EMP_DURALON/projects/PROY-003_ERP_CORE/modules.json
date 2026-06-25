@@ -71,6 +71,18 @@
         "PROY-002"
       ],
       "notes": "Modulo en prueba: pagos, cuentas de dinero, folios de cobranza y cortes de caja. OCR y dashboard quedan fase posterior."
+    },
+    {
+      "project_code": "PROY-006",
+      "module_code": "banks",
+      "project_name": "Banks, cuentas, movimientos y autorizacion de dinero",
+      "status": "in_progress",
+      "erp_ready": false,
+      "schema": "uc101_proy006",
+      "folder": "companies/EMP_DURALON/projects/PROY-006_BANKS",
+      "dashboard_url": null,
+      "depends_on": [],
+      "notes": "Modulo generico de bancos: schema uc101_proy006 aplicado y expuesto; tablas/RPCs verificadas. Billing/compras/reconciliation deben llamar a Banks, no duplicar saldos."
     }
   ]
 }

@@ -31,9 +31,11 @@ class ErpBillingDevolucionCreateService:
                 sales_ctx = sales_ctx_result["data"]
                 sales_schema = sales_ctx["schema"]
                 filters = {"id": sales_document_id} if sales_document_id else {"folio": sales_folio}
-                doc = fetch_one(SupabaseClient(sales_ctx), "sales_documents", filters, "id,folio,customer_name_snapshot")
+                doc = fetch_one(SupabaseClient(sales_ctx), "sales_documents", filters, "id,folio,document_type,customer_name_snapshot")
                 if not doc:
                     return {"ok": False, "error": "remision no encontrada"}
+                if str(doc.get("document_type") or "").strip().lower() != "remision":
+                    return {"ok": False, "error": "solo se pueden registrar devoluciones contra remisiones; los pedidos no son CXC"}
                 if not sales_document_id:
                     sales_document_id = doc["id"]
                 if not sales_folio:

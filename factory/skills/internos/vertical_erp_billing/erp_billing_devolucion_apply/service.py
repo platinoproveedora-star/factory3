@@ -70,9 +70,11 @@ class ErpBillingDevolucionApplyService:
         if not doc_id:
             return {"ok": False, "error": "la devolucion no tiene remision vinculada — usa resolution='anticipo'"}
 
-        document = fetch_one(SupabaseClient(sales_ctx), "sales_documents", {"id": doc_id}, "id,folio,total,paid_total,balance_total,status")
+        document = fetch_one(SupabaseClient(sales_ctx), "sales_documents", {"id": doc_id}, "id,folio,document_type,total,paid_total,balance_total,status")
         if not document:
             return {"ok": False, "error": "remision vinculada no encontrada"}
+        if str(document.get("document_type") or "").strip().lower() != "remision":
+            return {"ok": False, "error": "solo se pueden aplicar devoluciones a remisiones; los pedidos no son CXC"}
 
         new_balance = max(money(document.get("balance_total") if document.get("balance_total") is not None else document.get("total")) - amount, 0)
         new_paid = money(document.get("total")) - new_balance

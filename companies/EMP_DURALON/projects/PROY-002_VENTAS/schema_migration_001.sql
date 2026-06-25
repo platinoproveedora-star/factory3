@@ -14,7 +14,8 @@ ALTER TABLE uc101_proy002.sales_documents
     ADD COLUMN IF NOT EXISTS customer_name_snapshot text,
     ADD COLUMN IF NOT EXISTS customer_folio_snapshot text;
 
--- Exponer schema en Data API
-ALTER ROLE authenticator SET pgrst.db_schemas = 'public,storage,graphql_public,estoikolab,logplat,freelance,uc101_proy001,uc101_proy002,uc101_proy004';
-NOTIFY pgrst, 'reload config';
-NOTIFY pgrst, 'reload schema';
+-- PASO FINAL OBLIGATORIO: exponer schema en Data API (PostgREST)
+-- NO ejecutar ALTER ROLE manualmente — sobrescribiría otros schemas expuestos.
+-- Usar el skill:
+--   supabase_expose_schema  { "schema": "uc101_proy002", "dry_run": false }
+-- El skill hace append seguro sin tocar schemas existentes.

@@ -956,7 +956,7 @@ export default function BillingDashboard() {
 
       {/* ── Tab: Corte de Caja ── */}
       {!loading && tab === 'corte' && (
-        <div className="p-6 space-y-6 max-w-5xl">
+        <div className="p-6 space-y-6 max-w-7xl">
           {/* Date selector */}
           <div className="flex gap-3 items-center">
             <input
@@ -967,7 +967,7 @@ export default function BillingDashboard() {
             />
             <button onClick={() => api.getCashCutData(cutDate).then(setCutData).catch((e) => setErr(e.message))} className={btnPrimary}>Cargar</button>
             <button
-              onClick={() => api.openCashCut({}).then(() => api.getCashCutData(cutDate).then(setCutData)).catch((e) => setErr(e.message))}
+              onClick={() => api.openCashCut({ cut_date: cutDate }).then(() => api.getCashCutData(cutDate).then(setCutData)).catch((e) => setErr(e.message))}
               className={`${btnSecondary} ml-auto flex items-center gap-1`}
             >
               <Plus size={14} /> Abrir corte
@@ -977,27 +977,98 @@ export default function BillingDashboard() {
           {cutData && (
             <>
               {/* Totales de hoy */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <KpiCard label="Ventas del día" value={fmt(cutData.totales.total_ventas_dia)} />
-                <KpiCard label="Cobrado hoy" value={fmt(cutData.totales.total_pagos_hoy)} />
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <KpiCard label="Pedidos del día" value={fmt(cutData.totales.total_pedidos_dia)} />
+                <KpiCard label="Ventas del día" value={fmt(cutData.totales.total_remisiones_dia ?? cutData.totales.total_ventas_dia)} />
+                <KpiCard label="Cobrado efectivo" value={fmt(cutData.totales.total_efectivo_cobrado)} />
+                <KpiCard label="Cobrado transfer." value={fmt(cutData.totales.total_transferencias_cobradas)} />
+                <KpiCard label="Cobrado total" value={fmt(cutData.totales.total_pagos_hoy)} />
+                <KpiCard label="Gastos efectivo" value={fmt(cutData.totales.gastos_efectivo)} />
+                <KpiCard label="Gastos TC" value={fmt(cutData.totales.gastos_tc)} />
+                <KpiCard label="Gastos total" value={fmt(cutData.totales.total_gastos_dia)} />
                 <KpiCard label="CXC del día" value={fmt(cutData.totales.cxc_dia)} />
                 <KpiCard label="CXC anteriores" value={fmt(cutData.totales.total_cxc_anteriores)} />
               </div>
 
-              {/* Ventas del día */}
-              <Section title={`Remisiones del día (${cutData.ventas_dia.length})`}>
+              {/* Pedidos del día */}
+              <Section title={`Pedidos del día (${(cutData.pedidos_dia ?? []).length})`}>
                 <SimpleTable
-                  cols={['Folio', 'Cliente', 'Total', 'Cobrado', 'Saldo', 'Estado']}
-                  rows={cutData.ventas_dia.map((r) => [r.folio, r.customer_name_snapshot, fmt(r.total), fmt(r.paid_total), fmt(r.balance_total ?? r.total - (r.paid_total ?? 0)), <StatusBadge key="s" status={r.status} />])}
+                  cols={['Fecha', 'Folio', 'Cliente', 'Total']}
+                  rows={(cutData.pedidos_dia ?? []).map((r) => [fmtDate(r.document_date), r.folio, r.customer_name_snapshot, fmt(r.total)])}
+                />
+              </Section>
+
+              {/* Remisiones del día */}
+              <Section title={`Remisiones del día (${(cutData.remisiones_dia ?? cutData.ventas_dia).length})`}>
+                <SimpleTable
+                  cols={['Fecha', 'Folio', 'Cliente', 'Total', 'Cobrado', 'Saldo', 'Cuenta de cobro', 'Estado de pago']}
+                  rows={(cutData.remisiones_dia ?? cutData.ventas_dia).map((r) => [
+                    fmtDate(r.document_date),
+                    r.folio,
+                    r.customer_name_snapshot,
+                    fmt(r.total),
+                    <span key="cobrado" className="font-semibold text-green-700">{fmt(r.paid_total)}</span>,
+                    fmt(r.balance_total ?? r.total - (r.paid_total ?? 0)),
+                    r.payment_account_names ?? 'Sin cobro',
+                    <StatusBadge key="s" status={r.status} />,
+                  ])}
                 />
               </Section>
 
               {/* Pagos de hoy */}
               <Section title={`Pagos recibidos hoy (${cutData.pagos_hoy.length})`}>
                 <SimpleTable
-                  cols={['Folio', 'Cliente', 'Método', 'Importe', 'Confirmación']}
-                  rows={cutData.pagos_hoy.map((p) => [p.folio, p.customer_name ?? '-', METODO_LABEL[p.payment_method] ?? p.payment_method, fmt(p.amount), <StatusBadge key="s" status={p.confirmation_status ?? 'confirmado'} />])}
+                  cols={['Folio', 'Cliente', 'Método', 'Cuenta ingreso', 'Importe', 'Confirmación']}
+                  rows={cutData.pagos_hoy.map((p) => [
+                    p.folio,
+                    p.customer_name ?? '-',
+                    METODO_LABEL[p.payment_method] ?? p.payment_method,
+                    p.destination_account_name ?? 'Sin cuenta',
+                    <span key="importe" className="font-semibold text-green-700">{fmt(p.amount)}</span>,
+                    <StatusBadge key="s" status={p.confirmation_status ?? 'confirmado'} />,
+                  ])}
                 />
+              </Section>
+
+              {/* Gastos del dia */}
+              <Section title={`Gastos del día (${(cutData.gastos_dia ?? []).length})`}>
+                <SimpleTable
+                  cols={['Fecha', 'Folio', 'Categoría', 'Descripción', 'Cuenta egreso', 'Importe']}
+                  rows={(cutData.gastos_dia ?? []).map((g) => [
+                    fmtDate(g.fecha),
+                    g.folio,
+                    g.categoria ?? '-',
+                    g.descripcion ?? '-',
+                    g.cta_retiro_nombre ?? 'Sin cuenta',
+                    <span key="importe" className="font-semibold text-red-600">{fmt(g.monto)}</span>,
+                  ])}
+                />
+              </Section>
+
+              {/* Totales por cuenta */}
+              <Section title="Totales por cuenta">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-green-700 mb-2">Ingresos</h4>
+                    <SimpleTable
+                      cols={['Cuenta', 'Total']}
+                      rows={Object.entries(cutData.totales.ingresos_por_cuenta ?? {}).map(([account, amount]) => [
+                        account,
+                        <span key="ingreso" className="font-semibold text-green-700">{fmt(amount)}</span>,
+                      ])}
+                    />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-red-600 mb-2">Egresos</h4>
+                    <SimpleTable
+                      cols={['Cuenta', 'Total']}
+                      rows={Object.entries(cutData.totales.egresos_por_cuenta ?? {}).map(([account, amount]) => [
+                        account,
+                        <span key="egreso" className="font-semibold text-red-600">{fmt(amount)}</span>,
+                      ])}
+                    />
+                  </div>
+                </div>
               </Section>
 
               {/* CXC anteriores */}

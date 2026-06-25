@@ -39,6 +39,7 @@ class ErpProjectContextResolveService:
             modules_file.get("company_id"),
             os.getenv("FACTORY_COMPANY_ID"),
         )
+        company_config, company_issues = self._load_company_config(repo_root, company_id)
         schema = self._first(
             context.get("schema"),
             context.get("supabase_schema"),
@@ -61,6 +62,7 @@ class ErpProjectContextResolveService:
         }.items():
             if not value:
                 issues.append(f"{field} requerido; no usar defaults de cliente")
+        issues.extend(company_issues)
 
         module_schemas = {
             str(row.get("module_code")): row.get("schema")
@@ -114,7 +116,10 @@ class ErpProjectContextResolveService:
             "folder": self._first(context.get("folder"), project.get("folder"), module_row.get("folder")) or None,
             "dashboard_url": self._first(context.get("dashboard_url"), project.get("dashboard_url"), module_row.get("dashboard_url")) or None,
             "factory_api_url": self._first(context.get("factory_api_url"), os.getenv("FACTORY_API_URL")) or None,
+            "default_authorizer": self._first(context.get("default_authorizer"), company_config.get("default_authorizer")) or None,
             "folio_prefixes": folio_prefixes,
+            "company_config": company_config,
+            "company_config_path": str(company_config.get("_path")) if company_config.get("_path") else None,
             "project": project,
             "module": module_row,
             "modules_path": str(modules_file.get("_path")) if modules_file.get("_path") else None,
@@ -144,6 +149,22 @@ class ErpProjectContextResolveService:
                 data["_path"] = str(candidate)
                 return data
         return {}
+
+    def _load_company_config(self, repo_root: Path, company_id: str) -> tuple[dict, list[str]]:
+        issues: list[str] = []
+        if not company_id:
+            return {}, issues
+        company_dir = repo_root / "companies" / company_id
+        if not company_dir.exists() or not company_dir.is_dir():
+            return {}, [f"company_id invalido: no existe companies/{company_id}/"]
+        config_path = company_dir / "company.config.json"
+        if not config_path.exists():
+            return {}, ["company_id sin company.config.json"]
+        data = self._read_json(config_path)
+        if data is None or str(data.get("company_id") or "").strip() != company_id:
+            return {}, ["company.config.json invalido o company_id no coincide"]
+        data["_path"] = str(config_path)
+        return data, issues
 
     def _load_modules(self, context: dict, repo_root: Path, project: dict) -> dict:
         explicit = self._first(context.get("modules_json_path"), context.get("modules_path"))

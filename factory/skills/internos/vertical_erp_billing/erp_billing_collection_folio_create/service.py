@@ -105,6 +105,8 @@ class ErpBillingCollectionFolioCreateService:
         fetched = self._document(ctx, raw_doc) or {}
         doc = {**raw_doc, **{key: value for key, value in fetched.items() if value is not None}}
         status = str(doc.get("status") or "").strip().lower()
+        if str(doc.get("document_type") or "remision").strip().lower() != "remision":
+            return {"ok": False, "error": "solo las remisiones pueden generar folios de cobranza; los pedidos no son CXC"}
         if status == "cancelada":
             return {"ok": False, "error": "no se puede crear folio de una remision cancelada"}
         balance = money(doc.get("balance_total") if doc.get("balance_total") is not None else doc.get("total"))
@@ -139,5 +141,5 @@ class ErpBillingCollectionFolioCreateService:
             SupabaseClient(sales_ctx["data"]),
             "sales_documents",
             filters,
-            "id,folio,customer_id,customer_name_snapshot,total,paid_total,balance_total,status,document_date",
+            "id,folio,document_type,customer_id,customer_name_snapshot,total,paid_total,balance_total,status,document_date",
         )

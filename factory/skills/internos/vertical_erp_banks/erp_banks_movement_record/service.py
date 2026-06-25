@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _banks_common import SupabaseClient, blank, fetch_one, identity_row, money, reserve_folio, resolve_banks_context, today_iso  # noqa: E402
+from _banks_common import SupabaseClient, blank, money, resolve_banks_context, today_iso  # noqa: E402
 
 VALID_MOVEMENT_TYPES = {"entrada", "salida"}
 VALID_SOURCE_TYPES = {"pago", "transferencia", "ajuste", "corte", "apertura", "devolucion"}
@@ -32,64 +32,52 @@ class ErpBanksMovementRecordService:
             return {"ok": False, "error": f"source_type invalido. Opciones: {', '.join(sorted(VALID_SOURCE_TYPES))}"}
         if amount <= 0:
             return {"ok": False, "error": "amount debe ser mayor a 0"}
+        if source_type == "transferencia" and not str(context.get("transfer_group_id") or "").strip():
+            return {"ok": False, "error": "transfer_group_id requerido para transferencias"}
 
-        db = SupabaseClient(ctx)
-        filters = {"id": account_id} if account_id else {"folio": account_folio}
-        account = fetch_one(db, "banks_accounts", filters, "id,folio,account_name,current_balance,status,empresa_id")
-        if not account:
-            return {"ok": False, "error": "cuenta no encontrada"}
-        if str(account.get("empresa_id") or "") != ctx["company_id"]:
-            return {"ok": False, "error": "cuenta no pertenece a esta empresa"}
-        if str(account.get("status") or "") == "closed":
-            return {"ok": False, "error": "cuenta cerrada, no acepta movimientos"}
-
-        current_balance = money(account.get("current_balance") or 0)
-        balance_after = round(current_balance + amount if movement_type == "entrada" else current_balance - amount, 2)
-
-        row = {
-            **identity_row(ctx),
-            "account_id": account["id"],
-            "account_folio": account["folio"],
-            "movement_type": movement_type,
-            "source_type": source_type,
-            "source_id": blank(context.get("source_id")),
-            "source_folio": blank(context.get("source_folio")),
-            "amount": amount,
-            "balance_after": balance_after,
-            "movement_date": str(context.get("movement_date") or today_iso()),
-            "notes": blank(context.get("notes")),
-            "metadata": context.get("metadata") if isinstance(context.get("metadata"), dict) else {},
+        params = {
+            "p_account_id": account_id or None,
+            "p_account_folio": account_folio or None,
+            "p_movement_type": movement_type,
+            "p_source_type": source_type,
+            "p_source_module": blank(context.get("source_module")) or "manual",
+            "p_source_id": blank(context.get("source_id")),
+            "p_source_folio": blank(context.get("source_folio")),
+            "p_amount": amount,
+            "p_movement_date": str(context.get("movement_date") or today_iso()),
+            "p_transfer_group_id": blank(context.get("transfer_group_id")),
+            "p_reversal_of_movement_id": blank(context.get("reversal_of_movement_id")),
+            "p_clave_rastreo": blank(context.get("clave_rastreo")),
+            "p_value_date": blank(context.get("value_date")),
+            "p_notes": blank(context.get("notes")),
+            "p_metadata": context.get("metadata") if isinstance(context.get("metadata"), dict) else {},
+            "p_empresa_id": ctx["company_id"],
+            "p_project_code": ctx["project_code"],
+            "p_module_code": ctx["module_code"],
+            "p_requested_by": blank(context.get("requested_by")),
         }
 
         if context.get("dry_run", True):
             return {
                 "ok": True,
-                "message": "dry_run: no se registro movimiento",
+                "message": "dry_run: no se llamo banks_record_movement",
                 "data": {
-                    "movement": {"folio": "BAM-DRYRUN", **row},
-                    "balance_before": current_balance,
-                    "balance_after": balance_after,
+                    "function_name": "banks_record_movement",
+                    "params": params,
                 },
             }
 
-        folio_result = reserve_folio(ctx, "banks_movements", "BAM")
-        if not folio_result.get("ok"):
-            return folio_result
-        row["folio"] = folio_result["data"]["folio"]
-
-        result = db.rest_insert("banks_movements", row)
+        result = SupabaseClient(ctx).rpc("banks_record_movement", params)
         if not result.get("ok"):
             return result
-        data = result.get("data") or []
-        movement = data[0] if isinstance(data, list) and data else data
+        return self._normalize_rpc(result)
 
-        db.rest_update("banks_accounts", {"current_balance": balance_after, "updated_at": "now()"}, {"id": account["id"]})
-
-        return {
-            "ok": True,
-            "data": {
-                "movement": movement,
-                "balance_before": current_balance,
-                "balance_after": balance_after,
-            },
-        }
+    def _normalize_rpc(self, result: dict) -> dict:
+        data = result.get("data")
+        if isinstance(data, list) and data:
+            data = data[0]
+        if isinstance(data, dict) and "ok" in data:
+            return data
+        if isinstance(data, dict):
+            return {"ok": True, "data": data}
+        return {"ok": True, "data": {"result": data}}

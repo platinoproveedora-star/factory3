@@ -13,11 +13,24 @@ class ErpBillingCashCutOpenService:
         if not ctx_result.get("ok"):
             return ctx_result
         ctx = ctx_result["data"]
+        cut_date = str(context.get("cut_date") or today_iso())
+        existing = SupabaseClient(ctx).rest_select(
+            "billing_cash_cuts",
+            filters={"cut_date": f"eq.{cut_date}", "status": "eq.abierto"},
+            select="*",
+            limit=1,
+        )
+        if not existing.get("ok"):
+            return existing
+        rows = existing.get("data") or []
+        if rows:
+            return {"ok": True, "data": {"cash_cut": rows[0], "existing": True}}
+
         row = {
             **identity_row(ctx),
             "collector_name": blank(context.get("collector_name") or context.get("cobrador")),
             "money_account_id": blank(context.get("money_account_id")),
-            "cut_date": str(context.get("cut_date") or today_iso()),
+            "cut_date": cut_date,
             "expected_amount": money(context.get("expected_amount")),
             "counted_amount": 0,
             "difference_amount": 0,

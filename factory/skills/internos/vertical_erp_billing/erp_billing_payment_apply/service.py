@@ -24,6 +24,8 @@ class ErpBillingPaymentApplyService:
         document = self._document(sales_ctx, context)
         if not document:
             return {"ok": False, "error": "sales_document_id/sales_folio requerido o no encontrado"}
+        if str(document.get("document_type") or "").strip().lower() != "remision":
+            return {"ok": False, "error": "solo se pueden aplicar pagos a remisiones; los pedidos no son CXC"}
 
         unapplied = money(payment.get("unapplied_amount") if payment.get("unapplied_amount") is not None else payment.get("amount"))
         current_balance = money(document.get("balance_total") if document.get("balance_total") is not None else document.get("total"))
@@ -144,4 +146,4 @@ class ErpBillingPaymentApplyService:
         if not doc_id and not folio:
             return None
         filters = {"id": doc_id} if doc_id else {"folio": folio}
-        return fetch_one(SupabaseClient(sales_ctx), "sales_documents", filters, "id,folio,total,paid_total,balance_total,status")
+        return fetch_one(SupabaseClient(sales_ctx), "sales_documents", filters, "id,folio,document_type,total,paid_total,balance_total,status")

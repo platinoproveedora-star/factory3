@@ -34,9 +34,11 @@ class ErpBillingAnticipoApplyService:
         if not doc_id and not doc_folio:
             return {"ok": False, "error": "sales_document_id o sales_folio requerido"}
         doc_filters = {"id": doc_id} if doc_id else {"folio": doc_folio}
-        document = fetch_one(SupabaseClient(sales_ctx), "sales_documents", doc_filters, "id,folio,total,paid_total,balance_total,status,customer_id,customer_name_snapshot")
+        document = fetch_one(SupabaseClient(sales_ctx), "sales_documents", doc_filters, "id,folio,document_type,total,paid_total,balance_total,status,customer_id,customer_name_snapshot")
         if not document:
             return {"ok": False, "error": "remision no encontrada"}
+        if str(document.get("document_type") or "").strip().lower() != "remision":
+            return {"ok": False, "error": "solo se pueden aplicar anticipos a remisiones; los pedidos no son CXC"}
 
         unapplied = money(anticipo.get("unapplied_amount"))
         doc_balance = money(document.get("balance_total") if document.get("balance_total") is not None else document.get("total"))

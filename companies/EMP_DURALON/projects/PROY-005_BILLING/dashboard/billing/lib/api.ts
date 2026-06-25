@@ -15,6 +15,9 @@ const ERP_CONTEXT = {
   banks_schema: process.env.NEXT_PUBLIC_ERP_BANKS_SCHEMA ?? projectContext.banks_schema,
   banks_project_code: process.env.NEXT_PUBLIC_ERP_BANKS_PROJECT_CODE ?? projectContext.banks_project_code,
   banks_module_code: projectContext.banks_module_code,
+  expenses_schema: process.env.NEXT_PUBLIC_ERP_EXPENSES_SCHEMA ?? projectContext.expenses_schema,
+  expenses_project_code: process.env.NEXT_PUBLIC_ERP_EXPENSES_PROJECT_CODE ?? projectContext.expenses_project_code,
+  expenses_module_code: projectContext.expenses_module_code,
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,6 +46,7 @@ export type Remision = {
   paid_total?: number;
   balance_total?: number;
   dias_vencido?: number;
+  payment_account_names?: string;
 };
 
 export type Payment = {
@@ -55,6 +59,9 @@ export type Payment = {
   unapplied_amount?: number;
   payment_date: string;
   destination_money_account_id?: string | null;
+  destination_account_name?: string | null;
+  destination_account_folio?: string | null;
+  destination_account_type?: string | null;
   status: string;
   confirmation_status?: string | null;
   bank_reference?: string | null;
@@ -65,6 +72,18 @@ export type Payment = {
   receipt_file_bucket?: string | null;
   dias_esperando?: number;
   created_at?: string;
+};
+
+export type Expense = {
+  folio: string;
+  fecha: string;
+  monto: number;
+  descripcion?: string | null;
+  categoria?: string | null;
+  cta_retiro_id?: string | null;
+  cta_retiro_folio?: string | null;
+  cta_retiro_nombre?: string | null;
+  cta_retiro_tipo?: string | null;
 };
 
 export type PaymentApplication = {
@@ -186,19 +205,34 @@ export type CashCut = {
 
 export type CashCutData = {
   cut_date: string;
+  pedidos_dia: Remision[];
+  remisiones_dia: Remision[];
   ventas_dia: Remision[];
   pagos_hoy: Payment[];
+  gastos_dia: Expense[];
   cxc_anteriores: Remision[];
   por_confirmar: Payment[];
   cortes_abiertos: CashCut[];
   totales: {
+    total_pedidos_dia: number;
+    total_remisiones_dia: number;
     total_ventas_dia: number;
     total_cobrado_dia: number;
     cxc_dia: number;
     total_pagos_hoy: number;
+    total_gastos_dia: number;
+    gastos_efectivo: number;
+    gastos_tc: number;
+    gastos_otros: number;
+    total_efectivo_cobrado: number;
+    total_transferencias_cobradas: number;
     total_cxc_anteriores: number;
     total_por_confirmar: number;
     por_cuenta: Record<string, number>;
+    ingresos_por_cuenta: Record<string, number>;
+    egresos_por_cuenta: Record<string, number>;
+    ingresos_por_metodo: Record<string, number>;
+    egresos_por_tipo: Record<string, number>;
   };
 };
 
@@ -485,7 +519,7 @@ export async function getCashCutData(cut_date?: string): Promise<CashCutData> {
   );
 }
 
-export async function openCashCut(payload: { responsible_user?: string; notes?: string }) {
+export async function openCashCut(payload: { cut_date?: string; responsible_user?: string; notes?: string }) {
   return request<{ cash_cut: CashCut }>('vertical_erp_billing/erp_billing_cash_cut_open', {
     ...payload,
     dry_run: false,
