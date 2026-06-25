@@ -26,6 +26,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import * as api from '../lib/api';
+import projectContext from '../project-context.json';
 import type {
   Anticipo,
   CashCut,
@@ -445,7 +446,7 @@ export default function BillingDashboard() {
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Cobranza</h1>
-          <p className="text-xs text-gray-500">Duralon · PROY-005</p>
+          <p className="text-xs text-gray-500">{projectContext.company_label} · {projectContext.project_label}</p>
         </div>
         <button onClick={reload} className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-blue-600">
           <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> Actualizar

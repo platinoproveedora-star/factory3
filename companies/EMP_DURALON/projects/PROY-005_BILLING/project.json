@@ -5,7 +5,7 @@
   "module_code": "billing",
   "project_name": "Billing, cobranza, pagos y cuentas por cobrar",
   "status": "testing",
-  "erp_ready": false,
+  "erp_ready": true,
   "erp_identity": {
     "empresa_id": "EMP_DURALON",
     "company_id": "EMP_DURALON",
@@ -17,6 +17,7 @@
   "scope": "Modulo generico de cobranza para registrar pagos, folios de cobranza, cuentas de dinero, cortes de caja y aplicaciones contra documentos de ventas.",
   "platform": "interno",
   "supabase_schema": "uc101_proy005",
+  "schema": "uc101_proy005",
   "folder": "companies/EMP_DURALON/projects/PROY-005_BILLING",
   "requires_env": [
     "SUPABASE_URL",
