@@ -329,6 +329,29 @@ def cron_tasks(request: Request):
     return {"ok": result.get("ok"), "message": result.get("message"), "data": result.get("data")}
 
 
+@app.post("/cron/billing-cut")
+def cron_billing_cut():
+    """Render Cron — corte de caja automático 7pm. Configura ERP_BILLING_* env vars en Render."""
+    from factory.engine import SkillLoader, SkillRunner
+    skills_dir = FACTORY_DIR / "skills"
+    ext = skills_dir / "externos"
+    ext.mkdir(parents=True, exist_ok=True)
+    loader = SkillLoader(internal_root=skills_dir / "internos", external_root=ext)
+    runner = SkillRunner(loader)
+    context = {
+        "company_id": os.getenv("ERP_BILLING_COMPANY_ID", ""),
+        "schema": os.getenv("ERP_BILLING_SCHEMA", ""),
+        "sales_schema": os.getenv("ERP_BILLING_SALES_SCHEMA", ""),
+        "project_code": os.getenv("ERP_BILLING_PROJECT_CODE", "PROY-005"),
+        "module_code": os.getenv("ERP_BILLING_MODULE_CODE", "billing"),
+        "dry_run": False,
+    }
+    if not context["company_id"] or not context["schema"]:
+        return {"ok": False, "error": "ERP_BILLING_COMPANY_ID y ERP_BILLING_SCHEMA requeridos como env vars"}
+    result = runner.run("vertical_erp_billing/erp_billing_cash_cut_auto", context)
+    return {"ok": result.get("ok"), "data": result.get("data"), "error": result.get("error")}
+
+
 @app.post("/run/{skill_name:path}")
 async def run_skill(skill_name: str, request: Request):
     secret = os.getenv("FACTORY_RUN_SECRET", "")

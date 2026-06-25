@@ -173,9 +173,9 @@ export default function BillingDashboard() {
   const [ranking, setRanking] = useState<ClientRankingData | null>(null);
   const [rankFilter, setRankFilter] = useState<'todos' | '8' | '15' | '21'>('todos');
   const [rankSort, setRankSort] = useState<{ col: string; dir: 'desc' | 'asc' }>({ col: 'm_actual', dir: 'desc' });
-  const [productInput, setProductInput] = useState('');
-  const [productStats, setProductStats] = useState<{ label: string; por_cliente: Record<string, number> } | null>(null);
-  const [productLoading, setProductLoading] = useState(false);
+  type ProductSlot = { input: string; stats: { label: string; por_cliente: Record<string, number> } | null; loading: boolean };
+  const [slot1, setSlot1] = useState<ProductSlot>({ input: '', stats: null, loading: false });
+  const [slot2, setSlot2] = useState<ProductSlot>({ input: '', stats: null, loading: false });
 
   // Tab 7 – Corte
   const [cutDate, setCutDate] = useState(todayISO());
@@ -425,6 +425,14 @@ export default function BillingDashboard() {
     return true;
   });
 
+  const loadProductSlot = (slotNum: 1 | 2, product_name: string) => {
+    const setter = slotNum === 1 ? setSlot1 : setSlot2;
+    setter((p) => ({ ...p, loading: true }));
+    api.getClientProductMonth({ product_name })
+      .then((d) => setter((p) => ({ ...p, loading: false, stats: { label: d.product_name, por_cliente: d.por_cliente } })))
+      .catch((e) => { setErr(e.message); setter((p) => ({ ...p, loading: false })); });
+  };
+
   const filteredClientes = (() => {
     const base = ranking?.clientes.filter((c) => {
       if (rankFilter === '8') return (c.dias_sin_comprar ?? 0) >= 8;
@@ -442,7 +450,8 @@ export default function BillingDashboard() {
       else if (col === 'm2') { av = a.m2; bv = b.m2; }
       else if (col === 'ultima_compra') { av = a.ultima_compra ?? ''; bv = b.ultima_compra ?? ''; }
       else if (col === 'ticket_promedio') { av = a.ticket_promedio; bv = b.ticket_promedio; }
-      else if (col === 'producto') { av = productStats?.por_cliente[a.customer_name] ?? 0; bv = productStats?.por_cliente[b.customer_name] ?? 0; }
+      else if (col === 'producto1') { av = slot1.stats?.por_cliente[a.customer_name] ?? 0; bv = slot1.stats?.por_cliente[b.customer_name] ?? 0; }
+      else if (col === 'producto2') { av = slot2.stats?.por_cliente[a.customer_name] ?? 0; bv = slot2.stats?.por_cliente[b.customer_name] ?? 0; }
       if (av < bv) return dir === 'asc' ? -1 : 1;
       if (av > bv) return dir === 'asc' ? 1 : -1;
       return 0;
@@ -529,7 +538,7 @@ export default function BillingDashboard() {
       {!loading && tab === 'remisiones' && (
         <div className="p-6">
           <div className="flex flex-wrap gap-2 mb-4">
-            <input placeholder="Cliente..." className={`${inputCls} w-48`} value={remFilter.customer} onChange={(e) => setRemFilter((p) => ({ ...p, customer: e.target.value }))} />
+            <input placeholder="Cliente..." className={`${inputCls} w-48`} list="billing-customers" value={remFilter.customer} onChange={(e) => setRemFilter((p) => ({ ...p, customer: e.target.value }))} />
             <select className={`${inputCls} w-40`} value={remFilter.status} onChange={(e) => setRemFilter((p) => ({ ...p, status: e.target.value }))}>
               <option value="">Todos los estados</option>
               <option value="emitida">Emitida</option>
@@ -852,41 +861,38 @@ export default function BillingDashboard() {
             <KpiCard label="Proyección" value={fmt(ranking.totales.proyeccion)} sub={`${ranking.totales.tendencia_pct >= 0 ? '+' : ''}${ranking.totales.tendencia_pct}% vs M-2`} />
           </div>
 
-          {/* Filtro por producto */}
-          <div className="flex gap-2 mb-4 items-center">
-            <input
-              placeholder="Producto a analizar (ej. varilla 3/8)..."
-              className={`${inputCls} flex-1 max-w-sm`}
-              value={productInput}
-              onChange={(e) => setProductInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && productInput.trim()) {
-                  setProductLoading(true);
-                  api.getClientProductMonth({ product_name: productInput.trim() })
-                    .then((d) => setProductStats({ label: d.product_name, por_cliente: d.por_cliente }))
-                    .catch((e) => setErr(e.message))
-                    .finally(() => setProductLoading(false));
-                }
-              }}
-            />
-            <button
-              className={btnPrimary}
-              disabled={productLoading || !productInput.trim()}
-              onClick={() => {
-                setProductLoading(true);
-                api.getClientProductMonth({ product_name: productInput.trim() })
-                  .then((d) => setProductStats({ label: d.product_name, por_cliente: d.por_cliente }))
-                  .catch((e) => setErr(e.message))
-                  .finally(() => setProductLoading(false));
-              }}
-            >
-              {productLoading ? 'Cargando...' : 'Ver columna'}
-            </button>
-            {productStats && (
-              <button className={btnSecondary} onClick={() => { setProductStats(null); setProductInput(''); }}>
-                Quitar columna
+          {/* Columnas de producto */}
+          <div className="flex flex-col gap-2 mb-4">
+            {/* Slot 1 */}
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-gray-400 w-16 shrink-0">Col. 1:</span>
+              <input
+                placeholder="Producto (ej. varilla 3/8)..."
+                className={`${inputCls} flex-1 max-w-sm`}
+                value={slot1.input}
+                onChange={(e) => setSlot1((p) => ({ ...p, input: e.target.value }))}
+                onKeyDown={(e) => { if (e.key === 'Enter' && slot1.input.trim()) loadProductSlot(1, slot1.input.trim()); }}
+              />
+              <button className={btnPrimary} disabled={slot1.loading || !slot1.input.trim()} onClick={() => loadProductSlot(1, slot1.input.trim())}>
+                {slot1.loading ? 'Cargando...' : 'Ver'}
               </button>
-            )}
+              {slot1.stats && <button className={btnSecondary} onClick={() => setSlot1((p) => ({ ...p, stats: null, input: '' }))}>Quitar</button>}
+            </div>
+            {/* Slot 2 */}
+            <div className="flex gap-2 items-center">
+              <span className="text-xs text-gray-400 w-16 shrink-0">Col. 2:</span>
+              <input
+                placeholder="Producto 2..."
+                className={`${inputCls} flex-1 max-w-sm`}
+                value={slot2.input}
+                onChange={(e) => setSlot2((p) => ({ ...p, input: e.target.value }))}
+                onKeyDown={(e) => { if (e.key === 'Enter' && slot2.input.trim()) loadProductSlot(2, slot2.input.trim()); }}
+              />
+              <button className={btnPrimary} disabled={slot2.loading || !slot2.input.trim()} onClick={() => loadProductSlot(2, slot2.input.trim())}>
+                {slot2.loading ? 'Cargando...' : 'Ver'}
+              </button>
+              {slot2.stats && <button className={btnSecondary} onClick={() => setSlot2((p) => ({ ...p, stats: null, input: '' }))}>Quitar</button>}
+            </div>
           </div>
 
           {/* Filters */}
@@ -910,13 +916,14 @@ export default function BillingDashboard() {
                   <SortTh col="m1" sort={rankSort} onSort={setRankSort} align="right">M-1</SortTh>
                   <SortTh col="m2" sort={rankSort} onSort={setRankSort} align="right">M-2</SortTh>
                   <SortTh col="ultima_compra" sort={rankSort} onSort={setRankSort} align="center">Última compra</SortTh>
-                  {productStats && <SortTh col="producto" sort={rankSort} onSort={setRankSort} align="right" className="text-blue-700">{productStats.label}</SortTh>}
+                  {slot1.stats && <SortTh col="producto1" sort={rankSort} onSort={setRankSort} align="right" className="text-blue-700">{slot1.stats.label}</SortTh>}
+                  {slot2.stats && <SortTh col="producto2" sort={rankSort} onSort={setRankSort} align="right" className="text-purple-700">{slot2.stats.label}</SortTh>}
                   <SortTh col="ticket_promedio" sort={rankSort} onSort={setRankSort} align="right">Ticket Prom.</SortTh>
                 </tr>
               </thead>
               <tbody>
                 {filteredClientes.length === 0 && (
-                  <tr><td colSpan={9} className="text-center py-10 text-gray-400">Sin datos</td></tr>
+                  <tr><td colSpan={9 + (slot1.stats ? 1 : 0) + (slot2.stats ? 1 : 0)} className="text-center py-10 text-gray-400">Sin datos</td></tr>
                 )}
                 {filteredClientes.map((c, i) => (
                   <tr key={c.customer_key} className="border-t border-gray-100 hover:bg-gray-50">
@@ -928,9 +935,14 @@ export default function BillingDashboard() {
                     <td className="px-3 py-2.5 text-right">{c.m1 > 0 ? fmt(c.m1) : <span className="text-gray-300">—</span>}</td>
                     <td className="px-3 py-2.5 text-right">{c.m2 > 0 ? fmt(c.m2) : <span className="text-gray-300">—</span>}</td>
                     <td className="px-3 py-2.5 text-center text-gray-500 text-xs">{c.ultima_compra ? fmtDate(c.ultima_compra) : '—'}</td>
-                    {productStats && (
+                    {slot1.stats && (
                       <td className="px-3 py-2.5 text-right text-blue-700 font-medium">
-                        {productStats.por_cliente[c.customer_name] ? fmt(productStats.por_cliente[c.customer_name]) : <span className="text-gray-300">—</span>}
+                        {slot1.stats.por_cliente[c.customer_name] ? fmt(slot1.stats.por_cliente[c.customer_name]) : <span className="text-gray-300">—</span>}
+                      </td>
+                    )}
+                    {slot2.stats && (
+                      <td className="px-3 py-2.5 text-right text-purple-700 font-medium">
+                        {slot2.stats.por_cliente[c.customer_name] ? fmt(slot2.stats.por_cliente[c.customer_name]) : <span className="text-gray-300">—</span>}
                       </td>
                     )}
                     <td className="px-3 py-2.5 text-right text-gray-600">{c.ticket_promedio > 0 ? fmt(c.ticket_promedio) : <span className="text-gray-300">—</span>}</td>

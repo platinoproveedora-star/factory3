@@ -4101,6 +4101,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_billing/erp_billing_cash_cut_auto": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_cash_cut_auto",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Corte de caja automático 7pm: crea corte si no existe, genera resumen y lo envía por Telegram.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_cash_cut_auto",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_billing/erp_billing_devolucion_list": {
     "tipo": "interno",
     "nombre": "vertical_erp_billing/erp_billing_devolucion_list",

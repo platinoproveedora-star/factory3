@@ -1,0 +1,14 @@
+{
+  "type": "skill",
+  "name": "erp_billing_cash_cut_auto",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Corte de caja automático: verifica si existe corte del día, crea uno si no, y envía resumen por Telegram.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "FACTORY3_ADMIN_BOT_TOKEN",
+    "TELEGRAM_OWNER_CHAT_ID"
+  ]
+}
