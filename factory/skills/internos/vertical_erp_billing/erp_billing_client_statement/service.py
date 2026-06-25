@@ -84,7 +84,7 @@ class ErpBillingClientStatementService:
                 kardex.append({"fecha": evt_date, "tipo": "Remisión", "folio": row.get("folio"), "concepto": f"Venta {row.get('folio')}", "cargo": cargo, "abono": 0, "saldo": saldo_acum, "status": row.get("status")})
             elif kind == "pedido":
                 # Pedido es referencia informativa — no modifica el saldo
-                kardex.append({"fecha": evt_date, "tipo": "Pedido", "folio": row.get("folio"), "concepto": f"Pedido {row.get('folio')} (referencia)", "cargo": 0, "abono": 0, "saldo": saldo_acum, "status": row.get("status")})
+                kardex.append({"fecha": evt_date, "tipo": "Pedido", "folio": row.get("folio"), "concepto": f"Pedido {row.get('folio')} (referencia)", "cargo": 0, "abono": 0, "saldo": saldo_acum, "monto_ref": money(row.get("total")), "status": row.get("status")})
             elif kind == "pago":
                 abono = money(row.get("amount"))
                 saldo_acum = round(saldo_acum - abono, 2)

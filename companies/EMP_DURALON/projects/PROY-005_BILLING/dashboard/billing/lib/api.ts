@@ -112,6 +112,7 @@ export type KardexEntry = {
   cargo: number;
   abono: number;
   saldo: number;
+  monto_ref?: number;
   status?: string;
 };
 

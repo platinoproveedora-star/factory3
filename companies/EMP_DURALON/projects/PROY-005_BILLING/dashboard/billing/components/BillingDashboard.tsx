@@ -155,7 +155,7 @@ export default function BillingDashboard() {
   // Tab 2 – Pagos
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentApplications, setPaymentApplications] = useState<PaymentApplication[]>([]);
-  const [payFilter, setPayFilter] = useState({ date_from: '', date_to: '', confirmation_status: '' });
+  const [payFilter, setPayFilter] = useState({ customer: '', date_from: '', date_to: '', confirmation_status: '' });
 
   // Tab 3 – Anticipos
   const [anticipos, setAnticipos] = useState<Anticipo[]>([]);
@@ -405,6 +405,7 @@ export default function BillingDashboard() {
   });
 
   const filteredPay = payments.filter((p) => {
+    if (payFilter.customer && !p.customer_name?.toLowerCase().includes(payFilter.customer.toLowerCase())) return false;
     if (payFilter.date_from && (p.payment_date ?? '') < payFilter.date_from) return false;
     if (payFilter.date_to && (p.payment_date ?? '') > payFilter.date_to) return false;
     if (payFilter.confirmation_status && p.confirmation_status !== payFilter.confirmation_status) return false;
@@ -571,6 +572,7 @@ export default function BillingDashboard() {
       {!loading && tab === 'pagos' && (
         <div className="p-6">
           <div className="flex flex-wrap gap-2 mb-4">
+            <input placeholder="Cliente..." className={`${inputCls} w-48`} list="billing-customers" value={payFilter.customer} onChange={(e) => setPayFilter((p) => ({ ...p, customer: e.target.value }))} />
             <input type="date" className={`${inputCls} w-40`} value={payFilter.date_from} onChange={(e) => setPayFilter((p) => ({ ...p, date_from: e.target.value }))} />
             <input type="date" className={`${inputCls} w-40`} value={payFilter.date_to} onChange={(e) => setPayFilter((p) => ({ ...p, date_to: e.target.value }))} />
             <select className={`${inputCls} w-44`} value={payFilter.confirmation_status} onChange={(e) => setPayFilter((p) => ({ ...p, confirmation_status: e.target.value }))}>
@@ -790,6 +792,7 @@ export default function BillingDashboard() {
                       <th className="text-left px-4 py-3">Tipo</th>
                       <th className="text-left px-4 py-3">Folio</th>
                       <th className="text-left px-4 py-3">Concepto</th>
+                      <th className="text-right px-4 py-3 text-blue-600">Importe Pedido</th>
                       <th className="text-right px-4 py-3">Cargo</th>
                       <th className="text-right px-4 py-3">Abono</th>
                       <th className="text-right px-4 py-3">Saldo</th>
@@ -806,6 +809,7 @@ export default function BillingDashboard() {
                         </td>
                         <td className="px-4 py-2 font-mono text-xs text-gray-500">{k.folio}</td>
                         <td className="px-4 py-2">{k.concepto}</td>
+                        <td className="px-4 py-2 text-right text-blue-600">{k.monto_ref ? fmt(k.monto_ref) : ''}</td>
                         <td className="px-4 py-2 text-right text-red-600">{k.cargo ? fmt(k.cargo) : ''}</td>
                         <td className="px-4 py-2 text-right text-green-700">{k.abono ? fmt(k.abono) : ''}</td>
                         <td className={`px-4 py-2 text-right font-semibold ${k.saldo > 0 ? 'text-red-600' : 'text-gray-900'}`}>{fmt(k.saldo)}</td>
