@@ -1,0 +1,6 @@
+{
+  "name": "vertical_erp_billing/erp_billing_payment_create_and_apply",
+  "version": "0.1.0",
+  "description": "Crea un pago billing con cuenta destino obligatoria y lo aplica a una o varias remisiones del mismo cliente.",
+  "entrypoint": "skill.py"
+}

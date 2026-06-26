@@ -233,6 +233,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_billing/erp_billing_payment_create_and_apply": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_billing/erp_billing_payment_create_and_apply",
+    "vertical": "vertical_erp_billing",
+    "descripcion": "Crea un pago billing con cuenta destino obligatoria y lo aplica a una o varias remisiones del mismo cliente.",
+    "path": "skills/internos/vertical_erp_billing/erp_billing_payment_create_and_apply",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_billing/erp_billing_cash_cut_open": {
     "tipo": "interno",
     "nombre": "vertical_erp_billing/erp_billing_cash_cut_open",
@@ -3850,6 +3859,15 @@
     "vertical": "vertical_erp_banks",
     "descripcion": "Lista gastos pendientes y registra retiros bancarios contra una cuenta origen configurable para conciliacion de gastos.",
     "path": "skills/internos/vertical_erp_banks/erp_banks_expense_reconcile",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_banks/erp_banks_movement_to_expense": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_banks/erp_banks_movement_to_expense",
+    "vertical": "vertical_erp_banks",
+    "descripcion": "Crea un gasto ERP desde un movimiento bancario existente sin duplicar el movimiento. Multitenant.",
+    "path": "skills/internos/vertical_erp_banks/erp_banks_movement_to_expense",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

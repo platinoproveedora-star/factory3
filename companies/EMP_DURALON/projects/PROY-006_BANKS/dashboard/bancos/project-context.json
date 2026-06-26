@@ -9,6 +9,7 @@
   "statements_project_code": "PROY-007",
   "expenses_schema": "uc101_proy001",
   "expenses_project_code": "PROY-001",
+  "expenses_module_code": "gastos",
   "default_expense_source_account_name": "Cobranza efectivo",
   "expense_counterparty_name": "GastosDuralon"
 }

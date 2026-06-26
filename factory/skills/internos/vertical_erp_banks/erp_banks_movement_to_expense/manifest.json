@@ -1,0 +1,6 @@
+{
+  "name": "vertical_erp_banks/erp_banks_movement_to_expense",
+  "version": "0.1.0",
+  "description": "Crea un gasto ERP desde un movimiento bancario existente sin duplicar el movimiento. Multitenant.",
+  "entrypoint": "skill.py"
+}

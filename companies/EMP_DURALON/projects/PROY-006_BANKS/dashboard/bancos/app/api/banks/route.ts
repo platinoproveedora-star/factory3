@@ -89,6 +89,10 @@ function expensesProjectCode() {
   return env('EXPENSES_PROJECT_CODE') || (projectContext as any).expenses_project_code || '';
 }
 
+function expensesModuleCode() {
+  return env('EXPENSES_MODULE_CODE') || (projectContext as any).expenses_module_code || 'gastos';
+}
+
 function defaultExpenseSourceAccountName() {
   return env('DEFAULT_EXPENSE_SOURCE_ACCOUNT_NAME') || (projectContext as any).default_expense_source_account_name || '';
 }
@@ -433,6 +437,48 @@ async function cancelExpenseAssignment(payload: Record<string, any>) {
   }));
 }
 
+async function expenseOptions() {
+  const expenseSchema = expensesSchema();
+  if (!expenseSchema) throw new Error('EXPENSES_SCHEMA no configurado');
+  const [categories, users] = await Promise.all([
+    supabase('categorias_gasto', {
+      query: {
+        select: 'id,folio,nombre,activo',
+        activo: 'eq.true',
+        order: 'nombre.asc',
+        limit: '300'
+      }
+    }, expenseSchema),
+    supabase('usuarios', {
+      query: {
+        select: 'id,folio,nombre,activo,rol',
+        activo: 'eq.true',
+        order: 'nombre.asc',
+        limit: '300'
+      }
+    }, expenseSchema)
+  ]);
+  return { categories, users };
+}
+
+async function movementToExpense(payload: Record<string, any>) {
+  const expenseSchema = expensesSchema();
+  const expenseProject = expensesProjectCode();
+  if (!expenseSchema) throw new Error('EXPENSES_SCHEMA no configurado');
+  if (!expenseProject) throw new Error('EXPENSES_PROJECT_CODE no configurado');
+  return factorySkill('vertical_erp_banks/erp_banks_movement_to_expense', {
+    ...payload,
+    banks_schema: schema(),
+    expenses_schema: expenseSchema,
+    company_id: companyId(),
+    banks_project_code: projectCode(),
+    banks_module_code: moduleCode(),
+    expenses_project_code: expenseProject,
+    expenses_module_code: expensesModuleCode(),
+    dry_run: false
+  });
+}
+
 async function importStatementMovements(payload: Record<string, any>) {
   const sc = statementsSchema();
   if (!sc) throw new Error('STATEMENTS_SCHEMA no configurado');
@@ -473,6 +519,8 @@ export async function POST(request: Request) {
       list_expense_reconciliation: () => listExpenseReconciliation(payload),
       assign_expense_withdrawal: () => assignExpenseWithdrawal(payload),
       cancel_expense_assignment: () => cancelExpenseAssignment(payload),
+      expense_options: expenseOptions,
+      movement_to_expense: () => movementToExpense(payload),
       import_statement_movements: () => importStatementMovements(payload)
     };
 

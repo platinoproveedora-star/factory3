@@ -53,8 +53,15 @@ const fmtDate = (d?: string | null) =>
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 const METODOS = ['efectivo', 'tarjeta', 'transferencia', 'deposito', 'cheque'];
+const PAYMENT_METHODS = ['cash', 'card', 'transfer', 'deposit', 'check', 'other'];
 
 const METODO_LABEL: Record<string, string> = {
+  cash: 'Efectivo',
+  card: 'Tarjeta',
+  transfer: 'Transferencia',
+  deposit: 'Depósito',
+  check: 'Cheque',
+  other: 'Otro',
   efectivo: 'Efectivo',
   tarjeta: 'Tarjeta',
   transferencia: 'Transferencia',
@@ -191,6 +198,7 @@ export default function BillingDashboard() {
   // Modals
   type ModalState =
     | { kind: 'pago'; remision: Remision }
+    | { kind: 'nuevo_pago' }
     | { kind: 'apply_pago'; payment: Payment }
     | { kind: 'confirm_pago'; payment: Payment }
     | { kind: 'nuevo_anticipo' }
@@ -281,6 +289,41 @@ export default function BillingDashboard() {
       });
       setModal(null);
       reload();
+    } catch (e: any) {
+      setFormErr(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitNuevoPago() {
+    const amount = parseFloat(form.amount || '0');
+    const applications = remisiones
+      .filter((r) => r.customer_name_snapshot === form.customer && r.status !== 'cancelada' && r.status !== 'pagada')
+      .map((r) => ({ sales_document_id: r.id, amount_applied: parseFloat(form[`apply_${r.id}`] || '0') }))
+      .filter((row) => row.amount_applied > 0);
+    const totalApplied = applications.reduce((sum, row) => sum + row.amount_applied, 0);
+    if (!form.customer || !amount || !form.method || !form.account_id) return setFormErr('Cliente, importe, método y cuenta destino son requeridos');
+    if (!applications.length) return setFormErr('Selecciona al menos una remisión para aplicar');
+    if (totalApplied > amount) return setFormErr('El total aplicado excede el importe del pago');
+    setSaving(true);
+    try {
+      await api.createAndApplyPayment({
+        customer_name: form.customer,
+        payment_method: form.method,
+        amount,
+        payment_date: form.payment_date || undefined,
+        destination_money_account_id: form.account_id,
+        tracking_key: form.tracking_key || undefined,
+        reference: form.reference || undefined,
+        notes: form.notes || undefined,
+        applications,
+      });
+      setModal(null);
+      const d = await api.getDashboardData(200);
+      setPayments(d.payments ?? []);
+      setPaymentApplications(d.payment_applications ?? []);
+      setRemisiones(await api.getRemisiones({ limit: 200 }));
     } catch (e: any) {
       setFormErr(e.message);
     } finally {
@@ -598,7 +641,7 @@ export default function BillingDashboard() {
       {/* ── Tab: Pagos ── */}
       {!loading && tab === 'pagos' && (
         <div className="p-6">
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4 items-center">
             <input placeholder="Cliente..." className={`${inputCls} w-48`} list="billing-customers" value={payFilter.customer} onChange={(e) => setPayFilter((p) => ({ ...p, customer: e.target.value }))} />
             <input type="date" className={`${inputCls} w-40`} value={payFilter.date_from} onChange={(e) => setPayFilter((p) => ({ ...p, date_from: e.target.value }))} />
             <input type="date" className={`${inputCls} w-40`} value={payFilter.date_to} onChange={(e) => setPayFilter((p) => ({ ...p, date_to: e.target.value }))} />
@@ -607,6 +650,9 @@ export default function BillingDashboard() {
               <option value="confirmado">Confirmado</option>
               <option value="por_confirmar">Por confirmar</option>
             </select>
+            <button onClick={() => openModal({ kind: 'nuevo_pago' })} className={`${btnPrimary} flex items-center gap-1 ml-auto`}>
+              <Plus size={14} /> Nuevo pago
+            </button>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <table className="w-full text-sm">
@@ -1316,6 +1362,80 @@ export default function BillingDashboard() {
           <div className="flex gap-2 justify-end">
             <button className={btnSecondary} onClick={() => setModal(null)}>Cancelar</button>
             <button className={btnPrimary} disabled={saving} onClick={submitPago}>{saving ? 'Guardando...' : 'Registrar Pago'}</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Nuevo Pago */}
+      {modal?.kind === 'nuevo_pago' && (
+        <Modal title="Nuevo pago" onClose={() => setModal(null)}>
+          <Field label="Cliente">
+            <input className={inputCls} list="billing-customers" placeholder="Seleccionar cliente..." value={form.customer ?? ''} onChange={(e) => setF('customer', e.target.value)} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Importe">
+              <input type="number" className={inputCls} placeholder="0.00" value={form.amount ?? ''} onChange={(e) => setF('amount', e.target.value)} />
+            </Field>
+            <Field label="Fecha">
+              <input type="date" className={inputCls} value={form.payment_date ?? todayISO()} onChange={(e) => setF('payment_date', e.target.value)} />
+            </Field>
+          </div>
+          <Field label="Método de pago">
+            <select className={inputCls} value={form.method ?? ''} onChange={(e) => setF('method', e.target.value)}>
+              <option value="">Seleccionar...</option>
+              {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{METODO_LABEL[m]}</option>)}
+            </select>
+          </Field>
+          <Field label="Cuenta destino">
+            <select className={inputCls} value={form.account_id ?? ''} onChange={(e) => setF('account_id', e.target.value)}>
+              <option value="">Seleccionar cuenta...</option>
+              {accounts.map((a) => <option key={a.id} value={a.id}>{a.account_name}</option>)}
+            </select>
+          </Field>
+          {['transfer', 'deposit'].includes(form.method ?? '') && (
+            <Field label="Clave de rastreo / referencia">
+              <input className={inputCls} value={form.tracking_key ?? ''} onChange={(e) => setF('tracking_key', e.target.value)} />
+            </Field>
+          )}
+          <Field label="Notas">
+            <input className={inputCls} value={form.notes ?? ''} onChange={(e) => setF('notes', e.target.value)} />
+          </Field>
+          <div className="mb-4">
+            <p className="mb-2 text-sm font-medium text-gray-700">Remisiones a aplicar</p>
+            <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200">
+              {(form.customer
+                ? remisiones.filter((r) => r.customer_name_snapshot === form.customer && r.status !== 'cancelada' && r.status !== 'pagada')
+                : []
+              ).map((r) => {
+                const balance = r.balance_total ?? r.total - (r.paid_total ?? 0);
+                return (
+                  <div key={r.id} className="grid grid-cols-[1fr_120px] gap-2 border-b border-gray-100 px-3 py-2 last:border-b-0">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-gray-900">{r.folio}</p>
+                      <p className="text-xs text-gray-500">{fmtDate(r.document_date)} · Saldo {fmt(balance)}</p>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      max={balance}
+                      step="0.01"
+                      className={`${inputCls} h-9`}
+                      placeholder="0.00"
+                      value={form[`apply_${r.id}`] ?? ''}
+                      onChange={(e) => setF(`apply_${r.id}`, e.target.value)}
+                    />
+                  </div>
+                );
+              })}
+              {(!form.customer || remisiones.filter((r) => r.customer_name_snapshot === form.customer && r.status !== 'cancelada' && r.status !== 'pagada').length === 0) && (
+                <p className="px-3 py-6 text-center text-sm text-gray-400">Selecciona un cliente con remisiones pendientes</p>
+              )}
+            </div>
+          </div>
+          {formErr && <p className="text-red-600 text-sm mb-3">{formErr}</p>}
+          <div className="flex gap-2 justify-end">
+            <button className={btnSecondary} onClick={() => setModal(null)}>Cancelar</button>
+            <button className={btnPrimary} disabled={saving} onClick={submitNuevoPago}>{saving ? 'Guardando...' : 'Crear pago'}</button>
           </div>
         </Modal>
       )}

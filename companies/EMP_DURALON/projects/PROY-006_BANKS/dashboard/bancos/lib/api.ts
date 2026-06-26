@@ -145,6 +145,19 @@ export type ExpenseReconciliationData = {
   };
 };
 
+export type ExpenseOption = {
+  id: string;
+  folio?: string | null;
+  nombre: string;
+  activo?: boolean;
+  rol?: string | null;
+};
+
+export type ExpenseOptionsData = {
+  categories: ExpenseOption[];
+  users: ExpenseOption[];
+};
+
 export type ApiResponse<T> = {
   ok: boolean;
   data?: T;

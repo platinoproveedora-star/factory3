@@ -392,6 +392,26 @@ export async function applyPayment(payload: {
   return request('vertical_erp_billing/erp_billing_payment_apply', { ...payload, dry_run: false });
 }
 
+export async function createAndApplyPayment(payload: {
+  customer_name?: string;
+  customer_id?: string;
+  payment_method: string;
+  amount: number;
+  payment_date?: string;
+  destination_money_account_id: string;
+  tracking_key?: string;
+  reference?: string;
+  notes?: string;
+  applications: Array<{ sales_document_id: string; amount_applied: number }>;
+}) {
+  return request<{ payment: Payment; applications: unknown[] }>('vertical_erp_billing/erp_billing_payment_create_and_apply', {
+    ...payload,
+    banks_schema: ERP_CONTEXT.banks_schema,
+    banks_project_code: ERP_CONTEXT.banks_project_code,
+    dry_run: false,
+  });
+}
+
 export async function confirmPayment(payload: {
   payment_id?: string;
   payment_folio?: string;

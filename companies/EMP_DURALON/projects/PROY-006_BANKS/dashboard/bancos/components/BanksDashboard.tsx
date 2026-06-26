@@ -31,6 +31,7 @@ import {
   type Account,
   type Authorization,
   type DashboardData,
+  type ExpenseOptionsData,
   type ExpenseReconciliationData,
   type ExpenseReconciliationRow,
   type Movement,
@@ -120,6 +121,9 @@ export default function BanksDashboard() {
   const [movementAccountFilter, setMovementAccountFilter] = useState<string>('');
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [movementModalOpen, setMovementModalOpen] = useState(false);
+  const [expenseModalMovement, setExpenseModalMovement] = useState<Movement | null>(null);
+  const [expenseOptions, setExpenseOptions] = useState<ExpenseOptionsData>({ categories: [], users: [] });
+  const [expenseForm, setExpenseForm] = useState({ categoria_id: '', usuario_id: '', descripcion: '' });
   const emptyAccountForm = {
     account_name: '',
     account_type: 'bank',
@@ -237,6 +241,48 @@ export default function BanksDashboard() {
     }
   }
 
+  async function openMovementExpenseModal(movement: Movement) {
+    setError('');
+    setExpenseModalMovement(movement);
+    setExpenseForm({
+      categoria_id: expenseOptions.categories[0]?.id || '',
+      usuario_id: expenseOptions.users[0]?.id || '',
+      descripcion: movementConcept(movement)
+    });
+    try {
+      const options = await banksApi<ExpenseOptionsData>('expense_options');
+      setExpenseOptions(options);
+      setExpenseForm((current) => ({
+        ...current,
+        categoria_id: current.categoria_id || options.categories[0]?.id || '',
+        usuario_id: current.usuario_id || options.users[0]?.id || '',
+      }));
+    } catch (err: any) {
+      setError(err.message || 'No se pudieron cargar opciones de gastos');
+    }
+  }
+
+  async function createExpenseFromMovement(event: FormEvent) {
+    event.preventDefault();
+    if (!expenseModalMovement) return;
+    setSaving(true);
+    setError('');
+    try {
+      await banksApi('movement_to_expense', {
+        movement_id: expenseModalMovement.id,
+        categoria_id: expenseForm.categoria_id,
+        usuario_id: expenseForm.usuario_id,
+        descripcion: expenseForm.descripcion,
+      });
+      setExpenseModalMovement(null);
+      await refresh();
+    } catch (err: any) {
+      setError(err.message || 'No se pudo crear gasto desde movimiento');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function decide(auth: Authorization, decision: 'aprobado' | 'rechazado') {
     setSaving(true);
     setError('');
@@ -346,12 +392,52 @@ export default function BanksDashboard() {
 
         {activeTab === 'resumen' ? <Resumen accounts={data.accounts} onOpenMovements={openAccountMovements} /> : null}
         {activeTab === 'cuentas' ? <Cuentas accounts={data.accounts} form={accountForm} setForm={setAccountForm} onSubmit={createAccount} saving={saving} modalOpen={accountModalOpen} setModalOpen={setAccountModalOpen} /> : null}
-        {activeTab === 'movimientos' ? <Movimientos accounts={data.accounts} movements={data.movements} form={movementForm} setForm={setMovementForm} onSubmit={createMovement} saving={saving} accountFilter={movementAccountFilter} setAccountFilter={setMovementAccountFilter} modalOpen={movementModalOpen} setModalOpen={setMovementModalOpen} onStatusChange={updateReconciliationStatus} /> : null}
+        {activeTab === 'movimientos' ? <Movimientos accounts={data.accounts} movements={data.movements} form={movementForm} setForm={setMovementForm} onSubmit={createMovement} saving={saving} accountFilter={movementAccountFilter} setAccountFilter={setMovementAccountFilter} modalOpen={movementModalOpen} setModalOpen={setMovementModalOpen} onStatusChange={updateReconciliationStatus} onCreateExpense={openMovementExpenseModal} /> : null}
         {activeTab === 'autorizaciones' ? <Autorizaciones auths={pendingAuthorizations} movements={data.movements} onDecide={decide} saving={saving} /> : null}
         {activeTab === 'conciliacion' ? <Conciliacion accounts={data.accounts} movements={pendingReconciliation} onStatusChange={updateReconciliationStatus} saving={saving} /> : null}
         {activeTab === 'conciliacion_gastos' ? <ConciliacionGastos accounts={data.accounts} onRefreshBanks={refresh} /> : null}
         {activeTab === 'converter' ? <ConverterTab accounts={data.accounts} /> : null}
       </section>
+
+      {expenseModalMovement ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-3 py-4">
+          <form onSubmit={createExpenseFromMovement} className="w-full max-w-md rounded-lg border border-slate-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+              <div>
+                <h2 className="text-base font-bold text-slate-950">Crear gasto desde movimiento</h2>
+                <p className="text-xs text-slate-500">{expenseModalMovement.folio} / {money(expenseModalMovement.amount)}</p>
+              </div>
+              <button type="button" onClick={() => setExpenseModalMovement(null)} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="Cerrar">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid gap-3 px-4 py-4">
+              <Field label="Categoria">
+                <Select required value={expenseForm.categoria_id} onChange={(event) => setExpenseForm({ ...expenseForm, categoria_id: event.target.value })}>
+                  <option value="">Seleccionar</option>
+                  {expenseOptions.categories.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}
+                </Select>
+              </Field>
+              <Field label="Usuario">
+                <Select required value={expenseForm.usuario_id} onChange={(event) => setExpenseForm({ ...expenseForm, usuario_id: event.target.value })}>
+                  <option value="">Seleccionar</option>
+                  {expenseOptions.users.map((user) => <option key={user.id} value={user.id}>{user.nombre}</option>)}
+                </Select>
+              </Field>
+              <Field label="Descripcion">
+                <TextInput required value={expenseForm.descripcion} onChange={(event) => setExpenseForm({ ...expenseForm, descripcion: event.target.value })} />
+              </Field>
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                <p><b>Fecha:</b> {expenseModalMovement.movement_date}</p>
+                <p><b>Cuenta:</b> {accountLabel(data.accounts, expenseModalMovement.account_id, expenseModalMovement.account_folio)}</p>
+              </div>
+            </div>
+            <div className="border-t border-slate-200 px-4 py-3">
+              <SaveButton saving={saving} label="Crear gasto" />
+            </div>
+          </form>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -492,7 +578,7 @@ function Cuentas({ accounts, form, setForm, onSubmit, saving, modalOpen, setModa
   );
 }
 
-function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, accountFilter, setAccountFilter, modalOpen, setModalOpen, onStatusChange }: any) {
+function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, accountFilter, setAccountFilter, modalOpen, setModalOpen, onStatusChange, onCreateExpense }: any) {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [hideReversals, setHideReversals] = useState(false);
@@ -585,7 +671,7 @@ function Movimientos({ accounts, movements, form, setForm, onSubmit, saving, acc
             <p className={`mt-0.5 text-base font-bold ${balanceRango >= 0 ? 'text-teal-800' : 'text-amber-800'}`}>{money(balanceRango)}</p>
           </div>
         </div>
-        <MovementTable accounts={accounts} movements={filteredMovements} onStatusChange={onStatusChange} />
+        <MovementTable accounts={accounts} movements={filteredMovements} onStatusChange={onStatusChange} onCreateExpense={onCreateExpense} />
       </Panel>
       {modalOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/45 px-3 py-4">
@@ -1546,7 +1632,7 @@ function ConverterTab({ accounts }: { accounts: Account[] }) {
   );
 }
 
-function MovementTable({ accounts, movements, compact = false, onStatusChange }: { accounts: Account[]; movements: Movement[]; compact?: boolean; onStatusChange?: (id: string, status: string) => void }) {
+function MovementTable({ accounts, movements, compact = false, onStatusChange, onCreateExpense }: { accounts: Account[]; movements: Movement[]; compact?: boolean; onStatusChange?: (id: string, status: string) => void; onCreateExpense?: (movement: Movement) => void }) {
   if (!movements.length) return <Empty text="Sin movimientos registrados" />;
   return (
     <div className="overflow-x-auto">
@@ -1561,6 +1647,7 @@ function MovementTable({ accounts, movements, compact = false, onStatusChange }:
             <th className="border-b border-slate-200 px-2 py-1.5">Origen</th>
             <th className="border-b border-slate-200 px-2 py-1.5 text-right">Monto</th>
             {!compact ? <th className="border-b border-slate-200 px-2 py-1.5">Conciliacion</th> : null}
+            {!compact && onCreateExpense ? <th className="border-b border-slate-200 px-2 py-1.5">Acciones</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -1595,6 +1682,20 @@ function MovementTable({ accounts, movements, compact = false, onStatusChange }:
                   ) : (
                     <Badge value={RECONCILIATION_LABELS[movement.reconciliation_status] || movement.reconciliation_status} />
                   )}
+                </td>
+              ) : null}
+              {!compact && onCreateExpense ? (
+                <td className="border-b border-slate-100 px-2 py-1.5">
+                  <button
+                    type="button"
+                    disabled={movement.authorization_status === 'rechazado' || Boolean(movement.reversal_of_movement_id)}
+                    onClick={() => onCreateExpense(movement)}
+                    className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[9px] font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    title="Crear gasto desde este movimiento"
+                  >
+                    <FileText className="h-3 w-3" />
+                    Gasto
+                  </button>
                 </td>
               ) : null}
             </tr>
