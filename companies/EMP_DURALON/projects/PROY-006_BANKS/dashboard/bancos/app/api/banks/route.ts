@@ -466,7 +466,7 @@ async function movementToExpense(payload: Record<string, any>) {
   const expenseProject = expensesProjectCode();
   if (!expenseSchema) throw new Error('EXPENSES_SCHEMA no configurado');
   if (!expenseProject) throw new Error('EXPENSES_PROJECT_CODE no configurado');
-  return factorySkill('vertical_erp_banks/erp_banks_movement_to_expense', {
+  const result = await factorySkill('vertical_erp_banks/erp_banks_movement_to_expense', {
     ...payload,
     banks_schema: schema(),
     expenses_schema: expenseSchema,
@@ -477,6 +477,22 @@ async function movementToExpense(payload: Record<string, any>) {
     expenses_module_code: expensesModuleCode(),
     dry_run: false
   });
+  const expense = result?.expense || result?.gasto || null;
+  const expenseId = expense?.id ? String(expense.id) : '';
+  const expenseFolio = expense?.folio ? String(expense.folio) : '';
+  if (!expenseId && !expenseFolio) {
+    throw new Error(`El skill no devolvio el gasto creado; no se confirmo captura en ${expenseProject}`);
+  }
+
+  const query: Record<string, string> = { select: 'id,folio,fecha,monto,descripcion,metodo_captura', limit: '1' };
+  if (expenseId) query.id = `eq.${expenseId}`;
+  else query.folio = `eq.${expenseFolio}`;
+  const rows = await supabase('gastos', { query }, expenseSchema);
+  if (!rows?.[0]) {
+    throw new Error(`El skill reporto ${expenseFolio || expenseId}, pero no aparece en ${expenseProject} gastos`);
+  }
+
+  return { ...result, expense: rows[0], verified: true };
 }
 
 async function importStatementMovements(payload: Record<string, any>) {
