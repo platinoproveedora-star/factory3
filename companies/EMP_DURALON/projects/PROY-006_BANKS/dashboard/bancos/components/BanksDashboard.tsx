@@ -123,6 +123,7 @@ export default function BanksDashboard() {
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [movementModalOpen, setMovementModalOpen] = useState(false);
   const [expenseModalMovement, setExpenseModalMovement] = useState<Movement | null>(null);
+  const [expenseModalError, setExpenseModalError] = useState('');
   const [expenseOptions, setExpenseOptions] = useState<ExpenseOptionsData>({ categories: [], users: [] });
   const [expenseForm, setExpenseForm] = useState({ categoria_id: '', usuario_id: '', descripcion: '' });
   const emptyAccountForm = {
@@ -248,6 +249,7 @@ export default function BanksDashboard() {
   async function openMovementExpenseModal(movement: Movement) {
     setError('');
     setNotice('');
+    setExpenseModalError('');
     setExpenseModalMovement(movement);
     setExpenseForm({
       categoria_id: expenseOptions.categories[0]?.id || '',
@@ -263,7 +265,7 @@ export default function BanksDashboard() {
         usuario_id: current.usuario_id || options.users[0]?.id || '',
       }));
     } catch (err: any) {
-      setError(err.message || 'No se pudieron cargar opciones de gastos');
+      setExpenseModalError(err.message || 'No se pudieron cargar opciones de gastos');
     }
   }
 
@@ -273,19 +275,26 @@ export default function BanksDashboard() {
     setSaving(true);
     setError('');
     setNotice('');
+    setExpenseModalError('');
     try {
-      const result = await banksApi<any>('movement_to_expense', {
-        movement_id: expenseModalMovement.id,
-        categoria_id: expenseForm.categoria_id,
-        usuario_id: expenseForm.usuario_id,
-        descripcion: expenseForm.descripcion,
+      const timeout = new Promise<never>((_, reject) => {
+        window.setTimeout(() => reject(new Error('La captura tardo demasiado; intenta de nuevo o revisa Render/Factory')), 60000);
       });
+      const result = await Promise.race([
+        banksApi<any>('movement_to_expense', {
+          movement_id: expenseModalMovement.id,
+          categoria_id: expenseForm.categoria_id,
+          usuario_id: expenseForm.usuario_id,
+          descripcion: expenseForm.descripcion,
+        }),
+        timeout,
+      ]);
       const folio = result?.expense?.folio || result?.data?.expense?.folio || '';
       setNotice(folio ? `Gasto creado correctamente: ${folio}` : 'Gasto creado correctamente');
       setExpenseModalMovement(null);
       await refresh();
     } catch (err: any) {
-      setError(err.message || 'No se pudo crear gasto desde movimiento');
+      setExpenseModalError(err.message || 'No se pudo crear gasto desde movimiento');
     } finally {
       setSaving(false);
     }
@@ -423,11 +432,16 @@ export default function BanksDashboard() {
                 <h2 className="text-base font-bold text-slate-950">Crear gasto desde movimiento</h2>
                 <p className="text-xs text-slate-500">{expenseModalMovement.folio} / {money(expenseModalMovement.amount)}</p>
               </div>
-              <button type="button" onClick={() => setExpenseModalMovement(null)} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="Cerrar">
+              <button type="button" onClick={() => { setExpenseModalMovement(null); setExpenseModalError(''); }} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="Cerrar">
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="grid gap-3 px-4 py-4">
+              {expenseModalError ? (
+                <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+                  {expenseModalError}
+                </div>
+              ) : null}
               <Field label="Categoria">
                 <Select required value={expenseForm.categoria_id} onChange={(event) => setExpenseForm({ ...expenseForm, categoria_id: event.target.value })}>
                   <option value="">Seleccionar</option>
@@ -449,7 +463,7 @@ export default function BanksDashboard() {
               </div>
             </div>
             <div className="border-t border-slate-200 px-4 py-3">
-              <SaveButton saving={saving} label="Crear gasto" />
+              <SaveButton saving={saving} label="Crear gasto" disabled={!expenseForm.categoria_id || !expenseForm.usuario_id || !expenseForm.descripcion} />
             </div>
           </form>
         </div>
@@ -1097,9 +1111,9 @@ function Panel({ title, children }: { title: ReactNode; children: ReactNode }) {
   );
 }
 
-function SaveButton({ saving, label }: { saving: boolean; label: string }) {
+function SaveButton({ saving, label, disabled = false }: { saving: boolean; label: string; disabled?: boolean }) {
   return (
-    <button disabled={saving} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white">
+    <button disabled={saving || disabled} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
       {label}
     </button>
