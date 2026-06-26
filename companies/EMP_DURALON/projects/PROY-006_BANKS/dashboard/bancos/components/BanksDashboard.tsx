@@ -118,6 +118,7 @@ export default function BanksDashboard() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [movementAccountFilter, setMovementAccountFilter] = useState<string>('');
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [movementModalOpen, setMovementModalOpen] = useState(false);
@@ -196,6 +197,7 @@ export default function BanksDashboard() {
     event.preventDefault();
     setSaving(true);
     setError('');
+    setNotice('');
     try {
       await login(key);
       setAuthenticated(true);
@@ -211,6 +213,7 @@ export default function BanksDashboard() {
     event.preventDefault();
     setSaving(true);
     setError('');
+    setNotice('');
     try {
       await banksApi<Account>('create_account', accountForm);
       setAccountForm(emptyAccountForm);
@@ -228,6 +231,7 @@ export default function BanksDashboard() {
     event.preventDefault();
     setSaving(true);
     setError('');
+    setNotice('');
     try {
       await banksApi('record_movement', movementForm);
       setMovementForm((current) => ({ ...current, amount: '', notes: '', movement_date: today(), third_party_name: '', third_party_account: '', third_party_clabe: '', performed_by: '' }));
@@ -243,6 +247,7 @@ export default function BanksDashboard() {
 
   async function openMovementExpenseModal(movement: Movement) {
     setError('');
+    setNotice('');
     setExpenseModalMovement(movement);
     setExpenseForm({
       categoria_id: expenseOptions.categories[0]?.id || '',
@@ -267,13 +272,16 @@ export default function BanksDashboard() {
     if (!expenseModalMovement) return;
     setSaving(true);
     setError('');
+    setNotice('');
     try {
-      await banksApi('movement_to_expense', {
+      const result = await banksApi<any>('movement_to_expense', {
         movement_id: expenseModalMovement.id,
         categoria_id: expenseForm.categoria_id,
         usuario_id: expenseForm.usuario_id,
         descripcion: expenseForm.descripcion,
       });
+      const folio = result?.expense?.folio || result?.data?.expense?.folio || '';
+      setNotice(folio ? `Gasto creado correctamente: ${folio}` : 'Gasto creado correctamente');
       setExpenseModalMovement(null);
       await refresh();
     } catch (err: any) {
@@ -286,6 +294,7 @@ export default function BanksDashboard() {
   async function decide(auth: Authorization, decision: 'aprobado' | 'rechazado') {
     setSaving(true);
     setError('');
+    setNotice('');
     try {
       await banksApi('decide_authorization', { authorization_id: auth.id, decision, decision_notes: `Decision desde ${projectContext.service_name}` });
       await refresh();
@@ -299,6 +308,7 @@ export default function BanksDashboard() {
   async function updateReconciliationStatus(movementId: string, status: string) {
     setSaving(true);
     setError('');
+    setNotice('');
     try {
       await banksApi('mark_reconciled', { movement_id: movementId, reconciliation_status: status });
       setData((prev) => ({
@@ -372,6 +382,12 @@ export default function BanksDashboard() {
 
       <section className="mx-auto max-w-7xl px-5 py-5">
         {error ? <div className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div> : null}
+        {notice ? (
+          <div className="mb-4 flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+            <CheckCircle2 className="h-4 w-4" />
+            {notice}
+          </div>
+        ) : null}
 
         <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
           <Kpi icon={CircleDollarSign} label="Saldo total" value={money(data.kpis.total_balance)} tone="bg-teal-50 text-teal-700" />
