@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -74,7 +75,7 @@ class ErpBanksMovementToExpenseService:
         if context.get("dry_run", True):
             return {"ok": True, "data": {"dry_run": True, **preview}}
 
-        folio_result = reserve_folio(
+        folio_result = self._reserve_expense_folio(
             {
                 "schema": ctx["expenses_schema"],
                 "company_id": ctx["company_id"],
@@ -259,7 +260,7 @@ class ErpBanksMovementToExpenseService:
         return SupabaseClient({"schema": ctx["expenses_schema"]}).rest_insert("gastos", fallback)
 
     def _insert_event(self, ctx: dict, expense: dict, user: dict, movement: dict, tags: dict) -> None:
-        folio_result = reserve_folio(
+        folio_result = self._reserve_expense_folio(
             {
                 "schema": ctx["expenses_schema"],
                 "company_id": ctx["company_id"],
@@ -284,6 +285,37 @@ class ErpBanksMovementToExpenseService:
                 "module_code": ctx["expenses_module_code"],
             },
         )
+
+    def _reserve_expense_folio(self, context: dict, table: str, prefix: str) -> dict:
+        result = reserve_folio(context, table, prefix)
+        if result.get("ok"):
+            return result
+        error = str(result.get("error") or "")
+        if "reserve_erp_folio" not in error and "PGRST202" not in error:
+            return result
+        legacy = self._next_table_folio(context["schema"], table, prefix)
+        return {"ok": True, "data": {"folio": legacy, "scope": table, "prefix": prefix, "legacy_fallback": True}}
+
+    def _next_table_folio(self, schema: str, table: str, prefix: str) -> str:
+        result = SupabaseClient({"schema": schema}).rest_select(
+            table,
+            filters={"folio": f"ilike.{prefix}-%"},
+            select="folio",
+            limit=10000,
+        )
+        if not result.get("ok"):
+            return f"{prefix}-001"
+        max_number = 0
+        max_width = 3
+        for row in result.get("data") or []:
+            text = str(row.get("folio") or "")
+            match = re.match(rf"^{re.escape(prefix)}-(\d+)$", text)
+            if not match:
+                continue
+            number_text = match.group(1)
+            max_width = max(max_width, len(number_text))
+            max_number = max(max_number, int(number_text))
+        return f"{prefix}-{max_number + 1:0{max_width}d}"
 
     def _mark_movement_reviewed(self, ctx: dict, movement: dict, dry_run: bool) -> None:
         if dry_run:
