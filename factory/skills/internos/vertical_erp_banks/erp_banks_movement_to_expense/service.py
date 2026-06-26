@@ -27,6 +27,13 @@ class ErpBanksMovementToExpenseService:
             return {"ok": False, "error": "no se puede crear gasto desde un movimiento de reversa"}
         if movement.get("authorization_status") == "rechazado":
             return {"ok": False, "error": "no se puede crear gasto desde un movimiento rechazado"}
+        if self._movement_already_from_expense(movement):
+            return {"ok": False, "error": "este movimiento ya viene de gastos"}
+        if movement.get("reconciliation_status") == "revisado_conciliado":
+            existing = self._find_existing_expense(ctx, movement)
+            if existing:
+                return {"ok": True, "data": {"expense": existing, "movement": movement, "idempotent": True}}
+            return {"ok": False, "error": "este movimiento ya fue revisado o conciliado"}
         if movement.get("movement_type") != "salida" and not ctx["allow_income_as_expense"]:
             return {"ok": False, "error": "solo movimientos de salida se convierten a gasto"}
 
@@ -164,6 +171,10 @@ class ErpBanksMovementToExpenseService:
             raise RuntimeError(result.get("error") or "error leyendo movimiento")
         rows = result.get("data") or []
         return rows[0] if rows else None
+
+    def _movement_already_from_expense(self, movement: dict) -> bool:
+        metadata = movement.get("metadata") if isinstance(movement.get("metadata"), dict) else {}
+        return movement.get("source_module") == "expenses" or bool(metadata.get("expense_id") or metadata.get("expense_folio"))
 
     def _find_existing_expense(self, ctx: dict, movement: dict) -> dict | None:
         needle = {"bank_movement_id": movement.get("id")}

@@ -845,6 +845,20 @@ function movementConcept(movement: Movement) {
   );
 }
 
+function isExpenseBackedMovement(movement: Movement) {
+  const metadata = movement.metadata || {};
+  return movement.source_module === 'expenses' || Boolean(metadata.expense_id || metadata.expense_folio);
+}
+
+function expenseActionState(movement: Movement) {
+  if (isExpenseBackedMovement(movement)) return { canCreate: false, label: 'Ya es gasto' };
+  if (movement.reconciliation_status === 'revisado_conciliado') return { canCreate: false, label: 'Revisado' };
+  if (movement.movement_type !== 'salida') return { canCreate: false, label: '' };
+  if (movement.authorization_status === 'rechazado') return { canCreate: false, label: '' };
+  if (movement.reversal_of_movement_id) return { canCreate: false, label: '' };
+  return { canCreate: true, label: '' };
+}
+
 function Conciliacion({ accounts, movements, onStatusChange, saving }: { accounts: Account[]; movements: Movement[]; onStatusChange: (id: string, status: string) => void; saving: boolean }) {
   return (
     <Panel title="Movimientos por conciliar">
@@ -1651,7 +1665,9 @@ function MovementTable({ accounts, movements, compact = false, onStatusChange, o
           </tr>
         </thead>
         <tbody>
-          {movements.map((movement) => (
+          {movements.map((movement) => {
+            const expenseAction = expenseActionState(movement);
+            return (
             <tr key={movement.id} className="hover:bg-slate-50">
               <td className="whitespace-nowrap border-b border-slate-100 px-2 py-1.5 font-semibold text-slate-950">{movement.folio}</td>
               <td className="whitespace-nowrap border-b border-slate-100 px-2 py-1.5 text-slate-600">{movement.movement_date}</td>
@@ -1686,20 +1702,26 @@ function MovementTable({ accounts, movements, compact = false, onStatusChange, o
               ) : null}
               {!compact && onCreateExpense ? (
                 <td className="border-b border-slate-100 px-2 py-1.5">
-                  <button
-                    type="button"
-                    disabled={movement.authorization_status === 'rechazado' || Boolean(movement.reversal_of_movement_id)}
-                    onClick={() => onCreateExpense(movement)}
-                    className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[9px] font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                    title="Crear gasto desde este movimiento"
-                  >
-                    <FileText className="h-3 w-3" />
-                    Gasto
-                  </button>
+                  {expenseAction.canCreate ? (
+                    <button
+                      type="button"
+                      onClick={() => onCreateExpense(movement)}
+                      className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[9px] font-semibold text-slate-700 hover:bg-slate-50"
+                      title="Crear gasto desde este movimiento"
+                    >
+                      <FileText className="h-3 w-3" />
+                      Gasto
+                    </button>
+                  ) : expenseAction.label ? (
+                    <span className="inline-flex h-7 items-center rounded-md border border-slate-200 bg-slate-50 px-2 text-[9px] font-semibold text-slate-500">
+                      {expenseAction.label}
+                    </span>
+                  ) : null}
                 </td>
               ) : null}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
