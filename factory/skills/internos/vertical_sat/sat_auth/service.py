@@ -36,61 +36,58 @@ def _cargar_efirma(cer_b64: str, key_b64: str, key_pwd: str):
         if ".cer" in str(ve):
             raise
 
-    last_err = "sin detalle"
+    errores = []
 
     # 1 — cryptography DER (llaves modernas AES/PBES2)
     for enc in ("utf-8", "latin-1"):
         try:
             privkey = serialization.load_der_private_key(key_der, password=key_pwd.encode(enc))
             return cert, privkey, cer_der
-        except Exception:
-            pass
+        except Exception as e:
+            errores.append(f"DER/{enc}: {e}")
 
-    # 2 — PKCS#12 (por si subieron un .p12/.pfx con extensión .key)
+    # 2 — PKCS#12 (por si subieron .p12/.pfx con extensión .key)
     for enc in ("utf-8", "latin-1"):
         try:
             pk, _, _ = pkcs12.load_key_and_certificates(key_der, key_pwd.encode(enc))
             if pk:
                 return cert, pk, cer_der
-        except Exception:
-            pass
-
-    # 3 — openssl pkey (más permisivo que pkcs8, maneja más variantes DER)
-    for extra in ([], ["-legacy"]):
-        try:
-            r = subprocess.run(
-                ["openssl", "pkey", "-inform", "DER", "-passin", f"pass:{key_pwd}"] + extra,
-                input=key_der, capture_output=True, timeout=10,
-            )
-            if r.returncode == 0 and r.stdout:
-                privkey = serialization.load_pem_private_key(r.stdout, password=None)
-                return cert, privkey, cer_der
-            last_err = r.stderr.decode(errors="replace").strip()
         except Exception as e:
-            last_err = str(e)
+            errores.append(f"P12/{enc}: {e}")
 
-    # 4 — openssl pkcs8 explícito (llaves viejas SAT con PKCS#12-PBE/3DES)
-    for extra in ([], ["-legacy"]):
-        try:
-            r = subprocess.run(
-                ["openssl", "pkcs8", "-inform", "DER",
-                 "-passin", f"pass:{key_pwd}", "-nocrypt"] + extra,
-                input=key_der, capture_output=True, timeout=10,
-            )
-            if r.returncode == 0 and r.stdout:
-                privkey = serialization.load_pem_private_key(r.stdout, password=None)
-                return cert, privkey, cer_der
-            last_err = r.stderr.decode(errors="replace").strip()
-        except Exception as e:
-            last_err = str(e)
+    # 3 — openssl pkey (maneja más variantes DER; en OpenSSL 1.x ya incluye 3DES/RC2)
+    try:
+        r = subprocess.run(
+            ["openssl", "pkey", "-inform", "DER", "-passin", f"pass:{key_pwd}"],
+            input=key_der, capture_output=True, timeout=10,
+        )
+        if r.returncode == 0 and r.stdout:
+            privkey = serialization.load_pem_private_key(r.stdout, password=None)
+            return cert, privkey, cer_der
+        errores.append(f"openssl-pkey: {r.stderr.decode(errors='replace').strip()}")
+    except Exception as e:
+        errores.append(f"openssl-pkey: {e}")
 
-    err_lower = last_err.lower()
-    if "bad decrypt" in err_lower or "wrong tag" in err_lower or "wrong password" in err_lower:
+    # 4 — openssl pkcs8 (llaves SAT con PKCS#12-PBE/3DES explícito)
+    try:
+        r = subprocess.run(
+            ["openssl", "pkcs8", "-inform", "DER", "-passin", f"pass:{key_pwd}", "-nocrypt"],
+            input=key_der, capture_output=True, timeout=10,
+        )
+        if r.returncode == 0 and r.stdout:
+            privkey = serialization.load_pem_private_key(r.stdout, password=None)
+            return cert, privkey, cer_der
+        errores.append(f"openssl-pkcs8: {r.stderr.decode(errors='replace').strip()}")
+    except Exception as e:
+        errores.append(f"openssl-pkcs8: {e}")
+
+    resumen = " | ".join(errores)
+    if any(k in resumen.lower() for k in ("bad decrypt", "wrong tag", "wrong password", "mac verify")):
         raise ValueError(
             "Contraseña incorrecta — verifica que sea la contraseña de tu e.firma "
-            "(no la del portal SAT, no la del RFC)."
+            "(no la del portal SAT ni la del RFC). Detalles: " + resumen
         )
-    raise ValueError(f"Formato de llave no soportado. Detalle: {last_err[:300]}")
+    raise ValueError(f"No se pudo cargar la llave .key. Detalles: {resumen}")
 
 
 def _firmar_timestamp(ts_xml: str, cer_der: bytes, privkey, ts_id: str, tok_id: str) -> str:
