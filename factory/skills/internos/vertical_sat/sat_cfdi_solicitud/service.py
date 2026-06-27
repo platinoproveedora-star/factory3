@@ -108,11 +108,9 @@ class SatCfdiSolicitudService:
         sol_xml = (
             f'<des:{node_name} xmlns:des="{_NS_DES}">'
             f'<des:solicitud'
-            f' Complemento=""'
             f' EstadoComprobante="Vigente"'
             f' FechaFinal="{ff}T23:59:59"'
             f' FechaInicial="{fi}T00:00:00"'
-            f' RfcACuentaTerceros=""'
             f' RfcSolicitante="{rfc}"'
             f' TipoSolicitud="CFDI"'
             f'{rfc_emisor}{rfc_receptor} {tc_attr}>'
