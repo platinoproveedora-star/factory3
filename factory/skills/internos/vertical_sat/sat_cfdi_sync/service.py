@@ -26,6 +26,8 @@ class SatCfdiSyncService:
         tipo         = context.get("tipo", "E")
         tipo_comp    = context.get("tipo_comprobante", "")
         id_solicitud = str(context.get("id_solicitud") or "").strip()
+        tipo_sol     = context.get("tipo_solicitud") or context.get("request_type") or "CFDI"
+        rfc_match    = context.get("rfc_contraparte") or context.get("rfc_match") or ""
 
         if context.get("dry_run"):
             return {"ok": True, "message": "dry_run", "data": {"cfdis_guardados": 0, "log": []}}
@@ -52,7 +54,9 @@ class SatCfdiSyncService:
             r2 = self._run("sat_cfdi_solicitud", {
                 **creds, "token": token,
                 "fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin,
-                "tipo": tipo, "tipo_comprobante": tipo_comp, "dry_run": False,
+                "tipo": tipo, "tipo_comprobante": tipo_comp,
+                "tipo_solicitud": tipo_sol, "rfc_contraparte": rfc_match,
+                "dry_run": False,
             })
             log.append({"paso": "sat_cfdi_solicitud", "ok": r2.get("ok"), "msg": r2.get("message", "")})
             if not r2.get("ok"):

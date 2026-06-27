@@ -76,6 +76,12 @@ def _today_mx() -> date:
     return datetime.now(ZoneInfo("America/Mexico_City")).date()
 
 
+def _remember_request(label: str, payload: dict) -> None:
+    st.session_state.setdefault("sat_requests", [])
+    st.session_state["sat_requests"].insert(0, {"label": label, **payload})
+    st.session_state["sat_requests"] = st.session_state["sat_requests"][:12]
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Sidebar
 # ══════════════════════════════════════════════════════════════════════════════
@@ -145,6 +151,7 @@ if page == "Sincronizar":
             key="sync_tc",
         )
         existing_id = st.text_input("ID solicitud SAT existente", value="", key="sync_id_solicitud")
+        rfc_contraparte = st.text_input("RFC cliente/proveedor", value="", key="sync_rfc_contraparte")
 
         # Advertencia si rango > 12 meses
         try:
@@ -159,7 +166,19 @@ if page == "Sincronizar":
     st.divider()
 
     # ── Botón sync ───────────────────────────────────────────────────────────
-    if st.button("Sincronizar con SAT", type="primary", disabled=not creds_ok, use_container_width=True):
+    if st.session_state.get("sat_requests"):
+        st.subheader("Solicitudes en esta sesión")
+        st.dataframe(st.session_state["sat_requests"], use_container_width=True, hide_index=True)
+
+    col_a, col_b, col_c, col_d = st.columns(4)
+    create_ing = col_a.button("Solicitar ingresos", disabled=not creds_ok, use_container_width=True)
+    create_egr = col_b.button("Solicitar egresos", disabled=not creds_ok, use_container_width=True)
+    create_meta = col_c.button("Solicitar metadata", disabled=not creds_ok, use_container_width=True)
+    create_party = col_d.button("Solicitar por RFC", disabled=not creds_ok or not rfc_contraparte.strip(), use_container_width=True)
+
+    verify_existing = st.button("Verificar/descargar ID existente", type="primary", disabled=not creds_ok or not existing_id.strip(), use_container_width=True)
+
+    if create_ing or create_egr or create_meta or create_party or verify_existing:
         if not all([rfc, cer_up, key_up, password]):
             st.error("Vuelve a subir el certificado .cer, la llave .key y confirma la contraseña.")
             st.stop()
@@ -174,8 +193,62 @@ if page == "Sincronizar":
         cer_b64 = base64.b64encode(cer_bytes).decode()
         key_b64 = base64.b64encode(key_bytes).decode()
 
-        tipos = ["E", "R"] if s_tipo == "Ambos" else [s_tipo]
+        common_ctx = _context_base({
+            "rfc":              rfc,
+            "empresa_id":       rfc,
+            "rfc_propietario":  rfc,
+            "cer_b64":          cer_b64,
+            "key_b64":          key_b64,
+            "key_password":     password,
+            "fecha_inicio":     fi,
+            "fecha_fin":        ff,
+            "tipo_comprobante": s_tc,
+        })
 
+        if create_ing or create_egr or create_meta or create_party:
+            request_type = "Metadata" if create_meta else "CFDI"
+            target_tipo = "R" if create_egr else "E"
+            if create_party and s_tipo in ("E", "R"):
+                target_tipo = s_tipo
+            label = {
+                (True, False, False, False): "Ingresos",
+                (False, True, False, False): "Egresos",
+                (False, False, True, False): "Metadata",
+                (False, False, False, True): "Por RFC",
+            }.get((create_ing, create_egr, create_meta, create_party), "Solicitud")
+
+            with st.spinner(f"Creando solicitud SAT: {label}..."):
+                auth = _run_skill("vertical_sat/sat_auth", {**common_ctx, "dry_run": False})
+                if not auth.get("ok"):
+                    st.error(auth.get("error", "Error auth SAT"))
+                    st.stop()
+                req = _run_skill("vertical_sat/sat_cfdi_solicitud", {
+                    **common_ctx,
+                    "token": auth["data"]["token"],
+                    "tipo": target_tipo,
+                    "tipo_solicitud": request_type,
+                    "rfc_contraparte": rfc_contraparte.strip() if create_party else "",
+                    "dry_run": False,
+                })
+
+            if req.get("ok"):
+                data = req.get("data", {})
+                id_req = data.get("id_solicitud", "")
+                _remember_request(label, {
+                    "tipo": target_tipo,
+                    "tipo_solicitud": request_type,
+                    "fecha_inicio": fi,
+                    "fecha_fin": ff,
+                    "rfc_contraparte": rfc_contraparte.strip() if create_party else "",
+                    "id_solicitud": id_req,
+                })
+                st.success(f"{label}: solicitud aceptada {id_req}")
+                st.code(id_req)
+            else:
+                st.error(req.get("error", "Error solicitud SAT"))
+            st.stop()
+
+        tipos = ["E", "R"] if s_tipo == "Ambos" else [s_tipo]
         for t in tipos:
             for rango_fi, rango_ff in rangos:
                 lbl = f"{t} — {rango_fi} → {rango_ff}"
@@ -194,6 +267,7 @@ if page == "Sincronizar":
                             "tipo":             t,
                             "tipo_comprobante": s_tc,
                             "id_solicitud":     existing_id.strip(),
+                            "rfc_contraparte":  rfc_contraparte.strip(),
                         }),
                     )
 

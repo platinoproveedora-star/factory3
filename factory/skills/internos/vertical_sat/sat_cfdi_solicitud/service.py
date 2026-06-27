@@ -71,6 +71,8 @@ class SatCfdiSolicitudService:
         fecha_fin    = context.get("fecha_fin", "")
         tipo         = context.get("tipo", "E")
         tipo_comp    = context.get("tipo_comprobante", "")
+        tipo_sol     = context.get("tipo_solicitud") or context.get("request_type") or "CFDI"
+        rfc_match    = context.get("rfc_contraparte") or context.get("rfc_match") or ""
 
         if context.get("dry_run"):
             return {"ok": True, "message": "dry_run", "data": {"id_solicitud": "dry_solicitud_id"}}
@@ -86,7 +88,7 @@ class SatCfdiSolicitudService:
         try:
             fecha_fin = self._clamp_fecha_fin(fecha_fin)
             id_solicitud = self._solicitar(token, rfc, privkey, cer_der,
-                                           fecha_inicio, fecha_fin, tipo, tipo_comp)
+                                           fecha_inicio, fecha_fin, tipo, tipo_comp, tipo_sol, rfc_match)
             return {
                 "ok":      True,
                 "message": f"Solicitud aceptada: {id_solicitud}",
@@ -96,14 +98,15 @@ class SatCfdiSolicitudService:
             return {"ok": False, "error": f"Error solicitud SAT: {e}"}
 
     def _solicitar(self, token, rfc, privkey, cer_der,
-                   fi, ff, tipo, tipo_comp) -> str:
+                   fi, ff, tipo, tipo_comp, tipo_sol, rfc_match) -> str:
         from lxml import etree
 
         node_name = "SolicitaDescargaEmitidos" if tipo == "E" else "SolicitaDescargaRecibidos"
         soap_action = f'"http://DescargaMasivaTerceros.sat.gob.mx/ISolicitaDescargaService/{node_name}"'
-        rfc_emisor   = f' RfcEmisor="{rfc}"' if tipo == "E" else ""
+        rfc_emisor   = f' RfcEmisor="{rfc}"' if tipo == "E" else (f' RfcEmisor="{rfc_match}"' if rfc_match else "")
         rfc_receptor = f' RfcReceptor="{rfc}"' if tipo == "R" else ""
         tc_attr      = f'TipoComprobante="{tipo_comp}"' if tipo_comp else ""
+        xml_extra    = f'<des:RfcReceptores><des:RfcReceptor>{rfc_match}</des:RfcReceptor></des:RfcReceptores>' if tipo == "E" and rfc_match else ""
 
         sol_xml = (
             f'<des:{node_name} xmlns:des="{_NS_DES}">'
@@ -112,8 +115,9 @@ class SatCfdiSolicitudService:
             f' FechaFinal="{ff}T23:59:59"'
             f' FechaInicial="{fi}T00:00:00"'
             f' RfcSolicitante="{rfc}"'
-            f' TipoSolicitud="CFDI"'
+            f' TipoSolicitud="{tipo_sol}"'
             f'{rfc_emisor}{rfc_receptor} {tc_attr}>'
+            f'{xml_extra}'
             f'</des:solicitud>'
             f'</des:{node_name}>'
         )
