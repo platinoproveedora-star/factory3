@@ -100,8 +100,8 @@ if page == "Sincronizar":
         col1, col2, col3 = st.columns(3)
 
         rfc    = col1.text_input("RFC", value=os.getenv("SAT_RFC", ""), placeholder="XAXX010101000", key="sync_rfc")
-        cer_up = col2.file_uploader("Certificado (.cer)", type=["cer"], key="sync_cer")
-        key_up = col3.file_uploader("Llave privada (.key)", type=["key"], key="sync_key")
+        cer_up = col2.file_uploader("Certificado (.cer)", type=None, key="sync_cer")
+        key_up = col3.file_uploader("Llave privada (.key)", type=None, key="sync_key")
 
         password = st.text_input(
             "Contraseña de la e.firma",
