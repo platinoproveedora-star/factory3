@@ -9,10 +9,10 @@ import urllib.request
 import uuid as _uuid_mod
 import zipfile
 
-_URL    = "https://cfdidescargamasiva.clouda.sat.gob.mx/DescargarPaqueteService.svc"
-_ACTION = '"http://DescargaMasivaTerceros.gob.mx/IDescargarPaqueteService/DescargarPaquete"'
+_URL    = "https://cfdidescargamasiva.clouda.sat.gob.mx/DescargaMasivaService.svc"
+_ACTION = '"http://DescargaMasivaTerceros.sat.gob.mx/IDescargaMasivaTercerosService/Descargar"'
 _NS_DS  = "http://www.w3.org/2000/09/xmldsig#"
-_NS_DES = "http://DescargaMasivaTerceros.gob.mx"
+_NS_DES = "http://DescargaMasivaTerceros.sat.gob.mx"
 
 
 def _cargar_efirma(cer_b64: str, key_b64: str, key_pwd: str):
@@ -37,9 +37,8 @@ def _firmar_elemento(elem_xml: str, cer_der: bytes, privkey, elem_id: str) -> st
         f'<SignedInfo xmlns="{_NS_DS}">'
         f'<CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>'
         f'<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>'
-        f'<Reference URI="#{elem_id}">'
+        f'<Reference URI="{elem_id}">'
         f'<Transforms>'
-        f'<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>'
         f'<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>'
         f'</Transforms>'
         f'<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>'
@@ -94,22 +93,21 @@ class SatCfdiDescargarService:
     def _descargar(self, token, rfc, privkey, cer_der, id_paquete) -> list[str]:
         from lxml import etree
 
-        desc_id  = f"descarga-{_uuid_mod.uuid4().hex[:8]}"
         desc_xml = (
-            f'<des:peticionDescarga xmlns:des="{_NS_DES}" Id="{desc_id}"'
-            f' IdPaquete="{id_paquete}" RfcSolicitante="{rfc}"/>'
+            f'<des:PeticionDescargaMasivaTercerosEntrada xmlns:des="{_NS_DES}">'
+            f'<des:peticionDescarga IdPaquete="{id_paquete}" RfcSolicitante="{rfc}"></des:peticionDescarga>'
+            f'</des:PeticionDescargaMasivaTercerosEntrada>'
         )
-        firma     = _firmar_elemento(desc_xml, cer_der, privkey, desc_id)
+        firma     = _firmar_elemento(desc_xml, cer_der, privkey, "")
         desc_elem = etree.fromstring(desc_xml.encode())
-        desc_elem.append(etree.fromstring(firma.encode()))
+        desc_elem.find(f"{{{_NS_DES}}}peticionDescarga").append(etree.fromstring(firma.encode()))
         desc_signed = etree.tostring(desc_elem, encoding="unicode")
 
         envelope = (
             f'<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">'
+            f'<s:Header/>'
             f'<s:Body>'
-            f'<des:DescargarPaquete xmlns:des="{_NS_DES}">'
             f'{desc_signed}'
-            f'</des:DescargarPaquete>'
             f'</s:Body>'
             f'</s:Envelope>'
         )
@@ -128,15 +126,16 @@ class SatCfdiDescargarService:
             body = resp.read().decode("utf-8")
 
         root   = etree.fromstring(body.encode())
-        result = root.find(f".//{{{_NS_DES}}}DescargarPaqueteResult")
-        if result is None:
+        header = root.find(f".//{{{_NS_DES}}}respuesta")
+        paquete = root.find(f".//{{{_NS_DES}}}Paquete")
+        if header is not None:
+            cod = header.get("CodEstatus") or header.get("codestatus") or ""
+            if cod and cod != "5000":
+                msg = header.get("Mensaje") or header.get("mensaje") or ""
+                raise ValueError(f"SAT error {cod}: {msg}")
+        if paquete is None:
             raise ValueError(f"Respuesta inesperada: {body[:500]}")
-
-        cod = result.get("CodEstatus", "")
-        if cod != "5000":
-            raise ValueError(f"SAT error {cod}: {result.get('Mensaje','')}")
-
-        paquete_b64 = result.get("Paquete") or ""
+        paquete_b64 = paquete.text or ""
         if not paquete_b64:
             return []
 

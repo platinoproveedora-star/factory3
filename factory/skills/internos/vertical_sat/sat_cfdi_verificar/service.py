@@ -7,10 +7,10 @@ import os
 import urllib.request
 import uuid as _uuid_mod
 
-_URL    = "https://cfdidescargamasiva.clouda.sat.gob.mx/VerificaSolicitudDescargaService.svc"
-_ACTION = '"http://DescargaMasivaTerceros.gob.mx/IVerificaSolicitudDescargaService/VerificaSolicitudDescarga"'
+_URL    = "https://cfdidescargamasivasolicitud.clouda.sat.gob.mx/VerificaSolicitudDescargaService.svc"
+_ACTION = '"http://DescargaMasivaTerceros.sat.gob.mx/IVerificaSolicitudDescargaService/VerificaSolicitudDescarga"'
 _NS_DS  = "http://www.w3.org/2000/09/xmldsig#"
-_NS_DES = "http://DescargaMasivaTerceros.gob.mx"
+_NS_DES = "http://DescargaMasivaTerceros.sat.gob.mx"
 
 # Códigos SAT: 5000=terminada ok, 5001=aceptada, 5002=en proceso, 5003=terminada vacía
 _ESTADO_OK      = {"5000"}
@@ -40,9 +40,8 @@ def _firmar_elemento(elem_xml: str, cer_der: bytes, privkey, elem_id: str) -> st
         f'<SignedInfo xmlns="{_NS_DS}">'
         f'<CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>'
         f'<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>'
-        f'<Reference URI="#{elem_id}">'
+        f'<Reference URI="{elem_id}">'
         f'<Transforms>'
-        f'<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>'
         f'<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>'
         f'</Transforms>'
         f'<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>'
@@ -107,22 +106,21 @@ class SatCfdiVerificarService:
     def _verificar(self, token, rfc, privkey, cer_der, id_solicitud) -> tuple:
         from lxml import etree
 
-        ver_id  = f"verifica-{_uuid_mod.uuid4().hex[:8]}"
         ver_xml = (
-            f'<des:verifica xmlns:des="{_NS_DES}" Id="{ver_id}"'
-            f' IdSolicitud="{id_solicitud}" RfcSolicitante="{rfc}"/>'
+            f'<des:VerificaSolicitudDescarga xmlns:des="{_NS_DES}">'
+            f'<des:solicitud IdSolicitud="{id_solicitud}" RfcSolicitante="{rfc}"></des:solicitud>'
+            f'</des:VerificaSolicitudDescarga>'
         )
-        firma    = _firmar_elemento(ver_xml, cer_der, privkey, ver_id)
+        firma    = _firmar_elemento(ver_xml, cer_der, privkey, "")
         ver_elem = etree.fromstring(ver_xml.encode())
-        ver_elem.append(etree.fromstring(firma.encode()))
+        ver_elem.find(f"{{{_NS_DES}}}solicitud").append(etree.fromstring(firma.encode()))
         ver_signed = etree.tostring(ver_elem, encoding="unicode")
 
         envelope = (
             f'<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">'
+            f'<s:Header/>'
             f'<s:Body>'
-            f'<des:VerificaSolicitudDescarga xmlns:des="{_NS_DES}">'
             f'{ver_signed}'
-            f'</des:VerificaSolicitudDescarga>'
             f'</s:Body>'
             f'</s:Envelope>'
         )
@@ -145,7 +143,11 @@ class SatCfdiVerificarService:
         if result is None:
             raise ValueError(f"Respuesta inesperada: {body[:500]}")
 
-        cod_estado = result.get("CodEstatus", "")
-        estado     = result.get("EstadoSolicitud", "")
-        paquetes   = [p.text.strip() for p in result.findall(f"{{{_NS_DES}}}IdsPaquetes/{{{_NS_DES}}}string") if p.text]
+        cod_estado = result.get("CodEstatus") or result.get("codestatus") or ""
+        estado     = result.get("EstadoSolicitud") or result.get("estadosolicitud") or ""
+        paquetes   = [
+            p.text.strip()
+            for p in result.xpath(".//*[local-name()='IdsPaquetes']/*")
+            if p.text
+        ]
         return estado, paquetes, cod_estado
