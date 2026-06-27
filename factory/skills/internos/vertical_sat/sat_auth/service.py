@@ -18,11 +18,31 @@ _NS_DS = "http://www.w3.org/2000/09/xmldsig#"
 def _cargar_efirma(cer_b64: str, key_b64: str, key_pwd: str):
     from cryptography import x509
     from cryptography.hazmat.primitives import serialization
+
     cer_der = base64.b64decode(cer_b64)
     key_der = base64.b64decode(key_b64)
     cert    = x509.load_der_x509_certificate(cer_der)
-    privkey = serialization.load_der_private_key(key_der, password=key_pwd.encode())
-    return cert, privkey, cer_der
+
+    # Intentar varias combinaciones de formato + encoding de contraseña
+    # SAT usa DER/PKCS8; llaves viejas usan RC2/3DES que puede necesitar Latin-1
+    intentos = [
+        ("DER", "utf-8",   serialization.load_der_private_key),
+        ("DER", "latin-1", serialization.load_der_private_key),
+        ("PEM", "utf-8",   serialization.load_pem_private_key),
+        ("PEM", "latin-1", serialization.load_pem_private_key),
+    ]
+    errores = []
+    for fmt, enc, loader in intentos:
+        try:
+            privkey = loader(key_der, password=key_pwd.encode(enc))
+            return cert, privkey, cer_der
+        except Exception as e:
+            errores.append(f"{fmt}/{enc}: {e}")
+
+    raise ValueError(
+        "No se pudo descifrar la llave .key — verifica que subiste el archivo .key correcto "
+        f"y que la contraseña es la de tu e.firma. Detalles: {' | '.join(errores)}"
+    )
 
 
 def _firmar_timestamp(ts_xml: str, cer_der: bytes, privkey, ts_id: str, tok_id: str) -> str:
