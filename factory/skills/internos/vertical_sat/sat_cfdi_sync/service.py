@@ -7,8 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-_SKILLS_ROOT = Path(__file__).parent.parent.parent  # factory/skills/
-_INTERNOS    = str(_SKILLS_ROOT / "internos")
+_VERTICAL = Path(__file__).parent.parent  # factory/skills/internos/vertical_sat/
 
 _POLL_MAX     = 20
 _POLL_SLEEP   = 15  # segundos entre verificaciones
@@ -116,7 +115,7 @@ class SatCfdiSyncService:
         }
 
     def _run(self, skill_name: str, ctx: dict) -> dict:
-        skill_path  = Path(_INTERNOS) / skill_name
+        skill_path  = _VERTICAL / skill_name
         entrypoint  = skill_path / "skill.py"
         if not entrypoint.exists():
             return {"ok": False, "error": f"skill no encontrado: {skill_name}"}
