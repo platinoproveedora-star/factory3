@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: uc102-conta4all-sat
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SAT_RFC
+        sync: false
+      - key: SUPABASE_SCHEMA
+        value: uc102_proy001
+      - key: COMPANY_ID
+        value: EMP_CONTA4ALL
+      - key: PROJECT_CODE
+        value: PROY-001

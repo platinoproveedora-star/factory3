@@ -1,6 +1,6 @@
 # Tablas Supabase — Registry
 
-Actualizado: 2026-05-15
+Actualizado: 2026-06-26
 
 ## Schema `public`
 
@@ -33,6 +33,54 @@ Actualizado: 2026-05-15
 | [wabiz_messages](#wabiz_messages) | vertical_wabiz | Log de mensajes WhatsApp entrantes y salientes |
 | [factory_users](#factory_users) | factory | Usuarios globales de la fábrica (todos los canales) |
 | [wabiz_access_codes](#wabiz_access_codes) | vertical_wabiz | Claves de registro de usuarios vía WhatsApp |
+
+## Schema `uc102_proy001` — EMP_CONTA4ALL / PROY-001 / sat_cfdi_sync
+
+EMP_CONTA4ALL (UC-102) — Conta4all Automatización Contable Multi-RFC.
+
+| Tabla | Descripción |
+|---|---|
+| `uc102_proy001.cfdi_documentos` | CFDIs descargados del SAT. Dedup por (empresa_id, uuid_cfdi). Campo `rfc_propietario` identifica el RFC descargador. |
+
+---
+
+## cfdi_documentos (uc102_proy001)
+
+Schema: `uc102_proy001` | Empresa: EMP_CONTA4ALL — UC-102
+
+CFDIs descargados del SAT vía Descarga Masiva. Un registro por CFDI por RFC propietario.
+`tipo="E"` = emitidos (ingresos para el RFC), `tipo="R"` = recibidos (egresos/gastos).
+
+| Campo | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | uuid | NO | gen_random_uuid() | PK interno |
+| `empresa_id` | text | NO | — | Identificador de empresa (`EMP_CONTA4ALL` o RFC propietario) |
+| `rfc_propietario` | text | NO | — | RFC de quien descargó el CFDI |
+| `uuid_cfdi` | text | NO | — | UUID del CFDI (único por empresa_id) |
+| `tipo` | text | NO | — | `E`=emitido (ingreso) / `R`=recibido (egreso) |
+| `rfc_emisor` | text | SÍ | — | RFC del emisor |
+| `nombre_emisor` | text | SÍ | — | Razón social del emisor |
+| `rfc_receptor` | text | SÍ | — | RFC del receptor |
+| `nombre_receptor` | text | SÍ | — | Razón social del receptor |
+| `fecha_emision` | date | SÍ | — | Fecha del comprobante |
+| `fecha_timbrado` | timestamptz | SÍ | — | Fecha de timbrado SAT |
+| `total` | numeric | SÍ | — | Total del CFDI |
+| `subtotal` | numeric | SÍ | — | Subtotal |
+| `descuento` | numeric | SÍ | 0 | Descuento aplicado |
+| `moneda` | text | SÍ | 'MXN' | Moneda |
+| `tipo_comprobante` | text | SÍ | — | I=ingreso, E=egreso, T=traslado, N=nomina, P=pago |
+| `metodo_pago` | text | SÍ | — | PUE / PPD |
+| `forma_pago` | text | SÍ | — | 01=efectivo, 03=transferencia, etc. |
+| `uso_cfdi` | text | SÍ | — | Clave de uso (G01, G03, etc.) |
+| `estado` | text | SÍ | 'vigente' | vigente / cancelado |
+| `conceptos` | jsonb | SÍ | — | Array de conceptos del CFDI |
+| `xml_raw` | text | SÍ | — | XML completo del CFDI |
+| `created_at` | timestamptz | SÍ | now() | — |
+| UNIQUE | — | — | — | (empresa_id, uuid_cfdi) — dedup por empresa + folio SAT |
+
+**SQL**: `companies/EMP_CONTA4ALL/projects/PROY-001_SAT/schema.sql`
+
+---
 
 ## Schema `estoikolab`
 

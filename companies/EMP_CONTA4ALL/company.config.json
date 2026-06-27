@@ -1,0 +1,35 @@
+{
+  "company_id": "EMP_CONTA4ALL",
+  "company_name": "Conta4all — Automatización Contable Multi-RFC",
+  "short_name": "Conta4all",
+  "company_type": "service_company",
+  "industry": "accounting_automation",
+  "status": "active",
+  "relationship": "upwork_client",
+  "primary_contact": {
+    "name": "",
+    "email": ""
+  },
+  "objective": "Automatizar la descarga, organización y consulta de CFDIs del SAT para múltiples RFCs vía e.firma, eliminando el proceso manual.",
+  "legacy_ids": {
+    "client_id": "UC-102"
+  },
+  "dashboards": [],
+  "skill_stack": [
+    "vertical_sat/sat_auth",
+    "vertical_sat/sat_cfdi_solicitud",
+    "vertical_sat/sat_cfdi_verificar",
+    "vertical_sat/sat_cfdi_descargar",
+    "vertical_sat/sat_cfdi_parser",
+    "vertical_sat/sat_cfdi_store",
+    "vertical_sat/sat_cfdi_sync",
+    "vertical_sat/sat_cfdi_list"
+  ],
+  "channels": ["dashboard"],
+  "storage": {
+    "supabase_schema": "uc102_proy001",
+    "buckets": []
+  },
+  "created_at": "2026-06-26T00:00:00Z",
+  "updated_at": "2026-06-26T00:00:00Z"
+}

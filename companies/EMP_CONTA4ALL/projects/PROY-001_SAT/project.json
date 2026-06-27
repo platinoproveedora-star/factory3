@@ -1,0 +1,21 @@
+{
+  "company_id": "EMP_CONTA4ALL",
+  "project_code": "PROY-001",
+  "module_code": "sat_cfdi_sync",
+  "project_name": "SAT CFDI Sync",
+  "schema": "uc102_proy001",
+  "supabase_schema": "uc102_proy001",
+  "platform": "render",
+  "external_repo": "uc102-proy001",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SAT_RFC",
+    "SAT_EFIRMA_CER_B64",
+    "SAT_EFIRMA_KEY_B64",
+    "SAT_EFIRMA_PASSWORD"
+  ],
+  "status": "active",
+  "erp_ready": false,
+  "description": "Descarga, organiza y consulta CFDIs del SAT para múltiples RFCs vía e.firma. Ingresos (E emitidos) y egresos (R recibidos)."
+}

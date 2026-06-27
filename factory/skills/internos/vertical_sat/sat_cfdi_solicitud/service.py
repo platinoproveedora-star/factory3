@@ -99,9 +99,12 @@ class SatCfdiSolicitudService:
         from lxml import etree
 
         sol_id = f"solicitud-{_uuid_mod.uuid4().hex[:8]}"
-        rfc_emisor   = f'RfcEmisor="{rfc}"'   if tipo == "E" else ""
+        rfc_emisor   = f'RfcEmisor="{rfc}"'    if tipo == "E" else ""
         rfc_receptor = f'RfcReceptores="{rfc}"' if tipo == "R" else ""
         tc_attr      = f'TipoComprobante="{tipo_comp}"' if tipo_comp else ""
+        # SAT exige EstadoComprobante="Vigente" en solicitudes de recibidos (R)
+        # desde 2025-05-30 — sin este atributo el SAT devuelve cod 5004.
+        estado_comp  = 'EstadoComprobante="Vigente"' if tipo == "R" else ""
 
         sol_xml = (
             f'<des:solicitud xmlns:des="{_NS_DES}" Id="{sol_id}"'
@@ -109,7 +112,7 @@ class SatCfdiSolicitudService:
             f' FechaInicial="{fi}T00:00:00"'
             f' FechaFinal="{ff}T23:59:59"'
             f' TipoSolicitud="CFDI"'
-            f' {rfc_emisor} {rfc_receptor} {tc_attr}/>'
+            f' {rfc_emisor} {rfc_receptor} {tc_attr} {estado_comp}/>'
         )
 
         firma   = _firmar_elemento(sol_xml, cer_der, privkey, sol_id)

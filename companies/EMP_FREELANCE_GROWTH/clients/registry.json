@@ -1,4 +1,21 @@
 {
-  "next_number": 102,
-  "clients": []
+  "next_number": 103,
+  "clients": [
+    {
+      "client_id": "UC-101",
+      "client_name": "COMERCIALIZADORA DURALON DE CHIAPAS SA DE CV",
+      "short_name": "Duralon",
+      "status": "active",
+      "company_id": "EMP_DURALON",
+      "folder": "companies/EMP_DURALON"
+    },
+    {
+      "client_id": "UC-102",
+      "client_name": "Conta4all — Automatización Contable Multi-RFC",
+      "short_name": "Conta4all",
+      "status": "active",
+      "company_id": "EMP_CONTA4ALL",
+      "folder": "companies/EMP_CONTA4ALL"
+    }
+  ]
 }
