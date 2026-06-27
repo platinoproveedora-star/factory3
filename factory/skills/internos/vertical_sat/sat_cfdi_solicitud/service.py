@@ -115,15 +115,18 @@ class SatCfdiSolicitudService:
         tc_attr      = f'TipoComprobante="{tipo_comp}"' if tipo_comp else ""
         xml_extra    = f'<des:RfcReceptores><des:RfcReceptor>{rfc_match}</des:RfcReceptor></des:RfcReceptores>' if tipo == "E" and rfc_match else ""
 
+        # EstadoComprobante solo aplica a Emitidos — Recibidos no lo acepta (SAT 500)
+        estado_comp = ' EstadoComprobante="Vigente"' if tipo == "E" else ""
+        tc_attr_str = f" {tc_attr}" if tc_attr else ""
         sol_xml = (
             f'<des:{node_name} xmlns:des="{_NS_DES}">'
             f'<des:solicitud'
-            f' EstadoComprobante="Vigente"'
+            f'{estado_comp}'
             f' FechaFinal="{ff}{self._hora_fin(ff)}"'
             f' FechaInicial="{fi}T00:00:00"'
             f' RfcSolicitante="{rfc}"'
             f' TipoSolicitud="{tipo_sol}"'
-            f'{rfc_emisor}{rfc_receptor} {tc_attr}>'
+            f'{rfc_emisor}{rfc_receptor}{tc_attr_str}>'
             f'{xml_extra}'
             f'</des:solicitud>'
             f'</des:{node_name}>'
