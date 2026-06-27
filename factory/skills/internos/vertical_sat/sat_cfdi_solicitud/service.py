@@ -6,6 +6,8 @@ import hashlib
 import os
 import urllib.request
 import uuid as _uuid_mod
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 _URL    = "https://cfdidescargamasivasolicitud.clouda.sat.gob.mx/SolicitaDescargaService.svc"
 _NS_DS  = "http://www.w3.org/2000/09/xmldsig#"
@@ -82,6 +84,7 @@ class SatCfdiSolicitudService:
             return {"ok": False, "error": f"Error cargando e.firma: {e}"}
 
         try:
+            fecha_fin = self._clamp_fecha_fin(fecha_fin)
             id_solicitud = self._solicitar(token, rfc, privkey, cer_der,
                                            fecha_inicio, fecha_fin, tipo, tipo_comp)
             return {
@@ -156,6 +159,10 @@ class SatCfdiSolicitudService:
         if result is None:
             result = root.find(f".//{{{_NS_DES}}}solicitaDescargaRecibidosResult")
         if result is None:
+            result = root.find(f".//{{{_NS_DES}}}SolicitaDescargaEmitidosResult")
+        if result is None:
+            result = root.find(f".//{{{_NS_DES}}}SolicitaDescargaRecibidosResult")
+        if result is None:
             raise ValueError(f"Respuesta inesperada: {body[:500]}")
 
         cod = result.get("CodEstatus") or result.get("codestatus") or ""
@@ -164,3 +171,16 @@ class SatCfdiSolicitudService:
         if cod not in ("5000", "5002"):
             raise ValueError(f"SAT error {cod}: {msg}")
         return id_
+
+    def _clamp_fecha_fin(self, fecha_fin: str) -> str:
+        try:
+            requested = date.fromisoformat(str(fecha_fin))
+        except Exception:
+            return fecha_fin
+        try:
+            today_mx = datetime.now(ZoneInfo("America/Mexico_City")).date()
+        except Exception:
+            today_mx = date.today()
+        if requested > today_mx:
+            return today_mx.isoformat()
+        return fecha_fin

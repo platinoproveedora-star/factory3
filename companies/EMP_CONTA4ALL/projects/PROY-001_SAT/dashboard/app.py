@@ -5,6 +5,7 @@ import base64
 import os
 import sys
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 import calendar
 from pathlib import Path
 
@@ -71,6 +72,10 @@ def _context_base(extra: dict | None = None) -> dict:
     return ctx
 
 
+def _today_mx() -> date:
+    return datetime.now(ZoneInfo("America/Mexico_City")).date()
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Sidebar
 # ══════════════════════════════════════════════════════════════════════════════
@@ -120,7 +125,7 @@ if page == "Sincronizar":
     # ── Parámetros de descarga ────────────────────────────────────────────────
     with st.container(border=True):
         st.subheader("Periodo")
-        hoy    = date.today()
+        hoy    = _today_mx()
         primer = hoy.replace(day=1)
 
         col1, col2, col3, col4 = st.columns(4)
@@ -199,7 +204,7 @@ elif page == "Ingresos":
 
     st.title("Ingresos — CFDIs emitidos")
 
-    mes_actual = date.today().strftime("%Y-%m")
+    mes_actual = _today_mx().strftime("%Y-%m")
     col1, col2, col3 = st.columns(3)
     f_mes = col1.text_input("Mes (YYYY-MM)", value=mes_actual, key="ing_mes")
     f_dia = col2.text_input("Día específico YYYY-MM-DD (vacío = mes completo)", value="", key="ing_dia")
@@ -241,7 +246,7 @@ elif page == "Egresos":
 
     st.title("Egresos — CFDIs recibidos")
 
-    mes_actual = date.today().strftime("%Y-%m")
+    mes_actual = _today_mx().strftime("%Y-%m")
     col1, col2, col3 = st.columns(3)
     f_mes = col1.text_input("Mes (YYYY-MM)", value=mes_actual, key="egr_mes")
     f_dia = col2.text_input("Día específico YYYY-MM-DD (vacío = mes completo)", value="", key="egr_dia")
