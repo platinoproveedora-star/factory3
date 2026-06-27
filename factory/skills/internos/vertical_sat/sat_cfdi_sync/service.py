@@ -25,12 +25,15 @@ class SatCfdiSyncService:
         fecha_fin    = context.get("fecha_fin", "")
         tipo         = context.get("tipo", "E")
         tipo_comp    = context.get("tipo_comprobante", "")
+        id_solicitud = str(context.get("id_solicitud") or "").strip()
 
         if context.get("dry_run"):
             return {"ok": True, "message": "dry_run", "data": {"cfdis_guardados": 0, "log": []}}
 
-        if not all([empresa_id, rfc, cer_b64, key_b64, key_pwd, fecha_inicio, fecha_fin]):
-            return {"ok": False, "error": "Faltan: empresa_id/rfc/efirma creds y fecha_inicio/fecha_fin"}
+        if not all([empresa_id, rfc, cer_b64, key_b64, key_pwd]):
+            return {"ok": False, "error": "Faltan: empresa_id/rfc/efirma creds"}
+        if not id_solicitud and not all([fecha_inicio, fecha_fin]):
+            return {"ok": False, "error": "Faltan: fecha_inicio/fecha_fin o id_solicitud existente"}
 
         creds = {"rfc": rfc, "cer_b64": cer_b64, "key_b64": key_b64, "key_password": key_pwd}
         log   = []
@@ -42,16 +45,19 @@ class SatCfdiSyncService:
             return {"ok": False, "error": r1.get("error"), "data": {"log": log}}
         token = r1["data"]["token"]
 
-        # 2 — Solicitar descarga
-        r2 = self._run("sat_cfdi_solicitud", {
-            **creds, "token": token,
-            "fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin,
-            "tipo": tipo, "tipo_comprobante": tipo_comp, "dry_run": False,
-        })
-        log.append({"paso": "sat_cfdi_solicitud", "ok": r2.get("ok"), "msg": r2.get("message", "")})
-        if not r2.get("ok"):
-            return {"ok": False, "error": r2.get("error"), "data": {"log": log}}
-        id_solicitud = r2["data"]["id_solicitud"]
+        # 2 — Solicitar descarga o reusar una solicitud SAT ya aceptada.
+        if id_solicitud:
+            log.append({"paso": "sat_cfdi_solicitud", "ok": True, "msg": f"Reusando solicitud SAT: {id_solicitud}"})
+        else:
+            r2 = self._run("sat_cfdi_solicitud", {
+                **creds, "token": token,
+                "fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin,
+                "tipo": tipo, "tipo_comprobante": tipo_comp, "dry_run": False,
+            })
+            log.append({"paso": "sat_cfdi_solicitud", "ok": r2.get("ok"), "msg": r2.get("message", "")})
+            if not r2.get("ok"):
+                return {"ok": False, "error": r2.get("error"), "data": {"log": log}}
+            id_solicitud = r2["data"]["id_solicitud"]
 
         # 3 — Verificar con polling
         paquetes = []

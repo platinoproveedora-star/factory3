@@ -144,6 +144,7 @@ if page == "Sincronizar":
                                     "T": "Traslado", "N": "Nomina", "P": "Pago"}.get(x, x),
             key="sync_tc",
         )
+        existing_id = st.text_input("ID solicitud SAT existente", value="", key="sync_id_solicitud")
 
         # Advertencia si rango > 12 meses
         try:
@@ -182,6 +183,7 @@ if page == "Sincronizar":
                             "fecha_fin":        rango_ff,
                             "tipo":             t,
                             "tipo_comprobante": s_tc,
+                            "id_solicitud":     existing_id.strip(),
                         }),
                     )
 
