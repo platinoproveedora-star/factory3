@@ -115,8 +115,7 @@ class SatCfdiSolicitudService:
         tc_attr      = f'TipoComprobante="{tipo_comp}"' if tipo_comp else ""
         xml_extra    = f'<des:RfcReceptores><des:RfcReceptor>{rfc_match}</des:RfcReceptor></des:RfcReceptores>' if tipo == "E" and rfc_match else ""
 
-        # EstadoComprobante solo aplica a Emitidos — Recibidos no lo acepta (SAT 500)
-        estado_comp = ' EstadoComprobante="Vigente"' if tipo == "E" else ""
+        estado_comp = ' EstadoComprobante="Vigente"'
         tc_attr_str = f" {tc_attr}" if tc_attr else ""
         sol_xml = (
             f'<des:{node_name} xmlns:des="{_NS_DES}">'
