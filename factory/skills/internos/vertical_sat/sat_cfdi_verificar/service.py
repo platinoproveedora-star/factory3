@@ -167,11 +167,17 @@ class SatCfdiVerificarService:
         if result is None:
             raise ValueError(f"Respuesta inesperada: {body[:500]}")
 
-        estado_sol = int(result.get("EstadoSolicitud") or result.get("estadosolicitud") or 0)
-        cod_sol    = int(result.get("CodigoEstadoSolicitud") or result.get("codigoestadosolicitud") or 0)
-        num_cfdis  = int(result.get("NumeroCFDIs") or result.get("numerocfdis") or 0)
-        mensaje    = result.get("Mensaje") or result.get("mensaje") or ""
-        paquetes   = [
+        # CodEstatus = estado de la LLAMADA (5000=ok); distinto de CodigoEstadoSolicitud
+        cod_llamada = (result.get("CodEstatus") or result.get("codestatus") or "").strip()
+        estado_sol  = int(result.get("EstadoSolicitud") or result.get("estadosolicitud") or 0)
+        cod_sol     = int(result.get("CodigoEstadoSolicitud") or result.get("codigoestadosolicitud") or 0)
+        num_cfdis   = int(result.get("NumeroCFDIs") or result.get("numerocfdis") or 0)
+        mensaje     = result.get("Mensaje") or result.get("mensaje") or ""
+
+        if cod_llamada and cod_llamada != "5000":
+            raise ValueError(f"SAT verificar CodEstatus={cod_llamada}: {mensaje}")
+
+        paquetes = [
             p.text.strip()
             for p in result.xpath(".//*[local-name()='IdsPaquetes']")
             if p.text and p.text.strip()

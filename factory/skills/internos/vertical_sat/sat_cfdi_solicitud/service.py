@@ -179,6 +179,11 @@ class SatCfdiSolicitudService:
         msg = result.get("Mensaje") or result.get("mensaje") or ""
         if cod not in ("5000", "5002"):
             raise ValueError(f"SAT error {cod}: {msg}")
+        if cod == "5002" and not id_:
+            raise ValueError(
+                f"SAT: solicitud duplicada (5002) — ya existe una activa para este rango/RFC. "
+                f"Espera 24-72h a que expire, o prueba con un rango diferente. ({msg})"
+            )
         return id_
 
     def _clamp_fecha_fin(self, fecha_fin: str) -> str:
