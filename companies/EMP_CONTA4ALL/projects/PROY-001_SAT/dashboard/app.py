@@ -151,7 +151,12 @@ if page == "Sincronizar":
             key="sync_tc",
         )
         existing_id = st.text_input("ID solicitud SAT existente", value="", key="sync_id_solicitud")
-        rfc_contraparte = st.text_input("RFC cliente/proveedor", value="", key="sync_rfc_contraparte")
+        rfc_contraparte = st.text_input(
+            "RFC cliente/proveedor",
+            value="",
+            key="sync_rfc_contraparte",
+            help="Escribe el RFC exacto, no el nombre comercial. Para ingresos filtra receptor; para egresos filtra proveedor/emisor.",
+        ).strip().upper()
 
         # Advertencia si rango > 12 meses
         try:

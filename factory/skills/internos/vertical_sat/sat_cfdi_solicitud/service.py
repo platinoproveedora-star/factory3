@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import os
+import re
 import urllib.request
 import uuid as _uuid_mod
 from datetime import date, datetime
@@ -12,6 +13,7 @@ from zoneinfo import ZoneInfo
 _URL    = "https://cfdidescargamasivasolicitud.clouda.sat.gob.mx/SolicitaDescargaService.svc"
 _NS_DS  = "http://www.w3.org/2000/09/xmldsig#"
 _NS_DES = "http://DescargaMasivaTerceros.sat.gob.mx"
+_RFC_RE = re.compile(r"^[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}$")
 
 
 def _cargar_efirma(cer_b64: str, key_b64: str, key_pwd: str):
@@ -72,13 +74,18 @@ class SatCfdiSolicitudService:
         tipo         = context.get("tipo", "E")
         tipo_comp    = context.get("tipo_comprobante", "")
         tipo_sol     = context.get("tipo_solicitud") or context.get("request_type") or "CFDI"
-        rfc_match    = context.get("rfc_contraparte") or context.get("rfc_match") or ""
+        rfc          = str(rfc).strip().upper()
+        rfc_match    = str(context.get("rfc_contraparte") or context.get("rfc_match") or "").strip().upper()
 
         if context.get("dry_run"):
             return {"ok": True, "message": "dry_run", "data": {"id_solicitud": "dry_solicitud_id"}}
 
         if not all([token, rfc, cer_b64, key_b64, key_pwd, fecha_inicio, fecha_fin]):
             return {"ok": False, "error": "Faltan: token, rfc, efirma creds, fecha_inicio, fecha_fin"}
+        if not self._valid_rfc(rfc):
+            return {"ok": False, "error": f"RFC solicitante invalido: {rfc}"}
+        if rfc_match and not self._valid_rfc(rfc_match):
+            return {"ok": False, "error": f"RFC cliente/proveedor invalido: {rfc_match}. Debe ser RFC, no nombre."}
 
         try:
             privkey, cer_der = _cargar_efirma(cer_b64, key_b64, key_pwd)
@@ -186,3 +193,6 @@ class SatCfdiSolicitudService:
         if requested > today_mx:
             return today_mx.isoformat()
         return fecha_fin
+
+    def _valid_rfc(self, value: str) -> bool:
+        return bool(_RFC_RE.match(str(value or "").strip().upper()))
