@@ -7,7 +7,9 @@ import os
 import urllib.request
 import uuid as _uuid_mod
 
-_URL    = "https://cfdidescargamasiva.clouda.sat.gob.mx/SolicitaDescargaService.svc"
+# SAT cambió la URL en 2025; si la principal da 404 se intenta la alternativa
+_URL      = "https://cfdidescargamasiva.clouda.sat.gob.mx/SolicitaDescargaService.svc"
+_URL_ALT  = "https://cfdidescargamasivapr.clouda.sat.gob.mx/SolicitaDescargaService.svc"
 _ACTION = '"http://DescargaMasivaTerceros.gob.mx/ISolicitaDescargaService/SolicitaDescarga"'
 _NS_DS  = "http://www.w3.org/2000/09/xmldsig#"
 _NS_DES = "http://DescargaMasivaTerceros.gob.mx"
@@ -136,19 +138,31 @@ class SatCfdiSolicitudService:
             f'</s:Envelope>'
         )
 
-        req = urllib.request.Request(
-            _URL,
-            data=envelope.encode("utf-8"),
-            headers={
-                "Content-Type":  'text/xml; charset="utf-8"',
-                "SOAPAction":    _ACTION,
-                "Authorization": f'WRAP access_token="{token}"',
-                "User-Agent":    "FactoryFactory/0.1 (+https://github.com/)",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            body = resp.read().decode("utf-8")
+        import urllib.error
+        body = None
+        for _url in (_URL, _URL_ALT):
+            req = urllib.request.Request(
+                _url,
+                data=envelope.encode("utf-8"),
+                headers={
+                    "Content-Type":  'text/xml; charset="utf-8"',
+                    "SOAPAction":    _ACTION,
+                    "Authorization": f'WRAP access_token="{token}"',
+                    "User-Agent":    "FactoryFactory/0.1 (+https://github.com/)",
+                },
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    body = resp.read().decode("utf-8")
+                break
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8", errors="replace")
+                if e.code == 404:
+                    continue  # intentar URL alternativa
+                raise ValueError(f"SAT HTTP {e.code}: {err_body[:300]}")
+        if body is None:
+            raise ValueError(f"SAT no disponible en ninguna URL ({_URL} y {_URL_ALT} devolvieron 404)")
 
         root   = etree.fromstring(body.encode())
         result = root.find(f".//{{{_NS_DES}}}SolicitaDescargaResult")
