@@ -9,7 +9,7 @@ from pathlib import Path
 
 _VERTICAL = Path(__file__).parent.parent  # factory/skills/internos/vertical_sat/
 
-_POLL_MAX     = 20
+_POLL_MAX     = 60
 _POLL_SLEEP   = 15  # segundos entre verificaciones
 
 
@@ -76,7 +76,11 @@ class SatCfdiSyncService:
                         "data": {"log": log}}
 
         if not paquetes:
-            return {"ok": False, "error": "Timeout esperando paquetes SAT", "data": {"log": log}}
+            return {
+                "ok": False,
+                "error": f"Timeout esperando paquetes SAT para id_solicitud={id_solicitud}",
+                "data": {"id_solicitud": id_solicitud, "log": log},
+            }
 
         # 4 — Descargar + parsear + guardar
         total_guardados = 0
