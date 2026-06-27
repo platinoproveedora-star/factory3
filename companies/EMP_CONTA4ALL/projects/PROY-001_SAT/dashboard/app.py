@@ -99,8 +99,18 @@ def _update_request(index: int, values: dict) -> None:
         rows[index].update(values)
 
 
-def _cfdi_table(cfdis: list, cols_display: list[str], search: str) -> None:
-    """Renderiza tabla de CFDIs con búsqueda global y descarga CSV."""
+_MESES_ES = {1:"Enero",2:"Febrero",3:"Marzo",4:"Abril",5:"Mayo",6:"Junio",
+             7:"Julio",8:"Agosto",9:"Septiembre",10:"Octubre",11:"Noviembre",12:"Diciembre"}
+
+_COL_CFG = {
+    "total":    st.column_config.NumberColumn("Total",    format="$%.2f"),
+    "subtotal": st.column_config.NumberColumn("Subtotal", format="$%.2f"),
+    "descuento":st.column_config.NumberColumn("Descuento",format="$%.2f"),
+}
+
+
+def _cfdi_meses(cfdis: list, cols_display: list[str], search: str) -> None:
+    """Tabla de CFDIs agrupada por mes con expanders colapsables."""
     import pandas as pd
 
     if not cfdis:
@@ -109,31 +119,75 @@ def _cfdi_table(cfdis: list, cols_display: list[str], search: str) -> None:
 
     df = pd.DataFrame(cfdis)
 
-    # Busqueda global: filtra en todas las columnas de texto
     if search.strip():
         mask = df.apply(
             lambda col: col.astype(str).str.contains(search.strip(), case=False, na=False)
         ).any(axis=1)
         df = df[mask]
+        if df.empty:
+            st.info(f"Sin resultados para '{search}'.")
+            return
 
     cols = [c for c in cols_display if c in df.columns]
-    df_show = df[cols] if cols else df
 
-    st.caption(f"{len(df_show)} registros")
+    total_gral = df["total"].astype(float).sum() if "total" in df.columns else 0
+    st.caption(f"{len(df)} registros  —  Total: **${total_gral:,.2f}**")
 
-    st.dataframe(
-        df_show,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "total":    st.column_config.NumberColumn("Total", format="$%.2f"),
-            "subtotal": st.column_config.NumberColumn("Subtotal", format="$%.2f"),
-            "descuento":st.column_config.NumberColumn("Descuento", format="$%.2f"),
-        },
-    )
+    csv = df[cols].to_csv(index=False).encode("utf-8") if cols else df.to_csv(index=False).encode("utf-8")
+    st.download_button("Descargar CSV completo", csv, "cfdis.csv", "text/csv")
 
-    csv = df_show.to_csv(index=False).encode("utf-8")
-    st.download_button("Descargar CSV", csv, "cfdis.csv", "text/csv", use_container_width=False)
+    # Agrupar por año-mes
+    if "fecha_emision" in df.columns:
+        df["_f"] = pd.to_datetime(df["fecha_emision"], errors="coerce")
+        df["_y"] = df["_f"].dt.year.fillna(0).astype(int)
+        df["_m"] = df["_f"].dt.month.fillna(0).astype(int)
+        df = df.sort_values("_f", ascending=False)
+
+        for (anio, mes), grupo in df.groupby(["_y", "_m"], sort=False):
+            total_mes = grupo["total"].astype(float).sum() if "total" in grupo.columns else 0
+            mes_txt   = _MESES_ES.get(mes, str(mes))
+            header    = f"{mes_txt} {anio}  —  {len(grupo)} facturas  —  ${total_mes:,.2f}"
+            with st.expander(header, expanded=False):
+                df_show = grupo[cols].drop(columns=["_f","_y","_m"], errors="ignore") if cols else grupo
+                st.dataframe(df_show, use_container_width=True, hide_index=True, column_config=_COL_CFG)
+    else:
+        df_show = df[cols] if cols else df
+        st.dataframe(df_show, use_container_width=True, hide_index=True, column_config=_COL_CFG)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Cargar empresas configuradas en env vars
+# Formato: EMPRESA_1_RFC, EMPRESA_1_CER_B64, EMPRESA_1_KEY_B64, EMPRESA_1_PWD
+#          EMPRESA_2_RFC, ...  hasta EMPRESA_9
+# ══════════════════════════════════════════════════════════════════════════════
+def _empresas_configuradas() -> list[dict]:
+    empresas = []
+    for i in range(1, 10):
+        rfc = os.getenv(f"EMPRESA_{i}_RFC", "").strip()
+        if not rfc:
+            break
+        empresas.append({
+            "idx":     i,
+            "rfc":     rfc,
+            "label":   os.getenv(f"EMPRESA_{i}_LABEL", rfc),
+            "cer_b64": os.getenv(f"EMPRESA_{i}_CER_B64", ""),
+            "key_b64": os.getenv(f"EMPRESA_{i}_KEY_B64", ""),
+            "pwd":     os.getenv(f"EMPRESA_{i}_PWD", ""),
+        })
+    # fallback: empresa única con variables genéricas
+    if not empresas:
+        rfc = os.getenv("SAT_RFC", "").strip()
+        if rfc:
+            empresas.append({
+                "idx": 1, "rfc": rfc, "label": rfc,
+                "cer_b64": os.getenv("SAT_EFIRMA_CER_B64", ""),
+                "key_b64": os.getenv("SAT_EFIRMA_KEY_B64", ""),
+                "pwd":     os.getenv("SAT_EFIRMA_PASSWORD", ""),
+            })
+    return empresas
+
+
+_EMPRESAS = _empresas_configuradas()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -141,6 +195,18 @@ def _cfdi_table(cfdis: list, cols_display: list[str], search: str) -> None:
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.title("🧾 Conta4all SAT")
+
+    # Selector de empresa si hay varias configuradas
+    if _EMPRESAS:
+        emp_labels = [f"{e['label']}" for e in _EMPRESAS]
+        emp_idx = st.selectbox("Empresa", range(len(_EMPRESAS)),
+                               format_func=lambda i: emp_labels[i],
+                               key="sidebar_empresa")
+        _EMP_SEL = _EMPRESAS[emp_idx]
+    else:
+        _EMP_SEL = None
+
+    st.divider()
     page = st.radio(
         "Sección",
         ["Sincronizar", "Solicitudes", "Ingresos", "Egresos"],
@@ -153,23 +219,46 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════════════════════
 if page == "Sincronizar":
     st.title("Sincronizar con SAT")
-    st.info(
-        "Sube tu **e.firma** (.cer y .key), escribe la contraseña y selecciona el periodo. "
-        "Los archivos se usan solo para firmar la solicitud — **no se guardan en ningún lado**."
-    )
 
+    # ── Credenciales: env vars o upload manual ────────────────────────────────
     with st.container(border=True):
         st.subheader("e.firma")
-        col1, col2, col3 = st.columns(3)
-        rfc    = col1.text_input("RFC", value=os.getenv("SAT_RFC", ""), placeholder="XAXX010101000", key="sync_rfc")
-        cer_up = col2.file_uploader("Certificado (.cer)", type=None, key="sync_cer")
-        key_up = col3.file_uploader("Llave privada (.key)", type=None, key="sync_key")
-        password = st.text_input("Contraseña de la e.firma", type="password", key="sync_pwd",
-                                 help="La contraseña nunca se almacena.")
 
-    creds_ok = bool(rfc and cer_up and key_up and password)
+        _env_rfc     = _EMP_SEL["rfc"]     if _EMP_SEL else ""
+        _env_cer_b64 = _EMP_SEL["cer_b64"] if _EMP_SEL else ""
+        _env_key_b64 = _EMP_SEL["key_b64"] if _EMP_SEL else ""
+        _env_pwd     = _EMP_SEL["pwd"]     if _EMP_SEL else ""
+
+        _creds_desde_env = bool(_env_cer_b64 and _env_key_b64)
+
+        if _creds_desde_env:
+            st.success(f"e.firma configurada en Render: **{_env_rfc}**")
+            rfc    = _env_rfc
+            cer_up = None
+            key_up = None
+            if _env_pwd:
+                password = _env_pwd
+                st.caption("Contraseña cargada desde configuración.")
+            else:
+                password = st.text_input("Contraseña de la e.firma", type="password",
+                                         key="sync_pwd",
+                                         help="No está en env vars — escríbela aquí.")
+        else:
+            st.info("Sube tu e.firma o configura las env vars en Render para no tener que subir los archivos cada vez.")
+            col1, col2, col3 = st.columns(3)
+            rfc    = col1.text_input("RFC", value=_env_rfc, placeholder="XAXX010101000", key="sync_rfc")
+            cer_up = col2.file_uploader("Certificado (.cer)", type=None, key="sync_cer")
+            key_up = col3.file_uploader("Llave privada (.key)", type=None, key="sync_key")
+            password = st.text_input("Contraseña de la e.firma", type="password",
+                                     key="sync_pwd", help="La contraseña nunca se almacena.")
+
+    if _creds_desde_env:
+        creds_ok = bool(rfc and password)
+    else:
+        creds_ok = bool(rfc and cer_up and key_up and password)
+
     if not creds_ok:
-        st.caption("Completa los 4 campos para habilitar la sincronización.")
+        st.caption("Faltan credenciales para habilitar la sincronización.")
 
     st.divider()
 
@@ -247,16 +336,24 @@ if page == "Sincronizar":
     verify_any = verify_ing or verify_egr or saved_verify_idx is not None
 
     if create_any or verify_any:
-        if not all([rfc, cer_up, key_up, password]):
-            st.error("Vuelve a subir el .cer, .key y confirma la contraseña.")
-            st.stop()
-        cer_bytes = cer_up.getvalue()
-        key_bytes = key_up.getvalue()
-        if not cer_bytes or not key_bytes:
-            st.error("Los archivos llegaron vacíos. Vuelve a subirlos.")
-            st.stop()
-        cer_b64 = base64.b64encode(cer_bytes).decode()
-        key_b64 = base64.b64encode(key_bytes).decode()
+        # Resolver cer_b64 / key_b64 desde env vars o desde archivos subidos
+        if _creds_desde_env:
+            if not rfc or not password:
+                st.error("Falta RFC o contraseña.")
+                st.stop()
+            cer_b64 = _env_cer_b64
+            key_b64 = _env_key_b64
+        else:
+            if not all([rfc, cer_up, key_up, password]):
+                st.error("Vuelve a subir el .cer, .key y confirma la contraseña.")
+                st.stop()
+            cer_bytes = cer_up.getvalue()
+            key_bytes = key_up.getvalue()
+            if not cer_bytes or not key_bytes:
+                st.error("Los archivos llegaron vacíos. Vuelve a subirlos.")
+                st.stop()
+            cer_b64 = base64.b64encode(cer_bytes).decode()
+            key_b64 = base64.b64encode(key_bytes).decode()
 
         common_ctx = _context_base({
             "rfc": rfc, "empresa_id": rfc, "rfc_propietario": rfc,
@@ -428,18 +525,17 @@ elif page == "Solicitudes":
 # Ingresos (E — emitidos por este RFC)
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "Ingresos":
-    import pandas as pd
-
     st.title("Ingresos — CFDIs emitidos")
 
-    hoy    = _today_mx()
-    primer = hoy.replace(day=1)
+    hoy     = _today_mx()
+    enero_1 = date(hoy.year, 1, 1)
+    rfc_env = (_EMP_SEL["rfc"] if _EMP_SEL else "") or os.getenv("SAT_RFC", "")
 
     with st.container(border=True):
         col1, col2, col3 = st.columns(3)
-        fi_ing = col1.text_input("Fecha inicio", value=primer.strftime("%Y-%m-%d"), key="ing_fi")
-        ff_ing = col2.text_input("Fecha fin",    value=hoy.strftime("%Y-%m-%d"),    key="ing_ff")
-        f_rfc  = col3.text_input("RFC propietario", value=os.getenv("SAT_RFC", ""), key="ing_rfc")
+        fi_ing = col1.text_input("Fecha inicio", value=enero_1.strftime("%Y-%m-%d"), key="ing_fi")
+        ff_ing = col2.text_input("Fecha fin",    value=hoy.strftime("%Y-%m-%d"),     key="ing_ff")
+        f_rfc  = col3.text_input("RFC propietario", value=rfc_env, key="ing_rfc")
 
         col4, col5 = st.columns([3, 1])
         buscar = col4.text_input("Buscar (nombre, RFC, UUID, cualquier campo...)", value="", key="ing_buscar",
@@ -450,12 +546,8 @@ elif page == "Ingresos":
                                  key="ing_tc")
 
     ctx = _context_base({
-        "rfc_propietario": f_rfc,
-        "empresa_id":      f_rfc,
-        "tipo":            "E",
-        "fecha_inicio":    fi_ing,
-        "fecha_fin":       ff_ing,
-        "limit":           2000,
+        "rfc_propietario": f_rfc, "empresa_id": f_rfc, "tipo": "E",
+        "fecha_inicio": fi_ing, "fecha_fin": ff_ing, "limit": 5000,
     })
 
     with st.spinner("Cargando ingresos..."):
@@ -465,47 +557,39 @@ elif page == "Ingresos":
         st.error(r.get("error", "Error"))
         st.stop()
 
-    d = r.get("data", {})
+    d     = r.get("data", {})
     cfdis = d.get("cfdis", [])
-
-    # Filtro tipo_comprobante
     if tc_ing != "Todos":
         cfdis = [c for c in cfdis if (c.get("tipo_comprobante") or "").upper() == tc_ing.upper()]
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Facturas", d.get("total", 0))
-    m2.metric("Monto total", "${:,.0f}".format(d.get("monto_total", 0)))
-    m3.metric("Tipo Ingreso (I)", d.get("total_ingresos", 0))
-    m4.metric("Periodo", f"{fi_ing} → {ff_ing}")
+    m1.metric("Facturas",         len(cfdis))
+    m2.metric("Monto total",      "${:,.0f}".format(sum(float(c.get("total") or 0) for c in cfdis)))
+    m3.metric("Tipo Ingreso (I)", sum(1 for c in cfdis if (c.get("tipo_comprobante") or "").upper() == "I"))
+    m4.metric("Periodo",          f"{fi_ing} → {ff_ing}")
 
-    _cfdi_table(
-        cfdis,
-        cols_display=[
-            "fecha_emision", "nombre_receptor", "rfc_receptor",
-            "tipo_comprobante", "total", "subtotal", "descuento",
-            "moneda", "forma_pago", "metodo_pago", "uso_cfdi",
-            "uuid_cfdi", "rfc_propietario",
-        ],
-        search=buscar,
-    )
+    _cfdi_meses(cfdis, cols_display=[
+        "fecha_emision", "nombre_receptor", "rfc_receptor",
+        "tipo_comprobante", "total", "subtotal", "descuento",
+        "moneda", "forma_pago", "metodo_pago", "uso_cfdi", "uuid_cfdi",
+    ], search=buscar)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Egresos (R — recibidos por este RFC)
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "Egresos":
-    import pandas as pd
-
     st.title("Egresos — CFDIs recibidos")
 
-    hoy    = _today_mx()
-    primer = hoy.replace(day=1)
+    hoy     = _today_mx()
+    enero_1 = date(hoy.year, 1, 1)
+    rfc_env = (_EMP_SEL["rfc"] if _EMP_SEL else "") or os.getenv("SAT_RFC", "")
 
     with st.container(border=True):
         col1, col2, col3 = st.columns(3)
-        fi_egr = col1.text_input("Fecha inicio", value=primer.strftime("%Y-%m-%d"), key="egr_fi")
-        ff_egr = col2.text_input("Fecha fin",    value=hoy.strftime("%Y-%m-%d"),    key="egr_ff")
-        f_rfc  = col3.text_input("RFC propietario", value=os.getenv("SAT_RFC", ""), key="egr_rfc")
+        fi_egr = col1.text_input("Fecha inicio", value=enero_1.strftime("%Y-%m-%d"), key="egr_fi")
+        ff_egr = col2.text_input("Fecha fin",    value=hoy.strftime("%Y-%m-%d"),     key="egr_ff")
+        f_rfc  = col3.text_input("RFC propietario", value=rfc_env, key="egr_rfc")
 
         col4, col5 = st.columns([3, 1])
         buscar = col4.text_input("Buscar (nombre, RFC, UUID, cualquier campo...)", value="", key="egr_buscar",
@@ -516,12 +600,8 @@ elif page == "Egresos":
                                  key="egr_tc")
 
     ctx = _context_base({
-        "rfc_propietario": f_rfc,
-        "empresa_id":      f_rfc,
-        "tipo":            "R",
-        "fecha_inicio":    fi_egr,
-        "fecha_fin":       ff_egr,
-        "limit":           2000,
+        "rfc_propietario": f_rfc, "empresa_id": f_rfc, "tipo": "R",
+        "fecha_inicio": fi_egr, "fecha_fin": ff_egr, "limit": 5000,
     })
 
     with st.spinner("Cargando egresos..."):
@@ -531,26 +611,19 @@ elif page == "Egresos":
         st.error(r.get("error", "Error"))
         st.stop()
 
-    d = r.get("data", {})
+    d     = r.get("data", {})
     cfdis = d.get("cfdis", [])
-
-    # Filtro tipo_comprobante
     if tc_egr != "Todos":
         cfdis = [c for c in cfdis if (c.get("tipo_comprobante") or "").upper() == tc_egr.upper()]
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Facturas", d.get("total", 0))
-    m2.metric("Monto total", "${:,.0f}".format(d.get("monto_total", 0)))
-    m3.metric("Tipo Egreso (E)", d.get("total_egresos", 0))
-    m4.metric("Periodo", f"{fi_egr} → {ff_egr}")
+    m1.metric("Facturas",        len(cfdis))
+    m2.metric("Monto total",     "${:,.0f}".format(sum(float(c.get("total") or 0) for c in cfdis)))
+    m3.metric("Tipo Egreso (E)", sum(1 for c in cfdis if (c.get("tipo_comprobante") or "").upper() == "E"))
+    m4.metric("Periodo",         f"{fi_egr} → {ff_egr}")
 
-    _cfdi_table(
-        cfdis,
-        cols_display=[
-            "fecha_emision", "nombre_emisor", "rfc_emisor",
-            "tipo_comprobante", "total", "subtotal", "descuento",
-            "moneda", "forma_pago", "metodo_pago", "uso_cfdi",
-            "uuid_cfdi", "rfc_propietario",
-        ],
-        search=buscar,
-    )
+    _cfdi_meses(cfdis, cols_display=[
+        "fecha_emision", "nombre_emisor", "rfc_emisor",
+        "tipo_comprobante", "total", "subtotal", "descuento",
+        "moneda", "forma_pago", "metodo_pago", "uso_cfdi", "uuid_cfdi",
+    ], search=buscar)
