@@ -19,12 +19,26 @@ def _cargar_efirma(cer_b64: str, key_b64: str, key_pwd: str):
     import subprocess
     from cryptography import x509
     from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.serialization import pkcs12
 
     cer_der = base64.b64decode(cer_b64)
     key_der = base64.b64decode(key_b64)
     cert    = x509.load_der_x509_certificate(cer_der)
 
-    # Intento 1: cryptography DER (llaves modernas AES/3DES)
+    # Detección temprana: usuario subió el .cer donde va el .key
+    try:
+        x509.load_der_x509_certificate(key_der)
+        raise ValueError(
+            "El archivo que subiste como .key es en realidad un certificado (.cer). "
+            "Asegúrate de subir el .key en el campo de llave privada y el .cer en el de certificado."
+        )
+    except ValueError as ve:
+        if ".cer" in str(ve):
+            raise
+
+    last_err = "sin detalle"
+
+    # 1 — cryptography DER (llaves modernas AES/PBES2)
     for enc in ("utf-8", "latin-1"):
         try:
             privkey = serialization.load_der_private_key(key_der, password=key_pwd.encode(enc))
@@ -32,45 +46,51 @@ def _cargar_efirma(cer_b64: str, key_b64: str, key_pwd: str):
         except Exception:
             pass
 
-    # Intento 2: openssl CLI — maneja llaves viejas SAT con PKCS#12-PBE/3DES o RC2
-    # que la librería cryptography bundled no soporta en OpenSSL 3 estricto
-    try:
-        r = subprocess.run(
-            ["openssl", "pkcs8", "-inform", "DER", "-passin", f"pass:{key_pwd}", "-nocrypt"],
-            input=key_der, capture_output=True, timeout=10,
-        )
-        if r.returncode == 0 and r.stdout:
-            privkey = serialization.load_pem_private_key(r.stdout, password=None)
-            return cert, privkey, cer_der
-        openssl_err = r.stderr.decode(errors="replace").strip()
-    except FileNotFoundError:
-        openssl_err = "openssl no disponible"
-    except Exception as e:
-        openssl_err = str(e)
+    # 2 — PKCS#12 (por si subieron un .p12/.pfx con extensión .key)
+    for enc in ("utf-8", "latin-1"):
+        try:
+            pk, _, _ = pkcs12.load_key_and_certificates(key_der, key_pwd.encode(enc))
+            if pk:
+                return cert, pk, cer_der
+        except Exception:
+            pass
 
-    # Intento 3: openssl pkcs8 -topk8 legacy (para llaves con RC2/3DES viejos)
-    try:
-        r2 = subprocess.run(
-            ["openssl", "pkcs8", "-inform", "DER", "-passin", f"pass:{key_pwd}",
-             "-out", "/dev/stdout", "-nocrypt", "-legacy"],
-            input=key_der, capture_output=True, timeout=10,
-        )
-        if r2.returncode == 0 and r2.stdout:
-            privkey = serialization.load_pem_private_key(r2.stdout, password=None)
-            return cert, privkey, cer_der
-    except Exception:
-        pass
+    # 3 — openssl pkey (más permisivo que pkcs8, maneja más variantes DER)
+    for extra in ([], ["-legacy"]):
+        try:
+            r = subprocess.run(
+                ["openssl", "pkey", "-inform", "DER", "-passin", f"pass:{key_pwd}"] + extra,
+                input=key_der, capture_output=True, timeout=10,
+            )
+            if r.returncode == 0 and r.stdout:
+                privkey = serialization.load_pem_private_key(r.stdout, password=None)
+                return cert, privkey, cer_der
+            last_err = r.stderr.decode(errors="replace").strip()
+        except Exception as e:
+            last_err = str(e)
 
-    # Diagnóstico claro para el usuario
-    if "bad decrypt" in openssl_err or "bad decrypt" in openssl_err.lower():
+    # 4 — openssl pkcs8 explícito (llaves viejas SAT con PKCS#12-PBE/3DES)
+    for extra in ([], ["-legacy"]):
+        try:
+            r = subprocess.run(
+                ["openssl", "pkcs8", "-inform", "DER",
+                 "-passin", f"pass:{key_pwd}", "-nocrypt"] + extra,
+                input=key_der, capture_output=True, timeout=10,
+            )
+            if r.returncode == 0 and r.stdout:
+                privkey = serialization.load_pem_private_key(r.stdout, password=None)
+                return cert, privkey, cer_der
+            last_err = r.stderr.decode(errors="replace").strip()
+        except Exception as e:
+            last_err = str(e)
+
+    err_lower = last_err.lower()
+    if "bad decrypt" in err_lower or "wrong tag" in err_lower or "wrong password" in err_lower:
         raise ValueError(
-            "Contraseña incorrecta para la llave .key — "
-            "verifica que estás usando la contraseña de tu e.firma (no la del SAT ID ni del portal)."
+            "Contraseña incorrecta — verifica que sea la contraseña de tu e.firma "
+            "(no la del portal SAT, no la del RFC)."
         )
-    raise ValueError(
-        f"No se pudo cargar la llave .key. "
-        f"Verifica que subiste el archivo .key correcto. Detalle: {openssl_err or 'algoritmo no soportado'}"
-    )
+    raise ValueError(f"Formato de llave no soportado. Detalle: {last_err[:300]}")
 
 
 def _firmar_timestamp(ts_xml: str, cer_der: bytes, privkey, ts_id: str, tok_id: str) -> str:
