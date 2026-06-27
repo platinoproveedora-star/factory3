@@ -9,7 +9,7 @@ import urllib.request
 import uuid as _uuid_mod
 import zipfile
 
-_URL    = "https://cfdidescargamasiva.clouda.sat.gob.mx/DescargarPaquete/DescargarPaqueteService.svc"
+_URL    = "https://cfdidescargamasiva.clouda.sat.gob.mx/DescargarPaqueteService.svc"
 _ACTION = '"http://DescargaMasivaTerceros.gob.mx/IDescargarPaqueteService/DescargarPaquete"'
 _NS_DS  = "http://www.w3.org/2000/09/xmldsig#"
 _NS_DES = "http://DescargaMasivaTerceros.gob.mx"
