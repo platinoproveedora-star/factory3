@@ -355,6 +355,7 @@ if page == "Sincronizar":
             cer_b64 = base64.b64encode(cer_bytes).decode()
             key_b64 = base64.b64encode(key_bytes).decode()
 
+        rfc = rfc.strip().upper()
         common_ctx = _context_base({
             "rfc": rfc, "empresa_id": rfc, "rfc_propietario": rfc,
             "cer_b64": cer_b64, "key_b64": key_b64, "key_password": password,
@@ -545,6 +546,7 @@ elif page == "Ingresos":
                                                         "T":"Traslado","N":"Nomina","P":"Pago"}.get(x,x),
                                  key="ing_tc")
 
+    f_rfc = f_rfc.strip().upper()
     ctx = _context_base({
         "rfc_propietario": f_rfc, "empresa_id": f_rfc, "tipo": "E",
         "fecha_inicio": fi_ing, "fecha_fin": ff_ing, "limit": 5000,
@@ -599,6 +601,7 @@ elif page == "Egresos":
                                                         "T":"Traslado","N":"Nomina","P":"Pago"}.get(x,x),
                                  key="egr_tc")
 
+    f_rfc = f_rfc.strip().upper()
     ctx = _context_base({
         "rfc_propietario": f_rfc, "empresa_id": f_rfc, "tipo": "R",
         "fecha_inicio": fi_egr, "fecha_fin": ff_egr, "limit": 5000,
