@@ -112,7 +112,9 @@ class SatCfdiSolicitudService:
 
         node_name = "SolicitaDescargaEmitidos" if tipo == "E" else "SolicitaDescargaRecibidos"
         soap_action = f'"http://DescargaMasivaTerceros.sat.gob.mx/ISolicitaDescargaService/{node_name}"'
-        rfc_emisor   = f' RfcEmisor="{rfc}"' if tipo == "E" else (f' RfcEmisor="{rfc_match}"' if rfc_match else "")
+        # Emitidos: RfcEmisor NO existe en el schema (implícito = RfcSolicitante) → SAT devuelve HTTP 500
+        # Recibidos: RfcEmisor es atributo opcional para filtrar por emisor
+        rfc_emisor   = (f' RfcEmisor="{rfc_match}"' if rfc_match else "") if tipo == "R" else ""
         rfc_receptor = f' RfcReceptor="{rfc}"' if tipo == "R" else ""
         tc_attr      = f'TipoComprobante="{tipo_comp}"' if tipo_comp else ""
         xml_extra    = f'<des:RfcReceptores><des:RfcReceptor>{rfc_match}</des:RfcReceptor></des:RfcReceptores>' if tipo == "E" and rfc_match else ""
