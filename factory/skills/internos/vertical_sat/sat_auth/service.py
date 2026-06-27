@@ -16,6 +16,7 @@ _NS_DS = "http://www.w3.org/2000/09/xmldsig#"
 
 
 def _cargar_efirma(cer_b64: str, key_b64: str, key_pwd: str):
+    import subprocess
     from cryptography import x509
     from cryptography.hazmat.primitives import serialization
 
@@ -23,25 +24,52 @@ def _cargar_efirma(cer_b64: str, key_b64: str, key_pwd: str):
     key_der = base64.b64decode(key_b64)
     cert    = x509.load_der_x509_certificate(cer_der)
 
-    # Intentar varias combinaciones de formato + encoding de contraseña
-    # SAT usa DER/PKCS8; llaves viejas usan RC2/3DES que puede necesitar Latin-1
-    intentos = [
-        ("DER", "utf-8",   serialization.load_der_private_key),
-        ("DER", "latin-1", serialization.load_der_private_key),
-        ("PEM", "utf-8",   serialization.load_pem_private_key),
-        ("PEM", "latin-1", serialization.load_pem_private_key),
-    ]
-    errores = []
-    for fmt, enc, loader in intentos:
+    # Intento 1: cryptography DER (llaves modernas AES/3DES)
+    for enc in ("utf-8", "latin-1"):
         try:
-            privkey = loader(key_der, password=key_pwd.encode(enc))
+            privkey = serialization.load_der_private_key(key_der, password=key_pwd.encode(enc))
             return cert, privkey, cer_der
-        except Exception as e:
-            errores.append(f"{fmt}/{enc}: {e}")
+        except Exception:
+            pass
 
+    # Intento 2: openssl CLI — maneja llaves viejas SAT con PKCS#12-PBE/3DES o RC2
+    # que la librería cryptography bundled no soporta en OpenSSL 3 estricto
+    try:
+        r = subprocess.run(
+            ["openssl", "pkcs8", "-inform", "DER", "-passin", f"pass:{key_pwd}", "-nocrypt"],
+            input=key_der, capture_output=True, timeout=10,
+        )
+        if r.returncode == 0 and r.stdout:
+            privkey = serialization.load_pem_private_key(r.stdout, password=None)
+            return cert, privkey, cer_der
+        openssl_err = r.stderr.decode(errors="replace").strip()
+    except FileNotFoundError:
+        openssl_err = "openssl no disponible"
+    except Exception as e:
+        openssl_err = str(e)
+
+    # Intento 3: openssl pkcs8 -topk8 legacy (para llaves con RC2/3DES viejos)
+    try:
+        r2 = subprocess.run(
+            ["openssl", "pkcs8", "-inform", "DER", "-passin", f"pass:{key_pwd}",
+             "-out", "/dev/stdout", "-nocrypt", "-legacy"],
+            input=key_der, capture_output=True, timeout=10,
+        )
+        if r2.returncode == 0 and r2.stdout:
+            privkey = serialization.load_pem_private_key(r2.stdout, password=None)
+            return cert, privkey, cer_der
+    except Exception:
+        pass
+
+    # Diagnóstico claro para el usuario
+    if "bad decrypt" in openssl_err or "bad decrypt" in openssl_err.lower():
+        raise ValueError(
+            "Contraseña incorrecta para la llave .key — "
+            "verifica que estás usando la contraseña de tu e.firma (no la del SAT ID ni del portal)."
+        )
     raise ValueError(
-        "No se pudo descifrar la llave .key — verifica que subiste el archivo .key correcto "
-        f"y que la contraseña es la de tu e.firma. Detalles: {' | '.join(errores)}"
+        f"No se pudo cargar la llave .key. "
+        f"Verifica que subiste el archivo .key correcto. Detalle: {openssl_err or 'algoritmo no soportado'}"
     )
 
 
