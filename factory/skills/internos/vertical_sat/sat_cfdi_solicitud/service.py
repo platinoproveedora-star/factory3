@@ -93,9 +93,11 @@ class SatCfdiSolicitudService:
             return {"ok": False, "error": f"Error cargando e.firma: {e}"}
 
         try:
-            fecha_fin = self._clamp_fecha_fin(fecha_fin)
+            fecha_fin    = self._clamp_fecha_fin(fecha_fin)
+            estado_comp_val = (context.get("estado_comprobante") or "").strip() if tipo == "E" else ""
             id_solicitud = self._solicitar(token, rfc, privkey, cer_der,
-                                           fecha_inicio, fecha_fin, tipo, tipo_comp, tipo_sol, rfc_match)
+                                           fecha_inicio, fecha_fin, tipo, tipo_comp, tipo_sol,
+                                           rfc_match, estado_comp_val)
             return {
                 "ok":      True,
                 "message": f"Solicitud aceptada: {id_solicitud}",
@@ -105,7 +107,7 @@ class SatCfdiSolicitudService:
             return {"ok": False, "error": f"Error solicitud SAT: {e}"}
 
     def _solicitar(self, token, rfc, privkey, cer_der,
-                   fi, ff, tipo, tipo_comp, tipo_sol, rfc_match) -> str:
+                   fi, ff, tipo, tipo_comp, tipo_sol, rfc_match, estado_comp_val="") -> str:
         from lxml import etree
 
         node_name = "SolicitaDescargaEmitidos" if tipo == "E" else "SolicitaDescargaRecibidos"
@@ -115,10 +117,7 @@ class SatCfdiSolicitudService:
         tc_attr      = f'TipoComprobante="{tipo_comp}"' if tipo_comp else ""
         xml_extra    = f'<des:RfcReceptores><des:RfcReceptor>{rfc_match}</des:RfcReceptor></des:RfcReceptores>' if tipo == "E" and rfc_match else ""
 
-        # EstadoComprobante: solo aplica a Emitidos y solo si se pasa explícitamente.
-        # Omitir por defecto — SAT devuelve todos (Vigente + Cancelado) y el valor
-        # "Vigente" provoca CodEstatus=301 en algunas combinaciones de rango/RFC.
-        estado_comp_val = (context.get("estado_comprobante") or "").strip() if tipo == "E" else ""
+        # EstadoComprobante: omitido por defecto — SAT devuelve 301 con "Vigente" en algunos casos
         estado_comp = f' EstadoComprobante="{estado_comp_val}"' if estado_comp_val else ""
         tc_attr_str = f" {tc_attr}" if tc_attr else ""
         sol_xml = (
