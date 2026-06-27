@@ -99,9 +99,9 @@ if page == "Sincronizar":
         st.subheader("e.firma")
         col1, col2, col3 = st.columns(3)
 
-        rfc    = col1.text_input("RFC", placeholder="XAXX010101000", key="sync_rfc")
-        cer_up = col2.file_uploader("Certificado (.cer)", type=None, key="sync_cer")
-        key_up = col3.file_uploader("Llave privada (.key)", type=None, key="sync_key")
+        rfc    = col1.text_input("RFC", value=os.getenv("SAT_RFC", ""), placeholder="XAXX010101000", key="sync_rfc")
+        cer_up = col2.file_uploader("Certificado (.cer)", type=["cer"], key="sync_cer")
+        key_up = col3.file_uploader("Llave privada (.key)", type=["key"], key="sync_key")
 
         password = st.text_input(
             "Contraseña de la e.firma",
@@ -155,8 +155,8 @@ if page == "Sincronizar":
     # ── Botón sync ───────────────────────────────────────────────────────────
     if st.button("Sincronizar con SAT", type="primary", disabled=not creds_ok, use_container_width=True):
         # Leer bytes de los archivos — en memoria, nunca a disco
-        cer_b64 = base64.b64encode(cer_up.read()).decode()
-        key_b64 = base64.b64encode(key_up.read()).decode()
+        cer_b64 = base64.b64encode(cer_up.getvalue()).decode()
+        key_b64 = base64.b64encode(key_up.getvalue()).decode()
 
         tipos = ["E", "R"] if s_tipo == "Ambos" else [s_tipo]
 
