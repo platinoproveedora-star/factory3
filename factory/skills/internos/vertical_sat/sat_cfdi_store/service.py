@@ -13,6 +13,7 @@ class SatCfdiStoreService:
         empresa_id      = context.get("empresa_id") or os.getenv("EMPRESA_ID", "")
         rfc_propietario = context.get("rfc_propietario") or os.getenv("SAT_RFC", "")
         tipo            = context.get("tipo", "E")
+        schema          = context.get("schema") or os.getenv("SUPABASE_SCHEMA", "uc102_proy001")
 
         if context.get("dry_run"):
             return {"ok": True, "message": "dry_run", "data": {"insertados": 0, "total": len(cfdis)}}
@@ -58,6 +59,7 @@ class SatCfdiStoreService:
         if not rows:
             return {"ok": True, "message": "Sin UUIDs válidos", "data": {"insertados": 0}}
 
+        import urllib.error
         endpoint = f"{url}/rest/v1/cfdi_documentos"
         req = urllib.request.Request(
             endpoint,
@@ -66,13 +68,18 @@ class SatCfdiStoreService:
                 "apikey":          key,
                 "Authorization":   f"Bearer {key}",
                 "Content-Type":    "application/json",
+                "Content-Profile": schema,
                 "Prefer":          "resolution=merge-duplicates,return=minimal",
                 "User-Agent":      "FactoryFactory/0.1 (+https://github.com/)",
             },
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            resp.read()
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                resp.read()
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            return {"ok": False, "error": f"Supabase HTTP {e.code}: {body[:300]}"}
 
         return {
             "ok":      True,

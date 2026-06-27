@@ -116,9 +116,11 @@ class SatCfdiSyncService:
             cfdis = r5["data"].get("cfdis", [])
             r6    = self._run("sat_cfdi_store", {
                 "empresa_id": empresa_id, "cfdis": cfdis, "tipo": tipo,
-                "rfc_propietario": rfc, "dry_run": False,
+                "rfc_propietario": rfc, "schema": context.get("schema", "uc102_proy001"),
+                "dry_run": False,
             })
-            log.append({"paso": "sat_cfdi_store", "ok": r6.get("ok"), "msg": r6.get("message", "")})
+            log.append({"paso": "sat_cfdi_store", "ok": r6.get("ok"),
+                        "msg": r6.get("message") or r6.get("error", "")})
             total_guardados += r6.get("data", {}).get("insertados", 0)
 
         return {
