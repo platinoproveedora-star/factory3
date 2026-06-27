@@ -93,11 +93,9 @@ class SatCfdiSolicitudService:
             return {"ok": False, "error": f"Error cargando e.firma: {e}"}
 
         try:
-            fecha_fin    = self._clamp_fecha_fin(fecha_fin)
-            estado_comp_val = (context.get("estado_comprobante") or "").strip() if tipo == "E" else ""
+            fecha_fin = self._clamp_fecha_fin(fecha_fin)
             id_solicitud = self._solicitar(token, rfc, privkey, cer_der,
-                                           fecha_inicio, fecha_fin, tipo, tipo_comp, tipo_sol,
-                                           rfc_match, estado_comp_val)
+                                           fecha_inicio, fecha_fin, tipo, tipo_comp, tipo_sol, rfc_match)
             return {
                 "ok":      True,
                 "message": f"Solicitud aceptada: {id_solicitud}",
@@ -107,20 +105,18 @@ class SatCfdiSolicitudService:
             return {"ok": False, "error": f"Error solicitud SAT: {e}"}
 
     def _solicitar(self, token, rfc, privkey, cer_der,
-                   fi, ff, tipo, tipo_comp, tipo_sol, rfc_match, estado_comp_val="") -> str:
+                   fi, ff, tipo, tipo_comp, tipo_sol, rfc_match) -> str:
         from lxml import etree
 
         node_name = "SolicitaDescargaEmitidos" if tipo == "E" else "SolicitaDescargaRecibidos"
         soap_action = f'"http://DescargaMasivaTerceros.sat.gob.mx/ISolicitaDescargaService/{node_name}"'
-        # Emitidos: RfcEmisor NO existe en el schema (implícito = RfcSolicitante) → SAT devuelve HTTP 500
-        # Recibidos: RfcEmisor es atributo opcional para filtrar por emisor
-        rfc_emisor   = (f' RfcEmisor="{rfc_match}"' if rfc_match else "") if tipo == "R" else ""
+        rfc_emisor   = f' RfcEmisor="{rfc}"' if tipo == "E" else (f' RfcEmisor="{rfc_match}"' if rfc_match else "")
         rfc_receptor = f' RfcReceptor="{rfc}"' if tipo == "R" else ""
         tc_attr      = f'TipoComprobante="{tipo_comp}"' if tipo_comp else ""
         xml_extra    = f'<des:RfcReceptores><des:RfcReceptor>{rfc_match}</des:RfcReceptor></des:RfcReceptores>' if tipo == "E" and rfc_match else ""
 
-        # EstadoComprobante: omitido por defecto — SAT devuelve 301 con "Vigente" en algunos casos
-        estado_comp = f' EstadoComprobante="{estado_comp_val}"' if estado_comp_val else ""
+        # EstadoComprobante solo aplica a Emitidos — Recibidos no lo acepta (SAT 500)
+        estado_comp = ' EstadoComprobante="Vigente"' if tipo == "E" else ""
         tc_attr_str = f" {tc_attr}" if tc_attr else ""
         sol_xml = (
             f'<des:{node_name} xmlns:des="{_NS_DES}">'
