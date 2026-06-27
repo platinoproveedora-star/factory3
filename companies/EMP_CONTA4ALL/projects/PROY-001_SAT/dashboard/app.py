@@ -160,9 +160,19 @@ if page == "Sincronizar":
 
     # ── Botón sync ───────────────────────────────────────────────────────────
     if st.button("Sincronizar con SAT", type="primary", disabled=not creds_ok, use_container_width=True):
+        if not all([rfc, cer_up, key_up, password]):
+            st.error("Vuelve a subir el certificado .cer, la llave .key y confirma la contraseña.")
+            st.stop()
+
         # Leer bytes de los archivos — en memoria, nunca a disco
-        cer_b64 = base64.b64encode(cer_up.getvalue()).decode()
-        key_b64 = base64.b64encode(key_up.getvalue()).decode()
+        cer_bytes = cer_up.getvalue()
+        key_bytes = key_up.getvalue()
+        if not cer_bytes or not key_bytes:
+            st.error("Los archivos de e.firma llegaron vacíos. Vuelve a subir el .cer y el .key.")
+            st.stop()
+
+        cer_b64 = base64.b64encode(cer_bytes).decode()
+        key_b64 = base64.b64encode(key_bytes).decode()
 
         tipos = ["E", "R"] if s_tipo == "Ambos" else [s_tipo]
 
