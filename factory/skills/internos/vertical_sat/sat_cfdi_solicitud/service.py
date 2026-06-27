@@ -119,7 +119,7 @@ class SatCfdiSolicitudService:
             f'<des:{node_name} xmlns:des="{_NS_DES}">'
             f'<des:solicitud'
             f' EstadoComprobante="Vigente"'
-            f' FechaFinal="{ff}T23:59:59"'
+            f' FechaFinal="{ff}{self._hora_fin(ff)}"'
             f' FechaInicial="{fi}T00:00:00"'
             f' RfcSolicitante="{rfc}"'
             f' TipoSolicitud="{tipo_sol}"'
@@ -193,6 +193,16 @@ class SatCfdiSolicitudService:
         if requested > today_mx:
             return today_mx.isoformat()
         return fecha_fin
+
+    def _hora_fin(self, fecha: str) -> str:
+        """Pasado → T23:59:59. Hoy → hora actual MX (nunca futuro). Futuro ya fue clampeado."""
+        try:
+            now_mx = datetime.now(ZoneInfo("America/Mexico_City"))
+            if date.fromisoformat(fecha) >= now_mx.date():
+                return now_mx.strftime("T%H:%M:%S")
+        except Exception:
+            pass
+        return "T23:59:59"
 
     def _valid_rfc(self, value: str) -> bool:
         return bool(_RFC_RE.match(str(value or "").strip().upper()))

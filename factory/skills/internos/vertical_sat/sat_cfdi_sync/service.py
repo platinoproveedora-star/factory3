@@ -80,10 +80,14 @@ class SatCfdiSyncService:
                 break
             if estado.get("vacio"):
                 return {"ok": True, "message": "SAT: sin CFDIs en ese rango",
-                        "data": {"cfdis_guardados": 0, "log": log}}
+                        "data": {"cfdis_guardados": 0, "id_solicitud": id_solicitud, "log": log}}
+            if estado.get("error_sat"):
+                return {"ok": False,
+                        "error": f"SAT rechazó la solicitud: {r3.get('message', '')}",
+                        "data": {"id_solicitud": id_solicitud, "log": log}}
             if not estado.get("esperar"):
-                return {"ok": False, "error": f"Estado inesperado: {estado.get('cod_estado')}",
-                        "data": {"log": log}}
+                return {"ok": False, "error": f"Estado inesperado SAT: {estado.get('estado_solicitud')}",
+                        "data": {"id_solicitud": id_solicitud, "log": log}}
 
         if not paquetes:
             return {

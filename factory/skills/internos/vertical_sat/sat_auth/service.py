@@ -8,7 +8,7 @@ import urllib.request
 import uuid
 from datetime import datetime, timezone, timedelta
 
-_AUTH_URL    = "https://cfdidescargamasiva.clouda.sat.gob.mx/Autenticacion/Autenticacion.svc"
+_AUTH_URL    = "https://cfdidescargamasivasolicitud.clouda.sat.gob.mx/Autenticacion/Autenticacion.svc"
 _SOAP_ACTION = '"http://DescargaMasivaTerceros.gob.mx/IAutenticacion/Autentica"'
 _NS_U  = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
 _NS_O  = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"

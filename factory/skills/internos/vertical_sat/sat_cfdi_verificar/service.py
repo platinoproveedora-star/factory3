@@ -12,10 +12,15 @@ _ACTION = '"http://DescargaMasivaTerceros.sat.gob.mx/IVerificaSolicitudDescargaS
 _NS_DS  = "http://www.w3.org/2000/09/xmldsig#"
 _NS_DES = "http://DescargaMasivaTerceros.sat.gob.mx"
 
-# Códigos SAT: 5000=terminada ok, 5001=aceptada, 5002=en proceso, 5003=terminada vacía
-_ESTADO_OK      = {"5000"}
-_ESTADO_ESPERAR = {"5001", "5002"}
-_ESTADO_VACIO   = {"5003"}
+# EstadoSolicitud: 1=Aceptada 2=En proceso 3=Terminada 4=Error 5=Rechazada 6=Vencida
+_ESTADO_ESPERAR = {1, 2}
+_ESTADO_LISTO   = {3}
+_ESTADO_ERROR   = {4, 5, 6}
+_ESTADO_NOMBRES = {1: "Aceptada", 2: "En proceso", 3: "Terminada",
+                   4: "Error", 5: "Rechazada", 6: "Vencida"}
+# CodigoEstadoSolicitud
+_COD_SIN_CFDIS  = 5004
+_COD_DUPLICADA  = 5005
 
 
 def _cargar_efirma(cer_b64: str, key_b64: str, key_pwd: str):
@@ -73,7 +78,9 @@ class SatCfdiVerificarService:
         id_solicitud = context.get("id_solicitud", "")
 
         if context.get("dry_run"):
-            return {"ok": True, "message": "dry_run", "data": {"estado": "dry", "paquetes": [], "lista": []}}
+            return {"ok": True, "message": "dry_run", "data": {
+                "estado": "dry", "paquetes": [], "listo": False, "esperar": True, "vacio": False,
+            }}
 
         if not all([token, rfc, cer_b64, key_b64, key_pwd, id_solicitud]):
             return {"ok": False, "error": "Faltan: token, rfc, efirma creds, id_solicitud"}
@@ -84,22 +91,39 @@ class SatCfdiVerificarService:
             return {"ok": False, "error": f"Error cargando e.firma: {e}"}
 
         try:
-            estado, paquetes, cod = self._verificar(token, rfc, privkey, cer_der, id_solicitud)
+            estado_sol, cod_sol, num_cfdis, paquetes, mensaje = self._verificar(
+                token, rfc, privkey, cer_der, id_solicitud
+            )
         except Exception as e:
             return {"ok": False, "error": f"Error verificando SAT: {e}"}
 
-        lista = paquetes if cod in _ESTADO_OK else []
+        estado_txt = _ESTADO_NOMBRES.get(estado_sol, f"Desconocido({estado_sol})")
+        listo   = estado_sol in _ESTADO_LISTO and bool(paquetes)
+        vacio   = estado_sol in _ESTADO_LISTO and (not paquetes or cod_sol == _COD_SIN_CFDIS)
+        esperar = estado_sol in _ESTADO_ESPERAR
+        error   = estado_sol in _ESTADO_ERROR
+
+        nota = ""
+        if cod_sol == _COD_DUPLICADA:
+            nota = " (solicitud duplicada — ya existe una vigente con los mismos parámetros)"
+        elif cod_sol == _COD_SIN_CFDIS:
+            nota = " (sin CFDIs en ese rango)"
+
         return {
-            "ok":      cod in _ESTADO_OK | _ESTADO_ESPERAR | _ESTADO_VACIO,
-            "message": f"Estado {cod} — {estado} — {len(lista)} paquetes",
+            "ok":      not error,
+            "message": f"EstadoSolicitud={estado_sol} ({estado_txt}) CodSol={cod_sol} {num_cfdis} CFDIs{nota}",
             "data": {
-                "cod_estado":    cod,
-                "estado":        estado,
-                "listo":         cod in _ESTADO_OK,
-                "esperar":       cod in _ESTADO_ESPERAR,
-                "vacio":         cod in _ESTADO_VACIO,
-                "paquetes":      lista,
-                "id_solicitud":  id_solicitud,
+                "estado_solicitud": estado_sol,
+                "estado":           estado_txt,
+                "cod_solicitud":    cod_sol,
+                "num_cfdis":        num_cfdis,
+                "mensaje":          mensaje,
+                "listo":            listo,
+                "esperar":          esperar,
+                "vacio":            vacio,
+                "error_sat":        error,
+                "paquetes":         paquetes if listo else [],
+                "id_solicitud":     id_solicitud,
             },
         }
 
@@ -143,11 +167,13 @@ class SatCfdiVerificarService:
         if result is None:
             raise ValueError(f"Respuesta inesperada: {body[:500]}")
 
-        cod_estado = result.get("CodEstatus") or result.get("codestatus") or ""
-        estado     = result.get("EstadoSolicitud") or result.get("estadosolicitud") or ""
+        estado_sol = int(result.get("EstadoSolicitud") or result.get("estadosolicitud") or 0)
+        cod_sol    = int(result.get("CodigoEstadoSolicitud") or result.get("codigoestadosolicitud") or 0)
+        num_cfdis  = int(result.get("NumeroCFDIs") or result.get("numerocfdis") or 0)
+        mensaje    = result.get("Mensaje") or result.get("mensaje") or ""
         paquetes   = [
             p.text.strip()
             for p in result.xpath(".//*[local-name()='IdsPaquetes']/*")
-            if p.text
+            if p.text and p.text.strip()
         ]
-        return estado, paquetes, cod_estado
+        return estado_sol, cod_sol, num_cfdis, paquetes, mensaje
