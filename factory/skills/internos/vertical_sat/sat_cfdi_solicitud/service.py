@@ -7,7 +7,7 @@ import os
 import urllib.request
 import uuid as _uuid_mod
 
-_URL    = "https://cfdidescargamasiva.clouda.sat.gob.mx/SolicitaDescargaService.svc"
+_URL    = "https://cfdidescargamasiva.clouda.sat.gob.mx/SolicitaDescarga/SolicitaDescargaService.svc"
 _ACTION = '"http://DescargaMasivaTerceros.gob.mx/ISolicitaDescargaService/SolicitaDescarga"'
 _NS_DS  = "http://www.w3.org/2000/09/xmldsig#"
 _NS_DES = "http://DescargaMasivaTerceros.gob.mx"
