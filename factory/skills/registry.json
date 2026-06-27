@@ -2259,6 +2259,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_sat/sat_solicitud_manager": {
+    "tipo": "interno",
+    "nombre": "vertical_sat/sat_solicitud_manager",
+    "vertical": "vertical_sat",
+    "descripcion": "Persiste y consulta solicitudes SAT en Supabase (save/list/update_estado/setup).",
+    "path": "skills/internos/vertical_sat/sat_solicitud_manager",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_sat/sat_cfdi_store": {
     "tipo": "interno",
     "nombre": "vertical_sat/sat_cfdi_store",

@@ -47,6 +47,11 @@ class SatCfdiSyncService:
             return {"ok": False, "error": r1.get("error"), "data": {"log": log}}
         token = r1["data"]["token"]
 
+        schema = context.get("schema", "uc102_proy001")
+        sol_base = {"empresa_id": empresa_id, "rfc": rfc, "tipo": tipo,
+                    "tipo_solicitud": tipo_sol, "fecha_inicio": fecha_inicio,
+                    "fecha_fin": fecha_fin, "schema": schema}
+
         # 2 — Solicitar descarga o reusar una solicitud SAT ya aceptada.
         if id_solicitud:
             log.append({"paso": "sat_cfdi_solicitud", "ok": True, "msg": f"Reusando solicitud SAT: {id_solicitud}"})
@@ -62,6 +67,9 @@ class SatCfdiSyncService:
             if not r2.get("ok"):
                 return {"ok": False, "error": r2.get("error"), "data": {"log": log}}
             id_solicitud = r2["data"]["id_solicitud"]
+            # Persistir solicitud en DB para reutilizar entre sesiones
+            self._run("sat_solicitud_manager", {**sol_base, "action": "save",
+                                                "id_solicitud": id_solicitud, "estado": 1})
 
         # 3 — Verificar con polling
         paquetes = []
@@ -75,6 +83,12 @@ class SatCfdiSyncService:
                         "msg": r3.get("message", "")})
             if not r3.get("ok"):
                 return {"ok": False, "error": r3.get("error"), "data": {"log": log}}
+            # Actualizar estado en DB en cada poll
+            self._run("sat_solicitud_manager", {**sol_base, "action": "update_estado",
+                "id_solicitud": id_solicitud,
+                "estado": estado.get("estado_solicitud", 1),
+                "paquetes": estado.get("paquetes", []),
+                "num_cfdis": estado.get("num_cfdis", 0)})
             if estado.get("listo"):
                 paquetes = estado.get("paquetes", [])
                 break

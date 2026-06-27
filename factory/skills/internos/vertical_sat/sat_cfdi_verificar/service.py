@@ -13,7 +13,7 @@ _NS_DS  = "http://www.w3.org/2000/09/xmldsig#"
 _NS_DES = "http://DescargaMasivaTerceros.sat.gob.mx"
 
 # EstadoSolicitud: 1=Aceptada 2=En proceso 3=Terminada 4=Error 5=Rechazada 6=Vencida
-_ESTADO_ESPERAR = {1, 2}
+_ESTADO_ESPERAR = {0, 1, 2}  # 0 = SAT aún no registró la solicitud
 _ESTADO_LISTO   = {3}
 _ESTADO_ERROR   = {4, 5, 6}
 _ESTADO_NOMBRES = {1: "Aceptada", 2: "En proceso", 3: "Terminada",
