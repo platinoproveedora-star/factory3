@@ -134,23 +134,16 @@ if page == "Sincronizar":
         hoy    = _today_mx()
         primer = hoy.replace(day=1)
 
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         fi     = col1.text_input("Fecha inicio", value=primer.strftime("%Y-%m-%d"), key="sync_fi")
         ff     = col2.text_input("Fecha fin",    value=hoy.strftime("%Y-%m-%d"),    key="sync_ff")
-        s_tipo = col3.selectbox(
-            "Tipo",
-            ["E", "R", "Ambos"],
-            format_func=lambda x: {"E": "Ingresos (emitidos)", "R": "Egresos (recibidos)", "Ambos": "Ambos"}.get(x, x),
-            key="sync_tipo",
-        )
-        s_tc = col4.selectbox(
+        s_tc = col3.selectbox(
             "Tipo comprobante",
             ["", "I", "E", "T", "N", "P"],
             format_func=lambda x: {"": "Todos", "I": "Ingreso", "E": "Egreso",
                                     "T": "Traslado", "N": "Nomina", "P": "Pago"}.get(x, x),
             key="sync_tc",
         )
-        existing_id = st.text_input("ID solicitud SAT existente", value="", key="sync_id_solicitud")
         rfc_contraparte = st.text_input(
             "RFC cliente/proveedor",
             value="",
@@ -178,12 +171,22 @@ if page == "Sincronizar":
     col_a, col_b, col_c, col_d = st.columns(4)
     create_ing = col_a.button("Solicitar ingresos", disabled=not creds_ok, use_container_width=True)
     create_egr = col_b.button("Solicitar egresos", disabled=not creds_ok, use_container_width=True)
-    create_meta = col_c.button("Solicitar metadata", disabled=not creds_ok, use_container_width=True)
-    create_party = col_d.button("Solicitar por RFC", disabled=not creds_ok or not rfc_contraparte.strip(), use_container_width=True)
+    create_meta_ing = col_c.button("Metadata ingresos", disabled=not creds_ok, use_container_width=True)
+    create_meta_egr = col_d.button("Metadata egresos", disabled=not creds_ok, use_container_width=True)
 
-    verify_existing = st.button("Verificar/descargar ID existente", type="primary", disabled=not creds_ok or not existing_id.strip(), use_container_width=True)
+    col_e, col_f = st.columns(2)
+    create_party_ing = col_e.button("Ingresos por cliente", disabled=not creds_ok or not rfc_contraparte.strip(), use_container_width=True)
+    create_party_egr = col_f.button("Egresos por proveedor", disabled=not creds_ok or not rfc_contraparte.strip(), use_container_width=True)
 
-    if create_ing or create_egr or create_meta or create_party or verify_existing:
+    existing_id = st.text_input("ID solicitud SAT existente", value="", key="sync_id_solicitud")
+    col_g, col_h = st.columns(2)
+    verify_ing = col_g.button("Verificar/descargar ingresos", type="primary", disabled=not creds_ok or not existing_id.strip(), use_container_width=True)
+    verify_egr = col_h.button("Verificar/descargar egresos", type="primary", disabled=not creds_ok or not existing_id.strip(), use_container_width=True)
+
+    create_any = any([create_ing, create_egr, create_meta_ing, create_meta_egr, create_party_ing, create_party_egr])
+    verify_any = verify_ing or verify_egr
+
+    if create_any or verify_any:
         if not all([rfc, cer_up, key_up, password]):
             st.error("Vuelve a subir el certificado .cer, la llave .key y confirma la contraseña.")
             st.stop()
@@ -210,17 +213,18 @@ if page == "Sincronizar":
             "tipo_comprobante": s_tc,
         })
 
-        if create_ing or create_egr or create_meta or create_party:
-            request_type = "Metadata" if create_meta else "CFDI"
-            target_tipo = "R" if create_egr else "E"
-            if create_party and s_tipo in ("E", "R"):
-                target_tipo = s_tipo
+        if create_any:
+            request_type = "Metadata" if (create_meta_ing or create_meta_egr) else "CFDI"
+            target_tipo = "R" if (create_egr or create_meta_egr or create_party_egr) else "E"
             label = {
-                (True, False, False, False): "Ingresos",
-                (False, True, False, False): "Egresos",
-                (False, False, True, False): "Metadata",
-                (False, False, False, True): "Por RFC",
-            }.get((create_ing, create_egr, create_meta, create_party), "Solicitud")
+                (True, False, False, False, False, False): "Ingresos",
+                (False, True, False, False, False, False): "Egresos",
+                (False, False, True, False, False, False): "Metadata ingresos",
+                (False, False, False, True, False, False): "Metadata egresos",
+                (False, False, False, False, True, False): "Ingresos por cliente",
+                (False, False, False, False, False, True): "Egresos por proveedor",
+            }.get((create_ing, create_egr, create_meta_ing, create_meta_egr, create_party_ing, create_party_egr), "Solicitud")
+            use_party = create_party_ing or create_party_egr
 
             with st.spinner(f"Creando solicitud SAT: {label}..."):
                 auth = _run_skill("vertical_sat/sat_auth", {**common_ctx, "dry_run": False})
@@ -232,7 +236,7 @@ if page == "Sincronizar":
                     "token": auth["data"]["token"],
                     "tipo": target_tipo,
                     "tipo_solicitud": request_type,
-                    "rfc_contraparte": rfc_contraparte.strip() if create_party else "",
+                    "rfc_contraparte": rfc_contraparte.strip() if use_party else "",
                     "dry_run": False,
                 })
 
@@ -244,7 +248,7 @@ if page == "Sincronizar":
                     "tipo_solicitud": request_type,
                     "fecha_inicio": fi,
                     "fecha_fin": ff,
-                    "rfc_contraparte": rfc_contraparte.strip() if create_party else "",
+                    "rfc_contraparte": rfc_contraparte.strip() if use_party else "",
                     "id_solicitud": id_req,
                 })
                 st.success(f"{label}: solicitud aceptada {id_req}")
@@ -253,7 +257,7 @@ if page == "Sincronizar":
                 st.error(req.get("error", "Error solicitud SAT"))
             st.stop()
 
-        tipos = ["E", "R"] if s_tipo == "Ambos" else [s_tipo]
+        tipos = ["R"] if verify_egr else ["E"]
         for t in tipos:
             for rango_fi, rango_ff in rangos:
                 lbl = f"{t} — {rango_fi} → {rango_ff}"
