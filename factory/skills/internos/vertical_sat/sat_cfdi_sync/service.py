@@ -119,12 +119,15 @@ class SatCfdiSyncService:
         entrypoint  = skill_path / "skill.py"
         if not entrypoint.exists():
             return {"ok": False, "error": f"skill no encontrado: {skill_name}"}
-        module_name = f"_sat_{skill_name}"
+        module_name = f"_sat_{skill_name.replace('/', '_')}"
         spec        = importlib.util.spec_from_file_location(module_name, entrypoint)
         if not spec or not spec.loader:
             return {"ok": False, "error": f"error cargando: {skill_name}"}
         module = importlib.util.module_from_spec(spec)
         sys.path.insert(0, str(skill_path))
+        # Limpiar módulos de nombre genérico para evitar colisión de caché entre skills
+        for _k in [k for k in sys.modules if k in ("service", "skill")]:
+            del sys.modules[_k]
         try:
             spec.loader.exec_module(module)
             return module.run(ctx)
