@@ -103,7 +103,7 @@ class SatCfdiSyncService:
                 **creds, "token": token, "id_paquete": id_paquete, "dry_run": False,
             })
             log.append({"paso": f"sat_cfdi_descargar:{id_paquete}", "ok": r4.get("ok"),
-                        "msg": r4.get("message", "")})
+                        "msg": r4.get("message") or r4.get("error", "")})
             if not r4.get("ok"):
                 continue
 
