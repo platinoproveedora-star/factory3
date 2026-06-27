@@ -78,8 +78,37 @@ def _today_mx() -> date:
 
 def _remember_request(label: str, payload: dict) -> None:
     st.session_state.setdefault("sat_requests", [])
-    st.session_state["sat_requests"].insert(0, {"label": label, **payload})
+    signature = (
+        payload.get("tipo", ""),
+        payload.get("tipo_solicitud", ""),
+        payload.get("fecha_inicio", ""),
+        payload.get("fecha_fin", ""),
+        payload.get("rfc_contraparte", ""),
+    )
+    duplicate = any(
+        (
+            row.get("tipo", ""),
+            row.get("tipo_solicitud", ""),
+            row.get("fecha_inicio", ""),
+            row.get("fecha_fin", ""),
+            row.get("rfc_contraparte", ""),
+        ) == signature
+        for row in st.session_state["sat_requests"]
+    )
+    st.session_state["sat_requests"].insert(0, {
+        "label": label,
+        "estado_local": "Aceptada",
+        "duplicada_local": "Si" if duplicate else "",
+        "ultimo_resultado": "",
+        **payload,
+    })
     st.session_state["sat_requests"] = st.session_state["sat_requests"][:12]
+
+
+def _update_request(index: int, values: dict) -> None:
+    rows = st.session_state.get("sat_requests", [])
+    if 0 <= index < len(rows):
+        rows[index].update(values)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -164,10 +193,6 @@ if page == "Sincronizar":
     st.divider()
 
     # ── Botón sync ───────────────────────────────────────────────────────────
-    if st.session_state.get("sat_requests"):
-        st.subheader("Solicitudes en esta sesión")
-        st.dataframe(st.session_state["sat_requests"], use_container_width=True, hide_index=True)
-
     col_a, col_b, col_c, col_d = st.columns(4)
     create_ing = col_a.button("Solicitar ingresos", disabled=not creds_ok, use_container_width=True)
     create_egr = col_b.button("Solicitar egresos", disabled=not creds_ok, use_container_width=True)
@@ -178,13 +203,47 @@ if page == "Sincronizar":
     create_party_ing = col_e.button("Ingresos por cliente", disabled=not creds_ok or not rfc_contraparte.strip(), use_container_width=True)
     create_party_egr = col_f.button("Egresos por proveedor", disabled=not creds_ok or not rfc_contraparte.strip(), use_container_width=True)
 
+    saved_verify_idx = None
+    if st.session_state.get("sat_requests"):
+        st.subheader("Solicitudes en esta sesion")
+        head = st.columns([1.2, 0.7, 0.9, 1.2, 1.4, 2.7, 1.2, 1.1])
+        head[0].caption("Accion")
+        head[1].caption("Tipo")
+        head[2].caption("Solicitud")
+        head[3].caption("Periodo")
+        head[4].caption("RFC filtro")
+        head[5].caption("ID SAT")
+        head[6].caption("Estado")
+        head[7].caption("")
+        for idx, req_row in enumerate(st.session_state["sat_requests"]):
+            cols = st.columns([1.2, 0.7, 0.9, 1.2, 1.4, 2.7, 1.2, 1.1])
+            cols[0].write(req_row.get("label", "Solicitud"))
+            cols[1].write(req_row.get("tipo", ""))
+            cols[2].write(req_row.get("tipo_solicitud", ""))
+            cols[3].write(f"{req_row.get('fecha_inicio', '')} -> {req_row.get('fecha_fin', '')}")
+            cols[4].write(req_row.get("rfc_contraparte", "") or "Todos")
+            cols[5].code(req_row.get("id_solicitud", "") or "-", language=None)
+            estado = req_row.get("estado_local", "Aceptada")
+            if req_row.get("duplicada_local"):
+                estado = f"{estado} / duplicada"
+            if req_row.get("ultimo_resultado"):
+                estado = f"{estado}: {req_row.get('ultimo_resultado')}"
+            cols[6].write(estado)
+            if cols[7].button(
+                "Verificar",
+                key=f"verify_saved_{idx}_{req_row.get('id_solicitud', '')}",
+                disabled=not creds_ok or not req_row.get("id_solicitud"),
+                use_container_width=True,
+            ):
+                saved_verify_idx = idx
+
     existing_id = st.text_input("ID solicitud SAT existente", value="", key="sync_id_solicitud")
     col_g, col_h = st.columns(2)
     verify_ing = col_g.button("Verificar/descargar ingresos", type="primary", disabled=not creds_ok or not existing_id.strip(), use_container_width=True)
     verify_egr = col_h.button("Verificar/descargar egresos", type="primary", disabled=not creds_ok or not existing_id.strip(), use_container_width=True)
 
     create_any = any([create_ing, create_egr, create_meta_ing, create_meta_egr, create_party_ing, create_party_egr])
-    verify_any = verify_ing or verify_egr
+    verify_any = verify_ing or verify_egr or saved_verify_idx is not None
 
     if create_any or verify_any:
         if not all([rfc, cer_up, key_up, password]):
@@ -248,6 +307,7 @@ if page == "Sincronizar":
                     "tipo_solicitud": request_type,
                     "fecha_inicio": fi,
                     "fecha_fin": ff,
+                    "tipo_comprobante": s_tc,
                     "rfc_contraparte": rfc_contraparte.strip() if use_party else "",
                     "id_solicitud": id_req,
                 })
@@ -255,6 +315,43 @@ if page == "Sincronizar":
                 st.code(id_req)
             else:
                 st.error(req.get("error", "Error solicitud SAT"))
+            st.stop()
+
+        if saved_verify_idx is not None:
+            saved_req = st.session_state["sat_requests"][saved_verify_idx]
+            lbl = f"{saved_req.get('label', 'Solicitud')} - {saved_req.get('fecha_inicio', '')} -> {saved_req.get('fecha_fin', '')}"
+            with st.spinner(f"Verificando {lbl}..."):
+                r = _run_skill(
+                    "vertical_sat/sat_cfdi_sync",
+                    {
+                        **common_ctx,
+                        "fecha_inicio": saved_req.get("fecha_inicio", fi),
+                        "fecha_fin": saved_req.get("fecha_fin", ff),
+                        "tipo": saved_req.get("tipo", "E"),
+                        "tipo_solicitud": saved_req.get("tipo_solicitud", "CFDI"),
+                        "tipo_comprobante": saved_req.get("tipo_comprobante", s_tc),
+                        "id_solicitud": saved_req.get("id_solicitud", ""),
+                        "rfc_contraparte": saved_req.get("rfc_contraparte", ""),
+                    },
+                )
+
+            if r.get("ok"):
+                msg = r.get("message", "OK")
+                _update_request(saved_verify_idx, {
+                    "estado_local": "Verificada",
+                    "ultimo_resultado": msg,
+                })
+                st.success(f"{lbl}: {msg}")
+                for paso in r.get("data", {}).get("log", []):
+                    icon = "OK" if paso.get("ok") else "ERROR"
+                    st.caption(f"{icon} {paso['paso']} - {paso.get('msg', '')}")
+            else:
+                err = r.get("error", "Error")
+                _update_request(saved_verify_idx, {
+                    "estado_local": "Pendiente/Error",
+                    "ultimo_resultado": err,
+                })
+                st.error(f"{lbl}: {err}")
             st.stop()
 
         tipos = ["R"] if verify_egr else ["E"]
