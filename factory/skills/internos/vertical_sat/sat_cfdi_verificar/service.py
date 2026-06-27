@@ -173,7 +173,7 @@ class SatCfdiVerificarService:
         mensaje    = result.get("Mensaje") or result.get("mensaje") or ""
         paquetes   = [
             p.text.strip()
-            for p in result.xpath(".//*[local-name()='IdsPaquetes']/*")
+            for p in result.xpath(".//*[local-name()='IdsPaquetes']")
             if p.text and p.text.strip()
         ]
         return estado_sol, cod_sol, num_cfdis, paquetes, mensaje
