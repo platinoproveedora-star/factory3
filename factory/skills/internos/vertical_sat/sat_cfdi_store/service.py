@@ -100,7 +100,7 @@ class SatCfdiStoreService:
             return {"ok": True, "message": "Sin UUIDs válidos", "data": {"insertados": 0}}
 
         import urllib.error
-        endpoint = f"{url}/rest/v1/cfdi_documentos"
+        endpoint = f"{url}/rest/v1/cfdi_documentos?on_conflict=empresa_id,uuid_cfdi"
         req = urllib.request.Request(
             endpoint,
             data=json.dumps(rows).encode("utf-8"),
