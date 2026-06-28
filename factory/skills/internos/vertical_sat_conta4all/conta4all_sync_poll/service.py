@@ -42,7 +42,8 @@ class Conta4allSyncPollService:
             **creds, "token": token, "id_solicitud": id_solicitud, "dry_run": False,
         })
         if not r2.get("ok"):
-            return {"ok": False, "error": f"sat_cfdi_verificar: {r2.get('error', '')}",
+            msg = r2.get("error") or r2.get("message") or "sin detalle"
+            return {"ok": False, "error": f"sat_cfdi_verificar: {msg}",
                     "data": {"paso": "sat_cfdi_verificar"}}
 
         d = r2["data"]
@@ -79,7 +80,7 @@ class Conta4allSyncPollService:
             spec.loader.exec_module(module)
             return module.run(ctx)
         except Exception as e:
-            return {"ok": False, "error": str(e)}
+            return {"ok": False, "error": f"{type(e).__name__}: {e}"}
         finally:
             if sys.path and sys.path[0] == str(skill_path):
                 sys.path.pop(0)
