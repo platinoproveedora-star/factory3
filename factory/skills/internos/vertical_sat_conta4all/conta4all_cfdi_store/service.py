@@ -11,29 +11,29 @@ _DDL_SETUP = """
 CREATE SCHEMA IF NOT EXISTS conta4all;
 
 CREATE TABLE IF NOT EXISTS conta4all.cfdi_documentos (
-  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  managed_rfc_id   uuid NOT NULL,
-  uuid_cfdi        text NOT NULL,
-  tipo             text CHECK (tipo IN ('E','R')),
-  rfc_emisor       text,
-  nombre_emisor    text,
-  rfc_receptor     text,
-  nombre_receptor  text,
-  fecha_emision    date,
-  fecha_timbrado   timestamptz,
-  total            numeric(18,2) DEFAULT 0,
-  subtotal         numeric(18,2) DEFAULT 0,
-  descuento        numeric(18,2) DEFAULT 0,
-  moneda           text DEFAULT 'MXN',
-  tipo_comprobante text,
-  metodo_pago      text,
-  forma_pago       text,
-  uso_cfdi         text,
-  conceptos        jsonb DEFAULT '[]'::jsonb,
-  xml_raw          text,
-  created_at       timestamptz DEFAULT now(),
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  managed_rfc_id uuid NOT NULL,
+  uuid_cfdi      text NOT NULL,
+  created_at     timestamptz DEFAULT now(),
   UNIQUE (managed_rfc_id, uuid_cfdi)
 );
+
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS tipo             text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS rfc_emisor       text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS nombre_emisor    text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS rfc_receptor     text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS nombre_receptor  text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS fecha_emision    date;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS fecha_timbrado   timestamptz;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS total            numeric(18,2) DEFAULT 0;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS subtotal         numeric(18,2) DEFAULT 0;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS descuento        numeric(18,2) DEFAULT 0;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS moneda           text DEFAULT 'MXN';
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS tipo_comprobante text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS metodo_pago      text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS forma_pago       text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS uso_cfdi         text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS xml_raw          text;
 
 ALTER TABLE conta4all.cfdi_documentos ENABLE ROW LEVEL SECURITY;
 
