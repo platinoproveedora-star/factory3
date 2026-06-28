@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
     tipo: s.get("tipo") ?? undefined,
     fecha_inicio: s.get("fecha_inicio") ?? undefined,
     fecha_fin: s.get("fecha_fin") ?? undefined,
+    limit: s.get("limit") ?? undefined,
   });
   return NextResponse.json(result);
 }
