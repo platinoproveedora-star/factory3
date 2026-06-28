@@ -1,0 +1,12 @@
+{
+  "company_id": "EMP_CONTA4ALL",
+  "project_code": "PROY-002",
+  "module_code": "conta4all",
+  "platform": "vercel",
+  "requires_env": [
+    "FACTORY_API_URL",
+    "FACTORY_API_SECRET",
+    "PLATFORM_JWT_SECRET"
+  ],
+  "description": "Dashboard Next.js v1 para Conta4all — 5 pantallas: Login, Mis RFCs, Sincronizar, CFDIs, Resumen"
+}
