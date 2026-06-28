@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_auth_security/security_managed_rfc",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "CRUD de RFCs administrados por usuario. action=create|list|delete. Valida formato RFC SAT estrictamente.",
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
+}

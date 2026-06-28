@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_supabase/supabase_project_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un proyecto Supabase nuevo via Management API. action=list_orgs lista orgs disponibles. Devuelve url, service_role_key y db_pass UNA sola vez.",
+  "requires_env": ["SUPABASE_ACCESS_TOKEN"]
+}

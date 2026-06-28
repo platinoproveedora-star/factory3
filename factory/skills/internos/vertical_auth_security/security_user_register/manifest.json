@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_auth_security/security_user_register",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Registra usuario con email + password (Argon2id). Valida formato email y longitud mínima de password. modulo_code requerido.",
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
+}

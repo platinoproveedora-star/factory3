@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_doppler/doppler_secret_set",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea o actualiza secrets en un proyecto/config de Doppler. Acepta dict de secrets. Nunca loguea valores.",
+  "requires_env": ["DOPPLER_TOKEN"]
+}

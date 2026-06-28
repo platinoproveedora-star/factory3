@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_sat_conta4all/conta4all_cfdi_list",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Lista CFDIs de conta4all.cfdi_documentos filtrado por managed_rfc_id (kind=data, dashboard público).",
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
+}

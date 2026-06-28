@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_sat_conta4all/conta4all_sync_poll",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Paso 2 sync granular: re-auth + UNA llamada a sat_cfdi_verificar (sin loop). El browser llama esto cada 15-20s.",
+  "requires_env": []
+}

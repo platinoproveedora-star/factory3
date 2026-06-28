@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_supabase/supabase_project_status_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Verifica el estado de salud de un proyecto Supabase via Management API. Util tras supabase_project_create con wait=False.",
+  "requires_env": ["SUPABASE_ACCESS_TOKEN"]
+}

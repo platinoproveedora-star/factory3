@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_auth_security/security_user_login",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Login email+password → JWT (1-2h). Throttling por email+IP en platform.login_attempts. Bloqueo temporal tras 5 fallos.",
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY", "PLATFORM_JWT_SECRET"]
+}

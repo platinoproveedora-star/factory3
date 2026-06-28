@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_auth_security/security_secret_store",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Cifra e.firma (cer+key+password) con DEK/AES-256-GCM y KEK maestra. Guarda en platform.secrets. Nunca loguea credenciales.",
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY", "PLATFORM_KEK_V1"]
+}

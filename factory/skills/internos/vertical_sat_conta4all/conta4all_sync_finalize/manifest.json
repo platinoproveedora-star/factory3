@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_sat_conta4all/conta4all_sync_finalize",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Paso 3 sync granular: sat_cfdi_descargar + sat_cfdi_parser + conta4all_cfdi_store por managed_rfc_id.",
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
+}

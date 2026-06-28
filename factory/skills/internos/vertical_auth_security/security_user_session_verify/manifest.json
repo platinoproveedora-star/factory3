@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_auth_security/security_user_session_verify",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Valida JWT de sesión. Middleware para cualquier ruta autenticada del dashboard. Devuelve user_id, email, modulo_code.",
+  "requires_env": ["PLATFORM_JWT_SECRET"]
+}

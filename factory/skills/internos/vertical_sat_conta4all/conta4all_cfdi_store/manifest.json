@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_sat_conta4all/conta4all_cfdi_store",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Upsert CFDIs en conta4all.cfdi_documentos por managed_rfc_id (plataforma pública). action=setup_table crea DDL.",
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
+}

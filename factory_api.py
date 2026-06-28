@@ -19,6 +19,15 @@ from fastapi.responses import PlainTextResponse
 BASE_DIR = Path(__file__).parent
 FACTORY_DIR = BASE_DIR / "factory"
 
+# Skills que NUNCA deben ser accesibles via /run/ HTTP — solo invocables server-to-server
+# por otros skills via SkillRunner/importlib. Segunda capa: manifest.json "internal_only": true.
+_INTERNAL_ONLY_SKILLS: frozenset[str] = frozenset({
+    "security_secret_retrieve",
+    "vertical_auth_security/security_secret_retrieve",
+    "security_support_decrypt_session",
+    "vertical_auth_security/security_support_decrypt_session",
+})
+
 
 def load_env_file(path: Path = BASE_DIR / ".env") -> None:
     if not path.exists():
@@ -383,8 +392,23 @@ def cron_schedules(request: Request):
     return {"ok": result.get("ok"), "data": result.get("data"), "error": result.get("error")}
 
 
+def _is_internal_only(skill_name: str) -> bool:
+    if skill_name in _INTERNAL_ONLY_SKILLS:
+        return True
+    registry = read_json(FACTORY_DIR / "skills" / "registry.json")
+    entry    = registry.get(skill_name) or {}
+    rel_path = entry.get("path", "")
+    if rel_path:
+        manifest = read_json(FACTORY_DIR / rel_path / "manifest.json")
+        if manifest.get("internal_only"):
+            return True
+    return False
+
+
 @app.post("/run/{skill_name:path}")
 async def run_skill(skill_name: str, request: Request):
+    if _is_internal_only(skill_name):
+        raise HTTPException(status_code=403, detail="skill de uso interno — no accesible via /run/")
     secret = os.getenv("FACTORY_RUN_SECRET", "")
     if secret:
         auth = request.headers.get("Authorization", "")

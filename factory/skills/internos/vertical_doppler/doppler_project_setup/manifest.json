@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_doppler/doppler_project_setup",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un proyecto Doppler con configs dev/staging/production. action=list_projects lista proyectos existentes.",
+  "requires_env": ["DOPPLER_TOKEN"]
+}

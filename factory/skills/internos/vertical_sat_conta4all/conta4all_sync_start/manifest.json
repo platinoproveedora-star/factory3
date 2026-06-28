@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_sat_conta4all/conta4all_sync_start",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Paso 1 sync granular Conta4all: sat_auth + sat_cfdi_solicitud → devuelve id_solicitud. Sin polling bloqueante.",
+  "requires_env": []
+}

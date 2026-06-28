@@ -1,4 +1,176 @@
 {
+  "vertical_auth_security/security_user_register": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_user_register",
+    "vertical": "vertical_auth_security",
+    "descripcion": "Registra usuario email+password con Argon2id. Valida formato email y longitud mínima.",
+    "path": "skills/internos/vertical_auth_security/security_user_register",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_auth_security/security_user_login": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_user_login",
+    "vertical": "vertical_auth_security",
+    "descripcion": "Login email+password → JWT (2h). Throttling por email+IP, bloqueo tras 5 fallos.",
+    "path": "skills/internos/vertical_auth_security/security_user_login",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_auth_security/security_user_session_verify": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_user_session_verify",
+    "vertical": "vertical_auth_security",
+    "descripcion": "Valida JWT de sesión. Middleware para rutas autenticadas del dashboard.",
+    "path": "skills/internos/vertical_auth_security/security_user_session_verify",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_auth_security/security_managed_rfc": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_managed_rfc",
+    "vertical": "vertical_auth_security",
+    "descripcion": "CRUD RFCs administrados por usuario. action=create|list|delete. Valida formato RFC SAT.",
+    "path": "skills/internos/vertical_auth_security/security_managed_rfc",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_auth_security/security_secret_store": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_secret_store",
+    "vertical": "vertical_auth_security",
+    "descripcion": "Cifra e.firma con DEK/AES-256-GCM + KEK maestra. Guarda en platform.secrets. Sin logs de credenciales.",
+    "path": "skills/internos/vertical_auth_security/security_secret_store",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_auth_security/security_secret_retrieve": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_secret_retrieve",
+    "vertical": "vertical_auth_security",
+    "descripcion": "Descifra e.firma desde platform.secrets. SOLO server-to-server. Bloqueado en /run/ HTTP.",
+    "path": "skills/internos/vertical_auth_security/security_secret_retrieve",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_auth_security/security_access_grant": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_access_grant",
+    "vertical": "vertical_auth_security",
+    "descripcion": "CRUD grants de acceso por módulo. action=create|check|delete. Alta manual v1 sin Stripe.",
+    "path": "skills/internos/vertical_auth_security/security_access_grant",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_auth_security/security_password_reset": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_password_reset",
+    "vertical": "vertical_auth_security",
+    "descripcion": "Reset password. action=request|confirm. Sin envío de correo en v1 — token devuelto en respuesta.",
+    "path": "skills/internos/vertical_auth_security/security_password_reset",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_auth_security/security_support_decrypt_session": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_support_decrypt_session",
+    "vertical": "vertical_auth_security",
+    "descripcion": "Romper cristal: descifra con motivo obligatorio + audit log. Sin UI v1. SOLO server-to-server.",
+    "path": "skills/internos/vertical_auth_security/security_support_decrypt_session",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_doppler/doppler_project_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_doppler/doppler_project_setup",
+    "vertical": "vertical_doppler",
+    "descripcion": "Crea proyecto Doppler con ambientes dev/staging/production. action=list_projects lista existentes.",
+    "path": "skills/internos/vertical_doppler/doppler_project_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_doppler/doppler_secret_set": {
+    "tipo": "interno",
+    "nombre": "vertical_doppler/doppler_secret_set",
+    "vertical": "vertical_doppler",
+    "descripcion": "Crea o actualiza secrets en Doppler. Solo loguea nombres, nunca valores.",
+    "path": "skills/internos/vertical_doppler/doppler_secret_set",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_doppler/doppler_secret_list": {
+    "tipo": "interno",
+    "nombre": "vertical_doppler/doppler_secret_list",
+    "vertical": "vertical_doppler",
+    "descripcion": "Lista secrets de Doppler. include_values=False por defecto. Nunca loguea valores.",
+    "path": "skills/internos/vertical_doppler/doppler_secret_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_supabase/supabase_project_create": {
+    "tipo": "interno",
+    "nombre": "vertical_supabase/supabase_project_create",
+    "vertical": "vertical_supabase",
+    "descripcion": "Crea proyecto Supabase via Management API. action=list_orgs lista orgs. Devuelve url, service_role_key, db_pass (UNA sola vez).",
+    "path": "skills/internos/vertical_supabase/supabase_project_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_supabase/supabase_project_status_check": {
+    "tipo": "interno",
+    "nombre": "vertical_supabase/supabase_project_status_check",
+    "vertical": "vertical_supabase",
+    "descripcion": "Verifica estado de salud de un proyecto Supabase (ACTIVE_HEALTHY). Útil tras project_create con wait=False.",
+    "path": "skills/internos/vertical_supabase/supabase_project_status_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sat_conta4all/conta4all_cfdi_store": {
+    "tipo": "interno",
+    "nombre": "vertical_sat_conta4all/conta4all_cfdi_store",
+    "vertical": "vertical_sat_conta4all",
+    "descripcion": "Upsert CFDIs en conta4all.cfdi_documentos por managed_rfc_id (plataforma pública). action=setup_table crea DDL.",
+    "path": "skills/internos/vertical_sat_conta4all/conta4all_cfdi_store",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sat_conta4all/conta4all_cfdi_list": {
+    "tipo": "interno",
+    "nombre": "vertical_sat_conta4all/conta4all_cfdi_list",
+    "vertical": "vertical_sat_conta4all",
+    "kind": "data",
+    "descripcion": "Lista CFDIs de conta4all.cfdi_documentos filtrado por managed_rfc_id (kind=data, dashboard público).",
+    "path": "skills/internos/vertical_sat_conta4all/conta4all_cfdi_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sat_conta4all/conta4all_sync_start": {
+    "tipo": "interno",
+    "nombre": "vertical_sat_conta4all/conta4all_sync_start",
+    "vertical": "vertical_sat_conta4all",
+    "descripcion": "Paso 1 sync granular: sat_auth + sat_cfdi_solicitud → id_solicitud. Sin polling bloqueante.",
+    "path": "skills/internos/vertical_sat_conta4all/conta4all_sync_start",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sat_conta4all/conta4all_sync_poll": {
+    "tipo": "interno",
+    "nombre": "vertical_sat_conta4all/conta4all_sync_poll",
+    "vertical": "vertical_sat_conta4all",
+    "descripcion": "Paso 2 sync granular: re-auth + UNA llamada a sat_cfdi_verificar (sin loop). Browser llama cada 15-20s.",
+    "path": "skills/internos/vertical_sat_conta4all/conta4all_sync_poll",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sat_conta4all/conta4all_sync_finalize": {
+    "tipo": "interno",
+    "nombre": "vertical_sat_conta4all/conta4all_sync_finalize",
+    "vertical": "vertical_sat_conta4all",
+    "descripcion": "Paso 3 sync granular: sat_cfdi_descargar + sat_cfdi_parser + conta4all_cfdi_store por managed_rfc_id.",
+    "path": "skills/internos/vertical_sat_conta4all/conta4all_sync_finalize",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_ventas/erp_ventas_customer_list": {
     "tipo": "interno",
     "nombre": "vertical_erp_ventas/erp_ventas_customer_list",

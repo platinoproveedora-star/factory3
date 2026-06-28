@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_auth_security/security_secret_retrieve",
+  "version": "0.1.0",
+  "kind": "executable",
+  "internal_only": true,
+  "entrypoint": "skill.py",
+  "description": "Descifra e.firma desde platform.secrets. SOLO invocable server-to-server. Bloqueado en /run/ HTTP por factory_api.py.",
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY", "PLATFORM_KEK_V1"]
+}

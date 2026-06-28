@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_doppler/doppler_secret_list",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista secrets de un proyecto/config Doppler. Por defecto solo devuelve nombres (include_values=False). Nunca loguea valores.",
+  "requires_env": ["DOPPLER_TOKEN"]
+}

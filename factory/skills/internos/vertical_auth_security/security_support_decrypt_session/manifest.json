@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_auth_security/security_support_decrypt_session",
+  "version": "0.1.0",
+  "kind": "executable",
+  "internal_only": true,
+  "entrypoint": "skill.py",
+  "description": "Romper cristal: descifra secreto con motivo obligatorio + registro en audit log. Sin UI conectada en v1. SOLO server-to-server.",
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY", "PLATFORM_KEK_V1"]
+}
