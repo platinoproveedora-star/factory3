@@ -50,7 +50,7 @@ class Conta4allCfdiListService:
 
         cols = ("uuid_cfdi,tipo,rfc_emisor,nombre_emisor,rfc_receptor,nombre_receptor,"
                 "fecha_emision,fecha_timbrado,total,subtotal,descuento,moneda,"
-                "tipo_comprobante,metodo_pago,forma_pago,uso_cfdi,created_at")
+                "tipo_comprobante,metodo_pago,forma_pago,uso_cfdi")
 
         qs       = "&".join(filters + [f"limit={limit}", "order=fecha_emision.desc"])
         endpoint = f"{url}/rest/v1/cfdi_documentos?select={cols}&{qs}"

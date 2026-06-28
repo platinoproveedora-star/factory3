@@ -32,6 +32,7 @@ export default function CfdisPage() {
   const [cfdis, setCfdis] = useState<Cfdi[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/rfcs").then((r) => r.json()).then((d) => {
@@ -41,11 +42,16 @@ export default function CfdisPage() {
 
   const handleSearch = useCallback(async () => {
     if (!filters.managed_rfc_id) return;
-    setLoading(true); setSearched(true);
+    setLoading(true); setSearched(true); setError("");
     const qs = new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString();
     const res = await fetch(`/api/cfdis?${qs}`);
     const data = await res.json();
-    setCfdis(data.ok ? data.data?.cfdis ?? [] : []);
+    if (!data.ok) {
+      setCfdis([]);
+      setError(data.error || "Error consultando CFDIs");
+    } else {
+      setCfdis(data.data?.cfdis ?? []);
+    }
     setLoading(false);
   }, [filters]);
 
@@ -89,7 +95,13 @@ export default function CfdisPage() {
 
       {loading && <p className="text-muted text-sm">Cargando...</p>}
 
-      {!loading && searched && cfdis.length === 0 && (
+      {!loading && error && (
+        <div className="card border-red-800 bg-red-900/20 text-red-300 text-sm">
+          {error}
+        </div>
+      )}
+
+      {!loading && searched && !error && cfdis.length === 0 && (
         <div className="card text-center py-12">
           <p className="text-muted">No se encontraron CFDIs con esos filtros</p>
         </div>
