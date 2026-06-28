@@ -91,7 +91,6 @@ class Conta4allCfdiStoreService:
                 "metodo_pago":      c.get("metodo_pago", ""),
                 "forma_pago":       c.get("forma_pago", ""),
                 "uso_cfdi":         c.get("uso_cfdi", ""),
-                "conceptos":        json.dumps(c.get("conceptos", []), ensure_ascii=False),
                 "xml_raw":          c.get("xml_raw", ""),
             })
 
