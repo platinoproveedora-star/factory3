@@ -3,18 +3,17 @@ import { useState, useEffect, useCallback } from "react";
 import clsx from "clsx";
 
 interface Cfdi {
-  id: string;
   uuid_cfdi: string;
   tipo: string;
-  fecha: string;
-  emisor_rfc: string;
-  emisor_nombre: string;
-  receptor_rfc: string;
-  receptor_nombre: string;
+  fecha_emision: string;
+  rfc_emisor: string;
+  nombre_emisor: string;
+  rfc_receptor: string;
+  nombre_receptor: string;
   subtotal: number;
   total: number;
   moneda: string;
-  concepto: string;
+  tipo_comprobante: string;
 }
 
 interface Rfc { id: string; rfc: string; label?: string; }
@@ -68,8 +67,8 @@ export default function CfdisPage() {
             <label className="label">Tipo</label>
             <select className="input" value={filters.tipo} onChange={(e) => setFilters((f) => ({ ...f, tipo: e.target.value }))}>
               <option value="">Todos</option>
-              <option value="I">Ingreso</option>
-              <option value="E">Egreso</option>
+              <option value="E">Ingresos (Emitidos)</option>
+              <option value="R">Egresos (Recibidos)</option>
             </select>
           </div>
           <div>
@@ -106,25 +105,27 @@ export default function CfdisPage() {
                   <th className="text-left px-4 py-3">Fecha</th>
                   <th className="text-left px-4 py-3">Tipo</th>
                   <th className="text-left px-4 py-3">Emisor</th>
-                  <th className="text-left px-4 py-3">Concepto</th>
+                  <th className="text-left px-4 py-3">Contraparte</th>
                   <th className="text-right px-4 py-3">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {cfdis.map((c) => (
-                  <tr key={c.id} className="border-b border-border/50 hover:bg-card/60 transition-colors">
-                    <td className="px-4 py-3 text-muted">{c.fecha}</td>
+                  <tr key={c.uuid_cfdi} className="border-b border-border/50 hover:bg-card/60 transition-colors">
+                    <td className="px-4 py-3 text-muted">{c.fecha_emision}</td>
                     <td className="px-4 py-3">
-                      <span className={clsx(c.tipo === "I" ? "badge-green" : "badge-red")}>
-                        {c.tipo === "I" ? "Ingreso" : "Egreso"}
+                      <span className={clsx(c.tipo === "E" ? "badge-green" : "badge-red")}>
+                        {c.tipo === "E" ? "Ingreso" : "Egreso"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-mono text-xs">{c.emisor_rfc}</p>
-                      <p className="text-muted text-xs truncate max-w-[160px]">{c.emisor_nombre}</p>
+                      <p className="font-mono text-xs">{c.rfc_emisor}</p>
+                      <p className="text-muted text-xs truncate max-w-[160px]">{c.nombre_emisor}</p>
                     </td>
-                    <td className="px-4 py-3 text-muted text-xs truncate max-w-[180px]">{c.concepto}</td>
-                    <td className={clsx("px-4 py-3 text-right font-mono font-medium", c.tipo === "I" ? "text-green-400" : "text-red-400")}>
+                    <td className="px-4 py-3 text-muted text-xs truncate max-w-[180px]">
+                      {c.rfc_receptor} {c.nombre_receptor ? `- ${c.nombre_receptor}` : ""}
+                    </td>
+                    <td className={clsx("px-4 py-3 text-right font-mono font-medium", c.tipo === "E" ? "text-green-400" : "text-red-400")}>
                       {fmt(c.total, c.moneda)}
                     </td>
                   </tr>

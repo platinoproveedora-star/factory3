@@ -105,6 +105,13 @@ class Conta4allSyncPollService:
             vacio = bool(data.get("vacio"))
             error_sat = bool(data.get("error_sat"))
 
+        if estado_num == 5 and str(cod_sol) == "5002":
+            estado_txt = (
+                "SAT rechazo la solicitud. CodSol=5002 suele pasar cuando hay otra solicitud "
+                "igual activa o demasiados reintentos para el mismo RFC/rango. Espera y reintenta "
+                "con el mismo rango, o verifica una solicitud previa si existe."
+            )
+
         return {
             "id_solicitud": id_solicitud,
             "estado": estado_txt,
