@@ -26,11 +26,15 @@ class Conta4allCfdiListService:
         fecha_fin      = (context.get("fecha_fin") or "").strip()
         mes            = (context.get("mes") or "").strip()
         limit          = int(context.get("limit", 1000))
+        uuid_cfdi      = (context.get("uuid_cfdi") or "").strip()
+        include_xml    = bool(context.get("include_xml"))
 
         if not managed_rfc_id:
             return {"ok": False, "error": "managed_rfc_id requerido"}
 
         filters = [f"managed_rfc_id=eq.{managed_rfc_id}"]
+        if uuid_cfdi:
+            filters.append(f"uuid_cfdi=eq.{uuid_cfdi}")
         if tipo:
             filters.append(f"tipo=eq.{tipo}")
         if fecha_inicio:
@@ -50,7 +54,9 @@ class Conta4allCfdiListService:
 
         cols = ("uuid_cfdi,tipo,rfc_emisor,nombre_emisor,rfc_receptor,nombre_receptor,"
                 "fecha_emision,fecha_timbrado,total,subtotal,descuento,moneda,"
-                "tipo_comprobante,metodo_pago,forma_pago,uso_cfdi")
+                "tipo_comprobante,metodo_pago,forma_pago,uso_cfdi,conceptos,impuestos,iva,has_xml,pdf_url")
+        if include_xml:
+            cols += ",xml_raw"
 
         qs       = "&".join(filters + [f"limit={limit}", "order=fecha_emision.desc"])
         endpoint = f"{url}/rest/v1/cfdi_documentos?select={cols}&{qs}"

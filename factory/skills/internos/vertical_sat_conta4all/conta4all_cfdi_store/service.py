@@ -33,7 +33,13 @@ ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS tipo_comprobante 
 ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS metodo_pago      text;
 ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS forma_pago       text;
 ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS uso_cfdi         text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS conceptos        jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS impuestos        jsonb DEFAULT '{}'::jsonb;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS iva              numeric(18,2) DEFAULT 0;
 ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS xml_raw          text;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS has_xml          boolean DEFAULT false;
+ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS pdf_url          text DEFAULT '';
+UPDATE conta4all.cfdi_documentos SET has_xml = (NULLIF(xml_raw, '') IS NOT NULL);
 
 CREATE TABLE IF NOT EXISTS conta4all.sat_solicitudes (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -75,6 +81,8 @@ class Conta4allCfdiStoreService:
     def ejecutar(self, context: dict) -> dict:
         if context.get("action") == "setup_table":
             return self._setup(context)
+        if context.get("action") == "backfill_xml_fields":
+            return self._backfill_xml_fields(context)
 
         managed_rfc_id = str(context.get("managed_rfc_id") or "").strip()
         cfdis          = context.get("cfdis") or []
@@ -118,7 +126,11 @@ class Conta4allCfdiStoreService:
                 "metodo_pago":      c.get("metodo_pago", ""),
                 "forma_pago":       c.get("forma_pago", ""),
                 "uso_cfdi":         c.get("uso_cfdi", ""),
+                "conceptos":        c.get("conceptos", []),
+                "impuestos":        c.get("impuestos", {}),
+                "iva":              float(c.get("iva") or 0),
                 "xml_raw":          c.get("xml_raw", ""),
+                "has_xml":          bool(c.get("xml_raw")),
             })
 
         if not rows:
@@ -192,3 +204,136 @@ class Conta4allCfdiStoreService:
             body = e.read().decode("utf-8", errors="replace")
             return {"ok": False, "error": f"Management API {e.code}: {body[:300]}",
                     "data": {"sql_manual": _DDL_SETUP}}
+
+    def _backfill_xml_fields(self, context: dict) -> dict:
+        if context.get("dry_run", True):
+            return {"ok": True, "message": "dry_run - backfill no ejecutado", "data": {"actualizados": 0}}
+
+        url = (context.get("platform_supabase_url") or
+               os.getenv("PLATFORM_SUPABASE_URL", "")).rstrip("/")
+        key = (context.get("platform_supabase_service_role_key") or
+               os.getenv("PLATFORM_SUPABASE_SERVICE_ROLE_KEY", ""))
+        if not url or not key:
+            return {"ok": False, "error": "Faltan PLATFORM_SUPABASE_URL o PLATFORM_SUPABASE_SERVICE_ROLE_KEY"}
+
+        managed_rfc_id = str(context.get("managed_rfc_id") or "").strip()
+        limit = int(context.get("limit", 1000))
+        filters = ["select=managed_rfc_id,uuid_cfdi,xml_raw", "xml_raw=not.is.null", f"limit={limit}"]
+        if managed_rfc_id:
+            filters.append(f"managed_rfc_id=eq.{managed_rfc_id}")
+        endpoint = f"{url}/rest/v1/cfdi_documentos?{'&'.join(filters)}"
+        req = urllib.request.Request(endpoint, headers={
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Accept-Profile": "conta4all",
+            "User-Agent": "FactoryFactory/0.1 (+https://github.com/)",
+        })
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                rows = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            return {"ok": False, "error": f"Supabase HTTP {e.code}: {body[:300]}"}
+
+        updates = []
+        for row in rows:
+            derived = self._derive_xml_fields(row.get("xml_raw") or "")
+            if not derived:
+                continue
+            updates.append({
+                "managed_rfc_id": row.get("managed_rfc_id"),
+                "uuid_cfdi": row.get("uuid_cfdi"),
+                **derived,
+            })
+
+        if not updates:
+            return {"ok": True, "message": "Sin XMLs parseables para backfill", "data": {"actualizados": 0}}
+
+        updated = 0
+        for item in updates:
+            payload = {
+                "conceptos": item["conceptos"],
+                "impuestos": item["impuestos"],
+                "iva": item["iva"],
+            }
+            endpoint = (
+                f"{url}/rest/v1/cfdi_documentos?"
+                f"managed_rfc_id=eq.{item['managed_rfc_id']}&uuid_cfdi=eq.{item['uuid_cfdi']}"
+            )
+            req = urllib.request.Request(
+                endpoint,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "apikey": key,
+                    "Authorization": f"Bearer {key}",
+                    "Content-Type": "application/json",
+                    "Content-Profile": "conta4all",
+                    "Prefer": "return=minimal",
+                    "User-Agent": "FactoryFactory/0.1 (+https://github.com/)",
+                },
+                method="PATCH",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=20) as resp:
+                    resp.read()
+                updated += 1
+            except urllib.error.HTTPError:
+                continue
+
+        return {"ok": True, "message": f"{updated} CFDIs recalculados desde XML",
+                "data": {"actualizados": updated, "revisados": len(rows)}}
+
+    def _derive_xml_fields(self, xml_raw: str) -> dict:
+        if not xml_raw:
+            return {}
+        try:
+            import xml.etree.ElementTree as ET
+            if isinstance(xml_raw, str):
+                xml_text = xml_raw.lstrip("\ufeff")
+                root = ET.fromstring(xml_text)
+            else:
+                root = ET.fromstring(xml_raw)
+        except Exception:
+            return {}
+        ns = root.tag[1:].split("}", 1)[0] if root.tag.startswith("{") else "http://www.sat.gob.mx/cfd/4"
+
+        conceptos = []
+        for c in root.findall(f".//{{{ns}}}Concepto"):
+            conceptos.append({
+                "descripcion": c.get("Descripcion", ""),
+                "cantidad": c.get("Cantidad", ""),
+                "valor_unitario": c.get("ValorUnitario", ""),
+                "importe": c.get("Importe", ""),
+                "clave_prod_serv": c.get("ClaveProdServ", ""),
+            })
+
+        impuestos = {
+            "iva_trasladado": 0.0,
+            "iva_retenido": 0.0,
+            "isr_retenido": 0.0,
+            "total_trasladados": 0.0,
+            "total_retenidos": 0.0,
+        }
+        for traslado in root.findall(f".//{{{ns}}}Traslado"):
+            importe = self._to_float(traslado.get("Importe", "0"))
+            impuestos["total_trasladados"] += importe
+            if traslado.get("Impuesto") == "002":
+                impuestos["iva_trasladado"] += importe
+        for retencion in root.findall(f".//{{{ns}}}Retencion"):
+            importe = self._to_float(retencion.get("Importe", "0"))
+            impuestos["total_retenidos"] += importe
+            if retencion.get("Impuesto") == "002":
+                impuestos["iva_retenido"] += importe
+            if retencion.get("Impuesto") == "001":
+                impuestos["isr_retenido"] += importe
+        return {
+            "conceptos": conceptos,
+            "impuestos": impuestos,
+            "iva": round(impuestos["iva_trasladado"] - impuestos["iva_retenido"], 2),
+        }
+
+    def _to_float(self, value: str) -> float:
+        try:
+            return float(value or 0)
+        except Exception:
+            return 0.0

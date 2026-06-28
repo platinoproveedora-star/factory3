@@ -40,7 +40,8 @@ class SatCfdiParserService:
 
     def _parsear(self, xml_str: str) -> dict:
         from lxml import etree
-        root = etree.fromstring(xml_str.encode("utf-8") if isinstance(xml_str, str) else xml_str)
+        xml_bytes = xml_str.lstrip("\ufeff").encode("utf-8") if isinstance(xml_str, str) else xml_str
+        root = etree.fromstring(xml_bytes)
         ns   = root.nsmap.get(None) or _NS40
 
         def a(attr):
@@ -59,6 +60,26 @@ class SatCfdiParserService:
                 "importe":        c.get("Importe", ""),
                 "clave_prod_serv": c.get("ClaveProdServ", ""),
             })
+
+        impuestos = {
+            "iva_trasladado": 0.0,
+            "iva_retenido": 0.0,
+            "isr_retenido": 0.0,
+            "total_trasladados": 0.0,
+            "total_retenidos": 0.0,
+        }
+        for traslado in root.findall(f".//{{{ns}}}Traslado"):
+            importe = self._to_float(traslado.get("Importe", "0"))
+            impuestos["total_trasladados"] += importe
+            if traslado.get("Impuesto") == "002":
+                impuestos["iva_trasladado"] += importe
+        for retencion in root.findall(f".//{{{ns}}}Retencion"):
+            importe = self._to_float(retencion.get("Importe", "0"))
+            impuestos["total_retenidos"] += importe
+            if retencion.get("Impuesto") == "002":
+                impuestos["iva_retenido"] += importe
+            if retencion.get("Impuesto") == "001":
+                impuestos["isr_retenido"] += importe
 
         return {
             "uuid":             tfd.get("UUID", "") if tfd is not None else "",
@@ -81,5 +102,13 @@ class SatCfdiParserService:
             "rfc_receptor":     receptor.get("Rfc", "")   if receptor is not None else "",
             "nombre_receptor":  receptor.get("Nombre", "") if receptor is not None else "",
             "conceptos":        conceptos,
+            "impuestos":        impuestos,
+            "iva":              round(impuestos["iva_trasladado"] - impuestos["iva_retenido"], 2),
             "xml_raw":          xml_str if isinstance(xml_str, str) else xml_str.decode("utf-8"),
         }
+
+    def _to_float(self, value: str) -> float:
+        try:
+            return float(value or 0)
+        except Exception:
+            return 0.0

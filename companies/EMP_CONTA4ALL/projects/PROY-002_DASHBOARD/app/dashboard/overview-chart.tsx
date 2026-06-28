@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 
 interface Cfdi {
   fecha?: string;
+  fecha_emision?: string;
   tipo?: string;
   total?: number | string;
 }
@@ -10,12 +11,13 @@ interface Cfdi {
 function buildChartData(cfdis: Cfdi[]) {
   const byMonth: Record<string, { mes: string; Ingresos: number; Egresos: number }> = {};
   for (const c of cfdis) {
-    if (!c.fecha) continue;
-    const mes = c.fecha.slice(0, 7);
+    const fecha = c.fecha_emision || c.fecha;
+    if (!fecha) continue;
+    const mes = fecha.slice(0, 7);
     if (!byMonth[mes]) byMonth[mes] = { mes, Ingresos: 0, Egresos: 0 };
     const total = Number(c.total) || 0;
-    if (c.tipo === "I") byMonth[mes].Ingresos += total;
-    else if (c.tipo === "E") byMonth[mes].Egresos += total;
+    if (c.tipo === "E") byMonth[mes].Ingresos += total;
+    else if (c.tipo === "R") byMonth[mes].Egresos += total;
   }
   return Object.values(byMonth).sort((a, b) => a.mes.localeCompare(b.mes));
 }

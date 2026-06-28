@@ -12,6 +12,8 @@ export async function GET(req: NextRequest) {
     fecha_inicio: s.get("fecha_inicio") ?? undefined,
     fecha_fin: s.get("fecha_fin") ?? undefined,
     limit: s.get("limit") ?? undefined,
+    uuid_cfdi: s.get("uuid_cfdi") ?? undefined,
+    include_xml: s.get("include_xml") === "1",
   });
   return NextResponse.json(result);
 }
