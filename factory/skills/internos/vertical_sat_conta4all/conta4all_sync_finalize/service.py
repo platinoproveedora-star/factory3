@@ -2,12 +2,17 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import sys
+import tempfile
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 _VERTICAL_SAT = Path(__file__).parent.parent.parent / "vertical_sat"
 _VERTICAL_C4A = Path(__file__).parent.parent  # vertical_sat_conta4all
+_CACHE_PATH = Path(tempfile.gettempdir()) / "conta4all_sat_solicitudes.json"
 
 
 class Conta4allSyncFinalizeService:
@@ -19,6 +24,7 @@ class Conta4allSyncFinalizeService:
         key_pwd        = context.get("key_password") or os.getenv("SAT_EFIRMA_PASSWORD", "")
         managed_rfc_id = str(context.get("managed_rfc_id") or "").strip()
         tipo           = context.get("tipo", "E")
+        id_solicitud   = str(context.get("id_solicitud") or "").strip()
         paquetes       = context.get("paquetes") or []
 
         if context.get("dry_run"):
@@ -70,6 +76,15 @@ class Conta4allSyncFinalizeService:
                         "msg": r4.get("message") or r4.get("error", "")})
             total_guardados += r4.get("data", {}).get("insertados", 0)
 
+        if id_solicitud:
+            self._update_request_state(context, {
+                "id_solicitud": id_solicitud,
+                "estado": 3,
+                "paquetes": paquetes,
+                "num_cfdis": total_guardados,
+                "ultimo_error": "",
+            })
+
         return {
             "ok":      True,
             "message": f"{total_guardados} CFDIs guardados (tipo={tipo})",
@@ -78,6 +93,75 @@ class Conta4allSyncFinalizeService:
                 "paquetes_procesados": len(paquetes),
                 "log":                 log,
             },
+        }
+
+    def _update_request_state(self, context: dict, values: dict) -> None:
+        self._update_request_state_supabase(context, values)
+        self._update_request_state_cache(values)
+
+    def _update_request_state_supabase(self, context: dict, values: dict) -> None:
+        url, key = self._platform_supabase(context)
+        if not url or not key or not values.get("id_solicitud"):
+            return
+        patch = {
+            "estado": int(values.get("estado", 3)),
+            "paquetes": values.get("paquetes", []),
+            "num_cfdis": int(values.get("num_cfdis", 0) or 0),
+            "ultimo_error": values.get("ultimo_error", ""),
+        }
+        qs = urllib.parse.urlencode({"id_solicitud": f"eq.{values['id_solicitud']}"}, safe=".")
+        req = urllib.request.Request(
+            f"{url}/rest/v1/sat_solicitudes?{qs}",
+            data=json.dumps(patch).encode("utf-8"),
+            headers={**self._platform_headers(key), "Prefer": "return=minimal"},
+            method="PATCH",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                resp.read()
+        except Exception:
+            return
+
+    def _update_request_state_cache(self, values: dict) -> None:
+        rows = self._read_cache()
+        changed = False
+        for row in rows:
+            if row.get("id_solicitud") == values.get("id_solicitud"):
+                row.update({
+                    "estado": int(values.get("estado", row.get("estado", 3))),
+                    "paquetes": values.get("paquetes", row.get("paquetes", [])),
+                    "num_cfdis": int(values.get("num_cfdis", row.get("num_cfdis", 0)) or 0),
+                    "ultimo_error": values.get("ultimo_error", ""),
+                })
+                changed = True
+        if changed:
+            self._write_cache(rows)
+
+    def _read_cache(self) -> list[dict]:
+        try:
+            return json.loads(_CACHE_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return []
+
+    def _write_cache(self, rows: list[dict]) -> None:
+        try:
+            _CACHE_PATH.write_text(json.dumps(rows[:100]), encoding="utf-8")
+        except Exception:
+            pass
+
+    def _platform_supabase(self, context: dict) -> tuple[str, str]:
+        url = (context.get("platform_supabase_url") or os.getenv("PLATFORM_SUPABASE_URL", "")).rstrip("/")
+        key = context.get("platform_supabase_service_role_key") or os.getenv("PLATFORM_SUPABASE_SERVICE_ROLE_KEY", "")
+        return url, key
+
+    def _platform_headers(self, key: str) -> dict:
+        return {
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "Content-Profile": "conta4all",
+            "Accept-Profile": "conta4all",
+            "User-Agent": "FactoryFactory/0.1 (+https://github.com/)",
         }
 
     def _run(self, vertical_path: Path, skill_name: str, ctx: dict) -> dict:

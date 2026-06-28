@@ -35,7 +35,34 @@ ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS forma_pago       
 ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS uso_cfdi         text;
 ALTER TABLE conta4all.cfdi_documentos ADD COLUMN IF NOT EXISTS xml_raw          text;
 
+CREATE TABLE IF NOT EXISTS conta4all.sat_solicitudes (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  managed_rfc_id  uuid,
+  rfc             text NOT NULL,
+  id_solicitud    text NOT NULL UNIQUE,
+  tipo            text NOT NULL DEFAULT 'E',
+  tipo_solicitud  text NOT NULL DEFAULT 'CFDI',
+  tipo_comprobante text DEFAULT '',
+  rfc_contraparte text DEFAULT '',
+  fecha_inicio    date NOT NULL,
+  fecha_fin       date NOT NULL,
+  estado          int DEFAULT 1,
+  paquetes        jsonb DEFAULT '[]'::jsonb,
+  num_cfdis       int DEFAULT 0,
+  ultimo_error    text DEFAULT '',
+  created_at      timestamptz DEFAULT now(),
+  updated_at      timestamptz DEFAULT now()
+);
+
+ALTER TABLE conta4all.sat_solicitudes ADD COLUMN IF NOT EXISTS tipo_comprobante text DEFAULT '';
+ALTER TABLE conta4all.sat_solicitudes ADD COLUMN IF NOT EXISTS rfc_contraparte text DEFAULT '';
+ALTER TABLE conta4all.sat_solicitudes ADD COLUMN IF NOT EXISTS ultimo_error text DEFAULT '';
+
+CREATE INDEX IF NOT EXISTS sat_solicitudes_lookup_idx
+  ON conta4all.sat_solicitudes (managed_rfc_id, rfc, tipo, tipo_solicitud, fecha_inicio, fecha_fin, estado);
+
 ALTER TABLE conta4all.cfdi_documentos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conta4all.sat_solicitudes ENABLE ROW LEVEL SECURITY;
 
 GRANT USAGE ON SCHEMA conta4all TO service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA conta4all TO service_role;
