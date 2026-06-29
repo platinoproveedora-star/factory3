@@ -1,4 +1,15 @@
 {
+  "EMP_GASTOS4ALL": {
+    "GASTOS4ALL_V1": {
+      "company_id": "EMP_GASTOS4ALL",
+      "project_code": "GASTOS4ALL_V1",
+      "module_code": "gastos4all",
+      "schema": "gastos4all",
+      "type": "client_expenses",
+      "status": "active",
+      "folder": "companies/EMP_GASTOS4ALL/projects/GASTOS4ALL_V1"
+    }
+  },
   "EMP_DURALON": {
     "PROY-001": {
       "company_id": "EMP_DURALON",

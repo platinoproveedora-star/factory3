@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "gastos4all_schema_setup",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea el schema gastos4all multi-tenant en Supabase. dry_run=True retorna el SQL sin ejecutar.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ACCESS_TOKEN"]
+}

@@ -9,7 +9,7 @@ body {
 }
 
 @layer components {
-  .card        { @apply rounded-xl border border-border bg-card p-5; }
+  .card      { @apply rounded-xl border border-border bg-card p-5; }
   .btn-primary { @apply rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50; }
   .btn-ghost   { @apply rounded-lg border border-border px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:border-slate-400 hover:text-white; }
   .input       { @apply w-full rounded-lg border border-border bg-card px-3 py-2 text-slate-100 placeholder-muted transition-colors focus:border-primary focus:outline-none; }

@@ -162,14 +162,14 @@ export function GastosDashboard({
         <Kpi label="Promedio" value={mxn(stats.avg)} />
       </div>
 
-      <section className="mt-5 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <section className="mt-5 rounded-lg border border-border bg-card p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-[240px] flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Buscar gasto, folio, categoria..." className="w-full rounded-md border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-steel" />
           </div>
           <span className="text-xs text-slate-500">{filtered.length} registros</span>
-          <button onClick={startCreate} className="inline-flex items-center gap-2 rounded-md bg-ink px-3 py-2 text-sm font-medium text-white">
+          <button onClick={startCreate} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white">
             <Plus size={15} /> Nuevo
           </button>
           <button onClick={downloadCsv} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
@@ -182,7 +182,7 @@ export function GastosDashboard({
 
         <div className="mt-4 overflow-x-auto rounded-md border border-slate-200">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-[#eef3ef] text-left text-xs uppercase text-slate-600">
+            <thead className="bg-slate-900/30 text-left text-xs uppercase text-slate-400">
               <tr>
                 {["Folio", "Fecha", "Categoria", "Vehiculo", "Cta retiro", "Descripcion", "Usuario", "Monto", ""].map((head) => (
                   <th key={head} className="px-3 py-3 font-semibold">{head}</th>
@@ -199,7 +199,7 @@ export function GastosDashboard({
                   </tr>
                 ) : (
                   <tr key={row.folio} className="hover:bg-slate-50">
-                    <td className="px-3 py-2 font-mono text-xs text-slate-600">{row.folio}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-slate-400">{row.folio}</td>
                     <td className="px-3 py-2">{row.fecha}</td>
                     <td className="px-3 py-2">{row.categoria || "-"}</td>
                     <td className="px-3 py-2">{row.vehiculo || "-"}</td>
@@ -226,9 +226,9 @@ export function GastosDashboard({
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-ink">{value}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </div>
   );
 }
@@ -265,8 +265,8 @@ function DraftRow({
         </select>
         <input value={draft.descripcion} onChange={(event) => setDraft((d) => ({ ...d, descripcion: event.target.value }))} placeholder="Descripcion" className="rounded border border-slate-200 px-2 py-2 text-sm" />
         <div className="flex gap-1">
-          <button disabled={saving} onClick={onSave} className="inline-flex h-9 w-9 items-center justify-center rounded bg-moss text-white disabled:opacity-50" title="Guardar"><Check size={15} /></button>
-          <button onClick={onCancel} className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 bg-white" title="Cancelar"><X size={15} /></button>
+          <button disabled={saving} onClick={onSave} className="inline-flex h-9 w-9 items-center justify-center rounded bg-emerald-600 text-white disabled:opacity-50" title="Guardar"><Check size={15} /></button>
+          <button onClick={onCancel} className="inline-flex h-9 w-9 items-center justify-center rounded border border-border bg-card" title="Cancelar"><X size={15} /></button>
         </div>
       </div>
     </div>

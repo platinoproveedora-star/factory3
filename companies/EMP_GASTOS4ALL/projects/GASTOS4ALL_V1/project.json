@@ -1,0 +1,14 @@
+{
+  "company_id": "EMP_GASTOS4ALL",
+  "project_code": "GASTOS4ALL_V1",
+  "module_code": "gastos4all",
+  "schema": "gastos4all",
+  "platform": "vercel",
+  "requires_env": [
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY",
+    "PLATFORM_JWT_SECRET",
+    "FACTORY_API_URL",
+    "NEXT_PUBLIC_FACTORY_API_URL"
+  ]
+}

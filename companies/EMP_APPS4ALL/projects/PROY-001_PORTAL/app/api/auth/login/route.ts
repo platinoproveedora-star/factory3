@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookieOptions, COOKIE_NAME, signSession } from "@/lib/auth";
-import { verifyPassword } from "@/lib/password";
+import { callSkill } from "@/lib/factory";
 import { companyName, findUserByEmail, listCompanies, listGrants, logLoginAttempt } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
@@ -16,10 +16,20 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const user = await findUserByEmail(email);
-    if (!user || !(await verifyPassword(password, user.password_hash))) {
+    const skillResult = await callSkill("vertical_auth_security/security_user_login", {
+      email,
+      password,
+      ip,
+      modulo_code: "apps4all_portal",
+      dry_run: false,
+    });
+    if (!skillResult.ok) {
       await logLoginAttempt(email, ip, false);
       return NextResponse.json({ ok: false, error: "Credenciales incorrectas" }, { status: 401 });
+    }
+    const user = await findUserByEmail(email);
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Usuario no encontrado" }, { status: 401 });
     }
     const grants = await listGrants(user.id);
     if (!grants.length) {

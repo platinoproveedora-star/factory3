@@ -1,4 +1,13 @@
 {
+  "vertical_gastos4all/gastos4all_schema_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_gastos4all/gastos4all_schema_setup",
+    "vertical": "vertical_gastos4all",
+    "descripcion": "Crea el schema gastos4all multi-tenant en Supabase. dry_run=True retorna SQL sin ejecutar.",
+    "path": "skills/internos/vertical_gastos4all/gastos4all_schema_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_auth_security/security_user_register": {
     "tipo": "interno",
     "nombre": "vertical_auth_security/security_user_register",

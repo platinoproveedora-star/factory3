@@ -114,6 +114,9 @@ class ClientExpensesDashboardDataService:
             "order=fecha.desc",
             f"limit={limit}",
         ]
+        empresa_id = str(context.get("empresa_id") or context.get("company_id") or "").strip()
+        if empresa_id:
+            params.append(f"empresa_id=eq.{urllib.parse.quote(empresa_id)}")
         if context.get("fecha_desde"):
             params.append(f"fecha=gte.{urllib.parse.quote(str(context['fecha_desde']))}")
         if context.get("fecha_hasta"):
