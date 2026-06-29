@@ -278,6 +278,12 @@ class MultiShopperCrudService:
             "supabase_project_ref",
             "can_extract",
             "bucket",
+            "content_b64",
+            "content_base64",
+            "media_type",
+            "content_type",
+            "storage_path",
+            "file_type",
         }
         row = {key: value for key, value in context.items() if key not in blocked}
         if include_identity:
