@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/multi_shopper_dashboard_data",
+  "entrypoint": "skill.py",
+  "kind": "data",
+  "version": "0.1.0",
+  "description": "Data skill para dashboard Multi Shopper: KPIs, cotizaciones, productos, proveedores, documentos y precios."
+}

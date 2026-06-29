@@ -1,6 +1,6 @@
 # Tablas Supabase — Registry
 
-Actualizado: 2026-06-26
+Actualizado: 2026-06-28
 
 ## Schema `public`
 
@@ -118,6 +118,32 @@ ERP-ready: todas las tablas tienen `empresa_id`, `project_code`, `module_code`.
 | [freelance.proposals](#freelanceproposals) | Propuestas generadas para vacantes freelance. |
 | [freelance.tasks](#freelancetasks) | Checklist operativo del registro, portafolio y seguimiento. |
 | [freelance.assets](#freelanceassets) | Assets de portafolio por proyecto: screenshots, videos, links. |
+
+---
+
+## Schema configurable `vertical_multi_shopper`
+
+Purchasing IA Engine. El schema real viene de `context.schema` / `MULTI_SHOPPER_SCHEMA`; no esta fijado en codigo reusable.
+Todas las tablas tienen `id uuid PRIMARY KEY`, `folio text UNIQUE NOT NULL`, `company_id`, `project_code`, `module_code`, `created_at` y `updated_at` cuando aplica.
+
+| Tabla | Descripcion |
+|---|---|
+| `sales_quotes` | Cotizaciones de venta origen, con cliente/proyecto/status. |
+| `sales_quote_items` | Partidas solicitadas por el cliente antes de normalizar producto. |
+| `products` | Catalogo canonico de productos comprables/cotizables. |
+| `product_aliases` | Alias, marcas y textos equivalentes para matching. |
+| `suppliers` | Proveedores y metadatos comerciales. |
+| `supplier_contacts` | Contactos por proveedor y canal. |
+| `supplier_categories` | Relacion proveedor-categoria con prioridad. |
+| `purchase_quotes` | Solicitudes de cotizacion a proveedores; genera mensaje copiable, no envia automatico. |
+| `purchase_quote_items` | Partidas enviadas al proveedor. |
+| `purchase_quote_responses` | Respuestas de proveedor capturadas/OCR. |
+| `price_history` | Historico append-only de precios por proveedor/producto. |
+| `documents` | Archivos subidos y estado de extraccion. |
+| `activity_logs` | Auditoria operacional. |
+| `settings` | Configuracion por empresa/proyecto/modulo. |
+
+**SQL**: `vertical_multi_shopper/multi_shopper_schema_plan` genera el DDL con el schema recibido por contexto.
 
 ---
 

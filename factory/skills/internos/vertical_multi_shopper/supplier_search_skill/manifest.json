@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/supplier_search_skill",
+  "entrypoint": "skill.py",
+  "kind": "data",
+  "version": "0.1.0",
+  "description": "Busca proveedores Multi Shopper por categoria, texto o estado."
+}

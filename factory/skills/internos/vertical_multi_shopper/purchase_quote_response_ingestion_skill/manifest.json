@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/purchase_quote_response_ingestion_skill",
+  "entrypoint": "skill.py",
+  "kind": "executable",
+  "version": "0.1.0",
+  "description": "Registra respuestas de proveedor y conserva referencia a documento origen."
+}

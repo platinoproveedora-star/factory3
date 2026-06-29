@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/multi_shopper_activity_log_skill",
+  "entrypoint": "skill.py",
+  "kind": "executable",
+  "version": "0.1.0",
+  "description": "Registra y lista eventos operativos importantes de Multi Shopper."
+}

@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/document_skill",
+  "entrypoint": "skill.py",
+  "kind": "executable",
+  "version": "0.1.0",
+  "description": "Guarda documentos Multi Shopper, sube archivos a Storage y extrae productos/precios con IA."
+}

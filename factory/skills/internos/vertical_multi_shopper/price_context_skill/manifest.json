@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/price_context_skill",
+  "entrypoint": "skill.py",
+  "kind": "data",
+  "version": "0.1.0",
+  "description": "Consulta contexto historico de precios por producto, proveedor o texto."
+}

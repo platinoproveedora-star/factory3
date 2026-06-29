@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/sales_quote_items_skill",
+  "entrypoint": "skill.py",
+  "kind": "executable",
+  "version": "0.1.0",
+  "description": "CRUD de partidas de cotizacion de venta multi_shopper."
+}

@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/erp_reference_connector_skill",
+  "entrypoint": "skill.py",
+  "kind": "data",
+  "version": "0.1.0",
+  "description": "Conector ERP de solo lectura para productos, proveedores, categorias y unidades."
+}

@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/vertical_multi_shopper",
+  "entrypoint": "skill.py",
+  "kind": "executable",
+  "version": "0.1.0",
+  "description": "Skill raiz de la vertical Multi Shopper: health, capabilities y contrato operativo."
+}

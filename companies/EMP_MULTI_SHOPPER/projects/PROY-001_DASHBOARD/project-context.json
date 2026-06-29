@@ -1,0 +1,9 @@
+{
+  "company_id": "EMP_MULTI_SHOPPER",
+  "project_code": "PROY-001",
+  "module_code": "vertical_multi_shopper",
+  "schema": "multi_shopper",
+  "platform": "vercel",
+  "factory_api_url": "https://factory3.onrender.com",
+  "storage_bucket": "multi-shopper-documents"
+}

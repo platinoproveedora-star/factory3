@@ -1,0 +1,25 @@
+{
+  "company_id": "EMP_MULTI_SHOPPER",
+  "project_code": "PROY-001",
+  "module_code": "vertical_multi_shopper",
+  "project_name": "Purchasing IA Engine Dashboard",
+  "schema": "multi_shopper",
+  "supabase_schema": "multi_shopper",
+  "platform": "vercel",
+  "dashboard_path": "companies/EMP_MULTI_SHOPPER/projects/PROY-001_DASHBOARD",
+  "vercel_project": "emp-multi-shopper-dashboard",
+  "requires_env": [
+    "FACTORY_API_URL",
+    "FACTORY_API_SECRET",
+    "PLATFORM_JWT_SECRET",
+    "MULTI_SHOPPER_MODULE_CODE",
+    "MULTI_SHOPPER_SCHEMA",
+    "MULTI_SHOPPER_COMPANY_ID",
+    "MULTI_SHOPPER_PROJECT_CODE",
+    "MULTI_SHOPPER_WRITE_KEY",
+    "MULTI_SHOPPER_STORAGE_BUCKET"
+  ],
+  "status": "beta_1",
+  "erp_ready": true,
+  "notes": "Etapa 1: operacion interna, ERP read-only references, sin escritura a inventario/kardex."
+}

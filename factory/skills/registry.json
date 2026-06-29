@@ -4374,6 +4374,163 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_multi_shopper/vertical_multi_shopper": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/vertical_multi_shopper",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "Skill raiz de la vertical Multi Shopper: health, capabilities y contrato operativo.",
+    "path": "skills/internos/vertical_multi_shopper/vertical_multi_shopper",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/multi_shopper_schema_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/multi_shopper_schema_plan",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "Genera SQL para crear schema y tablas de vertical_multi_shopper sin ejecutar por default.",
+    "path": "skills/internos/vertical_multi_shopper/multi_shopper_schema_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/multi_shopper_dashboard_data": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/multi_shopper_dashboard_data",
+    "vertical": "vertical_multi_shopper",
+    "kind": "data",
+    "descripcion": "Data skill para dashboard Multi Shopper: KPIs, cotizaciones, productos, proveedores, documentos y precios.",
+    "path": "skills/internos/vertical_multi_shopper/multi_shopper_dashboard_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/sales_quote_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/sales_quote_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "CRUD de cotizaciones de venta multi_shopper.",
+    "path": "skills/internos/vertical_multi_shopper/sales_quote_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/sales_quote_items_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/sales_quote_items_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "CRUD de partidas de cotizacion de venta multi_shopper.",
+    "path": "skills/internos/vertical_multi_shopper/sales_quote_items_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/products_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/products_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "CRUD de productos propios Multi Shopper con referencias ERP opcionales.",
+    "path": "skills/internos/vertical_multi_shopper/products_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/supplier_registry_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/supplier_registry_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "CRUD de proveedores Multi Shopper.",
+    "path": "skills/internos/vertical_multi_shopper/supplier_registry_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/supplier_search_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/supplier_search_skill",
+    "vertical": "vertical_multi_shopper",
+    "kind": "data",
+    "descripcion": "Busca proveedores Multi Shopper por categoria, texto o estado.",
+    "path": "skills/internos/vertical_multi_shopper/supplier_search_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/supplier_category_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/supplier_category_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "CRUD de categorias asociadas a proveedores Multi Shopper.",
+    "path": "skills/internos/vertical_multi_shopper/supplier_category_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/purchase_quote_generator_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/purchase_quote_generator_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "Crea solicitudes de cotizacion de compra y genera texto listo para WhatsApp/correo.",
+    "path": "skills/internos/vertical_multi_shopper/purchase_quote_generator_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/purchase_quote_response_ingestion_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/purchase_quote_response_ingestion_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "Registra respuestas de proveedor y conserva referencia a documento origen.",
+    "path": "skills/internos/vertical_multi_shopper/purchase_quote_response_ingestion_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/price_context_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/price_context_skill",
+    "vertical": "vertical_multi_shopper",
+    "kind": "data",
+    "descripcion": "Consulta contexto historico de precios por producto, proveedor o texto.",
+    "path": "skills/internos/vertical_multi_shopper/price_context_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/price_history_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/price_history_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "CRUD append-only de historial de precios Multi Shopper.",
+    "path": "skills/internos/vertical_multi_shopper/price_history_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/document_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/document_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "Guarda documentos Multi Shopper, sube archivos a Storage y extrae productos/precios con IA.",
+    "path": "skills/internos/vertical_multi_shopper/document_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/erp_reference_connector_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/erp_reference_connector_skill",
+    "vertical": "vertical_multi_shopper",
+    "kind": "data",
+    "descripcion": "Conector ERP de solo lectura para productos, proveedores, categorias y unidades.",
+    "path": "skills/internos/vertical_multi_shopper/erp_reference_connector_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/multi_shopper_activity_log_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/multi_shopper_activity_log_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "Registra y lista eventos operativos importantes de Multi Shopper.",
+    "path": "skills/internos/vertical_multi_shopper/multi_shopper_activity_log_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_multi_shopper/settings_skill": {
+    "tipo": "interno",
+    "nombre": "vertical_multi_shopper/settings_skill",
+    "vertical": "vertical_multi_shopper",
+    "descripcion": "CRUD de settings por company_id para Multi Shopper.",
+    "path": "skills/internos/vertical_multi_shopper/settings_skill",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "render_create_cron_job": {
     "tipo": "interno",
     "nombre": "render_create_cron_job",

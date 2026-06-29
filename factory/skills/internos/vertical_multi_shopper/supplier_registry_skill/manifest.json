@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/supplier_registry_skill",
+  "entrypoint": "skill.py",
+  "kind": "executable",
+  "version": "0.1.0",
+  "description": "CRUD de proveedores Multi Shopper."
+}

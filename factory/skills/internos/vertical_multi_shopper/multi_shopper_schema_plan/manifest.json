@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/multi_shopper_schema_plan",
+  "entrypoint": "skill.py",
+  "kind": "executable",
+  "version": "0.1.0",
+  "description": "Genera SQL para crear schema y tablas de vertical_multi_shopper sin ejecutar por default."
+}
