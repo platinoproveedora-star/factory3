@@ -267,7 +267,13 @@ export function DocumentUploadForm() {
 
   // Step 3 — import
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ created: number; errors: number } | null>(null);
+  const [importResult, setImportResult] = useState<{
+    products_created: number;
+    products_found: number;
+    prices_created: number;
+    errors: number;
+    supplier: { name: string | null; folio: string | null; action: string | null };
+  } | null>(null);
   const [importError, setImportError] = useState("");
 
   function toBase64(f: File) {
@@ -346,9 +352,19 @@ export function DocumentUploadForm() {
       const data = await postSkill("vertical_multi_shopper/document_skill", {
         action: "import_products",
         products: toImport,
+        document_id: docId,
+        supplier_name: extracted.supplier_name,
+        currency: extracted.currency,
+        document_date: extracted.document_date,
         dry_run: false,
       });
-      setImportResult({ created: data?.data?.created ?? 0, errors: data?.data?.errors ?? 0 });
+      setImportResult({
+        products_created: data?.data?.products_created ?? 0,
+        products_found: data?.data?.products_found ?? 0,
+        prices_created: data?.data?.prices_created ?? 0,
+        errors: data?.data?.errors ?? 0,
+        supplier: data?.data?.supplier ?? { name: null, folio: null, action: null },
+      });
       router.refresh();
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Error al importar");
@@ -367,11 +383,34 @@ export function DocumentUploadForm() {
 
   // — Paso 3: resultado de importacion
   if (importResult) {
+    const { supplier, products_created, products_found, prices_created, errors } = importResult;
     return (
-      <div className="card max-w-2xl">
-        <p className="mb-2 font-semibold text-green-300">{importResult.created} producto(s) creados</p>
-        {importResult.errors > 0 && <p className="mb-2 text-sm text-yellow-300">{importResult.errors} con error (ya existentes o campos invalidos)</p>}
-        <button className="btn-primary mt-2" onClick={reset}>Subir otro documento</button>
+      <div className="card max-w-2xl space-y-3">
+        <p className="font-semibold text-green-300">Importacion completada</p>
+        {supplier.name && (
+          <p className="text-sm">
+            <span className="text-muted">Proveedor: </span>
+            <span className="font-medium">{supplier.name}</span>
+            {supplier.folio && <span className="ml-2 font-mono text-xs text-slate-400">{supplier.folio}</span>}
+            {supplier.action === "created" && <span className="ml-2 text-xs text-blue-300">(nuevo)</span>}
+          </p>
+        )}
+        <div className="grid grid-cols-3 gap-3 text-center text-sm">
+          <div className="rounded-lg bg-slate-800 p-3">
+            <p className="text-xl font-bold text-white">{products_created}</p>
+            <p className="text-xs text-muted">productos nuevos</p>
+          </div>
+          <div className="rounded-lg bg-slate-800 p-3">
+            <p className="text-xl font-bold text-white">{products_found}</p>
+            <p className="text-xs text-muted">ya existian</p>
+          </div>
+          <div className="rounded-lg bg-slate-800 p-3">
+            <p className="text-xl font-bold text-green-400">{prices_created}</p>
+            <p className="text-xs text-muted">precios guardados</p>
+          </div>
+        </div>
+        {errors > 0 && <p className="text-sm text-yellow-300">{errors} item(s) con error</p>}
+        <button className="btn-primary" onClick={reset}>Subir otro documento</button>
       </div>
     );
   }

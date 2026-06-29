@@ -205,7 +205,12 @@ class DocumentSkillService:
         return {"ok": True, "data": {"extracted": extracted, "document_id": doc_id}}
 
     def import_products(self, context: dict) -> dict:
-        """Crea productos en la DB a partir de la lista extraida por extract."""
+        """
+        A partir de la extraccion de un documento, guarda en DB:
+          1. Proveedor (find-or-create por nombre)
+          2. Productos (find-or-create por canonical_name)
+          3. price_history por cada producto con precio, enlazado al documento fuente
+        """
         ctx_result = _common().resolve_context(context)
         if not ctx_result.get("ok"):
             return ctx_result
@@ -213,39 +218,147 @@ class DocumentSkillService:
 
         products = context.get("products") or []
         if not products:
-            return {"ok": False, "error": "products requerido (lista de productos a importar)"}
+            return {"ok": False, "error": "products requerido"}
 
         dry_run = context.get("dry_run", True)
-        created = []
+        document_id = context.get("document_id") or context.get("id") or None
+        supplier_name = str(context.get("supplier_name") or "").strip() or None
+        currency = str(context.get("currency") or "MXN").strip() or "MXN"
+        price_date = str(context.get("document_date") or "").strip() or None
+
+        db = SupabaseClient(ctx)
+
+        # 1 — Find or create supplier
+        supplier_id = None
+        supplier_folio = None
+        supplier_action = None
+        if supplier_name:
+            sup_result = _find_or_create(
+                db, ctx,
+                table="suppliers",
+                match_field="name",
+                match_value=supplier_name,
+                extra={"status": "active"},
+                dry_run=dry_run,
+            )
+            if sup_result.get("ok"):
+                supplier_id = sup_result["data"].get("id")
+                supplier_folio = sup_result["data"].get("folio")
+                supplier_action = sup_result["data"].get("_action")
+
+        # 2 — For each product: find-or-create + price_history
+        products_created = []
+        products_found = []
+        prices_created = []
         errors = []
-        crud = _common().MultiShopperCrudService("products")
 
         for item in products:
-            raw_description = str(item.get("raw_description") or item.get("canonical_name") or "").strip()
-            if not raw_description:
+            raw = str(item.get("raw_description") or "").strip()
+            if not raw:
                 continue
-            payload = {
-                **ctx,
-                "action": "create",
-                "canonical_name": raw_description,
-                "category_name": item.get("category_name") or None,
-                "unit": item.get("unit") or None,
-                "brand": item.get("brand") or None,
-                "dry_run": dry_run,
-            }
-            result = crud.ejecutar(payload)
-            if result.get("ok"):
-                created.append(result.get("data", {}).get("product") or {"canonical_name": raw_description})
+
+            canonical = raw
+            # find-or-create product
+            prod_result = _find_or_create(
+                db, ctx,
+                table="products",
+                match_field="canonical_name",
+                match_value=canonical,
+                extra={
+                    "category_name": item.get("category_name") or None,
+                    "unit": item.get("unit") or None,
+                    "brand": item.get("brand") or None,
+                    "status": "active",
+                },
+                dry_run=dry_run,
+            )
+            if not prod_result.get("ok"):
+                errors.append({"item": raw, "error": prod_result.get("error")})
+                continue
+
+            prod = prod_result["data"]
+            product_id = prod.get("id")
+            if prod.get("_action") == "created":
+                products_created.append({"folio": prod.get("folio"), "canonical_name": canonical})
             else:
-                errors.append({"item": raw_description, "error": result.get("error")})
+                products_found.append({"folio": prod.get("folio"), "canonical_name": canonical})
+
+            # 3 — price_history si hay precio
+            unit_price = item.get("unit_price")
+            if unit_price is not None and supplier_id and product_id and not dry_run:
+                ph_row = {
+                    "company_id": ctx["company_id"],
+                    "project_code": ctx["project_code"],
+                    "module_code": ctx["module_code"],
+                    "product_id": product_id,
+                    "supplier_id": supplier_id,
+                    "product_name": canonical,
+                    "supplier_name": supplier_name,
+                    "raw_description": raw,
+                    "unit_price": unit_price,
+                    "currency": currency,
+                    "price_type": "supplier_cost",
+                }
+                if item.get("quantity") is not None:
+                    ph_row["quantity"] = item["quantity"]
+                if item.get("unit"):
+                    ph_row["unit"] = item["unit"]
+                if item.get("subtotal") is not None:
+                    ph_row["subtotal"] = item["subtotal"]
+                if price_date:
+                    ph_row["price_date"] = price_date
+                if document_id:
+                    ph_row["source_document_id"] = document_id
+                ph_ins = db.rest_insert("price_history", [ph_row])
+                if ph_ins.get("ok"):
+                    ph_data = ph_ins.get("data") or []
+                    ph_saved = ph_data[0] if isinstance(ph_data, list) and ph_data else ph_data
+                    prices_created.append({"folio": ph_saved.get("folio") if isinstance(ph_saved, dict) else None, "product": canonical, "price": unit_price})
+                else:
+                    errors.append({"item": f"precio {raw}", "error": ph_ins.get("error")})
 
         return {
             "ok": True,
             "data": {
-                "created": len(created),
-                "errors": len(errors),
-                "products": created,
-                "error_detail": errors,
                 "dry_run": dry_run,
+                "supplier": {"id": supplier_id, "folio": supplier_folio, "name": supplier_name, "action": supplier_action},
+                "products_created": len(products_created),
+                "products_found": len(products_found),
+                "prices_created": len(prices_created),
+                "errors": len(errors),
+                "detail": {
+                    "products_created": products_created,
+                    "products_found": products_found,
+                    "prices": prices_created,
+                    "error_detail": errors,
+                },
             },
         }
+
+
+def _find_or_create(db: SupabaseClient, ctx: dict, table: str, match_field: str, match_value: str, extra: dict, dry_run: bool) -> dict:
+    """Busca un registro por match_field=match_value; si no existe lo crea."""
+    result = db.rest_select(table, filters={"company_id": ctx["company_id"], match_field: match_value}, select="*", limit=1)
+    if result.get("ok") and result.get("data"):
+        row = result["data"][0]
+        row["_action"] = "found"
+        return {"ok": True, "data": row}
+
+    if dry_run:
+        return {"ok": True, "data": {"id": None, "folio": None, match_field: match_value, "_action": "dry_run"}}
+
+    row = {
+        "company_id": ctx["company_id"],
+        "project_code": ctx["project_code"],
+        "module_code": ctx["module_code"],
+        match_field: match_value,
+        **{k: v for k, v in extra.items() if v is not None},
+    }
+    ins = db.rest_insert(table, [row])
+    if not ins.get("ok"):
+        return ins
+    data = ins.get("data") or []
+    saved = data[0] if isinstance(data, list) and data else data
+    if isinstance(saved, dict):
+        saved["_action"] = "created"
+    return {"ok": True, "data": saved}
