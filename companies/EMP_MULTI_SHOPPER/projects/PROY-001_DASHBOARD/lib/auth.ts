@@ -19,6 +19,11 @@ export interface SessionUser {
   sub: string;
   email: string;
   modulo_code: string;
+  company_id?: string;
+  role?: string;
+  grant_id?: string;
+  plan_code?: string;
+  subscription_status?: string;
   exp: number;
 }
 

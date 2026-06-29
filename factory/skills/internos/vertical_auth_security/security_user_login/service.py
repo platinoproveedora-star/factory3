@@ -18,6 +18,7 @@ class SecurityUserLoginService:
 
     def ejecutar(self, context: dict) -> dict:
         modulo_code = (context.get("modulo_code") or "").strip()
+        company_id  = (context.get("company_id") or context.get("empresa_id") or "").strip()
         email       = (context.get("email") or "").strip().lower()
         password    = (context.get("password") or "").strip()
         ip          = (context.get("ip") or "unknown").strip()
@@ -68,14 +69,14 @@ class SecurityUserLoginService:
             return {"ok": False, "error": "Credenciales incorrectas"}
 
         # 4 — Verificar acceso al módulo
-        has_access = self._check_access(url, key, user["id"], modulo_code)
-        if not has_access:
+        grant = self._check_access(url, key, user["id"], modulo_code, company_id)
+        if not grant:
             self._log_attempt(url, key, email, ip, success=False)
             return {"ok": False, "error": f"Sin acceso al módulo '{modulo_code}'"}
 
         # 5 — Generar JWT
         self._log_attempt(url, key, email, ip, success=True)
-        token = self._generate_jwt(user["id"], email, modulo_code, jwt_secret)
+        token = self._generate_jwt(user["id"], email, modulo_code, jwt_secret, grant)
 
         return {
             "ok":      True,
@@ -86,6 +87,11 @@ class SecurityUserLoginService:
                 "email":       email,
                 "nombre":      user.get("nombre", ""),
                 "modulo_code": modulo_code,
+                "company_id":   grant.get("company_id", ""),
+                "role":         grant.get("role", ""),
+                "grant_id":     grant.get("id", ""),
+                "plan_code":    grant.get("plan_code") or "",
+                "subscription_status": grant.get("subscription_status") or grant.get("status") or "",
                 "expires_in":  _JWT_EXP_HOURS * 3600,
             },
         }
@@ -128,21 +134,35 @@ class SecurityUserLoginService:
         except VerifyMismatchError:
             return False
 
-    def _check_access(self, url: str, key: str, user_id: str, modulo_code: str) -> bool:
+    def _check_access(self, url: str, key: str, user_id: str, modulo_code: str, company_id: str = "") -> dict | None:
         import urllib.parse
         qs   = (f"?user_id=eq.{user_id}"
                 f"&modulo_code=eq.{urllib.parse.quote(modulo_code)}"
-                f"&select=id&limit=1")
+                f"&select=id,user_id,company_id,modulo_code,role,status,plan_code,subscription_status&limit=5")
+        if company_id:
+            qs += f"&company_id=eq.{urllib.parse.quote(company_id)}"
         rows = self._pg_get(url, key, f"/rest/v1/access_grants{qs}")
-        return bool(rows)
+        active_statuses = {"active", "trialing", "manual", "comped"}
+        active = [
+            row for row in rows
+            if str(row.get("status") or "manual") in active_statuses
+            and str(row.get("subscription_status") or row.get("status") or "manual") in active_statuses
+        ]
+        return active[0] if active else None
 
-    def _generate_jwt(self, user_id: str, email: str, modulo_code: str, secret: str) -> str:
+    def _generate_jwt(self, user_id: str, email: str, modulo_code: str, secret: str, grant: dict | None = None) -> str:
         import jwt
         now     = datetime.now(timezone.utc)
+        grant = grant or {}
         payload = {
             "sub":         user_id,
             "email":       email,
             "modulo_code": modulo_code,
+            "company_id":   grant.get("company_id", ""),
+            "role":         grant.get("role", ""),
+            "grant_id":     grant.get("id", ""),
+            "plan_code":    grant.get("plan_code") or "",
+            "subscription_status": grant.get("subscription_status") or grant.get("status") or "",
             "iat":         int(now.timestamp()),
             "exp":         int((now + timedelta(hours=_JWT_EXP_HOURS)).timestamp()),
         }

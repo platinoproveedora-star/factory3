@@ -38,6 +38,11 @@ class SecurityUserSessionVerifyService:
                 "user_id":     payload.get("sub", ""),
                 "email":       payload.get("email", ""),
                 "modulo_code": payload.get("modulo_code", ""),
+                "company_id":   payload.get("company_id", ""),
+                "role":         payload.get("role", ""),
+                "grant_id":     payload.get("grant_id", ""),
+                "plan_code":    payload.get("plan_code", ""),
+                "subscription_status": payload.get("subscription_status", ""),
                 "exp":         payload.get("exp"),
             },
         }

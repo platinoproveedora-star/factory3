@@ -1,0 +1,14 @@
+{
+  "company_id": "EMP_APPS4ALL",
+  "project_code": "PROY-001",
+  "module_code": "apps4all_portal",
+  "schema": "platform",
+  "platform": "vercel",
+  "requires_env": [
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY",
+    "PLATFORM_JWT_SECRET",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

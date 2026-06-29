@@ -1,0 +1,92 @@
+import { redirect } from "next/navigation";
+import { ArrowUpRight, FileSpreadsheet, ReceiptText, ShoppingBasket } from "lucide-react";
+import { getSession } from "@/lib/auth";
+import { listCompanies, listGrants, companyName } from "@/lib/platform";
+import { PortalShell } from "@/components/PortalShell";
+
+export const dynamic = "force-dynamic";
+
+const MODULES: Record<string, { title: string; description: string; href: string; icon: any; external?: boolean }> = {
+  apps4all_portal: {
+    title: "Apps4All",
+    description: "Menu central, empresas y acceso.",
+    href: "/",
+    icon: ArrowUpRight
+  },
+  conta4all: {
+    title: "Conta4All",
+    description: "CFDI, RFCs administrados y sincronizacion SAT.",
+    href: process.env.NEXT_PUBLIC_CONTA4ALL_URL || "#",
+    icon: FileSpreadsheet,
+    external: true
+  },
+  vertical_multi_shopper: {
+    title: "Multi Shopper",
+    description: "Cotizaciones, proveedores, productos y pricing.",
+    href: process.env.NEXT_PUBLIC_MULTI_SHOPPER_URL || "#",
+    icon: ShoppingBasket,
+    external: true
+  },
+  gastos: {
+    title: "Gastos",
+    description: "Gastos operativos, KPIs, filtros y CSV.",
+    href: "/apps/gastos",
+    icon: ReceiptText
+  }
+};
+
+export default async function HomePage() {
+  const user = await getSession();
+  if (!user) redirect("/login");
+  const grants = await listGrants(user.sub);
+  const companies = await listCompanies(Array.from(new Set(grants.map((grant) => grant.company_id))));
+
+  return (
+    <PortalShell user={user}>
+      <section className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-moss">Portal central</p>
+          <h1 className="mt-2 text-3xl font-semibold text-ink">Tus modulos activos</h1>
+        </div>
+        <p className="max-w-xl text-sm leading-6 text-slate-600">
+          Contrato preparado para multiempresa y Stripe: company, rol, plan y estado de suscripcion viven en grants.
+        </p>
+      </section>
+      <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {grants.map((grant) => {
+          const module = MODULES[grant.modulo_code] || {
+            title: grant.modulo_code,
+            description: "Modulo activo.",
+            href: "#",
+            icon: ArrowUpRight
+          };
+          const Icon = module.icon;
+          return (
+            <a
+              key={grant.id}
+              href={module.href}
+              target={module.external ? "_blank" : undefined}
+              rel={module.external ? "noreferrer" : undefined}
+              className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-steel hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-[#e4ece6] text-moss">
+                  <Icon size={20} />
+                </span>
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium uppercase text-slate-500">
+                  {grant.subscription_status || grant.status}
+                </span>
+              </div>
+              <h2 className="mt-4 text-lg font-semibold text-ink">{module.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{module.description}</p>
+              <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
+                <span>{companyName(companies, grant.company_id)}</span>
+                <span>{grant.role}</span>
+              </div>
+            </a>
+          );
+        })}
+      </section>
+    </PortalShell>
+  );
+}

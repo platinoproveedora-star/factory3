@@ -10,6 +10,8 @@ const links = [
   { href: "/dashboard/cfdis", label: "CFDIs" },
 ];
 
+const portalUrl = process.env.NEXT_PUBLIC_APPS4ALL_URL || "";
+
 export default function Nav({ email }: { email: string }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -40,6 +42,11 @@ export default function Nav({ email }: { email: string }) {
           ))}
         </div>
         <div className="flex items-center gap-3">
+          {portalUrl ? (
+            <a href={portalUrl} className="btn-ghost text-sm py-1">
+              Portal
+            </a>
+          ) : null}
           <span className="text-muted text-sm hidden sm:block">{email}</span>
           <button onClick={handleLogout} className="btn-ghost text-sm py-1">
             Salir

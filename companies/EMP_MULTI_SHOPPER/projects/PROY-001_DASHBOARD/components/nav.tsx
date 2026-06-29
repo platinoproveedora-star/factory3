@@ -26,6 +26,8 @@ const links = [
   { href: "/dashboard/settings", label: "Config", icon: Settings },
 ];
 
+const portalUrl = process.env.NEXT_PUBLIC_APPS4ALL_URL || "";
+
 export default function Nav({ email }: { email: string }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -60,6 +62,11 @@ export default function Nav({ email }: { email: string }) {
           })}
         </div>
         <div className="flex items-center justify-between gap-3 lg:justify-end">
+          {portalUrl ? (
+            <a href={portalUrl} className="btn-ghost inline-flex items-center gap-1 py-1">
+              Portal
+            </a>
+          ) : null}
           <span className="truncate text-sm text-muted">{email}</span>
           <button onClick={handleLogout} className="btn-ghost inline-flex items-center gap-1 py-1">
             <LogOut size={14} />
