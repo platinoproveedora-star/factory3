@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getStats, getGastos } from "@/lib/db";
+import { calcStats, getGastos } from "@/lib/db";
 import Nav                   from "@/components/Nav";
 import KpiGrid               from "@/components/KpiGrid";
 import CategoryTable         from "@/components/CategoryTable";
@@ -32,12 +32,13 @@ export default async function DashboardPage() {
 
   const empresaId = session.company_id;
 
-  let stats:  Awaited<ReturnType<typeof getStats>>  | null = null;
+  let stats:  ReturnType<typeof calcStats> | null = null;
   let gastos: Awaited<ReturnType<typeof getGastos>> = [];
   let loadError: string | null = null;
 
   try {
-    [stats, gastos] = await Promise.all([getStats(empresaId), getGastos(empresaId, 2000)]);
+    gastos = await getGastos(empresaId, 2000);
+    stats  = calcStats(gastos);
   } catch (e: any) {
     loadError = e?.message ?? "Error al cargar datos";
     stats = { total:0, count:0, avg:0, por_categoria:[], totalMes:0, totalMesAnt:0, variacion:0 };

@@ -6,14 +6,11 @@ import {
   Plus, Trash2, Pencil, Check, X, ChevronUp, ChevronDown,
 } from "lucide-react";
 import type { BankAccount, Gasto } from "@/lib/db";
-import { SCHEMA } from "@/lib/constants";
 
 type Props = { gastos: Gasto[]; bankAccounts: BankAccount[]; empresaId: string; projectCode?: string };
 type EditDraft = { monto: string; fecha: string; descripcion: string; categoria: string; vehiculo: string; cta_retiro_id: string };
 
 const PAGE_SIZE = 50;
-const READ_SKILL  = "vertical_client_expenses/client_expenses_dashboard_data";
-const WRITE_SKILL = "vertical_client_expenses/client_expenses_run";
 
 const METHOD_LABEL: Record<string, string> = {
   foto: "📷", manual: "⌨️", api: "🔌", ai_ocr: "🤖", import_excel: "📊", dashboard: "🖥️",
@@ -62,26 +59,15 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empr
 
   const accountById = useMemo(() => new Map(bankAccounts.map((a) => [a.id, a])), [bankAccounts]);
 
-  const baseCtx = {
-    schema: SCHEMA,
-    empresa_id: empresaId,
-    company_id: empresaId,
-    project_code: projectCode,
-    module_code: "gastos4all",
-    dry_run: false,
-  };
-
-  const factoryUrl = process.env.NEXT_PUBLIC_FACTORY_API_URL ?? "";
-
-  async function skillPost(skill: string, action: string, extra: object) {
-    const res = await fetch(`${factoryUrl}/data/${skill}`, {
+  async function apiPost(action: string, extra: object) {
+    const res = await fetch("/api/gastos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...baseCtx, action, ...extra }),
+      body: JSON.stringify({ action, ...extra }),
     });
     const json = await res.json();
-    if (!res.ok || json?.ok === false) throw new Error(json?.error ?? "Error en skill");
-    return json?.data ?? json;
+    if (!res.ok || json?.ok === false) throw new Error(json?.error ?? "Error en la operación");
+    return json;
   }
 
   const filtered = useMemo(() => {
@@ -124,7 +110,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empr
   async function saveEdit(folio: string) {
     setSaving(true); setError("");
     try {
-      await skillPost(WRITE_SKILL, "update_expense", {
+      await apiPost("update", {
         folio,
         monto: parseFloat(draft.monto),
         fecha: draft.fecha,
@@ -151,7 +137,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empr
     if (!confirm(`¿Eliminar ${folio}?`)) return;
     setSaving(true); setError("");
     try {
-      await skillPost(WRITE_SKILL, "delete_expense", { folio });
+      await apiPost("delete", { folio });
       setGastos((prev) => prev.filter((g) => g.folio !== folio));
     } catch (e: any) { setError(e.message); }
     finally { setSaving(false); }
@@ -163,10 +149,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empr
     }
     setSaving(true); setError("");
     try {
-      const userRes = await skillPost(WRITE_SKILL, "register_user", { nombre: "dashboard", telegram_chat_id: "dashboard" });
-      const usuario_id = userRes?.user?.id ?? userRes?.data?.user?.id ?? "";
-      const result = await skillPost(WRITE_SKILL, "save_expense", {
-        usuario_id,
+      const result = await apiPost("create", {
         monto: parseFloat(newRow.monto),
         fecha: newRow.fecha,
         descripcion: newRow.descripcion,
@@ -175,7 +158,6 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empr
         cta_retiro_id: newRow.cta_retiro_id || null,
         cta_retiro_folio: accountById.get(newRow.cta_retiro_id)?.folio || null,
         cta_retiro_nombre: accountById.get(newRow.cta_retiro_id)?.account_name || null,
-        metodo_captura: "dashboard",
       });
       const saved = result?.gasto ?? {};
       setGastos((prev) => [{
