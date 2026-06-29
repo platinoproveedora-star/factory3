@@ -21,7 +21,7 @@ const links = [
   { href: "/dashboard/products", label: "Productos", icon: Package },
   { href: "/dashboard/suppliers", label: "Proveedores", icon: Store },
   { href: "/dashboard/purchase-quotes", label: "Compra", icon: ShoppingCart },
-  { href: "/dashboard/documents/add", label: "Add docs", icon: FilePlus },
+  { href: "/dashboard/documents/add", label: "Subir doc", icon: FilePlus },
   { href: "/dashboard/documents", label: "Docs", icon: Truck },
   { href: "/dashboard/settings", label: "Config", icon: Settings },
 ];

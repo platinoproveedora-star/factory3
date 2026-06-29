@@ -1,8 +1,8 @@
 "use client";
 
-import { FileUp, Plus } from "lucide-react";
+import { FileUp, Loader2, Plus, Sparkles, PackagePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 async function postSkill(skill: string, body: Record<string, unknown>) {
   const res = await fetch("/api/multi-shopper", {
@@ -229,58 +229,271 @@ export function PurchaseQuoteCreateForm({
   );
 }
 
-export function DocumentUploadForm() {
-  const { error, saving, run } = useSubmit();
-  const [documentType, setDocumentType] = useState("sales_request");
-  const [file, setFile] = useState<File | null>(null);
-  const [message, setMessage] = useState("");
+type ExtractedProduct = {
+  raw_description: string | null;
+  quantity: number | null;
+  unit: string | null;
+  unit_price: number | null;
+  subtotal: number | null;
+  brand: string | null;
+  category_name: string | null;
+};
 
-  function toBase64(selected: File) {
+type ExtractedData = {
+  supplier_name: string | null;
+  document_date: string | null;
+  currency: string | null;
+  products: ExtractedProduct[];
+  summary: string | null;
+};
+
+export function DocumentUploadForm() {
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [documentType, setDocumentType] = useState("supplier_quote");
+  const [file, setFile] = useState<File | null>(null);
+
+  // Step 1 — upload
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [docId, setDocId] = useState<string | null>(null);
+  const [canExtract, setCanExtract] = useState(false);
+
+  // Step 2 — extract
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState("");
+  const [extracted, setExtracted] = useState<ExtractedData | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  // Step 3 — import
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ created: number; errors: number } | null>(null);
+  const [importError, setImportError] = useState("");
+
+  function toBase64(f: File) {
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result || "").split(",")[1] || "");
       reader.onerror = () => reject(new Error("No se pudo leer archivo"));
-      reader.readAsDataURL(selected);
+      reader.readAsDataURL(f);
     });
   }
 
+  function reset() {
+    setFile(null);
+    setDocId(null);
+    setCanExtract(false);
+    setExtracted(null);
+    setSelected(new Set());
+    setImportResult(null);
+    setUploadError("");
+    setExtractError("");
+    setImportError("");
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function handleUpload(event: React.FormEvent) {
+    event.preventDefault();
+    if (!file) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const content_b64 = await toBase64(file);
+      const data = await postSkill("vertical_multi_shopper/document_skill", {
+        action: "create",
+        file_name: file.name,
+        file_type: file.type || "application/octet-stream",
+        document_type: documentType,
+        content_b64,
+      });
+      const doc = data?.data?.document;
+      setDocId(doc?.id || null);
+      setCanExtract(data?.data?.can_extract ?? false);
+      router.refresh();
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Error al subir");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleExtract() {
+    if (!docId) return;
+    setExtracting(true);
+    setExtractError("");
+    setExtracted(null);
+    try {
+      const data = await postSkill("vertical_multi_shopper/document_skill", {
+        action: "extract",
+        id: docId,
+      });
+      const ext: ExtractedData = data?.data?.extracted || { supplier_name: null, document_date: null, currency: null, products: [], summary: null };
+      setExtracted(ext);
+      setSelected(new Set(ext.products.map((_: ExtractedProduct, i: number) => i)));
+    } catch (err) {
+      setExtractError(err instanceof Error ? err.message : "Error al extraer");
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  async function handleImport() {
+    if (!extracted) return;
+    setImporting(true);
+    setImportError("");
+    try {
+      const toImport = extracted.products.filter((_, i) => selected.has(i));
+      const data = await postSkill("vertical_multi_shopper/document_skill", {
+        action: "import_products",
+        products: toImport,
+        dry_run: false,
+      });
+      setImportResult({ created: data?.data?.created ?? 0, errors: data?.data?.errors ?? 0 });
+      router.refresh();
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Error al importar");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function toggleProduct(i: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
+  }
+
+  // — Paso 3: resultado de importacion
+  if (importResult) {
+    return (
+      <div className="card max-w-2xl">
+        <p className="mb-2 font-semibold text-green-300">{importResult.created} producto(s) creados</p>
+        {importResult.errors > 0 && <p className="mb-2 text-sm text-yellow-300">{importResult.errors} con error (ya existentes o campos invalidos)</p>}
+        <button className="btn-primary mt-2" onClick={reset}>Subir otro documento</button>
+      </div>
+    );
+  }
+
+  // — Paso 2: revisar productos extraidos
+  if (extracted) {
+    const prods = extracted.products || [];
+    return (
+      <div className="card max-w-2xl space-y-4">
+        <div>
+          <p className="text-sm font-semibold">Productos extraidos por IA</p>
+          {extracted.supplier_name && <p className="text-sm text-muted">Proveedor: {extracted.supplier_name}</p>}
+          {extracted.currency && <p className="text-sm text-muted">Moneda: {extracted.currency}</p>}
+          {extracted.summary && <p className="mt-1 text-xs text-slate-400">{extracted.summary}</p>}
+        </div>
+        {prods.length === 0 ? (
+          <p className="text-sm text-yellow-300">No se encontraron productos en el documento.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="table-head">
+                <tr>
+                  <th className="px-2 py-2 w-8">
+                    <input type="checkbox" checked={selected.size === prods.length} onChange={() => setSelected(selected.size === prods.length ? new Set() : new Set(prods.map((_: ExtractedProduct, i: number) => i)))} />
+                  </th>
+                  <th className="px-2 py-2 text-left">Descripcion</th>
+                  <th className="px-2 py-2">Cant</th>
+                  <th className="px-2 py-2">Unidad</th>
+                  <th className="px-2 py-2">Precio unit</th>
+                  <th className="px-2 py-2">Marca</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prods.map((p: ExtractedProduct, i: number) => (
+                  <tr key={i} className={selected.has(i) ? "" : "opacity-40"}>
+                    <td className="table-cell text-center"><input type="checkbox" checked={selected.has(i)} onChange={() => toggleProduct(i)} /></td>
+                    <td className="table-cell">{p.raw_description || "-"}</td>
+                    <td className="table-cell text-center">{p.quantity ?? "-"}</td>
+                    <td className="table-cell text-center">{p.unit || "-"}</td>
+                    <td className="table-cell text-right">{p.unit_price != null ? `$${p.unit_price}` : "-"}</td>
+                    <td className="table-cell">{p.brand || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {importError && <p className="text-sm text-red-300">{importError}</p>}
+        <div className="flex gap-3">
+          {prods.length > 0 && (
+            <button
+              className="btn-primary inline-flex items-center gap-2"
+              disabled={importing || selected.size === 0}
+              onClick={handleImport}
+            >
+              {importing ? <Loader2 size={15} className="animate-spin" /> : <PackagePlus size={15} />}
+              Importar {selected.size} producto(s)
+            </button>
+          )}
+          <button className="btn-ghost" onClick={reset}>Cancelar</button>
+        </div>
+      </div>
+    );
+  }
+
+  // — Paso 1a: documento subido, mostrar opcion de extraccion
+  if (docId) {
+    return (
+      <div className="card max-w-2xl space-y-4">
+        <p className="text-sm text-green-300 font-semibold">Documento guardado correctamente.</p>
+        {canExtract ? (
+          <>
+            <p className="text-sm text-muted">Puedes extraer los productos listados en el documento con IA.</p>
+            {extractError && <p className="text-sm text-red-300">{extractError}</p>}
+            <div className="flex gap-3">
+              <button
+                className="btn-primary inline-flex items-center gap-2"
+                disabled={extracting}
+                onClick={handleExtract}
+              >
+                {extracting ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                {extracting ? "Extrayendo..." : "Extraer productos con IA"}
+              </button>
+              <button className="btn-ghost" onClick={reset}>Subir otro</button>
+            </div>
+          </>
+        ) : (
+          <div className="flex gap-3">
+            <p className="text-sm text-muted">El tipo de archivo no soporta extraccion automatica.</p>
+            <button className="btn-ghost" onClick={reset}>Subir otro</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // — Paso 0: formulario de subida
   return (
-    <form
-      className="card max-w-2xl"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (!file) return;
-        run(async () => {
-          const content_b64 = await toBase64(file);
-          await postSkill("vertical_multi_shopper/document_skill", {
-            action: "create",
-            file_name: file.name,
-            file_type: file.type || "application/octet-stream",
-            document_type: documentType,
-            content_b64,
-          });
-          setMessage("Documento guardado");
-          setFile(null);
-        });
-      }}
-    >
-      <label className="label">Tipo</label>
-      <select className="input mb-4" value={documentType} onChange={(event) => setDocumentType(event.target.value)}>
-        <option value="sales_request">Solicitud venta</option>
+    <form className="card max-w-2xl" onSubmit={handleUpload}>
+      <label className="label">Tipo de documento</label>
+      <select className="input mb-4" value={documentType} onChange={(e) => setDocumentType(e.target.value)}>
         <option value="supplier_quote">Cotizacion proveedor</option>
+        <option value="sales_request">Solicitud venta</option>
         <option value="customer_quote">Cotizacion cliente</option>
         <option value="price_list">Lista de precios</option>
         <option value="image_note">Nota imagen</option>
         <option value="unknown">Desconocido</option>
       </select>
-      <label className="label">Archivo</label>
-      <input className="input mb-5" type="file" onChange={(event) => setFile(event.target.files?.[0] || null)} required />
-      <button className="btn-primary inline-flex items-center gap-2" disabled={saving || !file}>
-        <FileUp size={16} />
-        Guardar documento
+      <label className="label">Archivo (xlsx, pdf, imagen)</label>
+      <input
+        ref={fileRef}
+        className="input mb-5"
+        type="file"
+        accept=".xlsx,.xls,.pdf,.png,.jpg,.jpeg,.webp"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+        required
+      />
+      <button className="btn-primary inline-flex items-center gap-2" disabled={uploading || !file}>
+        {uploading ? <Loader2 size={16} className="animate-spin" /> : <FileUp size={16} />}
+        {uploading ? "Subiendo..." : "Subir documento"}
       </button>
-      {message && <p className="mt-4 text-sm text-green-300">{message}</p>}
-      {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
+      {uploadError && <p className="mt-4 text-sm text-red-300">{uploadError}</p>}
     </form>
   );
 }
