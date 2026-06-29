@@ -18,7 +18,7 @@ class StorageUploadService:
             return {"ok": False, "error": f"Error decodificando base64: {e}"}
 
         url = os.getenv("SUPABASE_URL", "").rstrip("/")
-        key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY", "")
+        key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_ANON_KEY", "")
         if not url or not key:
             return {"ok": False, "error": "SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY no configurados"}
 
