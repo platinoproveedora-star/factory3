@@ -8,7 +8,7 @@
   "platform": "vercel",
   "dashboard_path": "companies/EMP_MULTI_SHOPPER/projects/PROY-001_DASHBOARD",
   "vercel_project": "emp-multi-shopper-dashboard",
-  "dashboard_url": "https://emp-multi-shopper-dashboard.vercel.app",
+  "dashboard_url": "https://multi-shopper.vercel.app",
   "requires_env": [
     "FACTORY_API_URL",
     "FACTORY_API_SECRET",

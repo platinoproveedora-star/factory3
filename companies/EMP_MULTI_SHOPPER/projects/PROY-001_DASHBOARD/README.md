@@ -5,7 +5,7 @@ Dashboard Next.js operativo para `vertical_multi_shopper` / Purchasing IA Engine
 Produccion:
 
 ```text
-https://emp-multi-shopper-dashboard.vercel.app
+https://multi-shopper.vercel.app
 ```
 
 ## Deploy Vercel
