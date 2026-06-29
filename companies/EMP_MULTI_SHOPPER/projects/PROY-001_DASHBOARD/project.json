@@ -7,7 +7,7 @@
   "supabase_schema": "multi_shopper",
   "platform": "vercel",
   "dashboard_path": "companies/EMP_MULTI_SHOPPER/projects/PROY-001_DASHBOARD",
-  "vercel_project": "emp-multi-shopper-dashboard",
+  "vercel_project": "multi-shopper",
   "dashboard_url": "https://multi-shopper.vercel.app",
   "requires_env": [
     "FACTORY_API_URL",
