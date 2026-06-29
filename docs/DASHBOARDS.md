@@ -1,6 +1,6 @@
 # Dashboards Registry
 
-Actualizado: 2026-06-26
+Actualizado: 2026-06-29
 
 Este archivo registra dashboards operativos de Factory3. Cada dashboard debe tener empresa, ubicacion, deploy esperado, datos que consume y verticales/skills principales.
 
@@ -13,7 +13,7 @@ Este archivo registra dashboards operativos de Factory3. Cada dashboard debe ten
 | LOGPLAT Dashboard | LOGPLAT | `EMP_LOGPLAT/dashboard/app.py` | dashboard externo/logplat | Operacion de fletera: viajes, gastos, pagos, CXC y KPIs | Supabase schema `logplat` | `vertical_emp_logplat/*` |
 | Freelance Center | EMP_FREELANCE_GROWTH | `companies/EMP_FREELANCE_GROWTH/dashboard/app.py` | `emp-freelance-growth-dashboard` | Operar perfil, portafolio, vacantes, propuestas y checklist freelance | Archivos `portfolio/` + Supabase schema `freelance` | `vertical_freelance_growth/*` |
 | Duralon Gastos | EMP_DURALON | `companies/EMP_DURALON/projects/PROY-001_GASTOS/dashboard/gastos/` + repo `uc101-proy001` | https://uc101-gastos.onrender.com | KPIs, tabla por categoria, comparativo mensual, movimientos con export CSV | Supabase schema `uc101_proy001` via Factory API | `vertical_client_expenses/*` |
-| Multi Shopper Dashboard | EMP_MULTI_SHOPPER | `companies/EMP_MULTI_SHOPPER/projects/PROY-001_DASHBOARD/` | Vercel pendiente | Purchasing IA Engine: cotizaciones, productos, proveedores, documentos y precios historicos | Factory API + schema `multi_shopper` por project/env | `vertical_multi_shopper/*`, `vertical_auth_security/*` |
+| Multi Shopper Dashboard | EMP_MULTI_SHOPPER | `companies/EMP_MULTI_SHOPPER/projects/PROY-001_DASHBOARD/` | https://emp-multi-shopper-dashboard.vercel.app | Purchasing IA Engine: cotizaciones, productos, proveedores, documentos y precios historicos | Factory API + schema `multi_shopper` por project/env | `vertical_multi_shopper/*`, `vertical_auth_security/*` |
 | Duralon Inventario | EMP_DURALON | `companies/EMP_DURALON/projects/PROY-004_INVENTARIO/dashboard/inventario/` | Vercel pendiente | Operar productos, proveedores, clientes, compras/entradas, ventas/salidas e inventario | Supabase schema `uc101_proy004` via dashboard API routes | `vertical_erp_inventory/*`, `vertical_supabase/*` |
 | Conta4all SAT | EMP_CONTA4ALL | `companies/EMP_CONTA4ALL/projects/PROY-001_SAT/dashboard/app.py` | `uc102-conta4all-sat` en Render | Descarga, organiza y consulta CFDIs SAT (Ingresos E / Egresos R) multi-RFC. Incluye conversor e.firma, sync con rango particionado y filtros por mes/día. | Supabase schema `uc102_proy001` via Factory API | `vertical_sat/*` |
 
