@@ -165,31 +165,31 @@ export function GastosDashboard({
       <section className="mt-5 rounded-lg border border-border bg-card p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-[240px] flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Buscar gasto, folio, categoria..." className="w-full rounded-md border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-steel" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+            <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Buscar gasto, folio, categoria..." className="w-full rounded-md border border-border bg-bg py-2 pl-9 pr-3 text-sm text-slate-100 placeholder-muted outline-none focus:border-primary" />
           </div>
-          <span className="text-xs text-slate-500">{filtered.length} registros</span>
-          <button onClick={startCreate} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white">
+          <span className="text-xs text-muted">{filtered.length} registros</span>
+          <button onClick={startCreate} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90">
             <Plus size={15} /> Nuevo
           </button>
-          <button onClick={downloadCsv} className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+          <button onClick={downloadCsv} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50">
             <Download size={15} /> CSV
           </button>
         </div>
 
-        {error ? <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+        {error ? <p className="mt-3 rounded-md border border-red-800 bg-red-900/30 px-3 py-2 text-sm text-red-400">{error}</p> : null}
         {adding ? <DraftRow draft={draft} setDraft={setDraft} categories={categories} bankAccounts={bankAccounts} onCancel={() => setAdding(false)} onSave={() => save("create")} saving={saving} /> : null}
 
-        <div className="mt-4 overflow-x-auto rounded-md border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-900/30 text-left text-xs uppercase text-slate-400">
+        <div className="mt-4 overflow-x-auto rounded-md border border-border">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-slate-900/60 text-left text-xs uppercase text-muted">
               <tr>
                 {["Folio", "Fecha", "Categoria", "Vehiculo", "Cta retiro", "Descripcion", "Usuario", "Monto", ""].map((head) => (
-                  <th key={head} className="px-3 py-3 font-semibold">{head}</th>
+                  <th key={head} className="px-3 py-3 font-semibold tracking-wide">{head}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-border/50 bg-card">
               {filtered.map((row) => (
                 editing === row.folio ? (
                   <tr key={row.folio}>
@@ -198,19 +198,21 @@ export function GastosDashboard({
                     </td>
                   </tr>
                 ) : (
-                  <tr key={row.folio} className="hover:bg-slate-50">
-                    <td className="px-3 py-2 font-mono text-xs text-slate-400">{row.folio}</td>
-                    <td className="px-3 py-2">{row.fecha}</td>
-                    <td className="px-3 py-2">{row.categoria || "-"}</td>
-                    <td className="px-3 py-2">{row.vehiculo || "-"}</td>
-                    <td className="px-3 py-2">{row.cta_retiro_nombre || "Sin asignar"}</td>
-                    <td className="max-w-[280px] truncate px-3 py-2">{row.descripcion || "-"}</td>
-                    <td className="px-3 py-2">{row.nombre_usuario || "-"}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{mxn(row.monto)}</td>
+                  <tr key={row.folio} className="group hover:bg-slate-700/30">
+                    <td className="px-3 py-2 font-mono text-xs text-muted">{row.folio}</td>
+                    <td className="px-3 py-2 text-slate-300">{row.fecha}</td>
                     <td className="px-3 py-2">
-                      <div className="flex justify-end gap-1">
-                        <button onClick={() => startEdit(row)} className="rounded p-1 text-slate-500 hover:bg-slate-100" title="Editar"><Pencil size={14} /></button>
-                        <button onClick={() => remove(row.folio)} className="rounded p-1 text-red-600 hover:bg-red-50" title="Eliminar"><Trash2 size={14} /></button>
+                      <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-200">{row.categoria || "—"}</span>
+                    </td>
+                    <td className="px-3 py-2 text-slate-400">{row.vehiculo || "—"}</td>
+                    <td className="px-3 py-2 text-slate-400">{row.cta_retiro_nombre || "—"}</td>
+                    <td className="max-w-[280px] truncate px-3 py-2 text-slate-200">{row.descripcion || "—"}</td>
+                    <td className="px-3 py-2 text-muted">{row.nombre_usuario || "—"}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-white">{mxn(row.monto)}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button onClick={() => startEdit(row)} className="rounded p-1 text-muted hover:bg-slate-700 hover:text-white" title="Editar"><Pencil size={14} /></button>
+                        <button onClick={() => remove(row.folio)} className="rounded p-1 text-muted hover:bg-red-900/50 hover:text-red-400" title="Eliminar"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -227,7 +229,7 @@ export function GastosDashboard({
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </div>
   );
@@ -250,23 +252,24 @@ function DraftRow({
   onSave: () => void;
   saving: boolean;
 }) {
+  const inputCls = "rounded border border-border bg-slate-800 px-2 py-2 text-sm text-slate-100 placeholder-muted focus:border-primary focus:outline-none";
   return (
-    <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+    <div className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-3">
       <div className="grid gap-2 md:grid-cols-[120px_150px_180px_150px_200px_1fr_auto]">
-        <input value={draft.monto} onChange={(event) => setDraft((d) => ({ ...d, monto: event.target.value }))} type="number" placeholder="Monto" className="rounded border border-slate-200 px-2 py-2 text-sm" />
-        <input value={draft.fecha} onChange={(event) => setDraft((d) => ({ ...d, fecha: event.target.value }))} type="date" className="rounded border border-slate-200 px-2 py-2 text-sm" />
-        <select value={draft.categoria} onChange={(event) => setDraft((d) => ({ ...d, categoria: event.target.value }))} className="rounded border border-slate-200 px-2 py-2 text-sm">
+        <input value={draft.monto} onChange={(event) => setDraft((d) => ({ ...d, monto: event.target.value }))} type="number" placeholder="Monto" className={inputCls} />
+        <input value={draft.fecha} onChange={(event) => setDraft((d) => ({ ...d, fecha: event.target.value }))} type="date" className={inputCls} />
+        <select value={draft.categoria} onChange={(event) => setDraft((d) => ({ ...d, categoria: event.target.value }))} className={inputCls}>
           {categories.map((category) => <option key={category}>{category}</option>)}
         </select>
-        <input value={draft.vehiculo} onChange={(event) => setDraft((d) => ({ ...d, vehiculo: event.target.value }))} placeholder="Vehiculo" className="rounded border border-slate-200 px-2 py-2 text-sm" />
-        <select value={draft.cta_retiro_id} onChange={(event) => setDraft((d) => ({ ...d, cta_retiro_id: event.target.value }))} className="rounded border border-slate-200 px-2 py-2 text-sm">
+        <input value={draft.vehiculo} onChange={(event) => setDraft((d) => ({ ...d, vehiculo: event.target.value }))} placeholder="Vehiculo" className={inputCls} />
+        <select value={draft.cta_retiro_id} onChange={(event) => setDraft((d) => ({ ...d, cta_retiro_id: event.target.value }))} className={inputCls}>
           <option value="">Sin cuenta</option>
           {bankAccounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
         </select>
-        <input value={draft.descripcion} onChange={(event) => setDraft((d) => ({ ...d, descripcion: event.target.value }))} placeholder="Descripcion" className="rounded border border-slate-200 px-2 py-2 text-sm" />
+        <input value={draft.descripcion} onChange={(event) => setDraft((d) => ({ ...d, descripcion: event.target.value }))} placeholder="Descripcion" className={inputCls} />
         <div className="flex gap-1">
-          <button disabled={saving} onClick={onSave} className="inline-flex h-9 w-9 items-center justify-center rounded bg-emerald-600 text-white disabled:opacity-50" title="Guardar"><Check size={15} /></button>
-          <button onClick={onCancel} className="inline-flex h-9 w-9 items-center justify-center rounded border border-border bg-card" title="Cancelar"><X size={15} /></button>
+          <button disabled={saving} onClick={onSave} className="inline-flex h-9 w-9 items-center justify-center rounded bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50" title="Guardar"><Check size={15} /></button>
+          <button onClick={onCancel} className="inline-flex h-9 w-9 items-center justify-center rounded border border-border bg-slate-800 text-slate-300 hover:bg-slate-700" title="Cancelar"><X size={15} /></button>
         </div>
       </div>
     </div>
