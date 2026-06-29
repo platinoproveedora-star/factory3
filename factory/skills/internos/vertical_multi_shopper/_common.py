@@ -264,11 +264,20 @@ class MultiShopperCrudService:
             "dry_run",
             "schema",
             "supabase_schema",
+            "db_schema",
+            "empresa_id",
             "id",
             "folio",
             "limit",
             "table",
             "skill",
+            "supabase_url",
+            "supabase_service_role_key",
+            "supabase_anon_key",
+            "supabase_access_token",
+            "supabase_project_ref",
+            "can_extract",
+            "bucket",
         }
         row = {key: value for key, value in context.items() if key not in blocked}
         if include_identity:
