@@ -96,21 +96,46 @@ export async function listBankAccounts(companyId?: string) {
 
 export function summarize(gastos: Gasto[]) {
   const total = gastos.reduce((sum, row) => sum + row.monto, 0);
+
   const byCategory = new Map<string, { total: number; count: number }>();
-  for (const gasto of gastos) {
-    const key = gasto.categoria || "Sin categoria";
-    const current = byCategory.get(key) || { total: 0, count: 0 };
-    current.total += gasto.monto;
-    current.count += 1;
-    byCategory.set(key, current);
+  const now = new Date();
+  const months: string[] = [];
+  for (let i = 3; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   }
+  const byMonth = new Map<string, { total: number; count: number }>();
+  for (const mes of months) byMonth.set(mes, { total: 0, count: 0 });
+
+  for (const gasto of gastos) {
+    const cat = gasto.categoria || "Sin categoria";
+    const c = byCategory.get(cat) || { total: 0, count: 0 };
+    c.total += gasto.monto;
+    c.count += 1;
+    byCategory.set(cat, c);
+
+    const mes = gasto.fecha?.slice(0, 7);
+    if (mes && byMonth.has(mes)) {
+      const m = byMonth.get(mes)!;
+      m.total += gasto.monto;
+      m.count += 1;
+    }
+  }
+
+  const mesActual = months[months.length - 1];
   return {
     total,
     count: gastos.length,
     avg: gastos.length ? total / gastos.length : 0,
+    total_mes_actual: byMonth.get(mesActual)?.total || 0,
     por_categoria: Array.from(byCategory.entries())
-      .map(([categoria, values]) => ({ categoria, total: values.total, count: values.count }))
-      .sort((a, b) => b.total - a.total)
+      .map(([categoria, v]) => ({ categoria, total: v.total, count: v.count }))
+      .sort((a, b) => b.total - a.total),
+    por_mes: months.map((mes) => ({
+      mes,
+      total: byMonth.get(mes)?.total || 0,
+      count: byMonth.get(mes)?.count || 0
+    }))
   };
 }
 

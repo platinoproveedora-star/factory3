@@ -8,7 +8,9 @@ type Stats = {
   total: number;
   count: number;
   avg: number;
+  total_mes_actual: number;
   por_categoria: Array<{ categoria: string; total: number; count: number }>;
+  por_mes: Array<{ mes: string; total: number; count: number }>;
 };
 
 type Draft = {
@@ -23,6 +25,56 @@ type Draft = {
 
 function mxn(value: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value || 0);
+}
+
+function mesLabel(ym: string) {
+  const [y, m] = ym.split("-");
+  const names = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  return `${names[parseInt(m, 10) - 1]} ${y}`;
+}
+
+function computeStats(gastos: Gasto[]): Stats {
+  const total = gastos.reduce((sum, row) => sum + row.monto, 0);
+  const byCategory = new Map<string, { total: number; count: number }>();
+  const now = new Date();
+  const months: string[] = [];
+  for (let i = 3; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  const byMonth = new Map<string, { total: number; count: number }>();
+  for (const mes of months) byMonth.set(mes, { total: 0, count: 0 });
+
+  for (const gasto of gastos) {
+    const cat = gasto.categoria || "Sin categoria";
+    const c = byCategory.get(cat) || { total: 0, count: 0 };
+    c.total += gasto.monto;
+    c.count += 1;
+    byCategory.set(cat, c);
+
+    const mes = gasto.fecha?.slice(0, 7);
+    if (mes && byMonth.has(mes)) {
+      const m = byMonth.get(mes)!;
+      m.total += gasto.monto;
+      m.count += 1;
+    }
+  }
+
+  const mesActual = months[months.length - 1];
+  return {
+    total,
+    count: gastos.length,
+    avg: gastos.length ? total / gastos.length : 0,
+    total_mes_actual: byMonth.get(mesActual)?.total || 0,
+    por_categoria: Array.from(byCategory.entries())
+      .map(([categoria, v]) => ({ categoria, total: v.total, count: v.count }))
+      .sort((a, b) => b.total - a.total),
+    por_mes: months.map((mes) => ({
+      mes,
+      total: byMonth.get(mes)?.total || 0,
+      count: byMonth.get(mes)?.count || 0
+    }))
+  };
 }
 
 function csv(rows: Gasto[]) {
@@ -71,11 +123,10 @@ export function GastosDashboard({
     );
   }, [gastos, q]);
 
-  const stats = useMemo(() => {
-    if (gastos === initialGastos) return initialStats;
-    const total = gastos.reduce((sum, row) => sum + row.monto, 0);
-    return { total, count: gastos.length, avg: gastos.length ? total / gastos.length : 0, por_categoria: [] };
-  }, [gastos, initialGastos, initialStats]);
+  const stats = useMemo(
+    () => (gastos === initialGastos ? initialStats : computeStats(gastos)),
+    [gastos, initialGastos, initialStats]
+  );
 
   function startCreate() {
     setAdding(true);
@@ -154,14 +205,81 @@ export function GastosDashboard({
     URL.revokeObjectURL(url);
   }
 
+  const mesActualYM = new Date().toISOString().slice(0, 7);
+
   return (
     <div>
-      <div className="grid gap-3 md:grid-cols-3">
+      {/* KPIs */}
+      <div className="grid gap-3 md:grid-cols-4">
         <Kpi label="Gasto total" value={mxn(stats.total)} />
+        <Kpi label="Mes actual" value={mxn(stats.total_mes_actual)} highlight />
         <Kpi label="Movimientos" value={String(stats.count)} />
-        <Kpi label="Promedio" value={mxn(stats.avg)} />
+        <Kpi label="Promedio por gasto" value={mxn(stats.avg)} />
       </div>
 
+      {/* Resumen por mes y por categoría */}
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Últimos 4 meses</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase text-muted">
+                <th className="pb-2 font-semibold">Mes</th>
+                <th className="pb-2 text-right font-semibold">Movs.</th>
+                <th className="pb-2 text-right font-semibold">Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {[...stats.por_mes].reverse().map((row) => {
+                const isCurrent = row.mes === mesActualYM;
+                return (
+                  <tr key={row.mes} className={isCurrent ? "bg-primary/5" : ""}>
+                    <td className={`py-2 font-medium ${isCurrent ? "text-primary" : "text-slate-200"}`}>
+                      {mesLabel(row.mes)}
+                      {isCurrent && (
+                        <span className="ml-2 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-primary">actual</span>
+                      )}
+                    </td>
+                    <td className="py-2 text-right text-muted">{row.count}</td>
+                    <td className="py-2 text-right font-semibold text-white">{mxn(row.total)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Por categoría</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase text-muted">
+                <th className="pb-2 font-semibold">Categoría</th>
+                <th className="pb-2 text-right font-semibold">Movs.</th>
+                <th className="pb-2 text-right font-semibold">Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/40">
+              {stats.por_categoria.map((row) => (
+                <tr key={row.categoria}>
+                  <td className="py-2">
+                    <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-200">{row.categoria}</span>
+                  </td>
+                  <td className="py-2 text-right text-muted">{row.count}</td>
+                  <td className="py-2 text-right font-semibold text-white">{mxn(row.total)}</td>
+                </tr>
+              ))}
+              {stats.por_categoria.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="py-4 text-center text-muted">Sin datos</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Tabla de registros */}
       <section className="mt-5 rounded-lg border border-border bg-card p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-[240px] flex-1">
@@ -226,11 +344,11 @@ export function GastosDashboard({
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function Kpi({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className={`rounded-lg border p-4 shadow-sm ${highlight ? "border-primary/40 bg-primary/10" : "border-border bg-card"}`}>
       <p className="text-xs font-semibold uppercase tracking-wider text-muted">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+      <p className={`mt-2 text-2xl font-semibold ${highlight ? "text-primary" : "text-white"}`}>{value}</p>
     </div>
   );
 }
