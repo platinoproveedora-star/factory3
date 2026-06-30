@@ -25,12 +25,13 @@ export type BankAccount = {
   status: string;
 };
 
+const SCHEMA = "gastos4all";
+
 function dataEnv() {
   const url = process.env.SUPABASE_URL?.replace(/\/$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const schema = process.env.GASTOS_SCHEMA;
-  if (!url || !key || !schema) throw new Error("SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y GASTOS_SCHEMA requeridos");
-  return { url, key, schema };
+  if (!url || !key) throw new Error("SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY requeridos");
+  return { url, key };
 }
 
 async function rest<T>(schema: string, path: string, init: RequestInit = {}) {
@@ -53,20 +54,7 @@ async function rest<T>(schema: string, path: string, init: RequestInit = {}) {
   return text ? (JSON.parse(text) as T) : ([] as T);
 }
 
-export function gastosContext() {
-  const schema = process.env.GASTOS_SCHEMA;
-  const companyId = process.env.GASTOS_COMPANY_ID;
-  if (!schema || !companyId) throw new Error("GASTOS_SCHEMA y GASTOS_COMPANY_ID requeridos");
-  return {
-    schema,
-    company_id: companyId,
-    project_code: process.env.GASTOS_PROJECT_CODE || "PROY-001",
-    module_code: process.env.GASTOS_MODULE_CODE || "gastos"
-  };
-}
-
-export async function listGastos(limit = 2000) {
-  const { schema } = gastosContext();
+export async function listGastos(companyId: string, limit = 2000) {
   const select = [
     "id",
     "folio",
@@ -81,26 +69,27 @@ export async function listGastos(limit = 2000) {
     "categorias_gasto(nombre)",
     "usuarios(nombre)"
   ].join(",");
-  const qs = new URLSearchParams({ select, order: "fecha.desc", limit: String(limit) });
-  const rows = await rest<Record<string, any>[]>(schema, `gastos?${qs.toString()}`);
+  const qs = new URLSearchParams({ select, order: "fecha.desc", limit: String(limit), empresa_id: `eq.${companyId}` });
+  const rows = await rest<Record<string, any>[]>(SCHEMA, `gastos?${qs.toString()}`);
   return rows.map(formatGasto);
 }
 
-export async function listCategories() {
-  const { schema } = gastosContext();
-  const qs = new URLSearchParams({ select: "id,nombre", activo: "eq.true", order: "nombre.asc" });
-  return rest<Array<{ id: string; nombre: string }>>(schema, `categorias_gasto?${qs.toString()}`);
+export async function listCategories(companyId: string) {
+  const qs = new URLSearchParams({ select: "id,nombre", activo: "eq.true", order: "nombre.asc", empresa_id: `eq.${companyId}` });
+  return rest<Array<{ id: string; nombre: string }>>(SCHEMA, `categorias_gasto?${qs.toString()}`);
 }
 
-export async function listBankAccounts() {
+export async function listBankAccounts(companyId?: string) {
   const banksSchema = process.env.BANKS_SCHEMA;
   if (!banksSchema) return [];
-  const qs = new URLSearchParams({
+  const params: Record<string, string> = {
     select: "id,folio,account_name,bank_name,account_number_mask,current_balance,status",
     status: "eq.active",
     order: "account_name.asc",
     limit: "500"
-  });
+  };
+  if (companyId) params.empresa_id = `eq.${companyId}`;
+  const qs = new URLSearchParams(params);
   try {
     return await rest<BankAccount[]>(banksSchema, `banks_accounts?${qs.toString()}`);
   } catch {
@@ -128,14 +117,13 @@ export function summarize(gastos: Gasto[]) {
   };
 }
 
-export async function createGasto(input: Record<string, any>, user: SessionUser) {
-  const ctx = gastosContext();
-  const categories = await listCategories();
+export async function createGasto(input: Record<string, any>, user: SessionUser, companyId: string) {
+  const categories = await listCategories(companyId);
   const category = categories.find((item) => item.nombre === input.categoria) || categories[0];
   if (!category) throw new Error("No hay categorias configuradas");
-  const dashboardUser = await ensureDashboardUser(user);
-  const folio = await nextFolio(ctx.schema, "gastos", "GAS");
-  const account = await accountSnapshot(String(input.cta_retiro_id || ""));
+  const dashboardUser = await ensureDashboardUser(user, companyId);
+  const folio = await nextFolio(SCHEMA, "gastos", "GAS");
+  const account = await accountSnapshot(String(input.cta_retiro_id || ""), companyId);
   const row = {
     folio,
     usuario_id: dashboardUser.id,
@@ -148,23 +136,22 @@ export async function createGasto(input: Record<string, any>, user: SessionUser)
     cta_retiro_id: account?.id || null,
     cta_retiro_folio: account?.folio || null,
     cta_retiro_nombre: account?.account_name || null,
-    empresa_id: ctx.company_id,
-    project_code: ctx.project_code,
-    module_code: ctx.module_code,
+    empresa_id: companyId,
+    project_code: "gastos4all",
+    module_code: "gastos",
     erp_tags: {}
   };
-  const saved = await rest<Record<string, any>[]>(ctx.schema, "gastos", { method: "POST", body: JSON.stringify(row) });
-  await writeEvent(saved[0]?.id, dashboardUser.id, "creado", { source: "apps4all", by: user.email });
+  const saved = await rest<Record<string, any>[]>(SCHEMA, "gastos", { method: "POST", body: JSON.stringify(row) });
+  await writeEvent(saved[0]?.id, dashboardUser.id, "creado", { source: "apps4all", by: user.email }, companyId);
   return formatGasto({ ...saved[0], categorias_gasto: { nombre: category.nombre }, usuarios: { nombre: dashboardUser.nombre } });
 }
 
-export async function updateGasto(input: Record<string, any>, user: SessionUser) {
-  const ctx = gastosContext();
+export async function updateGasto(input: Record<string, any>, user: SessionUser, companyId: string) {
   const folio = String(input.folio || "");
   if (!folio) throw new Error("folio requerido");
-  const categories = await listCategories();
+  const categories = await listCategories(companyId);
   const category = categories.find((item) => item.nombre === input.categoria);
-  const account = await accountSnapshot(String(input.cta_retiro_id || ""));
+  const account = await accountSnapshot(String(input.cta_retiro_id || ""), companyId);
   const values: Record<string, any> = {
     monto: Number(input.monto || 0),
     fecha: input.fecha,
@@ -175,70 +162,73 @@ export async function updateGasto(input: Record<string, any>, user: SessionUser)
     cta_retiro_nombre: account?.account_name || null
   };
   if (category) values.categoria_id = category.id;
-  const qs = new URLSearchParams({ folio: `eq.${folio}` });
-  const rows = await rest<Record<string, any>[]>(ctx.schema, `gastos?${qs.toString()}`, {
+  const qs = new URLSearchParams({ folio: `eq.${folio}`, empresa_id: `eq.${companyId}` });
+  const rows = await rest<Record<string, any>[]>(SCHEMA, `gastos?${qs.toString()}`, {
     method: "PATCH",
     body: JSON.stringify(values)
   });
-  await writeEvent(rows[0]?.id, null, "editado", { source: "apps4all", by: user.email });
+  await writeEvent(rows[0]?.id, null, "editado", { source: "apps4all", by: user.email }, companyId);
   return rows[0] || {};
 }
 
-export async function deleteGasto(folio: string, user: SessionUser) {
-  const ctx = gastosContext();
+export async function deleteGasto(folio: string, user: SessionUser, companyId: string) {
   if (!folio) throw new Error("folio requerido");
-  const qs = new URLSearchParams({ folio: `eq.${folio}` });
-  const existing = await rest<Array<{ id: string }>>(ctx.schema, `gastos?${qs.toString()}&select=id&limit=1`);
-  await writeEvent(null, null, "eliminado", { source: "apps4all", by: user.email, folio });
+  const qs = new URLSearchParams({ folio: `eq.${folio}`, empresa_id: `eq.${companyId}` });
+  const existing = await rest<Array<{ id: string }>>(SCHEMA, `gastos?${qs.toString()}&select=id&limit=1`);
+  await writeEvent(null, null, "eliminado", { source: "apps4all", by: user.email, folio }, companyId);
   if (existing[0]?.id) {
     const eventQs = new URLSearchParams({ gasto_id: `eq.${existing[0].id}` });
-    await rest(ctx.schema, `gasto_eventos?${eventQs.toString()}`, { method: "DELETE" }).catch(() => []);
-    await rest(ctx.schema, `gasto_documentos?${eventQs.toString()}`, { method: "DELETE" }).catch(() => []);
+    await rest(SCHEMA, `gasto_eventos?${eventQs.toString()}`, { method: "DELETE" }).catch(() => []);
+    await rest(SCHEMA, `gasto_documentos?${eventQs.toString()}`, { method: "DELETE" }).catch(() => []);
   }
-  await rest(ctx.schema, `gastos?${qs.toString()}`, { method: "DELETE" });
+  await rest(SCHEMA, `gastos?${qs.toString()}`, { method: "DELETE" });
   return { deleted: true };
 }
 
-async function ensureDashboardUser(user: SessionUser) {
-  const ctx = gastosContext();
-  const qs = new URLSearchParams({ telegram_chat_id: "eq.apps4all", select: "id,nombre", limit: "1" });
-  const found = await rest<Array<{ id: string; nombre: string }>>(ctx.schema, `usuarios?${qs.toString()}`);
+async function ensureDashboardUser(user: SessionUser, companyId: string) {
+  const qs = new URLSearchParams({ telegram_chat_id: "eq.apps4all", select: "id,nombre", limit: "1", empresa_id: `eq.${companyId}` });
+  const found = await rest<Array<{ id: string; nombre: string }>>(SCHEMA, `usuarios?${qs.toString()}`);
   if (found[0]) return found[0];
   const row = {
-    folio: await nextFolio(ctx.schema, "usuarios", "USR"),
+    folio: await nextFolio(SCHEMA, "usuarios", "USR"),
     nombre: "apps4all",
     telegram_chat_id: "apps4all",
     rol: "admin",
-    empresa_id: ctx.company_id,
-    project_code: ctx.project_code,
-    module_code: ctx.module_code
+    empresa_id: companyId,
+    project_code: "gastos4all",
+    module_code: "gastos"
   };
-  const saved = await rest<Array<{ id: string; nombre: string }>>(ctx.schema, "usuarios", {
+  const saved = await rest<Array<{ id: string; nombre: string }>>(SCHEMA, "usuarios", {
     method: "POST",
     body: JSON.stringify(row)
   });
   return saved[0] || { id: "", nombre: user.email };
 }
 
-async function accountSnapshot(accountId: string) {
+async function accountSnapshot(accountId: string, companyId: string) {
   if (!accountId) return null;
-  const rows = await listBankAccounts();
+  const rows = await listBankAccounts(companyId);
   return rows.find((row) => row.id === accountId) || null;
 }
 
-async function writeEvent(gastoId: string | null, usuarioId: string | null, evento: string, detalle: Record<string, any>) {
-  const ctx = gastosContext();
+async function writeEvent(
+  gastoId: string | null,
+  usuarioId: string | null,
+  evento: string,
+  detalle: Record<string, any>,
+  companyId: string
+) {
   const row = {
-    folio: await nextFolio(ctx.schema, "gasto_eventos", "EVT"),
+    folio: await nextFolio(SCHEMA, "gasto_eventos", "EVT"),
     gasto_id: gastoId,
     usuario_id: usuarioId,
     evento,
     detalle,
-    empresa_id: ctx.company_id,
-    project_code: ctx.project_code,
-    module_code: ctx.module_code
+    empresa_id: companyId,
+    project_code: "gastos4all",
+    module_code: "gastos"
   };
-  await rest(ctx.schema, "gasto_eventos", { method: "POST", body: JSON.stringify(row) }).catch(() => []);
+  await rest(SCHEMA, "gasto_eventos", { method: "POST", body: JSON.stringify(row) }).catch(() => []);
 }
 
 async function nextFolio(schema: string, table: string, prefix: string) {

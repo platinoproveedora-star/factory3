@@ -95,3 +95,35 @@ export async function logLoginAttempt(email: string, ip: string, success: boolea
 export function companyName(companies: Company[], companyId: string) {
   return companies.find((company) => company.company_id === companyId)?.name || companyId;
 }
+
+export async function createPlatformUser(email: string, nombre: string, passwordHash: string): Promise<PlatformUser> {
+  const rows = await platformFetch<PlatformUser[]>("users", {
+    method: "POST",
+    body: JSON.stringify({ email: email.toLowerCase(), nombre, password_hash: passwordHash })
+  });
+  return rows[0];
+}
+
+export async function createCompany(companyId: string, name: string): Promise<Company> {
+  const rows = await platformFetch<Company[]>("companies", {
+    method: "POST",
+    body: JSON.stringify({ company_id: companyId, name, status: "active" })
+  });
+  return rows[0];
+}
+
+export async function createGrant(userId: string, companyId: string, moduloCode: string, role = "admin"): Promise<AccessGrant> {
+  const rows = await platformFetch<AccessGrant[]>("access_grants", {
+    method: "POST",
+    body: JSON.stringify({
+      user_id: userId,
+      company_id: companyId,
+      modulo_code: moduloCode,
+      role,
+      status: "manual",
+      plan_code: "manual",
+      subscription_status: "manual"
+    })
+  });
+  return rows[0];
+}
