@@ -9,17 +9,16 @@ export const runtime = "nodejs";
 async function requireGastosAccess() {
   const user = await getSession();
   if (!user) return { ok: false as const, status: 401, error: "sesion requerida" };
-  if (!user.company_id) return { ok: false as const, status: 403, error: "usuario sin empresa asignada" };
   const grants = await listGrants(user.sub);
-  const grant = grants.find((item) => item.company_id === user.company_id && item.modulo_code === "gastos");
+  const grant = grants.find((item) => item.modulo_code === "gastos");
   if (!grant) return { ok: false as const, status: 403, error: "sin acceso a gastos" };
-  return { ok: true as const, user };
+  return { ok: true as const, user, companyId: grant.company_id };
 }
 
 export async function GET() {
   const access = await requireGastosAccess();
   if (!access.ok) return NextResponse.json({ ok: false, error: access.error }, { status: access.status });
-  const companyId = access.user.company_id;
+  const companyId = access.companyId;
   try {
     const [gastos, categories, bankAccounts] = await Promise.all([
       listGastos(companyId),
@@ -35,7 +34,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const access = await requireGastosAccess();
   if (!access.ok) return NextResponse.json({ ok: false, error: access.error }, { status: access.status });
-  const companyId = access.user.company_id;
+  const { companyId } = access;
   const body = await req.json().catch(() => ({}));
   try {
     if (body.action === "create") {

@@ -11,10 +11,9 @@ export const dynamic = "force-dynamic";
 export default async function GastosPage() {
   const user = await getSession();
   if (!user) redirect("/login");
-  if (!user.company_id) redirect("/login");
   const grants = await listGrants(user.sub);
-  const hasAccess = grants.some((grant) => grant.company_id === user.company_id && grant.modulo_code === "gastos");
-  if (!hasAccess) {
+  const gastosGrant = grants.find((grant) => grant.modulo_code === "gastos");
+  if (!gastosGrant) {
     return (
       <PortalShell user={user}>
         <div className="rounded-lg border border-red-800 bg-red-900/30 p-5 text-red-400">
@@ -23,7 +22,7 @@ export default async function GastosPage() {
       </PortalShell>
     );
   }
-  const companyId = user.company_id;
+  const companyId = gastosGrant.company_id;
   const [gastos, categories, bankAccounts] = await Promise.all([
     listGastos(companyId),
     listCategories(companyId),
