@@ -23,11 +23,19 @@ export default async function GastosPage() {
     );
   }
   const companyId = gastosGrant.company_id;
-  const [gastos, categories, bankAccounts] = await Promise.all([
-    listGastos(companyId),
-    listCategories(companyId),
-    listBankAccounts(companyId)
-  ]);
+  let gastos: Awaited<ReturnType<typeof listGastos>> = [];
+  let categories: Awaited<ReturnType<typeof listCategories>> = [];
+  let bankAccounts: Awaited<ReturnType<typeof listBankAccounts>> = [];
+  let loadError: string | null = null;
+  try {
+    [gastos, categories, bankAccounts] = await Promise.all([
+      listGastos(companyId),
+      listCategories(companyId),
+      listBankAccounts(companyId)
+    ]);
+  } catch (err: any) {
+    loadError = err?.message || "Error cargando datos";
+  }
   return (
     <PortalShell user={user}>
       <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -37,6 +45,11 @@ export default async function GastosPage() {
           <p className="mt-1 text-sm text-slate-400">Operacion diaria, filtros y captura rapida.</p>
         </div>
       </div>
+      {loadError && (
+        <div className="mb-4 rounded-lg border border-amber-700 bg-amber-900/30 px-4 py-3 text-sm text-amber-300">
+          No se pudieron cargar los gastos: {loadError}
+        </div>
+      )}
       <GastosDashboard initialGastos={gastos} initialStats={summarize(gastos)} categories={categories.map((item) => item.nombre)} bankAccounts={bankAccounts} />
     </PortalShell>
   );
