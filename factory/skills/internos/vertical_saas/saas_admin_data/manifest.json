@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "saas_admin_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Datos para panel admin: lista empresas activas/inactivas, módulos por empresa, estado de suscripción Stripe, métricas generales.",
+  "requires_env": [
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

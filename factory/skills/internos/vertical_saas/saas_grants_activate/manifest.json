@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "saas_grants_activate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Activa acceso a un módulo para una empresa. Crea o reactiva el registro en access_grants. Llamado por Stripe webhook al confirmar pago.",
+  "requires_env": [
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "type": "skill",
+  "name": "stripe_customer_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea o recupera un Stripe Customer para una empresa. Guarda stripe_customer_id en la tabla companies de plataforma. Primer paso antes de checkout.",
+  "requires_env": [
+    "STRIPE_SECRET_KEY",
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

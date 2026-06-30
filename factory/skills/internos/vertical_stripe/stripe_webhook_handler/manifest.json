@@ -1,0 +1,14 @@
+{
+  "type": "skill",
+  "name": "stripe_webhook_handler",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Procesa eventos de Stripe webhook. checkout.session.completed → activa grants. customer.subscription.deleted / invoice.payment_failed → desactiva grants. Valida firma STRIPE_WEBHOOK_SECRET.",
+  "requires_env": [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

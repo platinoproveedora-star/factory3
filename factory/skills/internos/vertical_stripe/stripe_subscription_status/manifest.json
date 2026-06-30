@@ -1,0 +1,13 @@
+{
+  "type": "skill",
+  "name": "stripe_subscription_status",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Consulta estado actual de suscripción Stripe para una empresa: plan activo, fecha de renovación, monto, estado de pago.",
+  "requires_env": [
+    "STRIPE_SECRET_KEY",
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

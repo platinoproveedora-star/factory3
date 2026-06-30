@@ -1,0 +1,13 @@
+{
+  "type": "skill",
+  "name": "gastos4all_cuentas_retiro_setup",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea tabla cuentas_retiro en schema gastos4all (DDL). Permite registrar cuentas bancarias por empresa para el dropdown de retiros en gastos.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_ACCESS_TOKEN"
+  ]
+}

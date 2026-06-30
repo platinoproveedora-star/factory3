@@ -1,0 +1,14 @@
+{
+  "type": "skill",
+  "name": "saas_company_onboard",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Onboarding completo de empresa nueva: crea company + usuario + grants + seed de datos por módulo. Llamado por signup form y por Stripe webhook en primer pago.",
+  "requires_env": [
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

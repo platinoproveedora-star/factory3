@@ -1,0 +1,13 @@
+{
+  "type": "skill",
+  "name": "stripe_checkout_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea sesión de Stripe Checkout para un plan/módulo. Devuelve checkout_url para redirigir al usuario. Incluye metadata con company_id y modulo_code para el webhook.",
+  "requires_env": [
+    "STRIPE_SECRET_KEY",
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

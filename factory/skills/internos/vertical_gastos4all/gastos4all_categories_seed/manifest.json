@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "gastos4all_categories_seed",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Siembra categorías de gasto default para una empresa nueva en schema gastos4all. Llamado por saas_company_onboard al activar módulo gastos.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

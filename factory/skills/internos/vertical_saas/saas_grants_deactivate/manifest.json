@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "saas_grants_deactivate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Desactiva acceso a un módulo para una empresa. Marca grant como inactivo en access_grants. Llamado por Stripe webhook al cancelar suscripción o pago fallido.",
+  "requires_env": [
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

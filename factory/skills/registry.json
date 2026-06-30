@@ -1,4 +1,96 @@
 {
+  "vertical_saas/saas_company_onboard": {
+    "tipo": "interno",
+    "nombre": "vertical_saas/saas_company_onboard",
+    "vertical": "vertical_saas",
+    "descripcion": "Onboarding completo de empresa nueva: company + usuario + grants + seed de datos por módulo",
+    "path": "skills/internos/vertical_saas/saas_company_onboard",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_saas/saas_grants_activate": {
+    "tipo": "interno",
+    "nombre": "vertical_saas/saas_grants_activate",
+    "vertical": "vertical_saas",
+    "descripcion": "Activa acceso a un módulo para una empresa en access_grants",
+    "path": "skills/internos/vertical_saas/saas_grants_activate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_saas/saas_grants_deactivate": {
+    "tipo": "interno",
+    "nombre": "vertical_saas/saas_grants_deactivate",
+    "vertical": "vertical_saas",
+    "descripcion": "Desactiva acceso a un módulo para una empresa. Llamado por Stripe al cancelar",
+    "path": "skills/internos/vertical_saas/saas_grants_deactivate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_saas/saas_admin_data": {
+    "tipo": "interno",
+    "nombre": "vertical_saas/saas_admin_data",
+    "vertical": "vertical_saas",
+    "kind": "data",
+    "descripcion": "Datos para panel admin: empresas, módulos activos, métricas Stripe",
+    "path": "skills/internos/vertical_saas/saas_admin_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_stripe/stripe_customer_create": {
+    "tipo": "interno",
+    "nombre": "vertical_stripe/stripe_customer_create",
+    "vertical": "vertical_stripe",
+    "descripcion": "Crea o recupera Stripe Customer y lo vincula a la empresa en plataforma",
+    "path": "skills/internos/vertical_stripe/stripe_customer_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_stripe/stripe_checkout_create": {
+    "tipo": "interno",
+    "nombre": "vertical_stripe/stripe_checkout_create",
+    "vertical": "vertical_stripe",
+    "descripcion": "Crea sesión de Stripe Checkout para un plan/módulo. Devuelve checkout_url",
+    "path": "skills/internos/vertical_stripe/stripe_checkout_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_stripe/stripe_webhook_handler": {
+    "tipo": "interno",
+    "nombre": "vertical_stripe/stripe_webhook_handler",
+    "vertical": "vertical_stripe",
+    "descripcion": "Procesa eventos Stripe: activa grants en pago exitoso, desactiva en cancelación",
+    "path": "skills/internos/vertical_stripe/stripe_webhook_handler",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_stripe/stripe_subscription_status": {
+    "tipo": "interno",
+    "nombre": "vertical_stripe/stripe_subscription_status",
+    "vertical": "vertical_stripe",
+    "kind": "data",
+    "descripcion": "Consulta estado de suscripción Stripe para una empresa: plan, renovación, estado",
+    "path": "skills/internos/vertical_stripe/stripe_subscription_status",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gastos4all/gastos4all_categories_seed": {
+    "tipo": "interno",
+    "nombre": "vertical_gastos4all/gastos4all_categories_seed",
+    "vertical": "vertical_gastos4all",
+    "descripcion": "Siembra categorías de gasto default para empresa nueva en schema gastos4all",
+    "path": "skills/internos/vertical_gastos4all/gastos4all_categories_seed",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gastos4all/gastos4all_cuentas_retiro_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_gastos4all/gastos4all_cuentas_retiro_setup",
+    "vertical": "vertical_gastos4all",
+    "descripcion": "DDL: crea tabla cuentas_retiro en schema gastos4all para el dropdown de retiros",
+    "path": "skills/internos/vertical_gastos4all/gastos4all_cuentas_retiro_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_gastos4all/gastos4all_schema_setup": {
     "tipo": "interno",
     "nombre": "vertical_gastos4all/gastos4all_schema_setup",
