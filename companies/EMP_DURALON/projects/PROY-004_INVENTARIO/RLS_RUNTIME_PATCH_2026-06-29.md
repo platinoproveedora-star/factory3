@@ -67,3 +67,90 @@ Este parche debe reemplazarse por una solucion estructural:
    de servicio si se decide reducir dependencia de Render.
 4. Quitar o endurecer `erp_kardex_insert_erp_apps` cuando el runtime use service
    role correctamente.
+
+## Extension 2026-07-01 - catalogo inventario
+
+Al intentar agregar productos desde `https://uc101-inventario.onrender.com`, el
+dashboard fallaba con:
+
+```text
+HTTP 401 / 42501: new row violates row-level security policy for table "erp_products"
+```
+
+Compras seguia funcionando con productos existentes, pero alta/edicion de
+productos necesitaba policy propia porque el parche inicial solo cubria
+`erp_kardex`.
+
+Se agregaron policies temporales y restringidas para `erp_products` y
+`erp_parties`:
+
+```sql
+alter table uc101_proy004.erp_products enable row level security;
+alter table uc101_proy004.erp_parties enable row level security;
+
+create policy erp_products_insert_inventory_app
+on uc101_proy004.erp_products
+for insert
+to anon, authenticated
+with check (
+  empresa_id = 'EMP_DURALON'
+  and project_code = 'PROY-004'
+  and module_code = 'inventario'
+);
+
+create policy erp_products_update_inventory_app
+on uc101_proy004.erp_products
+for update
+to anon, authenticated
+using (
+  empresa_id = 'EMP_DURALON'
+  and project_code = 'PROY-004'
+  and module_code = 'inventario'
+)
+with check (
+  empresa_id = 'EMP_DURALON'
+  and project_code = 'PROY-004'
+  and module_code = 'inventario'
+);
+
+create policy erp_parties_insert_inventory_app
+on uc101_proy004.erp_parties
+for insert
+to anon, authenticated
+with check (
+  empresa_id = 'EMP_DURALON'
+  and project_code = 'PROY-004'
+  and module_code = 'inventario'
+  and party_type in ('customer', 'supplier', 'both')
+);
+
+create policy erp_parties_update_inventory_app
+on uc101_proy004.erp_parties
+for update
+to anon, authenticated
+using (
+  empresa_id = 'EMP_DURALON'
+  and project_code = 'PROY-004'
+  and module_code = 'inventario'
+)
+with check (
+  empresa_id = 'EMP_DURALON'
+  and project_code = 'PROY-004'
+  and module_code = 'inventario'
+  and party_type in ('customer', 'supplier', 'both')
+);
+
+grant insert, update on uc101_proy004.erp_products to anon, authenticated;
+grant insert, update on uc101_proy004.erp_parties to anon, authenticated;
+notify pgrst, 'reload schema';
+```
+
+Pruebas:
+
+- Alta real minima de producto `PRUEBA CODEX BORRAR PRODUCTO`: `200`.
+- Cleanup del producto por `product_key`: confirmado en `0`.
+- Compra real minima: `200`, creo entrada de kardex.
+- Cleanup de kardex de prueba: confirmado en `0`.
+
+Este ajuste tambien debe retirarse o endurecerse cuando Factory3 quede
+escribiendo con service role real desde Render.
