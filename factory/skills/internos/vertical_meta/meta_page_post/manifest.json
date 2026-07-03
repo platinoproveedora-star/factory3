@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "meta_page_post",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Publica un post orgánico (texto, foto o video) en una página de Facebook via Graph API. Distinto de meta_ads_create_ad (pagado). Soporta publicación inmediata o programada.",
+  "vertical": "vertical_meta",
+  "requires_env": [
+    "META_ACCESS_TOKEN"
+  ]
+}
