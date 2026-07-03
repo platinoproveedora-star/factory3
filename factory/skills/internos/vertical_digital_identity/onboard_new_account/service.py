@@ -273,6 +273,46 @@ class OnboardNewAccountService:
             else:
                 errores.append({"paso": "ig_comment_lead_detect", "error": r_lead.get("error")})
 
+        # Paso 5: sincronizar leads al pipeline de ventas
+        access_token = context.get("access_token") or ""
+        empresa_id_leads = context.get("empresa_id") or company_id
+
+        ig_form_id = (context.get("ig_form_id") or "").strip()
+        if "instagram" in plataformas:
+            if ig_form_id:
+                r_ig_leads = _run("vertical_instagram/ig_leads_sync", {
+                    "form_id": ig_form_id,
+                    "access_token": access_token,
+                    "empresa_id": empresa_id_leads,
+                    "dry_run": dry_run,
+                })
+                if r_ig_leads.get("ok"):
+                    pasos_completados.append("paso_5_ig_leads_sync")
+                else:
+                    errores.append({"paso": "ig_leads_sync", "error": r_ig_leads.get("error")})
+            else:
+                pasos_pendientes.append(
+                    "Sincronizar leads IG al pipeline — falta ig_form_id en context"
+                )
+
+        fb_form_id = (context.get("fb_form_id") or context.get("meta_form_id") or "").strip()
+        if "facebook_page" in plataformas:
+            if fb_form_id:
+                r_meta_leads = _run("vertical_meta_ads/meta_leads_sync_to_sales", {
+                    "form_id": fb_form_id,
+                    "access_token": access_token,
+                    "company_id": company_id,
+                    "dry_run": dry_run,
+                })
+                if r_meta_leads.get("ok"):
+                    pasos_completados.append("paso_5_meta_leads_sync_to_sales")
+                else:
+                    errores.append({"paso": "meta_leads_sync_to_sales", "error": r_meta_leads.get("error")})
+            else:
+                pasos_pendientes.append(
+                    "Sincronizar leads FB al pipeline — falta fb_form_id en context"
+                )
+
         auto_respuesta_activa = "paso_4_ig_auto_responder" in pasos_completados
         estado_final = "completo" if not errores else "parcial"
         pasos_pendientes_final = pasos_pendientes + _PASOS_MANUALES_SIEMPRE
