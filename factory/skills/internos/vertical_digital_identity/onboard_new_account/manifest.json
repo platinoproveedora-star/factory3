@@ -1,0 +1,16 @@
+{
+  "type": "skill",
+  "name": "onboard_new_account",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquestador de onboarding de identidad digital. Valida acceso, genera identidad visual, produce contenido y publica en Instagram y/o Facebook Page. Continúa aunque fallen pasos individuales.",
+  "vertical": "vertical_digital_identity",
+  "requires_env": [
+    "ANTHROPIC_API_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

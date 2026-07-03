@@ -4640,5 +4640,32 @@
     "path": "skills/internos/vertical_render/render_create_cron_job",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_media_gen/identidad_visual": {
+    "tipo": "interno",
+    "nombre": "vertical_media_gen/identidad_visual",
+    "vertical": "vertical_media_gen",
+    "descripcion": "Genera y guarda la identidad visual base (logo, portada FB, portada IG) via FAL API. Se corre una vez por empresa; estado_aprobacion arranca en pendiente.",
+    "path": "skills/internos/vertical_media_gen/identidad_visual",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_meta/meta_page_post": {
+    "tipo": "interno",
+    "nombre": "vertical_meta/meta_page_post",
+    "vertical": "vertical_meta",
+    "descripcion": "Publica un post orgánico (texto, foto o video) en una página de Facebook via Graph API. Soporta publicación inmediata o programada.",
+    "path": "skills/internos/vertical_meta/meta_page_post",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_digital_identity/onboard_new_account": {
+    "tipo": "interno",
+    "nombre": "vertical_digital_identity/onboard_new_account",
+    "vertical": "vertical_digital_identity",
+    "descripcion": "Orquestador de onboarding de identidad digital. Valida acceso, genera identidad visual, produce contenido y publica en Instagram y/o Facebook Page.",
+    "path": "skills/internos/vertical_digital_identity/onboard_new_account",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

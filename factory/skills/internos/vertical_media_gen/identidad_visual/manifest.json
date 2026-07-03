@@ -1,0 +1,14 @@
+{
+  "type": "skill",
+  "name": "identidad_visual",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera y guarda la identidad visual base (logo, portada FB, portada IG) de una empresa via FAL API. Se corre una sola vez por empresa; estado_aprobacion arranca en pendiente.",
+  "vertical": "vertical_media_gen",
+  "requires_env": [
+    "FAL_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}
