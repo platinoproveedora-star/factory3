@@ -76,18 +76,18 @@ class IdentidadVisualService:
             "tono": tono,
         }
 
-        logo_url, modelo_usado = self._generar(
+        logo_url, modelo_usado, logo_err = self._generar(
             fal_key, model_primary, model_fallback,
             _LOGO_PROMPT.format(**vars_), _IMAGE_SIZES["logo"],
         )
         if not logo_url:
-            return {"ok": False, "error": f"FAL: no se pudo generar logo con ningún modelo disponible"}
+            return {"ok": False, "error": f"FAL logo: {logo_err}"}
 
-        fb_url, _ = self._generar(
+        fb_url, _, _ = self._generar(
             fal_key, model_primary, model_fallback,
             _FB_COVER_PROMPT.format(**vars_), _IMAGE_SIZES["fb_cover"],
         )
-        ig_url, _ = self._generar(
+        ig_url, _, _ = self._generar(
             fal_key, model_primary, model_fallback,
             _IG_COVER_PROMPT.format(**vars_), _IMAGE_SIZES["ig_cover"],
         )
@@ -122,16 +122,26 @@ class IdentidadVisualService:
         model_fallback: str,
         prompt: str,
         image_size: str,
-    ) -> tuple[str | None, str]:
+    ) -> tuple[str | None, str, str | None]:
+        last_error = None
         for model_id in (model_primary, model_fallback):
             try:
                 result = self._call_fal(fal_key, model_id, {"prompt": prompt, "image_size": image_size})
-                images = result.get("images") or []
-                if images and images[0].get("url"):
-                    return images[0]["url"], model_id
-            except Exception:
-                continue
-        return None, model_fallback
+                # Try common FAL response shapes
+                url = (
+                    (result.get("images") or [{}])[0].get("url")
+                    or (result.get("image") or {}).get("url")
+                    or result.get("url")
+                )
+                if url:
+                    return url, model_id, None
+                last_error = f"modelo {model_id}: respuesta sin url — keys={list(result.keys())}"
+            except urllib.error.HTTPError as exc:
+                body = exc.read().decode("utf-8", errors="replace")[:300]
+                last_error = f"modelo {model_id}: HTTP {exc.code} — {body}"
+            except Exception as exc:
+                last_error = f"modelo {model_id}: {exc}"
+        return None, model_fallback, last_error
 
     def _call_fal(self, fal_key: str, model_id: str, payload: dict) -> dict:
         req = urllib.request.Request(
