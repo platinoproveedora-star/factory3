@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_export_png",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Prepara exportacion PNG/JPG publicable de carrusel y valida dependencias locales requeridas.",
+  "vertical": "vertical_instagram"
+}

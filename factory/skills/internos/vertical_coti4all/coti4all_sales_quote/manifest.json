@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_coti4all/coti4all_sales_quote",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea/actualiza cotización en quotes + quote_items desde items del contexto.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

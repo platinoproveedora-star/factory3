@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_coti4all/coti4all_product_catalog",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista items del catálogo COTI4ALL desde catalog_items con filtros por estado, búsqueda, categoría y orden.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

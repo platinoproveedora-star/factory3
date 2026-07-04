@@ -4667,5 +4667,86 @@
     "path": "skills/internos/vertical_digital_identity/onboard_new_account",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_coti4all/coti4all_product_catalog": {
+    "tipo": "interno",
+    "nombre": "vertical_coti4all/coti4all_product_catalog",
+    "vertical": "vertical_coti4all",
+    "descripcion": "Lista items del catálogo COTI4ALL desde catalog_items con filtros por estado, búsqueda, categoría y orden.",
+    "path": "skills/internos/vertical_coti4all/coti4all_product_catalog",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_coti4all/coti4all_schema_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_coti4all/coti4all_schema_setup",
+    "vertical": "vertical_coti4all",
+    "descripcion": "Genera o aplica el DDL base de COTI4ALL: catalog_items, price_lists, quotes, quote_items y quote_events.",
+    "path": "skills/internos/vertical_coti4all/coti4all_schema_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_coti4all/coti4all_price_list": {
+    "tipo": "interno",
+    "nombre": "vertical_coti4all/coti4all_price_list",
+    "vertical": "vertical_coti4all",
+    "descripcion": "Resuelve precio vigente por producto y lista de precio en coti4all, acepta código o id.",
+    "path": "skills/internos/vertical_coti4all/coti4all_price_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_coti4all/coti4all_cost_table": {
+    "tipo": "interno",
+    "nombre": "vertical_coti4all/coti4all_cost_table",
+    "vertical": "vertical_coti4all",
+    "descripcion": "Calcula costo de línea desde catalog_items.costo_referencia y cantidad.",
+    "path": "skills/internos/vertical_coti4all/coti4all_cost_table",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_coti4all/coti4all_sales_quote": {
+    "tipo": "interno",
+    "nombre": "vertical_coti4all/coti4all_sales_quote",
+    "vertical": "vertical_coti4all",
+    "descripcion": "Crea/actualiza cotización en quotes + quote_items desde items del contexto, con folio consecutivo.",
+    "path": "skills/internos/vertical_coti4all/coti4all_sales_quote",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_coti4all/coti4all_quote_margin": {
+    "tipo": "interno",
+    "nombre": "vertical_coti4all/coti4all_quote_margin",
+    "vertical": "vertical_coti4all",
+    "descripcion": "Calcula margen mejorado de cotización coti4all sin persistir, a partir de improve_factors por código.",
+    "path": "skills/internos/vertical_coti4all/coti4all_quote_margin",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_coti4all/coti4all_quote_pdf": {
+    "tipo": "interno",
+    "nombre": "vertical_coti4all/coti4all_quote_pdf",
+    "vertical": "vertical_coti4all",
+    "descripcion": "Genera HTML sellable de cotización coti4all con sello/verifica y listo para imprimir/guardar como PDF.",
+    "path": "skills/internos/vertical_coti4all/coti4all_quote_pdf",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_coti4all/coti4all_quote_list": {
+    "tipo": "interno",
+    "nombre": "vertical_coti4all/coti4all_quote_list",
+    "vertical": "vertical_coti4all",
+    "descripcion": "Lista cotizaciones guardadas de coti4all (folio, cliente, total, estado, fecha) para el tab Cotizaciones.",
+    "path": "skills/internos/vertical_coti4all/coti4all_quote_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_coti4all/coti4all_quote_get": {
+    "tipo": "interno",
+    "nombre": "vertical_coti4all/coti4all_quote_get",
+    "vertical": "vertical_coti4all",
+    "descripcion": "Obtiene una cotización guardada por id o folio, con sus renglones, para cargarla en modo edición.",
+    "path": "skills/internos/vertical_coti4all/coti4all_quote_get",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

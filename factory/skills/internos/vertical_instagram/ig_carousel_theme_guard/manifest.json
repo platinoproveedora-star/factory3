@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_theme_guard",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Normaliza paletas y contraste para carruseles de Instagram evitando combinaciones visuales debiles.",
+  "vertical": "vertical_instagram"
+}

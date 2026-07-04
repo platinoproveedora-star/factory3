@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_image_prompt",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Convierte briefs visuales de carrusel en prompts consistentes para generar imagenes de infografia.",
+  "vertical": "vertical_instagram"
+}

@@ -3,6 +3,7 @@ from __future__ import annotations
 import html
 import json
 import re
+from base64 import b64encode
 from pathlib import Path
 
 
@@ -52,6 +53,9 @@ class IgRenderCarouselSlidesService:
                     "keyword": cover.get("keyword") or carousel.get("keyword") or context.get("keyword"),
                     "intent": cover.get("intent") or carousel.get("intent") or context.get("intent"),
                     "promise": cover.get("promise") or carousel.get("promise") or context.get("promise"),
+                    "image_url": cover.get("image_url") or cover.get("image"),
+                    "image_path": cover.get("image_path"),
+                    "alt_text": cover.get("alt_text") or cover.get("alt"),
                 }
             )
         for item in raw or []:
@@ -64,6 +68,9 @@ class IgRenderCarouselSlidesService:
                         "evidence": item.get("evidence") or item.get("evidencia") or item.get("proof"),
                         "takeaway": item.get("takeaway") or item.get("conclusion") or item.get("accion"),
                         "keyword": item.get("keyword") or carousel.get("keyword") or context.get("keyword"),
+                        "image_url": item.get("image_url") or item.get("image"),
+                        "image_path": item.get("image_path"),
+                        "alt_text": item.get("alt_text") or item.get("alt"),
                     }
                 )
         cta = carousel.get("last_slide_cta") or context.get("last_slide_cta")
@@ -163,7 +170,10 @@ class IgRenderCarouselSlidesService:
         promise = str(slide.get("promise") or "aprende lo esencial en menos de un minuto").strip()
         evidence = str(slide.get("evidence") or "Sintesis basada en principios cientificos").strip()
         takeaway = str(slide.get("takeaway") or "").strip()
+        image_href = self._image_href(slide.get("image_url") or slide.get("image_path"))
+        alt_text = html.escape(str(slide.get("alt_text") or headline))
         kind = str(slide.get("kind") or "body")
+        role = str(slide.get("layout_role") or kind).strip()
         accent = palette.get("accent", "#0b5fff")
         accent_2 = palette.get("accent_2", "#14b8a6")
         ink = palette.get("ink", "#101828")
@@ -172,57 +182,64 @@ class IgRenderCarouselSlidesService:
         bg = palette.get("background", "#eef2f7")
         line = palette.get("line", "#d0d5dd")
         soft = palette.get("soft", "#e0f2fe")
-        head_size = int(typo.get("headline_size") or 86)
-        body_size = int(typo.get("body_size") or 34)
+        slide_typo = slide.get("typography") if isinstance(slide.get("typography"), dict) else {}
+        head_size = min(int(slide_typo.get("headline_size") or typo.get("headline_size") or 42), 46 if kind == "cover" else 38)
+        body_size = min(int(slide_typo.get("body_size") or typo.get("body_size") or 24), 24)
         footer = html.escape(str(layout.get("footer_label") or "Fuente: sintesis educativa"))
         hero_label = html.escape(str(layout.get("hero_label") or "GUIA SEO"))
         keyword_label = html.escape(str(layout.get("keyword_label") or "Keyword principal"))
-        title_y = 265 if kind == "cover" else 250
-        title_chars = 18 if kind == "cover" else 23
-        title_lines = self._wrap(headline, title_chars, 4)
-        body_lines = self._wrap(body, 38, 5)
-        proof_lines = self._wrap(evidence, 34, 3)
-        takeaway_lines = self._wrap(takeaway, 36, 3)
-        title_svg = self._text_lines(title_lines, margin + 40, title_y, head_size if kind == "cover" else 70, 84, ink, font, weight=900)
-        body_svg = self._text_lines(body_lines, margin + 44, 650, body_size, 48, muted, font, weight=500)
-        proof_svg = self._text_lines(proof_lines, margin + 76, 895, 28, 39, ink, font, weight=700)
-        takeaway_svg = self._text_lines(takeaway_lines, margin + 76, 1085, 30, 42, ink, font, weight=800) if takeaway else ""
+        title_y = 392 if kind == "cover" else 382
+        title_chars = 30 if kind == "cover" else 34
+        title_lines = self._wrap(headline, title_chars, 3)
+        body_lines = self._wrap(body, 44, 4)
+        proof_lines = self._wrap(evidence, 38, 2)
+        takeaway_lines = self._wrap(takeaway, 38, 2)
+        title_svg = self._text_lines_centered(title_lines, width / 2, title_y, head_size, head_size + 12, ink, font, weight=900)
+        body_svg = self._text_lines_centered(body_lines, width / 2, title_y + (len(title_lines) * (head_size + 12)) + 46, body_size, body_size + 11, muted, font, weight=500)
+        proof_svg = self._text_lines(proof_lines, margin + 76, 894, 26, 36, ink, font, weight=700)
+        takeaway_svg = self._text_lines(takeaway_lines, margin + 76, 1090, 27, 38, ink, font, weight=800) if takeaway else ""
         keyword_box = ""
         if keyword:
             keyword_box = f"""
   <rect x="{margin + 40}" y="170" width="{width - margin * 2 - 80}" height="56" rx="28" fill="{html.escape(soft)}" stroke="{html.escape(line)}"/>
   <text x="{margin + 68}" y="207" font-family="{html.escape(font)}" font-size="24" font-weight="800" fill="{html.escape(accent)}">{keyword_label}: {html.escape(keyword)}</text>"""
-        promise_box = ""
-        if kind == "cover":
-            promise_lines = self._wrap(promise, 36, 2)
-            promise_svg = self._text_lines(promise_lines, margin + 74, 1048, 32, 43, ink, font, weight=800)
-            promise_box = f"""
-  <rect x="{margin + 38}" y="990" width="{width - margin * 2 - 76}" height="150" rx="24" fill="{html.escape(soft)}" stroke="{html.escape(accent)}" stroke-width="2"/>
-  <text x="{margin + 74}" y="1030" font-family="{html.escape(font)}" font-size="22" font-weight="900" fill="{html.escape(accent)}">PROMESA</text>
-  {promise_svg}"""
-        takeaway_box = ""
-        if takeaway:
-            takeaway_box = f"""
-  <rect x="{margin + 38}" y="1018" width="{width - margin * 2 - 76}" height="152" rx="24" fill="{html.escape(soft)}" stroke="{html.escape(accent_2)}" stroke-width="2"/>
-  <text x="{margin + 76}" y="1062" font-family="{html.escape(font)}" font-size="22" font-weight="900" fill="{html.escape(accent_2)}">TAKEAWAY</text>
-  {takeaway_svg}"""
+        role_label = {
+            "cover": "GUIA",
+            "context": "CONTEXTO",
+            "mechanism": "MECANISMO",
+            "evidence": "EVIDENCIA",
+            "application": "APLICACION",
+            "cta": "CIERRE",
+        }.get(role, role.upper()[:16] or "SLIDE")
+        source_note = ""
+        if kind not in {"cover", "cta"}:
+            source_text = self._wrap(str(slide.get("source_title") or evidence), 58, 2)
+            source_svg = self._text_lines_centered(source_text, width / 2, 1052, 21, 30, muted, font, weight=600)
+            source_note = f"""
+  <rect x="{margin + 64}" y="990" width="{width - margin * 2 - 128}" height="118" rx="22" fill="{html.escape(soft)}" stroke="{html.escape(line)}" stroke-width="2"/>
+  <text x="{width / 2}" y="1030" font-family="{html.escape(font)}" font-size="18" font-weight="900" text-anchor="middle" fill="{html.escape(accent)}">FUENTE / NOTA</text>
+  {source_svg}"""
+        image_block = ""
+        if image_href:
+            image_block = f"""
+  <image href="{html.escape(image_href)}" x="{margin}" y="{margin}" width="{width - margin * 2}" height="{height - margin * 2}" opacity="0.20" preserveAspectRatio="xMidYMid slice">
+    <title>{alt_text}</title>
+  </image>
+  <rect x="{margin}" y="{margin}" width="{width - margin * 2}" height="{height - margin * 2}" rx="{int(layout.get('corner_radius') or 18)}" fill="#ffffff" opacity="0.78"/>"""
         svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
   <rect width="{width}" height="{height}" fill="{html.escape(bg)}"/>
   <rect x="{margin}" y="{margin}" width="{width - margin * 2}" height="{height - margin * 2}" rx="{int(layout.get('corner_radius') or 18)}" fill="{html.escape(panel)}" stroke="{html.escape(line)}" stroke-width="2"/>
+  {image_block}
   <rect x="{margin}" y="{margin}" width="{width - margin * 2}" height="16" rx="8" fill="{html.escape(accent)}"/>
   <circle cx="{width - 172}" cy="238" r="118" fill="{html.escape(accent_2)}" opacity="0.11"/>
   <circle cx="{width - 110}" cy="310" r="62" fill="{html.escape(accent)}" opacity="0.10"/>
-  <text x="{margin + 40}" y="{margin + 72}" font-family="{html.escape(font)}" font-size="24" font-weight="900" fill="{html.escape(accent)}">{hero_label}</text>
+  <text x="{margin + 40}" y="{margin + 72}" font-family="{html.escape(font)}" font-size="24" font-weight="900" fill="{html.escape(accent)}">{html.escape(role_label)}</text>
   <text x="{width - margin - 40}" y="{margin + 72}" font-family="{html.escape(font)}" font-size="24" font-weight="800" text-anchor="end" fill="{html.escape(muted)}">{number}/{total}</text>
   {keyword_box}
   {title_svg}
-  <text x="{margin + 44}" y="594" font-family="{html.escape(font)}" font-size="24" font-weight="900" fill="{html.escape(accent_2)}">INTENCION: {html.escape(intent.upper())}</text>
+  <text x="{width / 2}" y="310" font-family="{html.escape(font)}" font-size="21" font-weight="900" text-anchor="middle" fill="{html.escape(accent_2)}">INTENCION: {html.escape(intent.upper())}</text>
   {body_svg}
-  <rect x="{margin + 38}" y="830" width="{width - margin * 2 - 76}" height="138" rx="24" fill="#ffffff" stroke="{html.escape(line)}" stroke-width="2"/>
-  <text x="{margin + 76}" y="876" font-family="{html.escape(font)}" font-size="22" font-weight="900" fill="{html.escape(accent)}">EVIDENCIA</text>
-  {proof_svg}
-  {promise_box}
-  {takeaway_box}
+  {source_note}
   <text x="{margin + 40}" y="{height - margin - 42}" font-family="{html.escape(font)}" font-size="22" fill="{html.escape(muted)}">{footer}</text>
 </svg>"""
         return {
@@ -232,6 +249,22 @@ class IgRenderCarouselSlidesService:
             "body": body,
             "svg": svg,
         }
+
+    def _image_href(self, value: object) -> str:
+        if not value:
+            return ""
+        raw = str(value)
+        if raw.startswith(("http://", "https://", "data:")):
+            return raw
+        path = Path(raw)
+        if not path.is_absolute():
+            path = Path(__file__).resolve().parents[5] / path
+        if not path.exists() or not path.is_file():
+            return raw
+        suffix = path.suffix.lower()
+        mime = "image/svg+xml" if suffix == ".svg" else "image/png" if suffix == ".png" else "image/jpeg"
+        encoded = b64encode(path.read_bytes()).decode("ascii")
+        return f"data:{mime};base64,{encoded}"
 
     def _wrap(self, text: str, max_chars: int, max_lines: int) -> list[str]:
         words = re.sub(r"\s+", " ", text or "").strip().split(" ")
@@ -254,6 +287,12 @@ class IgRenderCarouselSlidesService:
     def _text_lines(self, lines: list[str], x: int, y: int, size: int, line_height: int, color: str, font: str, weight: int) -> str:
         return "\n".join(
             f'<text x="{x}" y="{y + idx * line_height}" font-family="{html.escape(font)}" font-size="{size}" font-weight="{weight}" fill="{html.escape(color)}">{html.escape(line)}</text>'
+            for idx, line in enumerate(lines)
+        )
+
+    def _text_lines_centered(self, lines: list[str], x: float, y: int, size: int, line_height: int, color: str, font: str, weight: int) -> str:
+        return "\n".join(
+            f'<text x="{x:.0f}" y="{y + idx * line_height}" font-family="{html.escape(font)}" font-size="{size}" font-weight="{weight}" text-anchor="middle" fill="{html.escape(color)}">{html.escape(line)}</text>'
             for idx, line in enumerate(lines)
         )
 

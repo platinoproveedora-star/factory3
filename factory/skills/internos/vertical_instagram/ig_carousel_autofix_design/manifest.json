@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_autofix_design",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Aplica correcciones conservadoras de diseno a slides de carrusel segun auditoria visual.",
+  "vertical": "vertical_instagram"
+}

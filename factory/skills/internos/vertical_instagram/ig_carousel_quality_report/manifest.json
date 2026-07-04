@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_quality_report",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera reporte de calidad de carrusel con scores, warnings, fuentes y readiness para publicar.",
+  "vertical": "vertical_instagram"
+}

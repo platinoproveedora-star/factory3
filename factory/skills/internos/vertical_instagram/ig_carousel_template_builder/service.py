@@ -69,8 +69,8 @@ class IgCarouselTemplateBuilderService:
             "palette": palette,
             "typography": {
                 "font_family": str(context.get("font_family") or "Arial, Helvetica, sans-serif"),
-                "headline_size": int(context.get("headline_size") or (86 if is_seo_hero else 76)),
-                "body_size": int(context.get("body_size") or (34 if is_seo_hero else 38)),
+                "headline_size": int(context.get("headline_size") or (58 if is_seo_hero else 76)),
+                "body_size": int(context.get("body_size") or (27 if is_seo_hero else 38)),
                 "label_size": int(context.get("label_size") or 24),
             },
             "layout": {

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_orchestrator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orquesta la creacion de carruseles de Instagram por modo: cientifico, educativo SEO, ventas, how-to, mito y marca.",
+  "vertical": "vertical_instagram"
+}

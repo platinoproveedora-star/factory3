@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_coti4all/coti4all_quote_list",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista cotizaciones guardadas de coti4all (folio, cliente, total, estado, fecha) para el tab Cotizaciones.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

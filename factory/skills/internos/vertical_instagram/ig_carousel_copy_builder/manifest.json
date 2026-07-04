@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_copy_builder",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Construye copy slide por slide para carruseles a partir de claims, modo y audiencia.",
+  "vertical": "vertical_instagram"
+}

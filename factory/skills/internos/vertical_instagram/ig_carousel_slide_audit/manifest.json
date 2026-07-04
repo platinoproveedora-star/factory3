@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_slide_audit",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Audita slides de carrusel por longitud, densidad, jerarquia, contraste, evidencia y preparacion visual.",
+  "vertical": "vertical_instagram"
+}

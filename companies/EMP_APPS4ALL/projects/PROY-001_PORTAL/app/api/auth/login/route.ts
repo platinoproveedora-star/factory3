@@ -8,7 +8,8 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  const email = String(body?.email || "").trim().toLowerCase();
+  const rawLogin = String(body?.email || "").trim().toLowerCase();
+  const email = rawLogin === "admintotal" ? "admintotal@apps4all.local" : rawLogin;
   const password = String(body?.password || "");
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
   if (!email || !password) {

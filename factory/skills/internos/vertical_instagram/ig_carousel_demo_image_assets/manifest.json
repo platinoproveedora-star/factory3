@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_demo_image_assets",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera assets visuales SVG locales para demos de carrusel con imagenes sin depender de APIs externas.",
+  "vertical": "vertical_instagram"
+}

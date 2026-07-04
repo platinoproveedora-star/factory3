@@ -1,0 +1,7 @@
+{
+  "name": "vertical_multi_shopper/purchase_import_skill",
+  "entrypoint": "skill.py",
+  "kind": "executable",
+  "version": "0.1.0",
+  "description": "Importa compras desde documento/xlsx/pdf/image: upload/extract a documents, find-or-create supplier y products, price_history en dry_run y comparativo proveedor-precio."
+}

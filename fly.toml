@@ -1,0 +1,27 @@
+app = "uc102-conta4all-sat"
+primary_region = "qro"
+
+[build]
+  [build.args]
+
+[env]
+  SUPABASE_SCHEMA = "uc102_proy001"
+  COMPANY_ID      = "EMP_CONTA4ALL"
+  PROJECT_CODE    = "PROY-001"
+  PORT            = "8080"
+
+[[services]]
+  internal_port = 8080
+  protocol      = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port     = 80
+    force_https = true
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port     = 443
+
+[processes]
+  app = "streamlit run companies/EMP_CONTA4ALL/projects/PROY-001_SAT/dashboard/app.py --server.port 8080 --server.address 0.0.0.0"
