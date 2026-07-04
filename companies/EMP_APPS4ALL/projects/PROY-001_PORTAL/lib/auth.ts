@@ -43,6 +43,11 @@ export async function getSession(): Promise<SessionUser | null> {
   }
 }
 
+export async function getSessionToken(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get(COOKIE_NAME)?.value || null;
+}
+
 export function cookieOptions(maxAge: number) {
   return {
     httpOnly: true,

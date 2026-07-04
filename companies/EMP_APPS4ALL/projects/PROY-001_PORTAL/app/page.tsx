@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { ArrowUpRight, FileSpreadsheet, ReceiptText, ShoppingBasket } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { getSession, getSessionToken } from "@/lib/auth";
 import { listCompanies, listGrants, companyName } from "@/lib/platform";
 import { PortalShell } from "@/components/PortalShell";
 
@@ -45,6 +45,7 @@ const MODULES: Record<string, { title: string; description: string; href: string
 export default async function HomePage() {
   const user = await getSession();
   if (!user) redirect("/login");
+  const sessionToken = await getSessionToken();
   const grants = await listGrants(user.sub);
   const companies = await listCompanies(Array.from(new Set(grants.map((grant) => grant.company_id))));
   const grantsByModule = Array.from(
@@ -83,10 +84,14 @@ export default async function HomePage() {
           const role = roles.includes("platform_admin") ? "platform_admin" : roles.includes("owner") ? "owner" : roles[0] || "admin";
           const statuses = moduleGrants.map((grant) => grant.subscription_status || grant.status);
           const status = statuses.includes("active") ? "active" : statuses[0] || "manual";
+          const href =
+            module.external && module.href !== "#" && sessionToken
+              ? `${module.href}${module.href.includes("?") ? "&" : "?"}sso=${encodeURIComponent(sessionToken)}`
+              : module.href;
           return (
             <a
               key={moduloCode}
-              href={module.href}
+              href={href}
               target={module.external ? "_blank" : undefined}
               rel={module.external ? "noreferrer" : undefined}
               className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-steel hover:shadow-md"

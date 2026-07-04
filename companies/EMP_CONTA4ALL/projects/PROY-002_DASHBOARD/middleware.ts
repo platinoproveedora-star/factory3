@@ -6,6 +6,28 @@ const PUBLIC = ["/login", "/register", "/api/auth/login", "/api/auth/register"];
 
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
+
+  const ssoToken = req.nextUrl.searchParams.get("sso");
+  if (ssoToken) {
+    try {
+      const secret = new TextEncoder().encode(process.env.PLATFORM_JWT_SECRET!);
+      await jwtVerify(ssoToken, secret);
+      const cleanUrl = new URL(req.nextUrl);
+      cleanUrl.searchParams.delete("sso");
+      const res = NextResponse.redirect(cleanUrl);
+      res.cookies.set(COOKIE_NAME, ssoToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 7200,
+      });
+      return res;
+    } catch {
+      // token invalido o expirado, seguir flujo normal
+    }
+  }
+
   if (PUBLIC.some((p) => path.startsWith(p))) return NextResponse.next();
 
   const token = req.cookies.get(COOKIE_NAME)?.value;
@@ -23,5 +45,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/api/rfcs/:path*", "/api/sync/:path*", "/api/cfdis/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/api/rfcs/:path*", "/api/sync/:path*", "/api/cfdis/:path*"],
 };
