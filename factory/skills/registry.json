@@ -4748,5 +4748,14 @@
     "path": "skills/internos/vertical_coti4all/coti4all_quote_get",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_factory_utils/factory_launch_readiness_audit": {
+    "tipo": "interno",
+    "nombre": "vertical_factory_utils/factory_launch_readiness_audit",
+    "vertical": "vertical_factory_utils",
+    "descripcion": "Audita infraestructura (Vercel/Render/Supabase), variables de billing/monitoreo, y genera un plan de trabajo con horas estimadas antes de comercializar.",
+    "path": "skills/internos/vertical_factory_utils/factory_launch_readiness_audit",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

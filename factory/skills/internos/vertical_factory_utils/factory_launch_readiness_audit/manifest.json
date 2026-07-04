@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factory_utils/factory_launch_readiness_audit",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Audita infraestructura (Vercel/Render/Supabase), variables de billing/monitoreo, y genera un plan de trabajo con horas estimadas antes de comercializar.",
+  "requires_env": ["VERCEL_TOKEN", "RENDER_API_KEY", "SUPABASE_ACCESS_TOKEN"]
+}
