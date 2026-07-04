@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_coti4all/coti4all_cost_table",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Calcula costo de línea desde catalog_items.costo_referencia y cantidad.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

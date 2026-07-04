@@ -1,0 +1,14 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all/platform_account_inspect",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Read-only inspection of platform account state for Apps4All. Lists company metadata, users, and access grants from the `platform` schema for `EMP_APPS4ALL`.",
+  "requires_env": [
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY",
+    "APPS4ALL_ALLOWED_COMPANY_ID"
+  ],
+  "internal_only": false
+}

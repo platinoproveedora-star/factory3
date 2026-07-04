@@ -20,6 +20,13 @@ const MODULES: Record<string, { title: string; description: string; href: string
     icon: FileSpreadsheet,
     external: true
   },
+  coti4all_portal: {
+    title: "Coti4All",
+    description: "Cotizador multiempresa, catalogo y documento para cliente.",
+    href: process.env.NEXT_PUBLIC_COTI4ALL_URL || "#",
+    icon: FileSpreadsheet,
+    external: true
+  },
   vertical_multi_shopper: {
     title: "Multi Shopper",
     description: "Cotizaciones, proveedores, productos y pricing.",
@@ -40,6 +47,16 @@ export default async function HomePage() {
   if (!user) redirect("/login");
   const grants = await listGrants(user.sub);
   const companies = await listCompanies(Array.from(new Set(grants.map((grant) => grant.company_id))));
+  const grantsByModule = Array.from(
+    grants
+      .reduce((map, grant) => {
+        const rows = map.get(grant.modulo_code) || [];
+        rows.push(grant);
+        map.set(grant.modulo_code, rows);
+        return map;
+      }, new Map<string, typeof grants>())
+      .entries()
+  ).sort(([a], [b]) => a.localeCompare(b));
 
   return (
     <PortalShell user={user}>
@@ -53,17 +70,22 @@ export default async function HomePage() {
         </p>
       </section>
       <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {grants.map((grant) => {
-          const module = MODULES[grant.modulo_code] || {
-            title: grant.modulo_code,
+        {grantsByModule.map(([moduloCode, moduleGrants]) => {
+          const module = MODULES[moduloCode] || {
+            title: moduloCode,
             description: "Modulo activo.",
             href: "#",
             icon: ArrowUpRight
           };
           const Icon = module.icon;
+          const companyNames = moduleGrants.map((grant) => companyName(companies, grant.company_id));
+          const roles = moduleGrants.map((grant) => grant.role);
+          const role = roles.includes("platform_admin") ? "platform_admin" : roles.includes("owner") ? "owner" : roles[0] || "admin";
+          const statuses = moduleGrants.map((grant) => grant.subscription_status || grant.status);
+          const status = statuses.includes("active") ? "active" : statuses[0] || "manual";
           return (
             <a
-              key={grant.id}
+              key={moduloCode}
               href={module.href}
               target={module.external ? "_blank" : undefined}
               rel={module.external ? "noreferrer" : undefined}
@@ -74,15 +96,21 @@ export default async function HomePage() {
                   <Icon size={20} />
                 </span>
                 <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium uppercase text-slate-500">
-                  {grant.subscription_status || grant.status}
+                  {status}
                 </span>
               </div>
               <h2 className="mt-4 text-lg font-semibold text-ink">{module.title}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">{module.description}</p>
-              <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-                <span>{companyName(companies, grant.company_id)}</span>
-                <span>{grant.role}</span>
+              <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-500">
+                <span className="truncate">
+                  {moduleGrants.length} {moduleGrants.length === 1 ? "empresa" : "empresas"}
+                </span>
+                <span>{role}</span>
               </div>
+              <p className="mt-2 truncate text-xs text-slate-400" title={companyNames.join(", ")}>
+                {companyNames.slice(0, 3).join(", ")}
+                {companyNames.length > 3 ? ` +${companyNames.length - 3}` : ""}
+              </p>
             </a>
           );
         })}

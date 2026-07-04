@@ -8,7 +8,8 @@
 4. Lee `docs/VERTICAL_<nombre>.md` del área en que vas a trabajar
 5. No crees carpetas ni archivos fuera de la estructura establecida
 6. No agregues dependencias sin agregarlas a `requirements.txt`
-7. Si no encuentras el patrón aquí → **pregunta antes de inventar**
+7. Si usas Hermes/MCP, explora primero y no ejecutes escrituras sin autorización humana
+8. Si no encuentras el patrón aquí → **pregunta antes de inventar**
 
 ## Qué es factory3
 Runtime de skills Python. Expone bots Telegram y endpoints HTTP via FastAPI (`factory_api.py`).
@@ -17,10 +18,12 @@ Todo corre en Render. DB: Supabase. IA: Anthropic Haiku.
 ## Estructura raíz
 ```
 factory3/
-  factory_api.py          ← FastAPI: webhooks + GET /data/{skill}
+  factory_api.py          ← FastAPI: webhooks + GET /data/{skill} + POST /run/{skill_name}
   factory/
     bots/
       registry.json       ← registro de bots
+    mcp/
+      server.py           ← puente MCP para Hermes; NO ejecuta skills directo
     skills/
       registry.json       ← registro de skills — LEER ANTES DE CREAR
       internos/           ← todos los skills
@@ -76,13 +79,57 @@ ANTHROPIC_API_KEY
 FACTORY3_ADMIN_BOT_TOKEN
 GITHUB_REPO / GITHUB_TOKEN
 RENDER_API_KEY
+FACTORY_RUN_SECRET
+FACTORY_API_URL
+REGISTRY_PATH
 ```
 
 ## Reglas de arquitectura
 - Todo en `skill.py` + `service.py` — nunca lógica inline en `bot.py` o `factory_api.py`
 - Skills `kind=data` para datos del dashboard, expuestos via `GET /data/<skill>`
+- Skills ejecutables remotos van por `POST /run/<skill>` protegido con `FACTORY_RUN_SECRET`
 - `dry_run=True` por defecto en skills con escritura
 - User-Agent en requests externos: `"FactoryFactory/0.1 (+https://github.com/)"`
+
+## Hermes / MCP — reglas canónicas
+
+Hermes se conecta a Factory3 mediante `factory/mcp/server.py`.
+
+Contrato:
+
+- Transporte actual: `stdio` local en Hermes/VPS o laptop; no servicio HTTP por ahora.
+- El puente MCP es delgado: lee `factory/skills/registry.json` y llama `POST /run/{skill_name}`.
+- El puente MCP NO reimplementa `SkillRunner`, `SupabaseClient`, lógica de skills ni clientes externos.
+- `FACTORY_RUN_SECRET` debe existir en Render para el servicio `factory_api.py` y en el entorno de Hermes.
+- Nunca pegues ni muestres `FACTORY_RUN_SECRET`, tokens, service keys, write keys ni passwords. Solo confirma `existe/no existe`.
+
+Tools MCP disponibles:
+
+```text
+list_verticals()
+list_skills(vertical=None)
+search_skills(query)
+get_skill_manifest(skill_name)
+run_skill(skill_name, context)
+```
+
+Flujo obligatorio para Hermes o cualquier agente MCP:
+
+1. Usar `list_verticals()` o `search_skills()` para descubrir capacidades.
+2. Usar `get_skill_manifest()` o revisar el skill real antes de ejecutar.
+3. Confirmar contexto requerido: `company_id`/`empresa_id`, `project_code`, `module_code`, `schema`.
+4. Si falta contexto, preguntar. No inventar empresa, schema, URL, folio ni token.
+5. Para escrituras, usar `dry_run=true` primero.
+6. No ejecutar `run_skill()` que escriba datos, cambie infraestructura, env vars, GitHub, Render o Supabase sin autorización humana explícita.
+7. Al ejecutar, reportar: skill usado, contexto no secreto usado, resultado resumido y siguiente riesgo.
+
+Regla práctica para Hermes:
+
+```text
+Explora primero. No ejecutes run_skill con escritura hasta que el humano lo autorice.
+```
+
+Si un usuario pide una acción ambigua, Hermes debe responder con plan corto y pedir confirmación antes de ejecutar.
 ## FACTORY3 SELLABLE GATE - OBLIGATORIO
 
 Factory3 se construye para vender y reutilizar modulos por empresa. Antes de crear o modificar codigo, cualquier agente debe cumplir este gate:

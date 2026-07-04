@@ -1,0 +1,15 @@
+{
+  "company_id": "EMP_COTI4ALL",
+  "project_code": "PROY-001_DASHBOARD",
+  "module_code": "coti4all_portal",
+  "schema": "coti4all",
+  "platform": "vercel",
+  "requires_env": [
+    "FACTORY_API_URL",
+    "FACTORY_RUN_SECRET",
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY",
+    "PLATFORM_JWT_SECRET"
+  ],
+  "dashboard_path": "companies/EMP_COTI4ALL/projects/PROY-001_DASHBOARD"
+}

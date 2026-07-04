@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_research/research_topic_essay",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un ensayo cientifico especifico sobre un subtema o claim usando solo fuentes reales provistas y bibliografia verificable.",
+  "vertical": "vertical_research"
+}

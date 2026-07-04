@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_typography_fit",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Calcula tamanos de tipografia y limites de texto por slide para carruseles de Instagram.",
+  "vertical": "vertical_instagram"
+}

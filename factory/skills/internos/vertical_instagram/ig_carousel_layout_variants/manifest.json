@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_layout_variants",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Asigna variantes de layout por slide para carruseles: portada, evidencia, proceso, comparativo, checklist y CTA.",
+  "vertical": "vertical_instagram"
+}

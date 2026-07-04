@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_image_brief",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera brief visual slide por slide para carruseles de Instagram con imagenes o infografias.",
+  "vertical": "vertical_instagram"
+}

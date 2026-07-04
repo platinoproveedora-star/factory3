@@ -96,6 +96,22 @@ Skills faltantes:
 Resultado esperado: generar assets publicables, analizar resultados y ajustar el
 calendario siguiente automaticamente.
 
+### Carruseles cientificos y educativos
+
+Se agrego una linea de trabajo para crear carruseles desde research verificable
+y/o briefs editoriales. El documento operativo vive en
+`docs/IG_CAROUSEL_PIPELINE.md`.
+
+Principios actuales:
+
+- El modo `scientific` requiere fuentes reales en `sources`.
+- Research y analisis editorial se generan antes del carrusel.
+- El orquestador generico es `vertical_instagram/ig_carousel_orchestrator`.
+- El render actual produce SVG/HTML; PNG queda pendiente hasta definir backend.
+- Los templates visuales siguen en ajuste: el siguiente paso recomendado es
+  separar layouts por rol (`cover`, `context`, `mechanism`, `evidence`,
+  `application`, `cta`) y no depender de una sola composicion.
+
 ## Tabla completa de skills
 
 | Skill | Vertical | Etapa | Descripcion | Estado |
@@ -118,6 +134,22 @@ calendario siguiente automaticamente.
 | `ig_hashtag_generator` | instagram | Base | Genera hashtags agrupados por alcance. | Implementado |
 | `ig_alt_text_generator` | instagram | Base | Genera alt text para accesibilidad y SEO. | Implementado |
 | `ig_carousel_builder` | instagram | Base | Genera copy slide por slide para carrusel. | Implementado |
+| `ig_carousel_template_builder` | instagram | 3 | Genera templates visuales reutilizables. | Implementado |
+| `ig_render_carousel_slides` | instagram | 3 | Renderiza slides SVG/HTML con texto e imagen local/URL. | Implementado/en ajuste |
+| `ig_carousel_export_assets` | instagram | 3 | Exporta SVG/HTML/manifest para revision. | Implementado |
+| `ig_carousel_image_brief` | instagram | 3 | Define requerimientos visuales por slide. | Implementado |
+| `ig_carousel_image_prompt` | instagram | 3 | Genera prompts para assets visuales. | Implementado |
+| `ig_carousel_demo_image_assets` | instagram | 3 | Genera assets SVG demo sin APIs externas. | Implementado |
+| `ig_carousel_typography_fit` | instagram | 3 | Ajusta tamanos segun longitud de texto. | Implementado |
+| `ig_carousel_theme_guard` | instagram | 3 | Normaliza paleta y contraste. | Implementado |
+| `ig_carousel_layout_variants` | instagram | 3 | Asigna roles/layouts por slide. | Implementado |
+| `ig_carousel_slide_audit` | instagram | 3 | Audita slides por densidad y riesgos basicos. | Implementado |
+| `ig_carousel_autofix_design` | instagram | 3 | Aplica correcciones conservadoras al copy/diseno. | Implementado |
+| `ig_carousel_research_to_claims` | instagram | 3 | Convierte research en claims seguros. | Implementado |
+| `ig_carousel_copy_builder` | instagram | 3 | Genera narrativa de slides desde claims. | Implementado/en ajuste |
+| `ig_carousel_quality_report` | instagram | 3 | Genera score y reporte de calidad. | Implementado |
+| `ig_carousel_export_png` | instagram | 3 | Valida plan/backend para PNG publicable. | Plan |
+| `ig_carousel_orchestrator` | instagram | 3 | Coordina research, copy, assets, render y audit. | Implementado |
 | `ig_reel_script` | instagram | Base | Genera guion de Reel. | Implementado |
 | `ig_story_script` | instagram | Base | Genera guion de Stories. | Implementado |
 | `ig_post_image` | instagram | Base | Publica imagen con caption y alt text opcional. | Implementado |

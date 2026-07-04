@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_instagram/ig_carousel_research_to_claims",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Convierte essays o paquetes editoriales de research en claims seguros listos para carrusel.",
+  "vertical": "vertical_instagram"
+}
