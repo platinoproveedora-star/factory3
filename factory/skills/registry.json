@@ -5174,5 +5174,42 @@
     "path": "skills/meta/skill_registry_vertical_sync",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_fleet4all_settlements/advance_capture": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_settlements/advance_capture",
+    "vertical": "vertical_fleet4all_settlements",
+    "descripcion": "Registra un anticipo a un operador Fleet4All con folio A-NNNN secuencial por empresa. settled_in queda null hasta que un settlement lo consuma.",
+    "path": "skills/internos/vertical_fleet4all_settlements/advance_capture",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_settlements/receipt_generate": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_settlements/receipt_generate",
+    "vertical": "vertical_fleet4all_settlements",
+    "descripcion": "Genera el recibo de liquidacion (PDF/HTML) de un settlement Fleet4All: desglose de trips, comision, anticipos y neto. Bilingue.",
+    "path": "skills/internos/vertical_fleet4all_settlements/receipt_generate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_settlements/settlement_calculate": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_settlements/settlement_calculate",
+    "vertical": "vertical_fleet4all_settlements",
+    "descripcion": "Calcula la liquidacion de un operador Fleet4All (trips cerrados + anticipos pendientes) segun su pay_scheme. Idempotente; approve=true marca advances consumidos de forma transaccional.",
+    "path": "skills/internos/vertical_fleet4all_settlements/settlement_calculate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_settlements/settlement_history": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_settlements/settlement_history",
+    "vertical": "vertical_fleet4all_settlements",
+    "descripcion": "Historial de liquidaciones Fleet4All por operador: settlements, totales por periodo y anticipos pendientes de descontar.",
+    "path": "skills/internos/vertical_fleet4all_settlements/settlement_history",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "data"
   }
 }

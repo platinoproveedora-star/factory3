@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ArrowUpRight, FileSpreadsheet, Megaphone, ReceiptText, ShoppingBasket, Store } from "lucide-react";
+import { ArrowUpRight, FileSpreadsheet, Megaphone, ReceiptText, ShoppingBasket, Store, Truck } from "lucide-react";
 import { getSession, getSessionToken } from "@/lib/auth";
 import { listCompanies, listGrants, companyName } from "@/lib/platform";
 import { PortalShell } from "@/components/PortalShell";
@@ -46,6 +46,13 @@ const MODULES: Record<string, { title: string; description: string; href: string
     description: "Gastos operativos, KPIs, filtros y CSV.",
     href: "/apps/gastos",
     icon: ReceiptText
+  },
+  fleet4all: {
+    title: "Fleet4All",
+    description: "Viajes, cobranza, carta porte, liquidaciones, combustible y mantenimiento de flotilla.",
+    href: process.env.NEXT_PUBLIC_FLEET4ALL_URL || "#",
+    icon: Truck,
+    external: true
   }
 };
 

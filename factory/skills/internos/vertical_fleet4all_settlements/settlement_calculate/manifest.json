@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_settlements/settlement_calculate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Calcula la liquidacion de un operador Fleet4All (trips cerrados + anticipos pendientes) segun su pay_scheme. Idempotente; approve=true marca advances consumidos de forma transaccional.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
