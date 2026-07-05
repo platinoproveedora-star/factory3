@@ -7,18 +7,47 @@ create table if not exists gptads4all.products (
   id uuid primary key default gen_random_uuid(),
   folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', '')),
   empresa_id text not null,
+  company_id text,
+  project_code text,
+  module_code text,
   product_key text not null,
   product_name text not null,
   description text,
+  base_brief text,
   category text,
   price_range text,
   url text,
   market jsonb,
   value_props jsonb,
+  metadata jsonb,
+  status text default 'active',
   tone text,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique (empresa_id, product_key)
+);
+
+create table if not exists gptads4all.briefs (
+  id uuid primary key default gen_random_uuid(),
+  folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', '')),
+  empresa_id text not null,
+  company_id text,
+  project_code text,
+  module_code text,
+  product_id uuid,
+  product_key text not null,
+  raw_brief text not null,
+  brief_analysis jsonb,
+  optimized_description text,
+  objective_recommended text,
+  channel_recommended text,
+  quality_score int,
+  output_language text,
+  creative_angles jsonb,
+  missing_fields jsonb,
+  status text default 'active',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
 create table if not exists gptads4all.intents (
@@ -55,6 +84,11 @@ create table if not exists gptads4all.campaigns (
   id uuid primary key default gen_random_uuid(),
   folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', '')),
   empresa_id text not null,
+  company_id text,
+  project_code text,
+  module_code text,
+  product_id uuid,
+  brief_id uuid,
   product_key text not null,
   campaign_key text not null,
   campaign_name text not null,
@@ -64,6 +98,8 @@ create table if not exists gptads4all.campaigns (
   status text default 'draft',
   intent_ids jsonb,
   hint_ids jsonb,
+  creative_angles_used jsonb,
+  brief_analysis jsonb,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique (empresa_id, campaign_key)
@@ -73,6 +109,9 @@ create table if not exists gptads4all.creatives (
   id uuid primary key default gen_random_uuid(),
   folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', '')),
   empresa_id text not null,
+  company_id text,
+  product_id uuid,
+  brief_id uuid,
   campaign_key text not null,
   creative_id text not null,
   intent_id text,
@@ -98,9 +137,26 @@ create table if not exists gptads4all.exports (
 );
 
 alter table if exists gptads4all.products add column if not exists folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', ''));
+alter table if exists gptads4all.products add column if not exists company_id text;
+alter table if exists gptads4all.products add column if not exists project_code text;
+alter table if exists gptads4all.products add column if not exists module_code text;
+alter table if exists gptads4all.products add column if not exists base_brief text;
+alter table if exists gptads4all.products add column if not exists metadata jsonb;
+alter table if exists gptads4all.products add column if not exists status text default 'active';
+alter table if exists gptads4all.briefs add column if not exists folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', ''));
 alter table if exists gptads4all.intents add column if not exists folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', ''));
 alter table if exists gptads4all.context_hints add column if not exists folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', ''));
 alter table if exists gptads4all.context_hints add column if not exists trigger_keywords jsonb;
 alter table if exists gptads4all.campaigns add column if not exists folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', ''));
+alter table if exists gptads4all.campaigns add column if not exists company_id text;
+alter table if exists gptads4all.campaigns add column if not exists project_code text;
+alter table if exists gptads4all.campaigns add column if not exists module_code text;
+alter table if exists gptads4all.campaigns add column if not exists product_id uuid;
+alter table if exists gptads4all.campaigns add column if not exists brief_id uuid;
+alter table if exists gptads4all.campaigns add column if not exists creative_angles_used jsonb;
+alter table if exists gptads4all.campaigns add column if not exists brief_analysis jsonb;
 alter table if exists gptads4all.creatives add column if not exists folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', ''));
+alter table if exists gptads4all.creatives add column if not exists company_id text;
+alter table if exists gptads4all.creatives add column if not exists product_id uuid;
+alter table if exists gptads4all.creatives add column if not exists brief_id uuid;
 alter table if exists gptads4all.exports add column if not exists folio text unique not null default ('gptads_' || replace(gen_random_uuid()::text, '-', ''));

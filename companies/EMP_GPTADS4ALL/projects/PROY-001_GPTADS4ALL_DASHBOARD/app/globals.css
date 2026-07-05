@@ -93,6 +93,28 @@ html, body {
     color: #cffafe;
   }
 
+  .choice {
+    min-height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    padding: 8px 12px;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .choice-active {
+    min-height: 40px;
+    border-radius: 8px;
+    border: 1px solid #0891b2;
+    background: #ecfeff;
+    padding: 8px 12px;
+    color: #0e7490;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
   .input {
     width: 100%;
     border-radius: 8px;

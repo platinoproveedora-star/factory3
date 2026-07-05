@@ -22,7 +22,7 @@ export const middleware = async (req: any) => {
       const res = NextResponse.redirect(cleanUrl);
       res.cookies.set(APPS4ALL_COOKIE_NAME, ssoToken, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
         maxAge: 7200,

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_fuel/deviation_alert",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lee fuel_efficiency y redacta alertas (Haiku) para unidades en warning/alert del ultimo periodo. dry_run devuelve mensajes sin enviar.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ANTHROPIC_API_KEY"]
+}

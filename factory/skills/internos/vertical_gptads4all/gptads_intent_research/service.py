@@ -22,6 +22,8 @@ class GptAdsIntentResearchService:
             f"Need {max_intents} intents.\n"
             "Allowed intent_type: informacional, comparacion, compra. "
             "Allowed funnel_stage: awareness, consideration, decision. priority integer 1-5.\n"
+            "Use natural buyer questions for the actual product. If it is coffee, food, craft or retail, "
+            "do not use SaaS/service phrases like implement, contratar, equipo, demo, workflow or operational results.\n"
             f"ProductBrief:\n{json.dumps(product_brief, ensure_ascii=False)}\n\n"
             'Return {"intents":[{"intent_text":"...","intent_type":"...","funnel_stage":"...","priority":1}]}'
         )
@@ -65,19 +67,47 @@ class GptAdsIntentResearchService:
 
     def _fallback_intents(self, product_brief: dict, max_intents: int) -> list[dict]:
         name = clean_text(product_brief.get("product_name")) or "esta solucion"
-        audience = clean_text((product_brief.get("market") or {}).get("audience")) or "mi empresa"
-        base = [
-            ("Como saber si " + name + " sirve para " + audience, "informacional", "awareness", 2),
-            ("Que beneficios tiene " + name + " frente a alternativas", "comparacion", "consideration", 2),
-            ("Cuanto cuesta implementar " + name, "compra", "decision", 1),
-            ("Que incluye el servicio de " + name, "informacional", "consideration", 2),
-            ("Como contratar " + name + " para mi equipo", "compra", "decision", 1),
-            ("Que resultados puedo esperar con " + name, "informacional", "consideration", 3),
-        ]
+        description = clean_text(product_brief.get("description"))
+        category = clean_text(product_brief.get("category"))
+        text = f"{name} {description} {category}".lower()
+        if self._is_consumer_food(text):
+            base = [
+                (f"De donde viene {name} y que lo hace especial", "informacional", "awareness", 2),
+                (f"Que sabor y aroma tiene {name}", "informacional", "consideration", 2),
+                (f"Por que elegir {name} frente a cafe comercial", "comparacion", "consideration", 2),
+                (f"{name} es buena opcion para regalo o consumo diario", "comparacion", "consideration", 3),
+                (f"Donde comprar {name} y como recibirlo", "compra", "decision", 1),
+                (f"Cuanto cuesta {name} y que presentacion tiene", "compra", "decision", 1),
+            ]
+        elif self._is_physical_product(text):
+            base = [
+                (f"Que hace diferente a {name}", "informacional", "awareness", 2),
+                (f"Para quien es recomendable {name}", "informacional", "consideration", 2),
+                (f"Como comparar {name} con otras opciones", "comparacion", "consideration", 2),
+                (f"Que incluye o como se usa {name}", "informacional", "consideration", 3),
+                (f"Donde comprar {name}", "compra", "decision", 1),
+                (f"Cuanto cuesta {name}", "compra", "decision", 1),
+            ]
+        else:
+            audience = clean_text((product_brief.get("market") or {}).get("audience")) or "mi negocio"
+            base = [
+                ("Como saber si " + name + " sirve para " + audience, "informacional", "awareness", 2),
+                ("Que beneficios tiene " + name + " frente a alternativas", "comparacion", "consideration", 2),
+                ("Cuanto cuesta usar " + name, "compra", "decision", 1),
+                ("Que incluye " + name, "informacional", "consideration", 2),
+                ("Como empezar con " + name, "compra", "decision", 1),
+                ("Que resultados puedo esperar con " + name, "informacional", "consideration", 3),
+            ]
         return [
             {"intent_text": text, "intent_type": kind, "funnel_stage": stage, "priority": priority}
             for text, kind, stage, priority in base[:max_intents]
         ]
+
+    def _is_consumer_food(self, text: str) -> bool:
+        return any(word in text for word in ["cafe", "coffee", "organico", "chiapaneco", "miel", "cacao", "chocolate", "mezcal", "bebida", "alimento"])
+
+    def _is_physical_product(self, text: str) -> bool:
+        return any(word in text for word in ["500g", "kg", "bolsa", "paquete", "producto", "artesanal", "hecho", "elaborado", "tienda", "regalo"])
 
     def _rows_from_fallback(self, product_brief: dict, max_intents: int) -> list[dict]:
         rows = []

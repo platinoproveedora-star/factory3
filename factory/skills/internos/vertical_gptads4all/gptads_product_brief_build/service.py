@@ -39,7 +39,9 @@ class GptAdsProductBriefBuildService:
             "Rules: keep empresa_id, product_key, product_name, price_range and url exactly as provided; "
             "do not invent price_range or url. Complete description only if missing or too thin. "
             "Infer category only if missing. Normalize market.language as es-MX/en-US style. "
-            "Generate exactly 3 value_props. tone must be profesional, casual, or urgente; default profesional.\n"
+            "Generate exactly 3 value_props. tone must be profesional, casual, or urgente; default profesional. "
+            "Use the real product category. If it is a consumer product, food, drink, craft, local product or retail item, "
+            "do not use SaaS/B2B phrases like implement, operational friction, teams, platform, workflow, demo or quote.\n"
             f"ProductRef:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
             "Return keys: description, category, market, value_props, tone, inferred_fields."
         )
@@ -89,17 +91,71 @@ class GptAdsProductBriefBuildService:
 
     def _fallback(self, payload: dict) -> dict:
         product_name = clean_text(payload.get("product_name"))
-        description = nullable_text(payload.get("description")) or f"Solucion enfocada en {product_name}."
-        category = nullable_text(payload.get("category")) or "servicios"
+        description = nullable_text(payload.get("description")) or f"Producto enfocado en {product_name}."
+        category = nullable_text(payload.get("category")) or self._category_from_text(product_name, description)
+        kind = self._kind(product_name, description, category)
+        if kind == "consumer_food":
+            value_props = [
+                self._origin_prop(product_name, description),
+                self._quality_prop(product_name, description),
+                self._story_prop(product_name, description),
+            ]
+        elif kind == "physical_product":
+            value_props = [
+                f"{product_name} con una propuesta clara y facil de entender",
+                "Ideal para quienes buscan calidad, origen y confianza antes de comprar",
+                "Presenta beneficios concretos sin promesas exageradas",
+            ]
+        else:
+            value_props = [
+                f"Comunica con claridad que problema resuelve {product_name}",
+                "Ayuda al cliente a entender beneficios, alcance y siguiente paso",
+                "Convierte interes inicial en una accion comercial concreta",
+            ]
         return {
             "description": description,
             "category": category,
             "market": payload.get("market") or {},
-            "value_props": [
-                f"Reduce friccion operativa alrededor de {product_name}",
-                "Entrega una propuesta clara para equipos que comparan opciones",
-                "Facilita que el cliente solicite informacion o cotizacion",
-            ],
+            "value_props": value_props,
             "tone": "profesional",
             "inferred_fields": ["fallback_generated"],
         }
+
+    def _kind(self, product_name: str, description: str, category: str) -> str:
+        text = f"{product_name} {description} {category}".lower()
+        food_words = ["cafe", "coffee", "organico", "chiapaneco", "miel", "cacao", "chocolate", "mezcal", "te ", "bebida", "alimento"]
+        physical_words = ["500g", "kg", "bolsa", "paquete", "producto", "artesanal", "hecho", "elaborado", "tienda", "regalo"]
+        if any(word in text for word in food_words):
+            return "consumer_food"
+        if any(word in text for word in physical_words):
+            return "physical_product"
+        return "service"
+
+    def _category_from_text(self, product_name: str, description: str) -> str:
+        text = f"{product_name} {description}".lower()
+        if "cafe" in text or "coffee" in text:
+            return "alimentos y bebidas"
+        if "miel" in text or "cacao" in text or "chocolate" in text:
+            return "alimentos artesanales"
+        return "servicios"
+
+    def _origin_prop(self, product_name: str, description: str) -> str:
+        text = description.lower()
+        if "jaltenango" in text and "chiapan" in text:
+            return "Cafe organico de Jaltenango, Chiapas, con identidad regional"
+        if "chiapan" in text:
+            return "Origen chiapaneco que comunica autenticidad y tradicion"
+        return f"Origen y elaboracion clara para valorar mejor {product_name}"
+
+    def _quality_prop(self, product_name: str, description: str) -> str:
+        if "organico" in description.lower():
+            return "Perfil organico para consumidores que cuidan lo que compran"
+        return f"Calidad cuidada para disfrutar {product_name} con confianza"
+
+    def _story_prop(self, product_name: str, description: str) -> str:
+        text = description.lower()
+        if "mujeres" in text:
+            return "Elaborado por mujeres de la region, con una historia que conecta"
+        if "region" in text or "artesanal" in text:
+            return "Historia local que hace la compra mas significativa"
+        return "Narrativa humana que diferencia el producto de opciones genericas"

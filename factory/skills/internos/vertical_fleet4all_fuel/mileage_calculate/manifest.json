@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_fuel/mileage_calculate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Calcula eficiencia de combustible (km/litro) de una unidad Fleet4All por periodo y detecta desviacion vs baseline. Idempotente (upsert fuel_efficiency).",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

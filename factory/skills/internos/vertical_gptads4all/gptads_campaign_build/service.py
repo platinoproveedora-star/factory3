@@ -50,6 +50,11 @@ class GptAdsCampaignBuildService:
         campaign_name = f"{clean_text(product_brief.get('product_name'))} - {country or 'GEN'}"
         campaign_draft = {
             "empresa_id": empresa_id,
+            "company_id": empresa_id,
+            "project_code": clean_text(context.get("project_code")) or None,
+            "module_code": clean_text(context.get("module_code")) or None,
+            "product_id": clean_text(context.get("product_id")) or None,
+            "brief_id": clean_text(context.get("brief_id")) or None,
             "product_key": product_key,
             "campaign_key": campaign_key,
             "campaign_name": campaign_name,
@@ -59,6 +64,8 @@ class GptAdsCampaignBuildService:
             "status": "draft",
             "intent_ids": intent_ids,
             "hint_ids": hint_ids,
+            "creative_angles_used": context.get("creative_angles_used") if isinstance(context.get("creative_angles_used"), list) else [],
+            "brief_analysis": context.get("brief_analysis") if isinstance(context.get("brief_analysis"), dict) else None,
         }
 
         warnings = []
@@ -75,6 +82,9 @@ class GptAdsCampaignBuildService:
             db = SupabaseClient(ctx)
             product_row = {
                 "empresa_id": empresa_id,
+                "company_id": empresa_id,
+                "project_code": clean_text(context.get("project_code")) or None,
+                "module_code": clean_text(context.get("module_code")) or None,
                 "product_key": product_key,
                 "product_name": product_brief.get("product_name"),
                 "description": product_brief.get("description"),
@@ -85,11 +95,23 @@ class GptAdsCampaignBuildService:
                 "value_props": product_brief.get("value_props"),
                 "tone": product_brief.get("tone"),
             }
+            product_call = db.rest_upsert("products", product_row, "empresa_id,product_key")
+            if not product_call.get("ok") and any(col in str(product_call.get("error") or "") for col in ["company_id", "project_code", "module_code"]):
+                legacy_product = dict(product_row)
+                for key in ("company_id", "project_code", "module_code"):
+                    legacy_product.pop(key, None)
+                product_call = db.rest_upsert("products", legacy_product, "empresa_id,product_key")
+            campaign_call = db.rest_upsert("campaigns", campaign_draft, "empresa_id,campaign_key")
+            if not campaign_call.get("ok") and any(col in str(campaign_call.get("error") or "") for col in ["company_id", "project_code", "module_code", "product_id", "brief_id", "creative_angles_used", "brief_analysis"]):
+                legacy_campaign = dict(campaign_draft)
+                for key in ("company_id", "project_code", "module_code", "product_id", "brief_id", "creative_angles_used", "brief_analysis"):
+                    legacy_campaign.pop(key, None)
+                campaign_call = db.rest_upsert("campaigns", legacy_campaign, "empresa_id,campaign_key")
             calls = [
-                ("products", db.rest_upsert("products", product_row, "empresa_id,product_key")),
+                ("products", product_call),
                 ("intents", db.rest_upsert("intents", [{**item, "empresa_id": empresa_id, "product_key": product_key} for item in intents], "empresa_id,product_key,intent_id")),
                 ("context_hints", db.rest_upsert("context_hints", [{**item, "empresa_id": empresa_id, "product_key": product_key} for item in hints], "empresa_id,product_key,hint_id")),
-                ("campaigns", db.rest_upsert("campaigns", campaign_draft, "empresa_id,campaign_key")),
+                ("campaigns", campaign_call),
             ]
             for stage, call in calls:
                 if not call.get("ok"):

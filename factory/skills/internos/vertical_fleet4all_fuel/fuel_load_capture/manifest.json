@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_fuel/fuel_load_capture",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Captura una carga de combustible Fleet4All por texto o foto (vision Haiku), folio F-NNNN. Actualiza odometro de la unidad (nunca retrocede).",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ANTHROPIC_API_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_gptads4all/gptads_brief_save",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Guarda un brief y su analisis para un producto GPTAds4All.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

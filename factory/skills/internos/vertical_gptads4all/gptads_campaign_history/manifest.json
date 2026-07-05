@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_gptads4all/gptads_campaign_history",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Lista historial de campañas GPTAds4All y angulos usados por empresa/producto.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

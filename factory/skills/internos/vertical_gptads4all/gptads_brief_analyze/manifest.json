@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_gptads4all/gptads_brief_analyze",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Analiza un brief libre y lo convierte en estrategia y prompt optimizado para GPTAds4All.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

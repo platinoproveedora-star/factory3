@@ -68,8 +68,26 @@ class GptAdsCreativeGenerateService:
             ctx["company_id"] = empresa_id
             ctx["schema"] = schema
             try:
-                rows = [{**row, "empresa_id": empresa_id, "campaign_key": campaign_key} for row in creatives]
+                rows = [
+                    {
+                        **row,
+                        "empresa_id": empresa_id,
+                        "company_id": empresa_id,
+                        "product_id": clean_text(context.get("product_id") or campaign_draft.get("product_id")) or None,
+                        "brief_id": clean_text(context.get("brief_id") or campaign_draft.get("brief_id")) or None,
+                        "campaign_key": campaign_key,
+                    }
+                    for row in creatives
+                ]
                 result = SupabaseClient(ctx).rest_upsert("creatives", rows, "empresa_id,campaign_key,creative_id")
+                if not result.get("ok") and any(col in str(result.get("error") or "") for col in ["company_id", "product_id", "brief_id"]):
+                    legacy_rows = []
+                    for row in rows:
+                        legacy = dict(row)
+                        for key in ("company_id", "product_id", "brief_id"):
+                            legacy.pop(key, None)
+                        legacy_rows.append(legacy)
+                    result = SupabaseClient(ctx).rest_upsert("creatives", legacy_rows, "empresa_id,campaign_key,creative_id")
                 if not result.get("ok"):
                     return {"ok": False, "error": "db_persistence_failed"}
             except Exception:
@@ -83,6 +101,8 @@ class GptAdsCreativeGenerateService:
             "Do not invent prices, discounts, certifications, guarantees, availability, or claims not present in ProductBrief.\n"
             f"Need {variants} variants per intent. Return pure JSON only.\n"
             "Length limits: headline <=60 chars, body <=200 chars, cta <=25 chars.\n"
+            "Match the real product. If it is coffee, food, craft or retail, write consumer ads about origin, taste, story, gift/use and purchase. "
+            "Do not use SaaS/B2B words like teams, implement, operational, workflow, demo, quote or platform.\n"
             f"CampaignDraft:\n{json.dumps(campaign_draft, ensure_ascii=False)}\n"
             f"ProductBrief:\n{json.dumps(product_brief, ensure_ascii=False)}\n"
             f"IntentSet:\n{json.dumps(intent_set, ensure_ascii=False)}\n"
@@ -120,20 +140,74 @@ class GptAdsCreativeGenerateService:
 
     def _fallback_creatives(self, product_brief: dict, intents: list, variants_per_intent: int) -> list[dict]:
         name = clean_text(product_brief.get("product_name")) or "tu solucion"
+        description = clean_text(product_brief.get("description"))
+        category = clean_text(product_brief.get("category"))
         value_props = product_brief.get("value_props") if isinstance(product_brief.get("value_props"), list) else []
-        benefit = clean_text(value_props[0] if value_props else "mejorar tu operacion")
+        text = f"{name} {description} {category}".lower()
+        if self._is_consumer_food(text):
+            templates = self._consumer_food_templates(name, description, value_props)
+        elif self._is_physical_product(text):
+            templates = self._physical_product_templates(name, value_props)
+        else:
+            templates = self._service_templates(name, value_props)
         rows = []
         for intent in intents:
             if not isinstance(intent, dict):
                 continue
             intent_id = clean_text(intent.get("intent_id"))
             for variant in range(variants_per_intent):
+                template = templates[variant % len(templates)]
                 rows.append(
                     {
                         "intent_id": intent_id,
-                        "headline": clip(f"{name} para equipos exigentes", 60),
-                        "body": clip(f"Convierte interes en accion con una propuesta clara para {benefit}.", 200),
-                        "cta": "Solicitar info" if variant == 0 else "Ver opciones",
+                        "headline": clip(template["headline"], 60),
+                        "body": clip(template["body"], 200),
+                        "cta": clip(template["cta"], 25),
                     }
                 )
         return rows
+
+    def _is_consumer_food(self, text: str) -> bool:
+        return any(word in text for word in ["cafe", "coffee", "organico", "chiapaneco", "miel", "cacao", "chocolate", "mezcal", "bebida", "alimento"])
+
+    def _is_physical_product(self, text: str) -> bool:
+        return any(word in text for word in ["500g", "kg", "bolsa", "paquete", "producto", "artesanal", "hecho", "elaborado", "tienda", "regalo"])
+
+    def _consumer_food_templates(self, name: str, description: str, value_props: list) -> list[dict]:
+        desc = description.lower()
+        origin = "de Jaltenango, Chiapas" if "jaltenango" in desc else "de origen chiapaneco" if "chiapan" in desc else "con origen cuidado"
+        story = "elaborado por mujeres de la region" if "mujeres" in desc else "con una historia local que se nota"
+        prop = clean_text(value_props[0] if value_props else f"{name} con identidad y sabor")
+        return [
+            {
+                "headline": f"Cafe organico {origin}",
+                "body": f"Disfruta {name}: {story}, con una propuesta honesta para quienes buscan sabor, origen y consumo consciente.",
+                "cta": "Comprar cafe",
+            },
+            {
+                "headline": "Sabor chiapaneco en tu taza",
+                "body": f"{prop}. Una opcion para regalar, compartir o convertir tu cafe diario en una compra con sentido.",
+                "cta": "Ver presentacion",
+            },
+            {
+                "headline": "Cafe con origen e historia",
+                "body": f"{name} comunica calidad, region y trabajo local sin sonar generico. Ideal para consumidores que valoran lo autentico.",
+                "cta": "Conocer mas",
+            },
+        ]
+
+    def _physical_product_templates(self, name: str, value_props: list) -> list[dict]:
+        prop = clean_text(value_props[0] if value_props else f"{name} con una propuesta clara")
+        return [
+            {"headline": f"{name} con calidad real", "body": f"{prop}. Presenta beneficios claros para decidir sin rodeos.", "cta": "Ver producto"},
+            {"headline": f"Elige {name}", "body": "Una opcion pensada para quien compara calidad, origen y confianza antes de comprar.", "cta": "Comprar ahora"},
+            {"headline": f"{name} sin vueltas", "body": "Comunica lo importante: que es, por que conviene y cual es el siguiente paso.", "cta": "Conocer mas"},
+        ]
+
+    def _service_templates(self, name: str, value_props: list) -> list[dict]:
+        benefit = clean_text(value_props[0] if value_props else "resolver una necesidad concreta")
+        return [
+            {"headline": f"{name} para crecer", "body": f"Convierte interes en accion con una propuesta clara para {benefit}.", "cta": "Solicitar info"},
+            {"headline": f"Conoce {name}", "body": "Explica beneficios, alcance y siguiente paso sin promesas exageradas.", "cta": "Ver opciones"},
+            {"headline": f"Empieza con {name}", "body": "Una forma simple de presentar valor y mover al cliente hacia la accion.", "cta": "Empezar"},
+        ]

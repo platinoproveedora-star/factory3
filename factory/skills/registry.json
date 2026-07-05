@@ -4758,6 +4758,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_gptads4all/gptads_brief_analyze": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_brief_analyze",
+    "vertical": "vertical_gptads4all",
+    "descripcion": "Analiza un brief libre y lo convierte en estrategia y prompt optimizado para GPTAds4All.",
+    "path": "skills/internos/vertical_gptads4all/gptads_brief_analyze",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_gptads4all/gptads_product_brief_build": {
     "tipo": "interno",
     "nombre": "vertical_gptads4all/gptads_product_brief_build",
@@ -4809,6 +4818,54 @@
     "vertical": "vertical_gptads4all",
     "descripcion": "Exporta CampaignDraft y CreativeSet a CSV, JSON o ambos.",
     "path": "skills/internos/vertical_gptads4all/gptads_bulk_export",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_product_save": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_product_save",
+    "vertical": "vertical_gptads4all",
+    "descripcion": "Guarda o actualiza un producto publicitario GPTAds4All por empresa.",
+    "path": "skills/internos/vertical_gptads4all/gptads_product_save",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_product_list": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_product_list",
+    "vertical": "vertical_gptads4all",
+    "kind": "data",
+    "descripcion": "Lista productos publicitarios GPTAds4All por empresa.",
+    "path": "skills/internos/vertical_gptads4all/gptads_product_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_brief_save": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_brief_save",
+    "vertical": "vertical_gptads4all",
+    "descripcion": "Guarda un brief y su analisis para un producto GPTAds4All.",
+    "path": "skills/internos/vertical_gptads4all/gptads_brief_save",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_brief_list": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_brief_list",
+    "vertical": "vertical_gptads4all",
+    "kind": "data",
+    "descripcion": "Lista briefs GPTAds4All por empresa y producto.",
+    "path": "skills/internos/vertical_gptads4all/gptads_brief_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_campaign_history": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_campaign_history",
+    "vertical": "vertical_gptads4all",
+    "kind": "data",
+    "descripcion": "Lista historial de campañas GPTAds4All y angulos usados por empresa/producto.",
+    "path": "skills/internos/vertical_gptads4all/gptads_campaign_history",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -5211,5 +5268,32 @@
     "entrypoint": "skill.py",
     "version": "0.1.0",
     "kind": "data"
+  },
+  "vertical_fleet4all_fuel/deviation_alert": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_fuel/deviation_alert",
+    "vertical": "vertical_fleet4all_fuel",
+    "descripcion": "Lee fuel_efficiency y redacta alertas (Haiku) para unidades en warning/alert del ultimo periodo. dry_run devuelve mensajes sin enviar.",
+    "path": "skills/internos/vertical_fleet4all_fuel/deviation_alert",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_fuel/fuel_load_capture": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_fuel/fuel_load_capture",
+    "vertical": "vertical_fleet4all_fuel",
+    "descripcion": "Captura una carga de combustible Fleet4All por texto o foto (vision Haiku), folio F-NNNN. Actualiza odometro de la unidad (nunca retrocede).",
+    "path": "skills/internos/vertical_fleet4all_fuel/fuel_load_capture",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_fuel/mileage_calculate": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_fuel/mileage_calculate",
+    "vertical": "vertical_fleet4all_fuel",
+    "descripcion": "Calcula eficiencia de combustible (km/litro) de una unidad Fleet4All por periodo y detecta desviacion vs baseline. Idempotente (upsert fuel_efficiency).",
+    "path": "skills/internos/vertical_fleet4all_fuel/mileage_calculate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

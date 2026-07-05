@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_gptads4all/gptads_product_list",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Lista productos publicitarios GPTAds4All por empresa.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
