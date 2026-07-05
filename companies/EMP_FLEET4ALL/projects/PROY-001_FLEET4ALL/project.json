@@ -1,0 +1,16 @@
+{
+  "company_id": "EMP_FLEET4ALL",
+  "project_code": "PROY-001",
+  "module_code": "fleet4all",
+  "project_name": "Fleet4All Ola 1 - Trips + Collections",
+  "schema": "fleet4all",
+  "supabase_schema": "fleet4all",
+  "platform": "internal",
+  "requires_env": [
+    "ANTHROPIC_API_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "status": "planned",
+  "erp_ready": false
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "skill_registry_vertical_sync",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Escanea skills/internos/vertical_*/<skill>/ y agrega al registry los que falten. Complementa a skill_registry_sync (que solo ve el primer nivel). dry_run=True por defecto.",
+  "requires_env": []
+}

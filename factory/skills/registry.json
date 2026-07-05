@@ -5083,5 +5083,96 @@
     "path": "skills/internos/vertical_apps4all_ops_monitoring/apps4all_ops_status_snapshot",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_fleet4all_trips/trip_create": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_trips/trip_create",
+    "vertical": "vertical_fleet4all_trips",
+    "descripcion": "Crea un viaje (trip) Fleet4All con folio T-NNNN secuencial por empresa.",
+    "path": "skills/internos/vertical_fleet4all_trips/trip_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_trips/expense_capture": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_trips/expense_capture",
+    "vertical": "vertical_fleet4all_trips",
+    "descripcion": "Captura un gasto Fleet4All por texto o foto (vision Haiku via ai_interpreter), con folio G-NNNN secuencial por empresa.",
+    "path": "skills/internos/vertical_fleet4all_trips/expense_capture",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_trips/trip_close": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_trips/trip_close",
+    "vertical": "vertical_fleet4all_trips",
+    "descripcion": "Cierra un viaje Fleet4All: recalcula trip_cost (suma de expenses) y trip_profit, siempre en Python. Idempotente.",
+    "path": "skills/internos/vertical_fleet4all_trips/trip_close",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_trips/trip_kpis": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_trips/trip_kpis",
+    "vertical": "vertical_fleet4all_trips",
+    "kind": "data",
+    "descripcion": "KPIs de viajes Fleet4All: utilidad semanal/mensual, trips activos, profit por unidad y operador, top gastos por tipo.",
+    "path": "skills/internos/vertical_fleet4all_trips/trip_kpis",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_trips/fleet_message_handler": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_trips/fleet_message_handler",
+    "vertical": "vertical_fleet4all_trips",
+    "descripcion": "Handler de mensajeria canal-agnostic (WhatsApp/Telegram) para Fleet4All: viaje, gasto, ayuda. Bilingue, multi-tenant por telefono.",
+    "path": "skills/internos/vertical_fleet4all_trips/fleet_message_handler",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_collections/payment_capture": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_collections/payment_capture",
+    "vertical": "vertical_fleet4all_collections",
+    "descripcion": "Registra un pago Fleet4All con folio P-NNNN secuencial por empresa; dispara receivables_sync del trip.",
+    "path": "skills/internos/vertical_fleet4all_collections/payment_capture",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_collections/receivables_sync": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_collections/receivables_sync",
+    "vertical": "vertical_fleet4all_collections",
+    "descripcion": "Reconstruye/actualiza una cuenta por cobrar (receivable) de Fleet4All a partir de un trip y sus payments. Idempotente.",
+    "path": "skills/internos/vertical_fleet4all_collections/receivables_sync",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_collections/statement_generate": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_collections/statement_generate",
+    "vertical": "vertical_fleet4all_collections",
+    "descripcion": "Genera estado de cuenta Fleet4All por cliente y periodo, con PDF/HTML opcional.",
+    "path": "skills/internos/vertical_fleet4all_collections/statement_generate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_collections/collection_reminder": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_collections/collection_reminder",
+    "vertical": "vertical_fleet4all_collections",
+    "descripcion": "Genera mensajes de cobro (bilingues, tono profesional) para receivables con balance>0 segun etapa: due-3d, due, +7d overdue.",
+    "path": "skills/internos/vertical_fleet4all_collections/collection_reminder",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "skill_registry_vertical_sync": {
+    "tipo": "meta",
+    "nombre": "skill_registry_vertical_sync",
+    "vertical": "factory",
+    "descripcion": "Escanea skills/internos/vertical_*/<skill>/ y agrega al registry los que falten. Complementa a skill_registry_sync (que solo ve el primer nivel). dry_run=True por defecto.",
+    "path": "skills/meta/skill_registry_vertical_sync",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }
