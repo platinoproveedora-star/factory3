@@ -5295,5 +5295,69 @@
     "path": "skills/internos/vertical_fleet4all_fuel/mileage_calculate",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_fleet4all_maintenance/maintenance_schedule": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_maintenance/maintenance_schedule",
+    "vertical": "vertical_fleet4all_maintenance",
+    "descripcion": "CRUD de planes de mantenimiento Fleet4All (folio M-NNNN). action=create|due_soon. next_due_km/next_due_date siempre calculados en Python.",
+    "path": "skills/internos/vertical_fleet4all_maintenance/maintenance_schedule",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_maintenance/parts_kardex": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_maintenance/parts_kardex",
+    "vertical": "vertical_fleet4all_maintenance",
+    "descripcion": "Alta de refacciones y movimientos in/out (folio MV-NNNN) Fleet4All. stock nunca negativo; avg_cost recalculado por promedio ponderado en entradas.",
+    "path": "skills/internos/vertical_fleet4all_maintenance/parts_kardex",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_maintenance/service_capture": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_maintenance/service_capture",
+    "vertical": "vertical_fleet4all_maintenance",
+    "descripcion": "Registra un servicio de mantenimiento Fleet4All (folio SV-NNNN). Si trae plan_folio recalcula next_due_*; actualiza odometro de la unidad (nunca retrocede).",
+    "path": "skills/internos/vertical_fleet4all_maintenance/service_capture",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_maintenance/unit_record": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_maintenance/unit_record",
+    "vertical": "vertical_fleet4all_maintenance",
+    "descripcion": "Expediente read-only de una unidad Fleet4All: datos, odometro, historial de servicios, planes activos, proximos vencimientos y costo de mantenimiento acumulado.",
+    "path": "skills/internos/vertical_fleet4all_maintenance/unit_record",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "data"
+  },
+  "vertical_fleet4all_quoting/quote_build": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_quoting/quote_build",
+    "vertical": "vertical_fleet4all_quoting",
+    "descripcion": "Calcula una cotizacion Fleet4All contra el tarifario (folio Q-NNNN). context.accept=true crea el trip via SkillRunner y liga trip_folio.",
+    "path": "skills/internos/vertical_fleet4all_quoting/quote_build",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_quoting/quote_pdf_send": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_quoting/quote_pdf_send",
+    "vertical": "vertical_fleet4all_quoting",
+    "descripcion": "Genera el PDF/HTML de una cotizacion Fleet4All (ruta, precio, vigencia, condiciones), bilingue. Envio real solo con dry_run=false y send_channel configurado.",
+    "path": "skills/internos/vertical_fleet4all_quoting/quote_pdf_send",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_quoting/rate_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_quoting/rate_manage",
+    "vertical": "vertical_fleet4all_quoting",
+    "descripcion": "CRUD del tarifario Fleet4All por ruta/tipo de carga. Normaliza origin/destination (minusculas sin acentos) para matching consistente.",
+    "path": "skills/internos/vertical_fleet4all_quoting/rate_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

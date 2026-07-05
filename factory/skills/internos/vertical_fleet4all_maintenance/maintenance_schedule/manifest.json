@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_maintenance/maintenance_schedule",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "CRUD de planes de mantenimiento Fleet4All (folio M-NNNN). action=create|due_soon. next_due_km/next_due_date siempre calculados en Python.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

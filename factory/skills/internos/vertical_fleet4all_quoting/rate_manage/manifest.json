@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_quoting/rate_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "CRUD del tarifario Fleet4All por ruta/tipo de carga. Normaliza origin/destination (minusculas sin acentos) para matching consistente.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

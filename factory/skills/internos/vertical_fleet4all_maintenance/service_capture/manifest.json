@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_maintenance/service_capture",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Registra un servicio de mantenimiento Fleet4All (folio SV-NNNN). Si trae plan_folio recalcula next_due_*; actualiza odometro de la unidad (nunca retrocede).",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_maintenance/parts_kardex",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Alta de refacciones y movimientos in/out (folio MV-NNNN) Fleet4All. stock nunca negativo; avg_cost recalculado por promedio ponderado en entradas.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_maintenance/unit_record",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Expediente read-only de una unidad Fleet4All: datos, odometro, historial de servicios, planes activos, proximos vencimientos y costo de mantenimiento acumulado.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
