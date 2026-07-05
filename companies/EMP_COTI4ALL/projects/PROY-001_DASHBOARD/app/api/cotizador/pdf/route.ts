@@ -58,6 +58,7 @@ function buildQuoteDocument(quote: any, user: any) {
     <section class="top">
       <div>
         <h2>${escapeHtml(companyName)}</h2>
+        ${quote.rfc ? `<p class="muted">RFC: ${escapeHtml(quote.rfc)}</p>` : ""}
         <h1>${escapeHtml(title)}${quote.folio ? ` ${escapeHtml(String(quote.folio))}` : ""}</h1>
       </div>
       <div class="muted">
