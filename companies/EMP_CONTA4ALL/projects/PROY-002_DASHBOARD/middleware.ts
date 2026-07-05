@@ -1,6 +1,6 @@
 import { jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
-import { COOKIE_NAME } from "@/lib/auth";
+import { APPS4ALL_COOKIE_NAME, COOKIE_NAME } from "@/lib/auth";
 
 const PUBLIC = ["/login", "/register", "/api/auth/login", "/api/auth/register"];
 
@@ -15,9 +15,9 @@ export async function middleware(req: NextRequest) {
       const cleanUrl = new URL(req.nextUrl);
       cleanUrl.searchParams.delete("sso");
       const res = NextResponse.redirect(cleanUrl);
-      res.cookies.set(COOKIE_NAME, ssoToken, {
+      res.cookies.set(APPS4ALL_COOKIE_NAME, ssoToken, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
         maxAge: 7200,
@@ -30,7 +30,7 @@ export async function middleware(req: NextRequest) {
 
   if (PUBLIC.some((p) => path.startsWith(p))) return NextResponse.next();
 
-  const token = req.cookies.get(COOKIE_NAME)?.value;
+  const token = req.cookies.get(COOKIE_NAME)?.value || req.cookies.get(APPS4ALL_COOKIE_NAME)?.value;
   if (!token) return NextResponse.redirect(new URL("/login", req.url));
 
   try {

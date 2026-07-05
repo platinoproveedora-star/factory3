@@ -2,6 +2,7 @@ import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 export const COOKIE_NAME = "c4a_token";
+export const APPS4ALL_COOKIE_NAME = "apps4all_token";
 export const MODULO_CODE = "conta4all";
 
 function jwtSecret() {
@@ -21,7 +22,8 @@ export interface SessionUser {
 }
 
 export async function getSession(): Promise<SessionUser | null> {
-  const token = (await cookies()).get(COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(APPS4ALL_COOKIE_NAME)?.value || cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, jwtSecret());
