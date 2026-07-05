@@ -21,7 +21,6 @@ export type Company = {
   company_id: string;
   name: string;
   status?: string;
-  metadata?: Record<string, unknown>;
 };
 
 function platformEnv() {
@@ -76,27 +75,9 @@ export async function listCompanies(companyIds: string[]) {
   const quoted = companyIds.map((id) => `"${id}"`).join(",");
   const qs = new URLSearchParams({
     company_id: `in.(${quoted})`,
-    select: "company_id,name,status,metadata"
+    select: "company_id,name,status"
   });
   return platformFetch<Company[]>(`companies?${qs.toString()}`);
-}
-
-export function companyRfc(companies: Company[], companyId: string) {
-  const value = companies.find((company) => company.company_id === companyId)?.metadata?.rfc;
-  return typeof value === "string" ? value : "";
-}
-
-export async function updateCompanyRfc(companyId: string, rfc: string) {
-  const rows = await platformFetch<Company[]>(
-    `companies?${new URLSearchParams({ company_id: `eq.${companyId}`, select: "metadata" }).toString()}`
-  );
-  const currentMetadata = (rows[0]?.metadata && typeof rows[0].metadata === "object" ? rows[0].metadata : {}) as Record<string, unknown>;
-  const metadata = { ...currentMetadata, rfc };
-  const updated = await platformFetch<Company[]>(`companies?${new URLSearchParams({ company_id: `eq.${companyId}` }).toString()}`, {
-    method: "PATCH",
-    body: JSON.stringify({ metadata })
-  });
-  return updated[0];
 }
 
 export async function logLoginAttempt(email: string, ip: string, success: boolean) {

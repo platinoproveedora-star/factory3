@@ -64,7 +64,6 @@ type CompanyOption = {
   company_id: string;
   name: string;
   status?: string;
-  metadata?: Record<string, unknown>;
 };
 
 type SavedClient = Pick<Cotizacion, "cliente_empresa" | "cliente_persona" | "obra" | "lugar_entrega" | "nota1" | "nota2" | "nota3"> & {
@@ -107,10 +106,6 @@ export default function CotizadorPage() {
   const [quoteCompanySaveStatus, setQuoteCompanySaveStatus] = useState("");
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [catalogCompanyId, setCatalogCompanyId] = useState("");
-  const [rfcInput, setRfcInput] = useState("");
-  const [rfcEditing, setRfcEditing] = useState(false);
-  const [rfcSaving, setRfcSaving] = useState(false);
-  const [rfcStatus, setRfcStatus] = useState("");
   const [catalogStatus, setCatalogStatus] = useState("Selecciona empresa para cargar catálogo.");
   const [saveStatus, setSaveStatus] = useState("");
   const [savingQuote, setSavingQuote] = useState(false);
@@ -206,13 +201,11 @@ export default function CotizadorPage() {
   const margenIva = totals.margenSubtotal * 0;
   const margenTotal = totals.margenSubtotal + margenIva;
   const selectedCompany = companies.find((company) => company.company_id === selectedCompanyId);
-  const selectedRfc = String(selectedCompany?.metadata?.rfc || "");
   const clientStorageKey = `coti4all_clients:${String(auth.sub || auth.email || "local")}`;
   const quoteCompanyStorageKey = `coti4all_quote_companies:${String(auth.sub || auth.email || "local")}`;
   const documentPayload = {
     ...form,
     company_id: selectedCompanyId,
-    rfc: selectedRfc,
     cliente_nombre: form.cliente_persona,
     customer_name: form.cliente_persona,
     customer_company: form.cliente_empresa,
@@ -250,39 +243,6 @@ export default function CotizadorPage() {
   useEffect(() => {
     if (step === 4) loadQuotes();
   }, [step, selectedCompanyId]);
-
-  useEffect(() => {
-    setRfcEditing(false);
-    setRfcStatus("");
-  }, [selectedCompanyId]);
-
-  const saveRfc = async () => {
-    if (!selectedCompanyId) return;
-    setRfcSaving(true);
-    setRfcStatus("");
-    try {
-      const res = await fetch("/api/companies/rfc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ company_id: selectedCompanyId, rfc: rfcInput }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.ok) throw new Error(json.error || "No se pudo guardar el RFC");
-      setCompanies((current) =>
-        current.map((company) =>
-          company.company_id === selectedCompanyId
-            ? { ...company, metadata: { ...(company.metadata || {}), rfc: json.company?.metadata?.rfc || rfcInput.toUpperCase() } }
-            : company
-        )
-      );
-      setRfcEditing(false);
-      setRfcStatus("RFC guardado.");
-    } catch (err) {
-      setRfcStatus((err as Error).message);
-    } finally {
-      setRfcSaving(false);
-    }
-  };
 
   const saveQuote = async () => {
     if (!form.lineas.length) {
@@ -567,52 +527,6 @@ export default function CotizadorPage() {
                 </option>
               ))}
             </select>
-          </div>
-          <div className="mt-3 flex flex-col gap-2 border-t border-slate-800 pt-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-500">RFC</p>
-              {rfcEditing ? (
-                <div className="mt-1 flex items-center gap-2">
-                  <input
-                    className="rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-sm font-semibold text-white outline-none focus:border-blue-500"
-                    value={rfcInput}
-                    onChange={(event) => setRfcInput(event.target.value.toUpperCase())}
-                    placeholder="RFC de la empresa"
-                    maxLength={13}
-                  />
-                  <button
-                    type="button"
-                    disabled={rfcSaving}
-                    onClick={saveRfc}
-                    className="rounded-md border border-blue-500 bg-blue-500 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-600"
-                  >
-                    {rfcSaving ? "Guardando..." : "Guardar"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRfcEditing(false)}
-                    className="rounded-md border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-slate-500"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <p className="mt-1 text-sm text-slate-300">
-                  {selectedRfc || "Sin RFC asignado"}{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRfcInput(selectedRfc);
-                      setRfcEditing(true);
-                    }}
-                    className="ml-2 text-xs font-semibold text-blue-400 hover:text-blue-300"
-                  >
-                    {selectedRfc ? "Editar" : "Asignar"}
-                  </button>
-                </p>
-              )}
-            </div>
-            {rfcStatus && <p className="text-xs font-medium text-slate-400">{rfcStatus}</p>}
           </div>
         </section>
 
