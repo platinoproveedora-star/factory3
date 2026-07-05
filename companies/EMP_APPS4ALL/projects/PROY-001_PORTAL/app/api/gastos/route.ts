@@ -6,17 +6,21 @@ import { listGrants } from "@/lib/platform";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-async function requireGastosAccess() {
+async function requireGastosAccess(companyId?: string | null) {
   const user = await getSession();
   if (!user) return { ok: false as const, status: 401, error: "sesion requerida" };
   const grants = await listGrants(user.sub);
-  const grant = grants.find((item) => item.modulo_code === "gastos");
+  const gastosGrants = grants.filter((item) => item.modulo_code === "gastos");
+  const grant = companyId
+    ? gastosGrants.find((item) => item.company_id === companyId)
+    : gastosGrants[0];
   if (!grant) return { ok: false as const, status: 403, error: "sin acceso a gastos" };
   return { ok: true as const, user, companyId: grant.company_id };
 }
 
-export async function GET() {
-  const access = await requireGastosAccess();
+export async function GET(req: NextRequest) {
+  const selectedCompanyId = req.nextUrl.searchParams.get("company_id");
+  const access = await requireGastosAccess(selectedCompanyId);
   if (!access.ok) return NextResponse.json({ ok: false, error: access.error }, { status: access.status });
   const companyId = access.companyId;
   try {
@@ -32,10 +36,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const access = await requireGastosAccess();
+  const body = await req.json().catch(() => ({}));
+  const access = await requireGastosAccess(String(body.company_id || ""));
   if (!access.ok) return NextResponse.json({ ok: false, error: access.error }, { status: access.status });
   const { companyId } = access;
-  const body = await req.json().catch(() => ({}));
   try {
     if (body.action === "create") {
       const gasto = await createGasto(body, access.user, companyId);

@@ -1,19 +1,23 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
-import { listGrants } from "@/lib/platform";
+import { companyName, listCompanies, listGrants } from "@/lib/platform";
 import { listBankAccounts, listCategories, listGastos, summarize } from "@/lib/gastos";
 import { PortalShell } from "@/components/PortalShell";
 import { GastosDashboard } from "@/components/GastosDashboard";
 
 export const dynamic = "force-dynamic";
 
-export default async function GastosPage() {
+export default async function GastosPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ company_id?: string }>;
+}) {
   const user = await getSession();
   if (!user) redirect("/login");
   const grants = await listGrants(user.sub);
-  const gastosGrant = grants.find((grant) => grant.modulo_code === "gastos");
-  if (!gastosGrant) {
+  const gastosGrants = grants.filter((grant) => grant.modulo_code === "gastos");
+  if (!gastosGrants.length) {
     return (
       <PortalShell user={user}>
         <div className="rounded-lg border border-red-800 bg-red-900/30 p-5 text-red-400">
@@ -22,7 +26,16 @@ export default async function GastosPage() {
       </PortalShell>
     );
   }
-  const companyId = gastosGrant.company_id;
+  const params = await searchParams;
+  const requestedCompanyId = String(params?.company_id || "").trim();
+  const companyId = gastosGrants.some((grant) => grant.company_id === requestedCompanyId)
+    ? requestedCompanyId
+    : gastosGrants[0].company_id;
+  const companies = await listCompanies(Array.from(new Set(gastosGrants.map((grant) => grant.company_id))));
+  const companyOptions = gastosGrants.map((grant) => ({
+    company_id: grant.company_id,
+    name: companyName(companies, grant.company_id)
+  }));
   let gastos: Awaited<ReturnType<typeof listGastos>> = [];
   let categories: Awaited<ReturnType<typeof listCategories>> = [];
   let bankAccounts: Awaited<ReturnType<typeof listBankAccounts>> = [];
@@ -50,7 +63,14 @@ export default async function GastosPage() {
           No se pudieron cargar los gastos: {loadError}
         </div>
       )}
-      <GastosDashboard initialGastos={gastos} initialStats={summarize(gastos)} categories={categories.map((item) => item.nombre)} bankAccounts={bankAccounts} />
+      <GastosDashboard
+        initialGastos={gastos}
+        initialStats={summarize(gastos)}
+        categories={categories.map((item) => item.nombre)}
+        bankAccounts={bankAccounts}
+        companyOptions={companyOptions}
+        selectedCompanyId={companyId}
+      />
     </PortalShell>
   );
 }

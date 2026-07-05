@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { calcStats, getGastos } from "@/lib/db";
+import { companyName, listCompanies, listGrants } from "@/lib/platform";
 import Nav                   from "@/components/Nav";
 import KpiGrid               from "@/components/KpiGrid";
 import CategoryTable         from "@/components/CategoryTable";
@@ -26,11 +27,26 @@ function catsByMonth(gastos: Awaited<ReturnType<typeof getGastos>>, month: strin
   return { cats, total: cats.reduce((s, c) => s + c.total, 0) };
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ company_id?: string }>;
+}) {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const empresaId = session.company_id;
+  const params = await searchParams;
+  const grants = await listGrants(session.sub);
+  const moduleGrants = grants.filter((grant) => grant.modulo_code === "gastos4all");
+  const requestedEmpresaId = String(params?.company_id || "").trim();
+  const empresaId = moduleGrants.some((grant) => grant.company_id === requestedEmpresaId)
+    ? requestedEmpresaId
+    : moduleGrants[0]?.company_id || session.company_id;
+  const companies = await listCompanies(Array.from(new Set(moduleGrants.map((grant) => grant.company_id))));
+  const companyOptions = moduleGrants.map((grant) => ({
+    company_id: grant.company_id,
+    name: companyName(companies, grant.company_id)
+  }));
 
   let stats:  ReturnType<typeof calcStats> | null = null;
   let gastos: Awaited<ReturnType<typeof getGastos>> = [];
@@ -55,7 +71,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <Nav email={session.email} empresa={empresaId} />
+      <Nav email={session.email} empresa={empresaId} companyOptions={companyOptions} selectedCompanyId={empresaId} />
 
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
         {loadError && (

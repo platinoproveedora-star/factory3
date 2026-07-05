@@ -91,12 +91,16 @@ export function GastosDashboard({
   initialGastos,
   initialStats,
   categories,
-  bankAccounts
+  bankAccounts,
+  companyOptions,
+  selectedCompanyId
 }: {
   initialGastos: Gasto[];
   initialStats: Stats;
   categories: string[];
   bankAccounts: BankAccount[];
+  companyOptions: Array<{ company_id: string; name: string }>;
+  selectedCompanyId: string;
 }) {
   const [gastos, setGastos] = useState(initialGastos);
   const [q, setQ] = useState("");
@@ -154,7 +158,7 @@ export function GastosDashboard({
     const res = await fetch("/api/gastos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, ...draft, monto: Number(draft.monto || 0) })
+      body: JSON.stringify({ action, company_id: selectedCompanyId, ...draft, monto: Number(draft.monto || 0) })
     });
     const json = await res.json().catch(() => ({}));
     setSaving(false);
@@ -184,7 +188,7 @@ export function GastosDashboard({
     const res = await fetch("/api/gastos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", folio })
+      body: JSON.stringify({ action: "delete", company_id: selectedCompanyId, folio })
     });
     const json = await res.json().catch(() => ({}));
     setSaving(false);
@@ -209,6 +213,30 @@ export function GastosDashboard({
 
   return (
     <div>
+      {companyOptions.length > 1 && (
+        <div className="mb-4 flex flex-col gap-2 rounded-lg border border-border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">Empresa activa</p>
+            <p className="text-sm text-slate-300">Los gastos se cargan y guardan solo para la empresa seleccionada.</p>
+          </div>
+          <select
+            value={selectedCompanyId}
+            onChange={(event) => {
+              const params = new URLSearchParams(window.location.search);
+              params.set("company_id", event.target.value);
+              window.location.href = `/apps/gastos?${params.toString()}`;
+            }}
+            className="min-w-[260px] rounded-md border border-border bg-bg px-3 py-2 text-sm text-slate-100 outline-none focus:border-primary"
+          >
+            {companyOptions.map((company) => (
+              <option key={company.company_id} value={company.company_id}>
+                {company.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* KPIs */}
       <div className="grid gap-3 md:grid-cols-4">
         <Kpi label="Gasto total" value={mxn(stats.total)} />

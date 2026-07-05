@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { COOKIE_NAME } from "./constants";
 
 export { COOKIE_NAME, MODULO_CODE, SCHEMA } from "./constants";
+export const APPS4ALL_COOKIE_NAME = "apps4all_token";
 
 export type SessionUser = {
   sub: string;
@@ -31,7 +32,7 @@ export async function signSession(payload: Omit<SessionUser, "exp">, maxAge = 72
 
 export async function getSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const token = cookieStore.get(APPS4ALL_COOKIE_NAME)?.value || cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, jwtSecret());

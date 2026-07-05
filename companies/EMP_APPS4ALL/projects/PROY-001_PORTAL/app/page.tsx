@@ -47,6 +47,13 @@ const MODULES: Record<string, { title: string; description: string; href: string
     href: "/apps/gastos",
     icon: ReceiptText
   },
+  gastos4all: {
+    title: "Gastos4All",
+    description: "Dashboard avanzado de gastos por empresa.",
+    href: process.env.NEXT_PUBLIC_GASTOS4ALL_URL || "#",
+    icon: ReceiptText,
+    external: true
+  },
   fleet4all: {
     title: "Fleet4All",
     description: "Viajes, cobranza, carta porte, liquidaciones, combustible y mantenimiento de flotilla.",

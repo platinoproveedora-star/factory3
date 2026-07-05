@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, Download, Loader2, LogOut, Megaphone, Sparkles, Wand2 } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Download, Loader2, LogOut, Megaphone, Sparkles, Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type Analysis = {
@@ -65,6 +65,7 @@ export default function StudioPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const apps4allHref = process.env.NEXT_PUBLIC_APPS4ALL_URL || "http://localhost:3018";
 
   useEffect(() => {
     fetch("/api/auth/grants/me")
@@ -211,6 +212,13 @@ export default function StudioPage() {
       <header className="border-b border-white/10 bg-slate-950/90">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">
+            <a
+              href={apps4allHref}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 px-3 text-sm font-medium text-slate-300 hover:border-cyan-300 hover:text-cyan-200"
+            >
+              <ArrowLeft size={16} />
+              Apps4All
+            </a>
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-400 text-slate-950">
               <Megaphone size={20} />
             </span>

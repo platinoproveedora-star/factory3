@@ -63,7 +63,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empr
     const res = await fetch("/api/gastos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, ...extra }),
+      body: JSON.stringify({ action, company_id: empresaId, ...extra }),
     });
     const json = await res.json();
     if (!res.ok || json?.ok === false) throw new Error(json?.error ?? "Error en la operación");

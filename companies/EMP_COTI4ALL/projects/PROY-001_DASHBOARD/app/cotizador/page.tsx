@@ -89,6 +89,7 @@ type QuoteListRow = {
 
 const currency = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 const portalHref = process.env.NEXT_PUBLIC_APPS4ALL_URL || "http://localhost:3018";
+const MODULE_CODE = "coti4all_portal";
 const IVA_RATE = 0.16;
 
 export default function CotizadorPage() {
@@ -136,7 +137,15 @@ export default function CotizadorPage() {
         if (!res.ok) return;
         const json = await res.json();
         setAuth(json.user || {});
-        const companyRows = Array.isArray(json.companies) ? json.companies : [];
+        const grants = Array.isArray(json.grants) ? json.grants : [];
+        const allowedCompanyIds = new Set(
+          grants
+            .filter((grant: any) => grant.modulo_code === MODULE_CODE)
+            .map((grant: any) => String(grant.company_id || ""))
+            .filter(Boolean)
+        );
+        const allCompanies = Array.isArray(json.companies) ? json.companies : [];
+        const companyRows = allCompanies.filter((company: CompanyOption) => allowedCompanyIds.has(company.company_id));
         setCompanies(companyRows);
         const initialCompany = String(
           companyRows.find((company: CompanyOption) => company.company_id === json.user?.company_id)?.company_id ||
@@ -447,10 +456,10 @@ export default function CotizadorPage() {
             Entra con tu cuenta Apps4All para abrir el cotizador de tu empresa.
           </p>
           <Link
-            href="/login"
+            href={portalHref}
             className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
           >
-            Ir a login
+            Ir a Apps4All
           </Link>
         </section>
       </main>
@@ -497,7 +506,7 @@ export default function CotizadorPage() {
             </p>
           </div>
           <Link href={portalHref} className="btn-ghost inline-flex items-center justify-center gap-2 px-4 py-2">
-            Portal Apps4All <ChevronRight size={15} />
+            Apps4All <ChevronRight size={15} />
           </Link>
         </section>
 

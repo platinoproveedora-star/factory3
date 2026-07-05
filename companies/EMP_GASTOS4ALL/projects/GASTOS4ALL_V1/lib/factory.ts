@@ -2,7 +2,7 @@ export async function callSkill<T = unknown>(
   skill: string,
   context: Record<string, unknown>
 ): Promise<{ ok: boolean; data?: T; error?: string }> {
-  const base = (process.env.FACTORY_API_URL || "https://factory3.onrender.com").replace(/\/$/, "");
+  const base = factoryApiUrl();
   const res = await fetch(`${base}/skill/${skill}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -17,7 +17,7 @@ export async function dataSkill<T = unknown>(
   skill: string,
   params: Record<string, unknown>
 ): Promise<T> {
-  const base = (process.env.FACTORY_API_URL || "https://factory3.onrender.com").replace(/\/$/, "");
+  const base = factoryApiUrl();
   const res = await fetch(`${base}/data/${skill}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,4 +29,10 @@ export async function dataSkill<T = unknown>(
   if (json?.ok === false) throw new Error(json.error ?? "factory3 error");
   if (json?.ok === true && "data" in json) return json.data as T;
   return json as T;
+}
+
+function factoryApiUrl() {
+  const base = process.env.FACTORY_API_URL;
+  if (!base) throw new Error("FACTORY_API_URL requerido");
+  return base.replace(/\/$/, "");
 }
