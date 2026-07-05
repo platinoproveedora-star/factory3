@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_factory/apps4all_factory_build_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Creates an end-to-end Apps4All app production plan from a module spec.",
+  "requires_env": []
+}

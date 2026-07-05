@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0f172a;
+  --card: #ffffff;
+  --ink: #0f172a;
+  --moss: #0f4c35;
+  --steel: #3b82f6;
+  --muted: #64748b;
+  --border: #e2e8f0;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+@layer components {
+  .bg-bg {
+    background: var(--bg);
+  }
+
+  .bg-card {
+    background: var(--card);
+  }
+
+  .bg-primary {
+    background: var(--steel);
+  }
+
+  .text-ink {
+    color: var(--ink);
+  }
+
+  .text-muted {
+    color: var(--muted);
+  }
+
+  .text-moss {
+    color: var(--moss);
+  }
+
+  .border-border {
+    border-color: var(--border);
+  }
+
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    padding: 16px;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  }
+
+  .btn-primary {
+    border-radius: 6px;
+    background: var(--moss);
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .btn-primary:hover {
+    background: #0a3526;
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: rgb(15 23 42 / 0.45);
+    color: #e2e8f0;
+    font-weight: 600;
+  }
+
+  .btn-dark {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 8px;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    background: rgb(15 23 42 / 0.92);
+    padding: 8px 12px;
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .btn-dark:hover {
+    border-color: #67e8f9;
+    color: #cffafe;
+  }
+
+  .input {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    padding: 10px 12px;
+    color: var(--ink);
+    font-size: 14px;
+  }
+
+  .label {
+    display: block;
+    margin-bottom: 6px;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_auth_bridge/apps4all_auth_bridge_health_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Checks that an Apps4All dashboard supports SSO, direct login and module grants.",
+  "requires_env": []
+}

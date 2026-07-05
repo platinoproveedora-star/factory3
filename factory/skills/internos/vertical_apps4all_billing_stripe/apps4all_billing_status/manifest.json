@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_billing_stripe/apps4all_billing_status",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Plans or reads Stripe subscription status for an Apps4All company.",
+  "requires_env": ["STRIPE_SECRET_KEY", "PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_auth_bridge/apps4all_auth_bridge_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Plans reusable Apps4All SSO plus direct-login auth for a dashboard module.",
+  "requires_env": []
+}

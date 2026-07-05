@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_gptads4all/gptads_creative_generate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera CreativeSet para CampaignDraft GPTAds4All.",
+  "requires_env": ["ANTHROPIC_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

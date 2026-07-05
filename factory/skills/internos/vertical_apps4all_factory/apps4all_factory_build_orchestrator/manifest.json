@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_factory/apps4all_factory_build_orchestrator",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orchestrates the Apps4All app production flow by delegating to specialized verticals.",
+  "requires_env": []
+}

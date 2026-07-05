@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_gptads4all/gptads_intent_research",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera intenciones conversacionales para un ProductBrief GPTAds4All.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

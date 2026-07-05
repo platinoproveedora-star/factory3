@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factory_productization/factory_demo_seed",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Creates a demo company/user/grants bundle for a sellable Factory3 module.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

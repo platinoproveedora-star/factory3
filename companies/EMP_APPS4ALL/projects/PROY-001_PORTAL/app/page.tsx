@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ArrowUpRight, FileSpreadsheet, ReceiptText, ShoppingBasket } from "lucide-react";
+import { ArrowUpRight, FileSpreadsheet, Megaphone, ReceiptText, ShoppingBasket, Store } from "lucide-react";
 import { getSession, getSessionToken } from "@/lib/auth";
 import { listCompanies, listGrants, companyName } from "@/lib/platform";
 import { PortalShell } from "@/components/PortalShell";
@@ -32,6 +32,13 @@ const MODULES: Record<string, { title: string; description: string; href: string
     description: "Cotizaciones, proveedores, productos y pricing.",
     href: process.env.NEXT_PUBLIC_MULTI_SHOPPER_URL || "#",
     icon: ShoppingBasket,
+    external: true
+  },
+  gptads4all: {
+    title: "GPTAds4All",
+    description: "Campanas, intenciones, creativos y export CSV/JSON.",
+    href: process.env.NEXT_PUBLIC_GPTADS4ALL_URL || "#",
+    icon: Megaphone,
     external: true
   },
   gastos: {
@@ -69,6 +76,13 @@ export default async function HomePage() {
         <p className="max-w-xl text-sm leading-6 text-slate-600">
           Contrato preparado para multiempresa y Stripe: company, rol, plan y estado de suscripcion viven en grants.
         </p>
+        <a
+          href="/marketplace"
+          className="inline-flex items-center gap-2 rounded-md bg-ink px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+        >
+          <Store size={16} />
+          Marketplace
+        </a>
       </section>
       <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {grantsByModule.map(([moduloCode, moduleGrants]) => {

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factory_productization/factory_module_clone_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Plans a safe multi-company clone of a sellable Factory3 module without writing files.",
+  "requires_env": []
+}

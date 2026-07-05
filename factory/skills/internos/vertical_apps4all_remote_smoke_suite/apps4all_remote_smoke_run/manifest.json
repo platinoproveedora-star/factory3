@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_remote_smoke_suite/apps4all_remote_smoke_run",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Runs remote HTTP smoke checks for a released Apps4All app when explicitly confirmed.",
+  "requires_env": []
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_marketplace/apps4all_marketplace_schema_setup",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Adds marketplace/product columns to platform.modulos and reloads Supabase REST schema.",
+  "requires_env": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"]
+}

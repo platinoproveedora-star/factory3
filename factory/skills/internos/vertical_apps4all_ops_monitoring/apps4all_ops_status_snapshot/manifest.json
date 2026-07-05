@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_ops_monitoring/apps4all_ops_status_snapshot",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Builds a local operational status snapshot for an Apps4All module.",
+  "requires_env": []
+}

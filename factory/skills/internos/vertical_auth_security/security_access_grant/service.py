@@ -60,9 +60,7 @@ class SecurityAccessGrantService:
             rows = self._pg_post(url, key, row)
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", errors="replace")
-            if e.code == 409 or "duplicate" in body.lower():
-                return {"ok": True, "message": "Grant ya existe", "data": {"created": False}}
-            return {"ok": False, "error": f"Supabase {e.code}: {body[:200]}"}
+            return self._handle_create_conflict(e.code, body, modulo_code)
 
         grant_id = rows[0].get("id") if rows else None
         return {
@@ -70,6 +68,23 @@ class SecurityAccessGrantService:
             "message": f"Acceso otorgado a '{modulo_code}' para user {user_id}",
             "data":    {"grant_id": grant_id, "user_id": user_id, "company_id": company_id, "modulo_code": modulo_code, "role": role},
         }
+
+    def _handle_create_conflict(self, status_code: int, body: str, modulo_code: str) -> dict:
+        try:
+            parsed = json.loads(body)
+        except Exception:
+            parsed = {}
+        pg_code = str(parsed.get("code") or "")
+        pg_message = str(parsed.get("message") or "")
+        pg_details = str(parsed.get("details") or "")
+
+        if pg_code == "23505":
+            return {"ok": True, "message": "Grant ya existe", "data": {"created": False}}
+        if pg_code == "23503":
+            return {"ok": False, "error": f"modulo_code '{modulo_code}' no existe en platform.modulos (foreign key violation): {pg_details or pg_message}"}
+        if status_code == 409:
+            return {"ok": False, "error": f"Supabase 409 no identificado: {pg_message or body[:200]}"}
+        return {"ok": False, "error": f"Supabase {status_code}: {body[:200]}"}
 
     def _check(self, url: str, key: str, user_id: str, modulo_code: str, company_id: str = "") -> dict:
         qs   = (f"?user_id=eq.{urllib.parse.quote(user_id)}"

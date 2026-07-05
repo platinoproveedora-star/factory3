@@ -1,0 +1,16 @@
+{
+  "company_id": "EMP_GPTADS4ALL",
+  "project_code": "PROY-001",
+  "module_code": "gptads4all",
+  "project_name": "GPTAds4All Ola 1",
+  "schema": "gptads4all",
+  "supabase_schema": "gptads4all",
+  "platform": "internal",
+  "requires_env": [
+    "ANTHROPIC_API_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "status": "planned",
+  "erp_ready": false
+}

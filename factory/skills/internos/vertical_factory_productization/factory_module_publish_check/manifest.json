@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factory_productization/factory_module_publish_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Audits whether a Factory3 module is ready to publish, demo, clone and sell.",
+  "requires_env": []
+}

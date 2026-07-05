@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_ops_monitoring/apps4all_ops_monitoring_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Plans operational monitoring checks for Apps4All modules.",
+  "requires_env": []
+}

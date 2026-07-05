@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_release/apps4all_release_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Builds a generic Vercel and Apps4All Marketplace release plan for a dashboard app.",
+  "requires_env": []
+}

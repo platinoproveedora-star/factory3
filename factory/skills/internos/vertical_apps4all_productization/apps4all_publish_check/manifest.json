@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_productization/apps4all_publish_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Apps4All-named publish readiness check for sellable modules.",
+  "requires_env": []
+}

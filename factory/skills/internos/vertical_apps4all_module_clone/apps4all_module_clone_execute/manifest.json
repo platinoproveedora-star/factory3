@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_module_clone/apps4all_module_clone_execute",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Executes a safe Apps4All module clone from a clone plan.",
+  "requires_env": []
+}

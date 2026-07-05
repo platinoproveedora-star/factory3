@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_billing_stripe/apps4all_billing_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Plans Stripe billing setup for an Apps4All sellable module.",
+  "requires_env": []
+}

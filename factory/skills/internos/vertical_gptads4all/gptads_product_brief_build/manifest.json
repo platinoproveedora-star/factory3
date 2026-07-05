@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_gptads4all/gptads_product_brief_build",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Normaliza y enriquece ProductRef en ProductBrief para GPTAds4All.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

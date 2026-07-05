@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_release/apps4all_deploy_sync",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Orchestrates Vercel project/env/deploy and Marketplace URL activation for an Apps4All app.",
+  "requires_env": ["VERCEL_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

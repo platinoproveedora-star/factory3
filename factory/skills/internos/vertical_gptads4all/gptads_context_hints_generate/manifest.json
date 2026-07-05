@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_gptads4all/gptads_context_hints_generate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera context hints conversacionales por intent para GPTAds4All.",
+  "requires_env": ["ANTHROPIC_API_KEY"]
+}

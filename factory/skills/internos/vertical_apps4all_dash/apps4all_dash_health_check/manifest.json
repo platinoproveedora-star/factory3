@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_dash/apps4all_dash_health_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Validate an Apps4All-compatible dashboard project structure and sellable context files.",
+  "requires_env": []
+}

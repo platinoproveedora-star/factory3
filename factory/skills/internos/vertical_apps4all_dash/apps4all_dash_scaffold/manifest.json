@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_dash/apps4all_dash_scaffold",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Scaffold Apps4All-compatible Next dashboards with auth, grants, SSO and project config.",
+  "requires_env": []
+}

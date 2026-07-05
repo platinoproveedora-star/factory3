@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_auth_bridge/apps4all_auth_bridge_scaffold",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Scaffolds reusable Apps4All auth bridge files into a Next dashboard project.",
+  "requires_env": []
+}

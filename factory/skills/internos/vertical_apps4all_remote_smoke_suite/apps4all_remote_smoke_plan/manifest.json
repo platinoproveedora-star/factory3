@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_remote_smoke_suite/apps4all_remote_smoke_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Plans remote smoke checks for a released Apps4All app.",
+  "requires_env": []
+}

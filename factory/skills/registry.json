@@ -4757,5 +4757,331 @@
     "path": "skills/internos/vertical_factory_utils/factory_launch_readiness_audit",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_product_brief_build": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_product_brief_build",
+    "vertical": "vertical_gptads4all",
+    "descripcion": "Normaliza y enriquece ProductRef en ProductBrief para GPTAds4All.",
+    "path": "skills/internos/vertical_gptads4all/gptads_product_brief_build",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_intent_research": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_intent_research",
+    "vertical": "vertical_gptads4all",
+    "descripcion": "Genera IntentSet priorizado desde ProductBrief para GPTAds4All.",
+    "path": "skills/internos/vertical_gptads4all/gptads_intent_research",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_context_hints_generate": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_context_hints_generate",
+    "vertical": "vertical_gptads4all",
+    "descripcion": "Genera ContextHintSet trazable a intents validos para GPTAds4All.",
+    "path": "skills/internos/vertical_gptads4all/gptads_context_hints_generate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_campaign_build": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_campaign_build",
+    "vertical": "vertical_gptads4all",
+    "descripcion": "Construye CampaignDraft deterministico y persiste assets GPTAds4All opcionalmente.",
+    "path": "skills/internos/vertical_gptads4all/gptads_campaign_build",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_creative_generate": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_creative_generate",
+    "vertical": "vertical_gptads4all",
+    "descripcion": "Genera CreativeSet con limites de copy y trazabilidad a intents.",
+    "path": "skills/internos/vertical_gptads4all/gptads_creative_generate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_gptads4all/gptads_bulk_export": {
+    "tipo": "interno",
+    "nombre": "vertical_gptads4all/gptads_bulk_export",
+    "vertical": "vertical_gptads4all",
+    "descripcion": "Exporta CampaignDraft y CreativeSet a CSV, JSON o ambos.",
+    "path": "skills/internos/vertical_gptads4all/gptads_bulk_export",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_dash/apps4all_dash_scaffold": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_dash/apps4all_dash_scaffold",
+    "vertical": "vertical_apps4all_dash",
+    "descripcion": "Scaffold Apps4All-compatible Next dashboards with auth, grants, SSO and project config.",
+    "path": "skills/internos/vertical_apps4all_dash/apps4all_dash_scaffold",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_dash/apps4all_dash_health_check": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_dash/apps4all_dash_health_check",
+    "vertical": "vertical_apps4all_dash",
+    "descripcion": "Validate an Apps4All-compatible dashboard project structure and sellable context files.",
+    "path": "skills/internos/vertical_apps4all_dash/apps4all_dash_health_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_marketplace/apps4all_marketplace_schema_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_marketplace/apps4all_marketplace_schema_setup",
+    "vertical": "vertical_apps4all_marketplace",
+    "descripcion": "Adds marketplace/product columns to platform.modulos and reloads Supabase REST schema.",
+    "path": "skills/internos/vertical_apps4all_marketplace/apps4all_marketplace_schema_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_marketplace/apps4all_marketplace_module_register": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_marketplace/apps4all_marketplace_module_register",
+    "vertical": "vertical_apps4all_marketplace",
+    "descripcion": "Registers or updates a sellable Apps4All module in platform.modulos.",
+    "path": "skills/internos/vertical_apps4all_marketplace/apps4all_marketplace_module_register",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_marketplace/apps4all_marketplace_module_list": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_marketplace/apps4all_marketplace_module_list",
+    "vertical": "vertical_apps4all_marketplace",
+    "kind": "data",
+    "descripcion": "Lists Apps4All marketplace modules from platform.modulos.",
+    "path": "skills/internos/vertical_apps4all_marketplace/apps4all_marketplace_module_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_marketplace/apps4all_marketplace_module_activate": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_marketplace/apps4all_marketplace_module_activate",
+    "vertical": "vertical_apps4all_marketplace",
+    "descripcion": "Activates a marketplace module for a company/user by creating an access_grant.",
+    "path": "skills/internos/vertical_apps4all_marketplace/apps4all_marketplace_module_activate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_marketplace/apps4all_marketplace_access_matrix": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_marketplace/apps4all_marketplace_access_matrix",
+    "vertical": "vertical_apps4all_marketplace",
+    "kind": "data",
+    "descripcion": "Lists access grants by module/company for Marketplace administration.",
+    "path": "skills/internos/vertical_apps4all_marketplace/apps4all_marketplace_access_matrix",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factory_productization/factory_demo_seed": {
+    "tipo": "interno",
+    "nombre": "vertical_factory_productization/factory_demo_seed",
+    "vertical": "vertical_factory_productization",
+    "descripcion": "Creates a demo company/user/grants bundle for a sellable Factory3 module.",
+    "path": "skills/internos/vertical_factory_productization/factory_demo_seed",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factory_productization/factory_module_publish_check": {
+    "tipo": "interno",
+    "nombre": "vertical_factory_productization/factory_module_publish_check",
+    "vertical": "vertical_factory_productization",
+    "descripcion": "Audits whether a Factory3 module is ready to publish, demo, clone and sell.",
+    "path": "skills/internos/vertical_factory_productization/factory_module_publish_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factory_productization/factory_module_clone_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_factory_productization/factory_module_clone_plan",
+    "vertical": "vertical_factory_productization",
+    "descripcion": "Plans a safe multi-company clone of a sellable Factory3 module without writing files.",
+    "path": "skills/internos/vertical_factory_productization/factory_module_clone_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_release/apps4all_release_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_release/apps4all_release_plan",
+    "vertical": "vertical_apps4all_release",
+    "descripcion": "Builds a generic Vercel and Apps4All Marketplace release plan for a dashboard app.",
+    "path": "skills/internos/vertical_apps4all_release/apps4all_release_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_release/apps4all_deploy_sync": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_release/apps4all_deploy_sync",
+    "vertical": "vertical_apps4all_release",
+    "descripcion": "Orchestrates Vercel project/env/deploy and Marketplace URL activation for an Apps4All app.",
+    "path": "skills/internos/vertical_apps4all_release/apps4all_deploy_sync",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_release/apps4all_module_url_activate": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_release/apps4all_module_url_activate",
+    "vertical": "vertical_apps4all_release",
+    "descripcion": "Stores the released app URL for an Apps4All Marketplace module.",
+    "path": "skills/internos/vertical_apps4all_release/apps4all_module_url_activate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_auth_bridge/apps4all_auth_bridge_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_auth_bridge/apps4all_auth_bridge_plan",
+    "vertical": "vertical_apps4all_auth_bridge",
+    "descripcion": "Plans reusable Apps4All SSO plus direct-login auth for a dashboard module.",
+    "path": "skills/internos/vertical_apps4all_auth_bridge/apps4all_auth_bridge_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_auth_bridge/apps4all_auth_bridge_health_check": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_auth_bridge/apps4all_auth_bridge_health_check",
+    "vertical": "vertical_apps4all_auth_bridge",
+    "descripcion": "Checks that an Apps4All dashboard supports SSO, direct login and module grants.",
+    "path": "skills/internos/vertical_apps4all_auth_bridge/apps4all_auth_bridge_health_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_auth_bridge/apps4all_auth_bridge_scaffold": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_auth_bridge/apps4all_auth_bridge_scaffold",
+    "vertical": "vertical_apps4all_auth_bridge",
+    "descripcion": "Scaffolds reusable Apps4All auth bridge files into a Next dashboard project.",
+    "path": "skills/internos/vertical_apps4all_auth_bridge/apps4all_auth_bridge_scaffold",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_module_clone/apps4all_module_clone_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_module_clone/apps4all_module_clone_plan",
+    "vertical": "vertical_apps4all_module_clone",
+    "descripcion": "Apps4All-named alias for planning a safe multi-company module clone.",
+    "path": "skills/internos/vertical_apps4all_module_clone/apps4all_module_clone_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_module_clone/apps4all_module_clone_execute": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_module_clone/apps4all_module_clone_execute",
+    "vertical": "vertical_apps4all_module_clone",
+    "descripcion": "Executes a safe Apps4All module clone from a clone plan.",
+    "path": "skills/internos/vertical_apps4all_module_clone/apps4all_module_clone_execute",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_factory/apps4all_factory_build_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_factory/apps4all_factory_build_plan",
+    "vertical": "vertical_apps4all_factory",
+    "descripcion": "Creates an end-to-end Apps4All app production plan from a module spec.",
+    "path": "skills/internos/vertical_apps4all_factory/apps4all_factory_build_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_factory/apps4all_factory_build_orchestrator": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_factory/apps4all_factory_build_orchestrator",
+    "vertical": "vertical_apps4all_factory",
+    "descripcion": "Orchestrates the Apps4All app production flow by delegating to specialized verticals.",
+    "path": "skills/internos/vertical_apps4all_factory/apps4all_factory_build_orchestrator",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_factory/apps4all_company_project_scaffold": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_factory/apps4all_company_project_scaffold",
+    "vertical": "vertical_apps4all_factory",
+    "descripcion": "Apps4All-named company/project scaffold plan for sellable modules.",
+    "path": "skills/internos/vertical_apps4all_factory/apps4all_company_project_scaffold",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_productization/apps4all_demo_seed": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_productization/apps4all_demo_seed",
+    "vertical": "vertical_apps4all_productization",
+    "descripcion": "Apps4All-named demo company/user/grants seed for sellable modules.",
+    "path": "skills/internos/vertical_apps4all_productization/apps4all_demo_seed",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_productization/apps4all_publish_check": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_productization/apps4all_publish_check",
+    "vertical": "vertical_apps4all_productization",
+    "descripcion": "Apps4All-named publish readiness check for sellable modules.",
+    "path": "skills/internos/vertical_apps4all_productization/apps4all_publish_check",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_remote_smoke_suite/apps4all_remote_smoke_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_remote_smoke_suite/apps4all_remote_smoke_plan",
+    "vertical": "vertical_apps4all_remote_smoke_suite",
+    "descripcion": "Plans remote smoke checks for a released Apps4All app.",
+    "path": "skills/internos/vertical_apps4all_remote_smoke_suite/apps4all_remote_smoke_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_remote_smoke_suite/apps4all_remote_smoke_run": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_remote_smoke_suite/apps4all_remote_smoke_run",
+    "vertical": "vertical_apps4all_remote_smoke_suite",
+    "descripcion": "Runs remote HTTP smoke checks for a released Apps4All app when explicitly confirmed.",
+    "path": "skills/internos/vertical_apps4all_remote_smoke_suite/apps4all_remote_smoke_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_billing_stripe/apps4all_billing_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_billing_stripe/apps4all_billing_plan",
+    "vertical": "vertical_apps4all_billing_stripe",
+    "descripcion": "Plans Stripe billing setup for an Apps4All sellable module.",
+    "path": "skills/internos/vertical_apps4all_billing_stripe/apps4all_billing_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_billing_stripe/apps4all_billing_checkout": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_billing_stripe/apps4all_billing_checkout",
+    "vertical": "vertical_apps4all_billing_stripe",
+    "descripcion": "Creates or previews a Stripe checkout flow for an Apps4All module.",
+    "path": "skills/internos/vertical_apps4all_billing_stripe/apps4all_billing_checkout",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_billing_stripe/apps4all_billing_status": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_billing_stripe/apps4all_billing_status",
+    "vertical": "vertical_apps4all_billing_stripe",
+    "descripcion": "Plans or reads Stripe subscription status for an Apps4All company.",
+    "path": "skills/internos/vertical_apps4all_billing_stripe/apps4all_billing_status",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_ops_monitoring/apps4all_ops_monitoring_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_ops_monitoring/apps4all_ops_monitoring_plan",
+    "vertical": "vertical_apps4all_ops_monitoring",
+    "descripcion": "Plans operational monitoring checks for Apps4All modules.",
+    "path": "skills/internos/vertical_apps4all_ops_monitoring/apps4all_ops_monitoring_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_ops_monitoring/apps4all_ops_status_snapshot": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_ops_monitoring/apps4all_ops_status_snapshot",
+    "vertical": "vertical_apps4all_ops_monitoring",
+    "descripcion": "Builds a local operational status snapshot for an Apps4All module.",
+    "path": "skills/internos/vertical_apps4all_ops_monitoring/apps4all_ops_status_snapshot",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_module_clone/apps4all_module_clone_plan",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Apps4All-named alias for planning a safe multi-company module clone.",
+  "requires_env": []
+}

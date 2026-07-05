@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_billing_stripe/apps4all_billing_checkout",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Creates or previews a Stripe checkout flow for an Apps4All module.",
+  "requires_env": ["STRIPE_SECRET_KEY"]
+}
