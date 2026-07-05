@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_cartaporte/csd_vault",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Guarda/recupera el CSD (cer, key, password) del tenant via el vault generico security_secret_store/retrieve (envelope encryption). Nunca devuelve material criptografico salvo action=retrieve para uso interno de pac_stamp.",
+  "internal_only": true,
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY", "PLATFORM_KEK_V1"]
+}

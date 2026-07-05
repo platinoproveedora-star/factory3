@@ -5359,5 +5359,50 @@
     "path": "skills/internos/vertical_fleet4all_quoting/rate_manage",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_fleet4all_cartaporte/cartaporte_build": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_cartaporte/cartaporte_build",
+    "vertical": "vertical_fleet4all_cartaporte",
+    "descripcion": "Arma el draft del CFDI+Carta Porte derivando trip/unit/driver + mercancias. Campos faltantes devuelven missing_fields para pedirlos uno a uno. Folio CP-NNNN.",
+    "path": "skills/internos/vertical_fleet4all_cartaporte/cartaporte_build",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_cartaporte/cartaporte_cancel": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_cartaporte/cartaporte_cancel",
+    "vertical": "vertical_fleet4all_cartaporte",
+    "descripcion": "Cancela un timbre de Carta Porte ante el PAC (adapter generico) con motivo SAT 01-04. Requiere context.confirm=true explicito.",
+    "path": "skills/internos/vertical_fleet4all_cartaporte/cartaporte_cancel",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_cartaporte/cartaporte_validate": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_cartaporte/cartaporte_validate",
+    "vertical": "vertical_fleet4all_cartaporte",
+    "descripcion": "Validacion local del draft de Carta Porte antes de gastar timbre: estructura, catalogos SAT basicos, formato RFC, peso>0. Nunca llama al PAC.",
+    "path": "skills/internos/vertical_fleet4all_cartaporte/cartaporte_validate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_cartaporte/csd_vault": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_cartaporte/csd_vault",
+    "vertical": "vertical_fleet4all_cartaporte",
+    "descripcion": "Guarda/recupera el CSD (cer, key, password) del tenant via el vault generico security_secret_store/retrieve (envelope encryption). Nunca devuelve material criptografico salvo action=retrieve para uso interno de pac_stamp.",
+    "path": "skills/internos/vertical_fleet4all_cartaporte/csd_vault",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_cartaporte/pac_stamp": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_cartaporte/pac_stamp",
+    "vertical": "vertical_fleet4all_cartaporte",
+    "descripcion": "Envia el draft de Carta Porte al PAC via un adapter generico (PAC_PROVIDER/PAC_USER/PAC_PASSWORD/PAC_URL en env). Sin credenciales usa un adapter simulado (sandbox_simulated). Idempotente: draft ya stamped nunca se re-timbra.",
+    "path": "skills/internos/vertical_fleet4all_cartaporte/pac_stamp",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
   }
 }

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_cartaporte/cartaporte_validate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Validacion local del draft de Carta Porte antes de gastar timbre: estructura, catalogos SAT basicos, formato RFC, peso>0. Nunca llama al PAC.",
+  "requires_env": []
+}

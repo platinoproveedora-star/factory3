@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_cartaporte/pac_stamp",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Envia el draft de Carta Porte al PAC via un adapter generico (PAC_PROVIDER/PAC_USER/PAC_PASSWORD/PAC_URL en env). Sin credenciales usa un adapter simulado (sandbox_simulated). Idempotente: draft ya stamped nunca se re-timbra.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "PAC_PROVIDER", "PAC_USER", "PAC_PASSWORD", "PAC_URL"]
+}

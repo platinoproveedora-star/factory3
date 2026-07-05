@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_cartaporte/cartaporte_cancel",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Cancela un timbre de Carta Porte ante el PAC (adapter generico) con motivo SAT 01-04. Requiere context.confirm=true explicito.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "PAC_PROVIDER", "PAC_USER", "PAC_PASSWORD", "PAC_URL"]
+}
