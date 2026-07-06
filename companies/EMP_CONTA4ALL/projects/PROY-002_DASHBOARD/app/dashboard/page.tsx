@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { COMPANY_CHANGE_EVENT, COMPANY_STORAGE_KEY } from "@/components/nav";
+import { COMPANY_CHANGE_EVENT, COMPANY_STORAGE_KEY, RFC_STORAGE_KEY } from "@/components/nav";
 import OverviewChart from "./overview-chart";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
@@ -120,14 +120,19 @@ export default function DashboardPage() {
       .then((d) => {
         if (d.ok) {
           const rows = d.data?.rfcs ?? [];
+          const storedRfc = window.localStorage.getItem(RFC_STORAGE_KEY) || "";
           setRfcs(rows);
-          setSelectedRfc(rows[0]?.id || "");
+          setSelectedRfc(rows.find((r: Rfc) => r.id === storedRfc)?.id || rows[0]?.id || "");
         } else {
           setError(d.error || "No se pudieron cargar RFCs");
         }
       })
       .catch(() => setError("No se pudieron cargar RFCs"));
   }, [selectedCompanyId]);
+
+  useEffect(() => {
+    if (selectedRfc) window.localStorage.setItem(RFC_STORAGE_KEY, selectedRfc);
+  }, [selectedRfc]);
 
   const load = useCallback(async () => {
     if (!selectedRfc) return;

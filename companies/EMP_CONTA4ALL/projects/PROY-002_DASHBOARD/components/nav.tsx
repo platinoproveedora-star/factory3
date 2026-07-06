@@ -13,6 +13,7 @@ const links = [
 const portalUrl = process.env.NEXT_PUBLIC_APPS4ALL_URL || "";
 export const COMPANY_CHANGE_EVENT = "conta4all:company-change";
 export const COMPANY_STORAGE_KEY = "conta4all_company_id";
+export const RFC_STORAGE_KEY = "conta4all_managed_rfc_id";
 
 export default function Nav({ email }: { email: string }) {
   const pathname = usePathname();

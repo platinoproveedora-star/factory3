@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import clsx from "clsx";
-import { COMPANY_CHANGE_EVENT, COMPANY_STORAGE_KEY } from "@/components/nav";
+import { COMPANY_CHANGE_EVENT, COMPANY_STORAGE_KEY, RFC_STORAGE_KEY } from "@/components/nav";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 type Cfdi = Record<string, JsonValue | undefined>;
@@ -206,15 +206,6 @@ export default function CfdisPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
 
   useEffect(() => {
-    fetch("/api/rfcs").then((r) => r.json()).then((d) => {
-      if (d.ok) {
-        const rows = d.data?.rfcs ?? [];
-        setRfcs(rows);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
     setSelectedCompanyId(window.localStorage.getItem(COMPANY_STORAGE_KEY) || "");
     const onCompanyChange = (event: Event) => {
       setSelectedCompanyId(String((event as CustomEvent).detail || ""));
@@ -223,10 +214,32 @@ export default function CfdisPage() {
     return () => window.removeEventListener(COMPANY_CHANGE_EVENT, onCompanyChange);
   }, []);
 
-  const companyRfcs = selectedCompanyId
-    ? rfcs.filter((r) => r.company_id === selectedCompanyId)
-    : [];
-  const visibleRfcs = companyRfcs.length ? companyRfcs : rfcs;
+  useEffect(() => {
+    if (!selectedCompanyId) {
+      setRfcs([]);
+      setFilters((f) => ({ ...f, managed_rfc_id: "" }));
+      setFiscal((f) => ({ ...f, managed_rfc_id: "" }));
+      return;
+    }
+
+    fetch(`/api/rfcs?company_id=${encodeURIComponent(selectedCompanyId)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) {
+          setRfcs([]);
+          return;
+        }
+        const rows = (d.data?.rfcs ?? []) as Rfc[];
+        const storedRfc = window.localStorage.getItem(RFC_STORAGE_KEY) || "";
+        const nextRfc = rows.find((r) => r.id === storedRfc)?.id || rows[0]?.id || "";
+        setRfcs(rows);
+        setFilters((f) => ({ ...f, managed_rfc_id: nextRfc }));
+        setFiscal((f) => ({ ...f, managed_rfc_id: nextRfc }));
+      })
+      .catch(() => setRfcs([]));
+  }, [selectedCompanyId]);
+
+  const visibleRfcs = rfcs;
 
   useEffect(() => {
     if (visibleRfcs.length !== 1) return;
@@ -245,6 +258,7 @@ export default function CfdisPage() {
 
   const handleSearch = useCallback(async () => {
     if (!filters.managed_rfc_id) return;
+    window.localStorage.setItem(RFC_STORAGE_KEY, filters.managed_rfc_id);
     setLoading(true); setSearched(true); setError("");
     try {
       setCfdis(await fetchCfdis({ ...filters, limit: "5000" }));
@@ -258,6 +272,7 @@ export default function CfdisPage() {
 
   const handleFiscalSearch = useCallback(async () => {
     if (!fiscal.managed_rfc_id || !fiscal.year) return;
+    window.localStorage.setItem(RFC_STORAGE_KEY, fiscal.managed_rfc_id);
     setFiscalLoading(true); setFiscalSearched(true); setFiscalError("");
     try {
       setFiscalCfdis(await fetchCfdis({
