@@ -47,10 +47,6 @@ function round4(value: number) {
   return Math.round((Number(value || 0) + Number.EPSILON) * 10000) / 10000;
 }
 
-function numberInput(value: number, decimals = 2) {
-  return Number(value || 0).toFixed(decimals);
-}
-
 function stockLabel(product: Product) {
   const stock = Number(product.current_stock ?? product.quantity ?? 0);
   return `${round4(stock)} ${product.unit || ''}`.trim();
@@ -600,12 +596,24 @@ function ProductCard({
   onSelectProduct: (product: Product) => void;
 }) {
   const [query, setQuery] = useState(item.description);
+  const [quantityText, setQuantityText] = useState(String(item.quantity || ''));
+  const [priceExText, setPriceExText] = useState(String(item.unit_price_ex_vat || ''));
+  const [priceIncText, setPriceIncText] = useState(String(round2(item.unit_price_ex_vat * (1 + item.vat_rate)) || ''));
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setQuery(item.description);
   }, [item.description]);
+
+  useEffect(() => {
+    setQuantityText(String(item.quantity || ''));
+  }, [item.quantity]);
+
+  useEffect(() => {
+    setPriceExText(String(item.unit_price_ex_vat || ''));
+    setPriceIncText(String(round2(item.unit_price_ex_vat * (1 + item.vat_rate)) || ''));
+  }, [item.unit_price_ex_vat, item.vat_rate]);
 
   useEffect(() => {
     function handler(event: MouseEvent) {
@@ -620,6 +628,27 @@ function ProductCard({
     const rows = term ? products.filter((product) => clean(`${product.product_name} ${product.sku || ''} ${product.folio || ''}`).includes(term)) : products;
     return rows.slice(0, 12);
   }, [products, query]);
+
+  function commitQuantity(value: string) {
+    const next = round4(Number(value || 0));
+    setQuantityText(String(next || ''));
+    onUpdate({ quantity: next });
+  }
+
+  function commitPriceEx(value: string) {
+    const next = round2(Number(value || 0));
+    setPriceExText(String(next || ''));
+    setPriceIncText(String(round2(next * (1 + item.vat_rate)) || ''));
+    onUpdate({ unit_price_ex_vat: next });
+  }
+
+  function commitPriceInc(value: string) {
+    const inc = Number(value || 0);
+    const next = item.vat_rate <= -1 ? 0 : round2(inc / (1 + item.vat_rate));
+    setPriceExText(String(next || ''));
+    setPriceIncText(String(round2(next * (1 + item.vat_rate)) || ''));
+    onUpdate({ unit_price_ex_vat: next });
+  }
 
   return (
     <article className="rounded border border-slate-200 bg-white p-3">
@@ -671,7 +700,17 @@ function ProductCard({
 
       <div className="mt-3 grid grid-cols-3 gap-2">
         <Field label="Cantidad">
-          <input disabled={disabled} type="number" min="0" step="0.01" value={numberInput(item.quantity, 2)} onChange={(event) => onUpdate({ quantity: round4(Number(event.target.value || 0)) })} className="input disabled:bg-slate-100" />
+          <input
+            disabled={disabled}
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={quantityText}
+            onChange={(event) => setQuantityText(event.target.value)}
+            onBlur={(event) => commitQuantity(event.target.value)}
+            className="input disabled:bg-slate-100"
+          />
         </Field>
         <Field label="Unidad">
           <input disabled={disabled} value={item.unit} onChange={(event) => onUpdate({ unit: event.target.value })} className="input disabled:bg-slate-100" />
@@ -682,7 +721,17 @@ function ProductCard({
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Field label="Precio sin IVA">
-          <input disabled={disabled} type="number" min="0" step="0.01" inputMode="decimal" value={numberInput(item.unit_price_ex_vat, 2)} onChange={(event) => onUpdate({ unit_price_ex_vat: round2(Number(event.target.value || 0)) })} className="input disabled:bg-slate-100" />
+          <input
+            disabled={disabled}
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={priceExText}
+            onChange={(event) => setPriceExText(event.target.value)}
+            onBlur={(event) => commitPriceEx(event.target.value)}
+            className="input disabled:bg-slate-100"
+          />
         </Field>
         <Field label="Precio con IVA">
           <input
@@ -691,8 +740,9 @@ function ProductCard({
             min="0"
             step="0.01"
             inputMode="decimal"
-            value={numberInput(round2(item.unit_price_ex_vat * (1 + item.vat_rate)), 2)}
-            onChange={(event) => onUpdate({ unit_price_ex_vat: item.vat_rate <= -1 ? 0 : round2(Number(event.target.value || 0) / (1 + item.vat_rate)) })}
+            value={priceIncText}
+            onChange={(event) => setPriceIncText(event.target.value)}
+            onBlur={(event) => commitPriceInc(event.target.value)}
             className="input disabled:bg-slate-100"
           />
         </Field>
