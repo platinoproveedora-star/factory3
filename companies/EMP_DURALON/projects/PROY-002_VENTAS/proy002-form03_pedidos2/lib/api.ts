@@ -35,6 +35,9 @@ export type Product = {
   sku?: string | null;
   unit: string;
   category?: string | null;
+  quantity?: number | null;
+  current_stock?: number | null;
+  stock_status?: string | null;
   weight_kg?: number | null;
   weight_unit?: string | null;
 };
@@ -86,6 +89,7 @@ export type FormItem = {
   product_id: string | null;
   description: string;
   quantity: number;
+  current_stock?: number | null;
   unit: string;
   unit_price_ex_vat: number;
   vat_rate: number;
@@ -215,7 +219,7 @@ export async function openRemisionPdf(folio: string) {
 }
 
 export type PedidoPayload = {
-  customer_id: string;
+  customer_id?: string;
   customer_name?: string;
   document_date: string;
   due_date?: string;

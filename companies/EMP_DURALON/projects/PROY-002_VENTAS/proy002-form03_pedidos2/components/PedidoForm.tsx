@@ -39,24 +39,41 @@ function mxn(value: number) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value || 0);
 }
 
+function round2(value: number) {
+  return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+}
+
+function round4(value: number) {
+  return Math.round((Number(value || 0) + Number.EPSILON) * 10000) / 10000;
+}
+
+function numberInput(value: number, decimals = 2) {
+  return Number(value || 0).toFixed(decimals);
+}
+
+function stockLabel(product: Product) {
+  const stock = Number(product.current_stock ?? product.quantity ?? 0);
+  return `${round4(stock)} ${product.unit || ''}`.trim();
+}
+
 function clean(value: string) {
   return value.trim().toLowerCase();
 }
 
 function lineSubtotal(item: FormItem) {
-  return Math.round(item.quantity * item.unit_price_ex_vat * 100) / 100;
+  return round2(item.quantity * item.unit_price_ex_vat);
 }
 
 function lineVat(item: FormItem) {
-  return Math.round(lineSubtotal(item) * item.vat_rate * 100) / 100;
+  return round2(lineSubtotal(item) * item.vat_rate);
 }
 
 function lineTotal(item: FormItem) {
-  return Math.round((lineSubtotal(item) + lineVat(item)) * 100) / 100;
+  return round2(lineSubtotal(item) + lineVat(item));
 }
 
 function lineWeight(item: FormItem) {
-  return Math.round(item.quantity * item.weight_kg_per_unit * 10000) / 10000;
+  return round4(item.quantity * item.weight_kg_per_unit);
 }
 
 function itemFromPedido(row: PedidoItem): FormItem {
@@ -65,8 +82,9 @@ function itemFromPedido(row: PedidoItem): FormItem {
     product_id: row.inventory_product_id || row.product_id || null,
     description: row.description || '',
     quantity: Number(row.quantity || 0),
+    current_stock: null,
     unit: row.unit || 'pieza',
-    unit_price_ex_vat: Number(row.unit_price_ex_vat ?? row.unit_price ?? 0),
+    unit_price_ex_vat: round2(Number(row.unit_price_ex_vat ?? row.unit_price ?? 0)),
     vat_rate: Number(row.vat_rate ?? row.tax_rate ?? IVA),
     weight_kg_per_unit: Number(row.weight_kg_per_unit || 0),
     weight_source: Number(row.weight_kg_per_unit || 0) > 0 ? 'catalog' : 'missing',
@@ -131,8 +149,8 @@ export default function PedidoForm() {
   const selectedRemisionFolio = remisionFolio(current);
   const subtotal = items.reduce((sum, item) => sum + lineSubtotal(item), 0);
   const taxTotal = items.reduce((sum, item) => sum + lineVat(item), 0);
-  const total = Math.round((subtotal + taxTotal) * 100) / 100;
-  const totalWeight = Math.round(items.reduce((sum, item) => sum + lineWeight(item), 0) * 10000) / 10000;
+  const total = round2(subtotal + taxTotal);
+  const totalWeight = round4(items.reduce((sum, item) => sum + lineWeight(item), 0));
   const missingWeights = items.filter((item) => item.product_id && item.weight_source === 'missing').length;
 
   const filteredPedidos = useMemo(() => {
@@ -199,7 +217,11 @@ export default function PedidoForm() {
       const detail = await getPedidoDetail(row.folio);
       const pedido = detail.pedido;
       setCurrent(pedido);
-      const selectedCustomer = customers.find((item) => item.id === pedido.customer_id) || null;
+      const selectedCustomer = customers.find((item) => item.id === pedido.customer_id) || {
+        id: pedido.customer_id,
+        folio: '',
+        party_name: pedido.customer_name_snapshot,
+      };
       setCustomer(selectedCustomer);
       setCustomerQuery(selectedCustomer?.party_name || pedido.customer_name_snapshot || '');
       setDocumentDate(pedido.document_date || today());
@@ -227,6 +249,7 @@ export default function PedidoForm() {
     updateItem(key, {
       product_id: product.id,
       description: product.product_name,
+      current_stock: Number(product.current_stock ?? product.quantity ?? 0),
       unit: product.unit || 'pieza',
       weight_kg_per_unit: weight,
       weight_source: weight > 0 ? 'catalog' : 'missing',
@@ -238,7 +261,7 @@ export default function PedidoForm() {
   }
 
   function validate() {
-    if (!customer) return 'Selecciona un cliente de la lista.';
+    if (!customer && !customerQuery.trim()) return 'Selecciona o escribe un cliente.';
     if (!dueDate) return 'Fecha prometida requerida.';
     if (items.some((item) => !item.description.trim() || item.quantity <= 0)) return 'Cada producto necesita descripcion y cantidad mayor a 0.';
     if (items.some((item) => item.unit_price_ex_vat < 0)) return 'El precio no puede ser negativo.';
@@ -247,8 +270,8 @@ export default function PedidoForm() {
 
   function payload() {
     return {
-      customer_id: customer?.id || '',
-      customer_name: customer?.party_name,
+      customer_id: customer?.id || undefined,
+      customer_name: customer?.party_name || customerQuery.trim(),
       document_date: documentDate,
       due_date: dueDate,
       delivery_address: deliveryAddress || undefined,
@@ -260,10 +283,10 @@ export default function PedidoForm() {
       items: items.map((item) => ({
         product_id: item.product_id,
         description: item.description,
-        quantity: item.quantity,
+        quantity: round4(item.quantity),
         unit: item.unit,
-        unit_price_ex_vat: item.unit_price_ex_vat,
-        vat_rate: item.vat_rate,
+        unit_price_ex_vat: round2(item.unit_price_ex_vat),
+        vat_rate: round4(item.vat_rate),
       })),
     };
   }
@@ -421,7 +444,7 @@ export default function PedidoForm() {
                 setCustomerOpen(true);
               }}
               onFocus={() => setCustomerOpen(true)}
-              placeholder="Buscar cliente activo"
+              placeholder="Buscar cliente o escribir nuevo"
               className="input h-12 text-base disabled:bg-slate-100"
             />
             {customerOpen && !customer && isEditable && (
@@ -434,6 +457,9 @@ export default function PedidoForm() {
                 ))}
                 {!filteredCustomers.length && <p className="px-3 py-3 text-sm text-slate-500">Sin coincidencias</p>}
               </div>
+            )}
+            {!customer && customerQuery.trim() && isEditable && (
+              <p className="mt-2 text-xs text-emerald-700">Se creara cliente nuevo: {customerQuery.trim()}</p>
             )}
           </div>
         </section>
@@ -633,7 +659,9 @@ function ProductCard({
                 className="block w-full border-b border-slate-100 px-3 py-3 text-left last:border-b-0 hover:bg-slate-50"
               >
                 <p className="font-semibold text-slate-900">{product.product_name}</p>
-                <p className="text-xs text-slate-500">{[product.sku, product.unit, product.weight_kg ? `${Number(product.weight_kg).toFixed(2)} kg` : 'sin peso'].filter(Boolean).join(' / ')}</p>
+                <p className="text-xs text-slate-500">
+                  {[product.sku, `Exist. ${stockLabel(product)}`, product.weight_kg ? `${Number(product.weight_kg).toFixed(2)} kg` : 'sin peso'].filter(Boolean).join(' / ')}
+                </p>
               </button>
             ))}
             {!suggestions.length && <p className="px-3 py-3 text-sm text-slate-500">Sin coincidencias</p>}
@@ -643,7 +671,7 @@ function ProductCard({
 
       <div className="mt-3 grid grid-cols-3 gap-2">
         <Field label="Cantidad">
-          <input disabled={disabled} type="number" min="0" step="0.01" value={item.quantity} onChange={(event) => onUpdate({ quantity: Number(event.target.value || 0) })} className="input disabled:bg-slate-100" />
+          <input disabled={disabled} type="number" min="0" step="0.01" value={numberInput(item.quantity, 2)} onChange={(event) => onUpdate({ quantity: round4(Number(event.target.value || 0)) })} className="input disabled:bg-slate-100" />
         </Field>
         <Field label="Unidad">
           <input disabled={disabled} value={item.unit} onChange={(event) => onUpdate({ unit: event.target.value })} className="input disabled:bg-slate-100" />
@@ -654,21 +682,24 @@ function ProductCard({
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Field label="Precio sin IVA">
-          <input disabled={disabled} type="number" min="0" step="0.0001" inputMode="decimal" value={item.unit_price_ex_vat} onChange={(event) => onUpdate({ unit_price_ex_vat: Number(event.target.value || 0) })} className="input disabled:bg-slate-100" />
+          <input disabled={disabled} type="number" min="0" step="0.01" inputMode="decimal" value={numberInput(item.unit_price_ex_vat, 2)} onChange={(event) => onUpdate({ unit_price_ex_vat: round2(Number(event.target.value || 0)) })} className="input disabled:bg-slate-100" />
         </Field>
         <Field label="Precio con IVA">
           <input
             disabled={disabled}
             type="number"
             min="0"
-            step="0.0001"
+            step="0.01"
             inputMode="decimal"
-            value={Math.round(item.unit_price_ex_vat * (1 + item.vat_rate) * 10000) / 10000}
-            onChange={(event) => onUpdate({ unit_price_ex_vat: item.vat_rate <= -1 ? 0 : Math.round((Number(event.target.value || 0) / (1 + item.vat_rate)) * 10000) / 10000 })}
+            value={numberInput(round2(item.unit_price_ex_vat * (1 + item.vat_rate)), 2)}
+            onChange={(event) => onUpdate({ unit_price_ex_vat: item.vat_rate <= -1 ? 0 : round2(Number(event.target.value || 0) / (1 + item.vat_rate)) })}
             className="input disabled:bg-slate-100"
           />
         </Field>
       </div>
+      {item.product_id && item.current_stock !== undefined && item.current_stock !== null && (
+        <p className="mt-2 text-xs font-semibold text-slate-600">Existencia: {round4(Number(item.current_stock || 0))} {item.unit}</p>
+      )}
       <div className="mt-3 grid grid-cols-3 gap-2 rounded bg-slate-50 p-2 text-xs">
         <div>
           <p className="text-slate-500">Subtotal</p>
