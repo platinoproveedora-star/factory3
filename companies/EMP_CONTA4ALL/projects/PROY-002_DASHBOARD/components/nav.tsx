@@ -13,6 +13,8 @@ const links = [
 
 const portalUrl = process.env.NEXT_PUBLIC_APPS4ALL_URL || "";
 const MODULE_CODE = "conta4all";
+export const COMPANY_CHANGE_EVENT = "conta4all:company-change";
+export const COMPANY_STORAGE_KEY = "conta4all_company_id";
 
 type CompanyOption = {
   company_id: string;
@@ -58,7 +60,8 @@ export default function Nav({ email }: { email: string }) {
 
   function selectCompany(companyId: string) {
     setSelectedCompanyId(companyId);
-    window.localStorage.setItem("conta4all_company_id", companyId);
+    window.localStorage.setItem(COMPANY_STORAGE_KEY, companyId);
+    window.dispatchEvent(new CustomEvent(COMPANY_CHANGE_EVENT, { detail: companyId }));
   }
 
   return (

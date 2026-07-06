@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import clsx from "clsx";
+import { COMPANY_CHANGE_EVENT, COMPANY_STORAGE_KEY } from "@/components/nav";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 type Cfdi = Record<string, JsonValue | undefined>;
@@ -13,7 +14,7 @@ type Totals = {
   numEgresos: number;
 };
 
-interface Rfc { id: string; rfc: string; label?: string; }
+interface Rfc { id: string; rfc: string; label?: string; company_id?: string | null; }
 
 const MONTHS = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -202,19 +203,37 @@ export default function CfdisPage() {
   const [fiscalSearched, setFiscalSearched] = useState(false);
   const [error, setError] = useState("");
   const [fiscalError, setFiscalError] = useState("");
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
 
   useEffect(() => {
     fetch("/api/rfcs").then((r) => r.json()).then((d) => {
       if (d.ok) {
         const rows = d.data?.rfcs ?? [];
         setRfcs(rows);
-        if (rows.length === 1) {
-          setFilters((f) => ({ ...f, managed_rfc_id: rows[0].id }));
-          setFiscal((f) => ({ ...f, managed_rfc_id: rows[0].id }));
-        }
       }
     });
   }, []);
+
+  useEffect(() => {
+    setSelectedCompanyId(window.localStorage.getItem(COMPANY_STORAGE_KEY) || "");
+    const onCompanyChange = (event: Event) => {
+      setSelectedCompanyId(String((event as CustomEvent).detail || ""));
+    };
+    window.addEventListener(COMPANY_CHANGE_EVENT, onCompanyChange);
+    return () => window.removeEventListener(COMPANY_CHANGE_EVENT, onCompanyChange);
+  }, []);
+
+  const companyRfcs = selectedCompanyId
+    ? rfcs.filter((r) => r.company_id === selectedCompanyId)
+    : [];
+  const visibleRfcs = companyRfcs.length ? companyRfcs : rfcs;
+
+  useEffect(() => {
+    if (visibleRfcs.length !== 1) return;
+    const onlyId = visibleRfcs[0].id;
+    setFilters((f) => (f.managed_rfc_id === onlyId ? f : { ...f, managed_rfc_id: onlyId }));
+    setFiscal((f) => (f.managed_rfc_id === onlyId ? f : { ...f, managed_rfc_id: onlyId }));
+  }, [visibleRfcs]);
 
   const fetchCfdis = useCallback(async (params: Record<string, string>) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
@@ -278,7 +297,7 @@ export default function CfdisPage() {
                 <label className="label">RFC</label>
                 <select className="input" value={filters.managed_rfc_id} onChange={(e) => setFilters((f) => ({ ...f, managed_rfc_id: e.target.value }))}>
                   <option value="">Selecciona RFC</option>
-                  {rfcs.map((r) => <option key={r.id} value={r.id}>{r.rfc}{r.label ? ` - ${r.label}` : ""}</option>)}
+                  {visibleRfcs.map((r) => <option key={r.id} value={r.id}>{r.rfc}{r.label ? ` - ${r.label}` : ""}</option>)}
                 </select>
               </div>
               <div>
@@ -349,7 +368,7 @@ export default function CfdisPage() {
                 <label className="label">RFC</label>
                 <select className="input" value={fiscal.managed_rfc_id} onChange={(e) => setFiscal((f) => ({ ...f, managed_rfc_id: e.target.value }))}>
                   <option value="">Selecciona RFC</option>
-                  {rfcs.map((r) => <option key={r.id} value={r.id}>{r.rfc}{r.label ? ` - ${r.label}` : ""}</option>)}
+                  {visibleRfcs.map((r) => <option key={r.id} value={r.id}>{r.rfc}{r.label ? ` - ${r.label}` : ""}</option>)}
                 </select>
               </div>
               <div>
