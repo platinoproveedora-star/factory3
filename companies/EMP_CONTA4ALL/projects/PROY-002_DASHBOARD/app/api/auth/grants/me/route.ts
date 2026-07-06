@@ -17,7 +17,7 @@ export async function GET() {
       grants,
       companies,
     });
-  } catch {
-    return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || "Token invalido" }, { status: 500 });
   }
 }
