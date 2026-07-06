@@ -1,12 +1,16 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { COMPANY_CHANGE_EVENT, COMPANY_STORAGE_KEY } from "@/components/nav";
 import OverviewChart from "./overview-chart";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 type Cfdi = Record<string, JsonValue | undefined>;
 
-interface Rfc { id: string; rfc: string; label?: string; }
+interface Rfc { id: string; rfc: string; label?: string; company_id?: string | null; }
+interface CompanyOption { company_id: string; name?: string; }
+
+const MODULE_CODE = "conta4all";
 
 const fmt = (n: number) => n.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
 
@@ -67,22 +71,63 @@ function buildKpis(cfdis: Cfdi[]) {
 }
 
 export default function DashboardPage() {
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [rfcs, setRfcs] = useState<Rfc[]>([]);
   const [selectedRfc, setSelectedRfc] = useState("");
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [cfdis, setCfdis] = useState<Cfdi[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const selectedCompany = companies.find((company) => company.company_id === selectedCompanyId);
 
   useEffect(() => {
-    fetch("/api/rfcs").then((r) => r.json()).then((d) => {
-      if (d.ok) {
-        const rows = d.data?.rfcs ?? [];
-        setRfcs(rows);
-        if (rows.length) setSelectedRfc(rows[0].id);
-      }
-    });
+    fetch("/api/auth/grants/me")
+      .then((res) => res.json())
+      .then((json) => {
+        const grants = Array.isArray(json.grants) ? json.grants : [];
+        const allowedCompanyIds = new Set(
+          grants
+            .filter((grant: any) => grant.modulo_code === MODULE_CODE)
+            .map((grant: any) => String(grant.company_id || ""))
+            .filter(Boolean)
+        );
+        const rows = (Array.isArray(json.companies) ? json.companies : []).filter((company: CompanyOption) =>
+          allowedCompanyIds.has(company.company_id)
+        );
+        const stored = window.localStorage.getItem(COMPANY_STORAGE_KEY) || "";
+        const initialCompany =
+          rows.find((company: CompanyOption) => company.company_id === stored)?.company_id ||
+          rows.find((company: CompanyOption) => company.company_id === json.user?.company_id)?.company_id ||
+          rows[0]?.company_id ||
+          "";
+        setCompanies(rows);
+        setSelectedCompanyId(initialCompany);
+      })
+      .catch(() => null);
   }, []);
+
+  useEffect(() => {
+    if (!selectedCompanyId) return;
+    window.localStorage.setItem(COMPANY_STORAGE_KEY, selectedCompanyId);
+    window.dispatchEvent(new CustomEvent(COMPANY_CHANGE_EVENT, { detail: selectedCompanyId }));
+    setRfcs([]);
+    setSelectedRfc("");
+    setCfdis([]);
+    setError("");
+    fetch(`/api/rfcs?company_id=${encodeURIComponent(selectedCompanyId)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok) {
+          const rows = d.data?.rfcs ?? [];
+          setRfcs(rows);
+          setSelectedRfc(rows[0]?.id || "");
+        } else {
+          setError(d.error || "No se pudieron cargar RFCs");
+        }
+      })
+      .catch(() => setError("No se pudieron cargar RFCs"));
+  }, [selectedCompanyId]);
 
   const load = useCallback(async () => {
     if (!selectedRfc) return;
@@ -118,9 +163,37 @@ export default function DashboardPage() {
       <h1 className="text-xl font-bold mb-1">Resumen</h1>
       <p className="text-muted text-sm mb-6">Vista fiscal por RFC</p>
 
-      {rfcs.length === 0 ? (
+      <div className="card mb-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">Empresa activa</p>
+            <p className="mt-1 text-sm text-slate-300">
+              {selectedCompany?.name || selectedCompanyId || "Selecciona una empresa"} · Los RFCs y el resumen se cargan para esta empresa.
+            </p>
+          </div>
+          <select
+            className="input md:max-w-sm"
+            value={selectedCompanyId}
+            onChange={(e) => setSelectedCompanyId(e.target.value)}
+            disabled={!companies.length}
+          >
+            {companies.length === 0 ? <option value="">Sin empresas disponibles</option> : null}
+            {companies.map((company) => (
+              <option key={company.company_id} value={company.company_id}>
+                {company.name || company.company_id}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {!selectedCompanyId ? (
         <div className="card text-center py-12">
-          <p className="text-muted mb-3">Aun no tienes RFCs registrados</p>
+          <p className="text-muted">No tienes empresas activas para Conta4All.</p>
+        </div>
+      ) : rfcs.length === 0 ? (
+        <div className="card text-center py-12">
+          <p className="text-muted mb-3">Esta empresa aun no tiene RFCs registrados</p>
           <Link href="/dashboard/rfcs" className="btn-primary">Agregar RFC</Link>
         </div>
       ) : (

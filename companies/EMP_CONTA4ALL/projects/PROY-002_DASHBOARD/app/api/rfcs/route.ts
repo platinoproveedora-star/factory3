@@ -54,7 +54,7 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ ok: false, error: "id requerido" }, { status: 400 });
   const result = await callSkill("vertical_auth_security/security_managed_rfc", {
     action: "delete",
-    id,
+    managed_rfc_id: id,
     user_id: user.sub,
     modulo_code: MODULO_CODE,
     dry_run: false,

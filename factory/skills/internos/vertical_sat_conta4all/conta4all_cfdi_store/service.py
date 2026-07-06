@@ -10,6 +10,19 @@ import urllib.error
 _DDL_SETUP = """
 CREATE SCHEMA IF NOT EXISTS conta4all;
 
+CREATE TABLE IF NOT EXISTS conta4all.managed_rfcs (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id uuid NOT NULL,
+  company_id    text,
+  rfc           text NOT NULL,
+  label         text DEFAULT '',
+  created_at    timestamptz DEFAULT now(),
+  UNIQUE (owner_user_id, rfc)
+);
+
+ALTER TABLE conta4all.managed_rfcs ADD COLUMN IF NOT EXISTS company_id text;
+CREATE INDEX IF NOT EXISTS managed_rfcs_company_idx ON conta4all.managed_rfcs (company_id);
+
 CREATE TABLE IF NOT EXISTS conta4all.cfdi_documentos (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   managed_rfc_id uuid NOT NULL,
@@ -69,6 +82,7 @@ CREATE INDEX IF NOT EXISTS sat_solicitudes_lookup_idx
 
 ALTER TABLE conta4all.cfdi_documentos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conta4all.sat_solicitudes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conta4all.managed_rfcs ENABLE ROW LEVEL SECURITY;
 
 GRANT USAGE ON SCHEMA conta4all TO service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA conta4all TO service_role;
