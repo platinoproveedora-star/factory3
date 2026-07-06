@@ -84,7 +84,8 @@ class ErpVentasRemisionCancelService:
             return updated
         data = updated.get("data") or []
         remision = data[0] if isinstance(data, list) and data else data
-        return {"ok": True, "data": {"remision": remision, "reversals": reversals}}
+        released_pedido = self._release_parent_pedido(sales_db, doc, note, now)
+        return {"ok": True, "data": {"remision": remision, "reversals": reversals, "pedido_liberado": released_pedido}}
 
     def _save_reversal(self, context: dict, cfg: dict, doc: dict, item: dict, product_id: str, quantity: float, note: str) -> dict:
         service_path = _SKILLS_ROOT / "vertical_erp_inventory" / "erp_inventory_kardex_save" / "service.py"
@@ -129,11 +130,54 @@ class ErpVentasRemisionCancelService:
         result = db.rest_select(
             "sales_documents",
             filters=filters,
-            select="id,folio,external_folio,customer_id,customer_name_snapshot,status,document_date,delivery_address,total,balance_total,notes",
+            select="id,folio,external_folio,parent_document_id,root_document_id,customer_id,customer_name_snapshot,status,document_date,delivery_address,total,balance_total,notes,metadata",
             limit=1,
         )
         rows = result.get("data") or []
         return rows[0] if rows else None
+
+    def _release_parent_pedido(self, db: SupabaseClient, doc: dict, note: str, timestamp: str) -> dict | None:
+        pedido_id = str(doc.get("parent_document_id") or "").strip()
+        metadata = doc.get("metadata") if isinstance(doc.get("metadata"), dict) else {}
+        pedido_folio = str(metadata.get("source_pedido_folio") or metadata.get("pedido_folio") or "").strip()
+        if not pedido_id and not pedido_folio:
+            return None
+        filters = {"id": pedido_id} if pedido_id else {"folio": pedido_folio}
+        result = db.rest_select(
+            "sales_documents",
+            filters={**filters, "document_type": "eq.pedido"},
+            select="id,folio,status,metadata",
+            limit=1,
+        )
+        rows = result.get("data") or []
+        if not result.get("ok") or not rows:
+            return None
+        pedido = rows[0]
+        pedido_metadata = pedido.get("metadata") if isinstance(pedido.get("metadata"), dict) else {}
+        canceled = pedido_metadata.get("remisiones_canceladas") if isinstance(pedido_metadata.get("remisiones_canceladas"), list) else []
+        if doc.get("folio") not in canceled:
+            canceled.append(doc.get("folio"))
+        history = pedido_metadata.get("remisiones_history") if isinstance(pedido_metadata.get("remisiones_history"), list) else []
+        history.append({"folio": doc.get("folio"), "id": doc.get("id"), "status": "cancelada", "canceled_at": timestamp, "reason": note})
+        pedido_metadata.update(
+            {
+                "remision_folio": None,
+                "remision_id": None,
+                "released_at": timestamp,
+                "released_by_cancelled_remision_folio": doc.get("folio"),
+                "remisiones_canceladas": canceled,
+                "remisiones_history": history,
+            }
+        )
+        update = db.rest_update(
+            "sales_documents",
+            {"status": "liberado", "metadata": pedido_metadata, "updated_at": timestamp},
+            {"id": pedido["id"]},
+        )
+        if not update.get("ok"):
+            return None
+        updated = update.get("data") or []
+        return updated[0] if isinstance(updated, list) and updated else updated
 
     def _already_reversed(self, rows: list[dict], doc_id: str, folio: str) -> bool:
         for row in rows:

@@ -308,6 +308,33 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_ventas/erp_ventas_pedido_detail": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_pedido_detail",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Devuelve encabezado e items de un pedido ERP para edicion o remisionado.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_pedido_detail",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_pedido_update": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_pedido_update",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Actualiza encabezado e items de pedidos ERP solo si no estan remisionados.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_pedido_update",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_ventas/erp_ventas_pedido_to_remision": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_pedido_to_remision",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Convierte un pedido editable/liberado en remision, liga documentos y bloquea el pedido.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_pedido_to_remision",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_ventas/erp_ventas_pedido_pdf": {
     "tipo": "interno",
     "nombre": "vertical_erp_ventas/erp_ventas_pedido_pdf",

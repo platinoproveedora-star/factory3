@@ -89,6 +89,8 @@ class ErpVentasRemisionCreateService:
             "project_code": cfg["project_ventas"],
             "module_code": cfg["module_ventas"],
             "document_type": "remision",
+            "parent_document_id": str(context.get("parent_document_id") or "").strip() or None,
+            "root_document_id": str(context.get("root_document_id") or context.get("parent_document_id") or "").strip() or None,
             "external_folio": external_folio,
             "customer_id": customer_id,
             "customer_name_snapshot": customer_name_snapshot,
@@ -110,6 +112,7 @@ class ErpVentasRemisionCreateService:
                 "customer_schema": cfg["schema_inventario"],
                 "customer_table": "erp_parties",
                 "customer_id": customer_id,
+                **(context.get("metadata") if isinstance(context.get("metadata"), dict) else {}),
             },
         }
         doc_result = SupabaseClient(ctx_ventas).rest_insert("sales_documents", doc_row)
@@ -131,6 +134,7 @@ class ErpVentasRemisionCreateService:
             item_folio = item_folio_result["data"]["folio"]
             product = self._get_product(context, cfg, item.get("product_id")) if item.get("product_id") else {}
 
+            item_metadata = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
             item_row = {
                 "folio": item_folio,
                 "empresa_id": cfg["empresa_id"],
@@ -171,6 +175,7 @@ class ErpVentasRemisionCreateService:
                     "lot_cost_snapshot": item.get("lot_cost_snapshot"),
                     "avg_cost_snapshot": item.get("avg_cost_snapshot"),
                     "last_cost_snapshot": item.get("last_cost_snapshot"),
+                    **item_metadata,
                 },
             }
             item_result = SupabaseClient(ctx_ventas).rest_insert("sales_document_items", item_row)
@@ -329,6 +334,7 @@ class ErpVentasRemisionCreateService:
                     "line_subtotal": line_subtotal,
                     "line_total": line_total,
                     "lot_code": str(item.get("lot_code") or "").strip() or None,
+                    "metadata": item.get("metadata") if isinstance(item.get("metadata"), dict) else {},
                 }
             )
         return parsed, None
@@ -476,6 +482,7 @@ class ErpVentasRemisionCreateService:
                     "lot_cost_snapshot": item.get("lot_cost_snapshot"),
                     "avg_cost_snapshot": item.get("avg_cost_snapshot"),
                     "last_cost_snapshot": item.get("last_cost_snapshot"),
+                    **(item.get("metadata") if isinstance(item.get("metadata"), dict) else {}),
                 },
             }
         )

@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_pedido_to_remision",
+  "vertical": "vertical_erp_ventas",
+  "descripcion": "Convierte un pedido editable/liberado en remision, liga documentos y bloquea el pedido.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

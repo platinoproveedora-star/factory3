@@ -206,6 +206,13 @@ export default function PedidoForm() {
     }
   }
 
+  function preventImplicitSubmit(event: React.KeyboardEvent<HTMLFormElement>) {
+    if (event.key !== 'Enter') return;
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'TEXTAREA') return;
+    event.preventDefault();
+  }
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center px-5">
@@ -261,7 +268,7 @@ export default function PedidoForm() {
         </div>
       </header>
 
-      <form id="pedido-form" onSubmit={submit} className="mx-auto max-w-2xl space-y-3 px-4 py-4">
+      <form id="pedido-form" onSubmit={submit} onKeyDown={preventImplicitSubmit} className="mx-auto max-w-2xl space-y-3 px-4 py-4">
         {error && <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
         <section className="rounded border border-slate-200 bg-white p-4">

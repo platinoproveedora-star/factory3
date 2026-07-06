@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_pedido_update",
+  "vertical": "vertical_erp_ventas",
+  "descripcion": "Actualiza encabezado e items de pedidos ERP solo si no estan remisionados.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

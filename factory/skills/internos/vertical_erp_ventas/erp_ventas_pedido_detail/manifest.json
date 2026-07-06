@@ -1,0 +1,7 @@
+{
+  "name": "vertical_erp_ventas/erp_ventas_pedido_detail",
+  "vertical": "vertical_erp_ventas",
+  "descripcion": "Devuelve encabezado e items de un pedido ERP para edicion o remisionado.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}
