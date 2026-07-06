@@ -1,7 +1,11 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { COMPANY_CHANGE_EVENT, COMPANY_STORAGE_KEY, RFC_STORAGE_KEY } from "@/components/nav";
 
-interface Rfc { id: string; rfc: string; label?: string; }
+const MODULE_CODE = "conta4all";
+
+interface Rfc { id: string; rfc: string; label?: string; company_id?: string | null; }
+interface CompanyOption { company_id: string; name?: string; }
 
 type SyncState = "idle" | "starting" | "polling" | "finalizing" | "done" | "error";
 
@@ -16,6 +20,8 @@ function toB64(file: File): Promise<string> {
 
 export default function SincronizarPage() {
   const [rfcs, setRfcs] = useState<Rfc[]>([]);
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [form, setForm] = useState({
     managed_rfc_id: "",
     rfc: "",
@@ -34,15 +40,74 @@ export default function SincronizarPage() {
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    fetch("/api/rfcs").then((r) => r.json()).then((d) => {
-      if (d.ok) setRfcs(d.data?.rfcs ?? []);
-    });
-    return () => { if (pollTimer.current) clearTimeout(pollTimer.current); };
+    fetch("/api/auth/grants/me")
+      .then((res) => res.json())
+      .then((json) => {
+        const grants = Array.isArray(json.grants) ? json.grants : [];
+        const allowedCompanyIds = new Set(
+          grants
+            .filter((grant: any) => grant.modulo_code === MODULE_CODE)
+            .map((grant: any) => String(grant.company_id || ""))
+            .filter(Boolean)
+        );
+        const rows = (Array.isArray(json.companies) ? json.companies : []).filter((company: CompanyOption) =>
+          allowedCompanyIds.has(company.company_id)
+        );
+        const stored = window.localStorage.getItem(COMPANY_STORAGE_KEY) || "";
+        const initialCompany =
+          rows.find((company: CompanyOption) => company.company_id === stored)?.company_id ||
+          rows.find((company: CompanyOption) => company.company_id === json.user?.company_id)?.company_id ||
+          rows[0]?.company_id ||
+          "";
+        setCompanies(rows);
+        setSelectedCompanyId(initialCompany);
+      })
+      .catch(() => {});
+
+    const onCompanyChange = (event: Event) => {
+      setSelectedCompanyId(String((event as CustomEvent).detail || ""));
+    };
+    window.addEventListener(COMPANY_CHANGE_EVENT, onCompanyChange);
+    return () => {
+      window.removeEventListener(COMPANY_CHANGE_EVENT, onCompanyChange);
+      if (pollTimer.current) clearTimeout(pollTimer.current);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!selectedCompanyId) {
+      setRfcs([]);
+      setForm((f) => ({ ...f, managed_rfc_id: "", rfc: "" }));
+      return;
+    }
+    window.localStorage.setItem(COMPANY_STORAGE_KEY, selectedCompanyId);
+    window.dispatchEvent(new CustomEvent(COMPANY_CHANGE_EVENT, { detail: selectedCompanyId }));
+    fetch(`/api/rfcs?company_id=${encodeURIComponent(selectedCompanyId)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) {
+          setRfcs([]);
+          setForm((f) => ({ ...f, managed_rfc_id: "", rfc: "" }));
+          return;
+        }
+        const rows = (d.data?.rfcs ?? []) as Rfc[];
+        const storedRfc = window.localStorage.getItem(RFC_STORAGE_KEY) || "";
+        const nextRfc = rows.find((r) => r.id === storedRfc) || rows[0];
+        setRfcs(rows);
+        setForm((f) => ({ ...f, managed_rfc_id: nextRfc?.id || "", rfc: nextRfc?.rfc || "" }));
+      })
+      .catch(() => setRfcs([]));
+  }, [selectedCompanyId]);
 
   function selectRfc(id: string) {
     const r = rfcs.find((x) => x.id === id);
+    if (id) window.localStorage.setItem(RFC_STORAGE_KEY, id);
     setForm((f) => ({ ...f, managed_rfc_id: id, rfc: r?.rfc ?? "" }));
+  }
+
+  function companyName(companyId?: string | null) {
+    if (!companyId) return "Selecciona una empresa";
+    return companies.find((c) => c.company_id === companyId)?.name || companyId;
   }
 
   async function handleStart(e: React.FormEvent) {
@@ -122,6 +187,30 @@ export default function SincronizarPage() {
       <h1 className="text-xl font-bold mb-1">Sincronizar SAT</h1>
       <p className="text-muted text-sm mb-6">Descarga tus CFDIs directamente del SAT</p>
 
+      <div className="card mb-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">Empresa activa</p>
+            <p className="mt-1 text-sm text-slate-300">
+              {companyName(selectedCompanyId)} - La descarga se guardara en el RFC de esta empresa.
+            </p>
+          </div>
+          <select
+            className="input md:max-w-sm"
+            value={selectedCompanyId}
+            onChange={(e) => setSelectedCompanyId(e.target.value)}
+            disabled={!companies.length || isBusy}
+          >
+            {companies.length === 0 ? <option value="">Sin empresas disponibles</option> : null}
+            {companies.map((company) => (
+              <option key={company.company_id} value={company.company_id}>
+                {company.name || company.company_id}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="card">
         <form onSubmit={handleStart} className="space-y-4">
           <div>
@@ -131,6 +220,7 @@ export default function SincronizarPage() {
               value={form.managed_rfc_id}
               onChange={(e) => selectRfc(e.target.value)}
               required
+              disabled={!selectedCompanyId}
             >
               <option value="">Selecciona un RFC</option>
               {rfcs.map((r) => (
@@ -209,7 +299,7 @@ export default function SincronizarPage() {
             </div>
           )}
 
-          <button type="submit" className="btn-primary w-full" disabled={isBusy}>
+          <button type="submit" className="btn-primary w-full" disabled={isBusy || !selectedCompanyId || !form.managed_rfc_id}>
             {isBusy ? "Sincronizando..." : "Iniciar sincronización"}
           </button>
         </form>
