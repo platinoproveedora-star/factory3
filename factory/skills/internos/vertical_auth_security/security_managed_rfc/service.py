@@ -75,9 +75,10 @@ class SecurityManagedRfcService:
 
     def _list(self, context: dict, url: str, key: str, user_id: str) -> dict:
         company_id = (context.get("company_id") or "").strip()
-        qs = f"?owner_user_id=eq.{urllib.parse.quote(user_id)}&select=id,rfc,label,company_id,created_at&order=created_at.asc"
         if company_id:
-            qs += f"&company_id=eq.{urllib.parse.quote(company_id)}"
+            qs = f"?company_id=eq.{urllib.parse.quote(company_id)}&select=id,rfc,label,company_id,created_at&order=created_at.asc"
+        else:
+            qs = f"?owner_user_id=eq.{urllib.parse.quote(user_id)}&select=id,rfc,label,company_id,created_at&order=created_at.asc"
         rows = self._pg_get(url, key, f"/rest/v1/managed_rfcs{qs}", schema="conta4all")
         return {
             "ok":      True,
