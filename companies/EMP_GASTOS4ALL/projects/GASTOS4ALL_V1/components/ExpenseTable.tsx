@@ -37,9 +37,10 @@ function gastosToCSV(rows: Gasto[]) {
   return [h.join(","), ...b].join("\n");
 }
 
-export default function ExpenseTable({ gastos: initialGastos, bankAccounts, categorias: initialCategorias, empresaId, projectCode = "GASTOS4ALL_V1" }: Props) {
+export default function ExpenseTable({ gastos: initialGastos, bankAccounts: initialBankAccounts, categorias: initialCategorias, empresaId, projectCode = "GASTOS4ALL_V1" }: Props) {
   const [gastos, setGastos]         = useState<Gasto[]>(initialGastos);
   const [categorias, setCategorias] = useState<Categoria[]>(initialCategorias);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(initialBankAccounts);
   const [q, setQ]                   = useState("");
   const [fechaDesde, setFechaDesde] = useState(() => {
     const d = new Date();
@@ -60,6 +61,11 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
   const [newCatName, setNewCatName] = useState("");
   const [catSaving, setCatSaving]   = useState(false);
   const [catError, setCatError]     = useState("");
+  const [manageCuentas, setManageCuentas] = useState(false);
+  const [newCuentaName, setNewCuentaName] = useState("");
+  const [newCuentaBanco, setNewCuentaBanco] = useState("");
+  const [cuentaSaving, setCuentaSaving]     = useState(false);
+  const [cuentaError, setCuentaError]       = useState("");
 
   const CATEGORIES = useMemo(() => {
     const active = categorias.filter((c) => c.activo).map((c) => c.nombre);
@@ -68,6 +74,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
     return from.length > 0 ? from : ["combustible", "gastos varios", "taller", "nomina", "otros"];
   }, [categorias, gastos]);
 
+  const activeAccounts = useMemo(() => bankAccounts.filter((a) => a.activo), [bankAccounts]);
   const accountById = useMemo(() => new Map(bankAccounts.map((a) => [a.id, a])), [bankAccounts]);
 
   async function apiPost(action: string, extra: object) {
@@ -116,6 +123,43 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
       setCategorias((prev) => prev.map((c) => (c.id === categoria.id ? categoria : c)));
     } catch (e: any) { setCatError(e.message); }
     finally { setCatSaving(false); }
+  }
+
+  async function apiPostCuenta(action: string, extra: object) {
+    const res = await fetch("/api/cuentas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, company_id: empresaId, ...extra }),
+    });
+    const json = await res.json();
+    if (!res.ok || json?.ok === false) throw new Error(json?.error ?? "Error en la operación");
+    return json;
+  }
+
+  async function addAccount() {
+    const nombre = newCuentaName.trim();
+    if (!nombre) return;
+    setCuentaSaving(true); setCuentaError("");
+    try {
+      const result = await apiPostCuenta("create", { nombre, banco: newCuentaBanco.trim() || undefined });
+      const cuenta: BankAccount = result.cuenta;
+      setBankAccounts((prev) => {
+        const exists = prev.some((c) => c.id === cuenta.id);
+        return exists ? prev.map((c) => (c.id === cuenta.id ? cuenta : c)) : [...prev, cuenta];
+      });
+      setNewCuentaName(""); setNewCuentaBanco("");
+    } catch (e: any) { setCuentaError(e.message); }
+    finally { setCuentaSaving(false); }
+  }
+
+  async function toggleAccount(acc: BankAccount) {
+    setCuentaSaving(true); setCuentaError("");
+    try {
+      const result = await apiPostCuenta("toggle", { id: acc.id, activo: !acc.activo });
+      const cuenta: BankAccount = result.cuenta;
+      setBankAccounts((prev) => prev.map((c) => (c.id === cuenta.id ? cuenta : c)));
+    } catch (e: any) { setCuentaError(e.message); }
+    finally { setCuentaSaving(false); }
   }
 
   const filtered = useMemo(() => {
@@ -167,12 +211,12 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
         vehiculo: draft.vehiculo || null,
         cta_retiro_id: draft.cta_retiro_id || null,
         cta_retiro_folio: accountById.get(draft.cta_retiro_id)?.folio || null,
-        cta_retiro_nombre: accountById.get(draft.cta_retiro_id)?.account_name || null,
+        cta_retiro_nombre: accountById.get(draft.cta_retiro_id)?.nombre || null,
       });
       setGastos((prev) =>
         prev.map((g) =>
           g.folio === folio
-            ? { ...g, monto: parseFloat(draft.monto), fecha: draft.fecha, descripcion: draft.descripcion, categoria: draft.categoria, vehiculo: draft.vehiculo || null, cta_retiro_id: draft.cta_retiro_id || null, cta_retiro_nombre: accountById.get(draft.cta_retiro_id)?.account_name || null, cta_retiro_folio: accountById.get(draft.cta_retiro_id)?.folio || null }
+            ? { ...g, monto: parseFloat(draft.monto), fecha: draft.fecha, descripcion: draft.descripcion, categoria: draft.categoria, vehiculo: draft.vehiculo || null, cta_retiro_id: draft.cta_retiro_id || null, cta_retiro_nombre: accountById.get(draft.cta_retiro_id)?.nombre || null, cta_retiro_folio: accountById.get(draft.cta_retiro_id)?.folio || null }
             : g
         )
       );
@@ -205,7 +249,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
         vehiculo: newRow.vehiculo || null,
         cta_retiro_id: newRow.cta_retiro_id || null,
         cta_retiro_folio: accountById.get(newRow.cta_retiro_id)?.folio || null,
-        cta_retiro_nombre: accountById.get(newRow.cta_retiro_id)?.account_name || null,
+        cta_retiro_nombre: accountById.get(newRow.cta_retiro_id)?.nombre || null,
       });
       const saved = result?.gasto ?? {};
       setGastos((prev) => [{
@@ -215,7 +259,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
         vehiculo: newRow.vehiculo || null,
         cta_retiro_id: newRow.cta_retiro_id || null,
         cta_retiro_folio: accountById.get(newRow.cta_retiro_id)?.folio || null,
-        cta_retiro_nombre: accountById.get(newRow.cta_retiro_id)?.account_name || null,
+        cta_retiro_nombre: accountById.get(newRow.cta_retiro_id)?.nombre || null,
         nombre_usuario: "dashboard",
       }, ...prev]);
       setNewRow({ monto:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", categoria: CATEGORIES[0] ?? "", vehiculo:"", cta_retiro_id:"" });
@@ -259,6 +303,9 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
         </button>
         <button onClick={() => { setManageCats((v) => !v); setCatError(""); }} className="btn-ghost inline-flex items-center gap-2">
           <Tag size={14} /> Categorías
+        </button>
+        <button onClick={() => { setManageCuentas((v) => !v); setCuentaError(""); }} className="btn-ghost inline-flex items-center gap-2">
+          <Tag size={14} /> Cuentas
         </button>
         <button onClick={handleExport} className="btn-ghost inline-flex items-center gap-2">
           <Download size={14} /> CSV
@@ -309,6 +356,56 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
         </div>
       )}
 
+      {/* Bank account management */}
+      {manageCuentas && (
+        <div className="mb-4 rounded-xl border border-primary/40 bg-primary/5 p-4">
+          <p className="mb-3 text-xs font-semibold text-primary">Cuentas de retiro de {empresaId}</p>
+          {cuentaError && <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 px-3 py-1.5 text-xs text-red-400">{cuentaError}</div>}
+          <div className="mb-3 flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Nombre de la cuenta"
+              value={newCuentaName}
+              onChange={(e) => setNewCuentaName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") addAccount(); }}
+              className={inputCls + " w-48"}
+            />
+            <input
+              type="text"
+              placeholder="Banco (opcional)"
+              value={newCuentaBanco}
+              onChange={(e) => setNewCuentaBanco(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") addAccount(); }}
+              className={inputCls + " w-40"}
+            />
+            <button onClick={addAccount} disabled={cuentaSaving || !newCuentaName.trim()} className="btn-primary inline-flex items-center gap-1 disabled:opacity-40">
+              <Plus size={13} /> Agregar
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {bankAccounts.length === 0 && <span className="text-xs text-muted">Sin cuentas configuradas todavía.</span>}
+            {bankAccounts.map((a) => (
+              <span
+                key={a.id}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${
+                  a.activo ? "bg-slate-700 text-slate-200" : "bg-slate-800 text-slate-500 line-through"
+                }`}
+              >
+                {a.nombre}{a.banco ? ` · ${a.banco}` : ""}
+                <button
+                  onClick={() => toggleAccount(a)}
+                  disabled={cuentaSaving}
+                  title={a.activo ? "Quitar" : "Reactivar"}
+                  className="text-current hover:opacity-70 disabled:opacity-40"
+                >
+                  {a.activo ? <X size={11} /> : <RotateCcw size={11} />}
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* New expense form */}
       {adding && (
         <div className="mb-4 rounded-xl border border-primary/40 bg-primary/5 p-4">
@@ -325,7 +422,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
             <div><label className="label">Cta retiro</label>
               <select value={newRow.cta_retiro_id} onChange={(e) => setNewRow((p) => ({...p, cta_retiro_id: e.target.value}))} className={selectCls + " min-w-[160px]"}>
                 <option value="">Sin asignar</option>
-                {bankAccounts.map((a) => <option key={a.id} value={a.id}>{a.account_name}</option>)}
+                {activeAccounts.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
               </select>
             </div>
             <div className="min-w-[160px] flex-1"><label className="label">Descripción</label><input type="text" placeholder="opcional" value={newRow.descripcion} onChange={(e) => setNewRow((p) => ({...p, descripcion: e.target.value}))} className={inputCls + " w-full"} /></div>
@@ -367,7 +464,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
                       : <span className="text-xs text-slate-400">{g.vehiculo || "—"}</span>}
                   </td>
                   <td className="px-3 py-2">
-                    {isEditing ? <select value={draft.cta_retiro_id} onChange={(e) => setDraft((p) => ({...p, cta_retiro_id: e.target.value}))} className={selectCls + " min-w-[140px]"}><option value="">Sin asignar</option>{bankAccounts.map((a) => <option key={a.id} value={a.id}>{a.account_name}</option>)}</select>
+                    {isEditing ? <select value={draft.cta_retiro_id} onChange={(e) => setDraft((p) => ({...p, cta_retiro_id: e.target.value}))} className={selectCls + " min-w-[140px]"}><option value="">Sin asignar</option>{activeAccounts.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}</select>
                       : <span className="text-xs text-slate-400">{g.cta_retiro_nombre || "Sin asignar"}</span>}
                   </td>
                   <td className="max-w-[200px] px-3 py-2">

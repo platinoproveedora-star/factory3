@@ -14,15 +14,7 @@ export type Gasto = {
   cta_retiro_nombre?: string | null;
 };
 
-export type BankAccount = {
-  id: string;
-  folio: string;
-  account_name: string;
-  bank_name: string | null;
-  account_number_mask: string | null;
-  status: string;
-  current_balance: number;
-};
+export type BankAccount = { id: string; folio: string; nombre: string; banco: string | null; tipo: string; activo: boolean };
 
 export type Categoria = { id: string; nombre: string; activo: boolean };
 
@@ -117,6 +109,39 @@ export async function setCategoryActive(empresaId: string, id: string, activo: b
   const qs = new URLSearchParams({ id: `eq.${id}`, empresa_id: `eq.${empresaId}` });
   const rows = await sbWrite<Categoria[]>(`categorias_gasto?${qs}`, { method: "PATCH", body: JSON.stringify({ activo }) });
   if (!rows[0]) throw new Error("categoría no encontrada");
+  return rows[0];
+}
+
+export async function listAllBankAccounts(empresaId: string): Promise<BankAccount[]> {
+  const qs = new URLSearchParams({ select: "id,folio,nombre,banco,tipo,activo", empresa_id: `eq.${empresaId}`, order: "nombre.asc" });
+  return sbGet<BankAccount[]>(`cuentas_retiro?${qs}`);
+}
+
+export async function createBankAccount(empresaId: string, nombre: string, banco?: string): Promise<BankAccount> {
+  const clean = nombre.trim();
+  if (!clean) throw new Error("nombre de cuenta requerido");
+  const existing = await listAllBankAccounts(empresaId);
+  const match = existing.find((c) => c.nombre.toLowerCase() === clean.toLowerCase());
+  if (match) {
+    if (match.activo) throw new Error("Esa cuenta ya existe");
+    return setBankAccountActive(empresaId, match.id, true);
+  }
+  const row = {
+    folio: await nextFolio("cuentas_retiro", "CTA"),
+    nombre: clean,
+    banco: banco?.trim() || null,
+    tipo: "bank",
+    activo: true,
+    empresa_id: empresaId,
+  };
+  const saved = await sbWrite<BankAccount[]>("cuentas_retiro", { method: "POST", body: JSON.stringify(row) });
+  return saved[0];
+}
+
+export async function setBankAccountActive(empresaId: string, id: string, activo: boolean): Promise<BankAccount> {
+  const qs = new URLSearchParams({ id: `eq.${id}`, empresa_id: `eq.${empresaId}` });
+  const rows = await sbWrite<BankAccount[]>(`cuentas_retiro?${qs}`, { method: "PATCH", body: JSON.stringify({ activo }) });
+  if (!rows[0]) throw new Error("cuenta no encontrada");
   return rows[0];
 }
 

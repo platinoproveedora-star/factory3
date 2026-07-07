@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { calcStats, getGastos, listAllCategories } from "@/lib/db";
+import { calcStats, getGastos, listAllBankAccounts, listAllCategories } from "@/lib/db";
 import { companyName, listCompanies, listGrants } from "@/lib/platform";
 import Nav                   from "@/components/Nav";
 import KpiGrid               from "@/components/KpiGrid";
@@ -51,6 +51,7 @@ export default async function DashboardPage({
   let stats:  ReturnType<typeof calcStats> = { total:0, count:0, avg:0, por_categoria:[], totalMes:0, totalMesAnt:0, variacion:0 };
   let gastos: Awaited<ReturnType<typeof getGastos>> = [];
   let categorias: Awaited<ReturnType<typeof listAllCategories>> = [];
+  let bankAccounts: Awaited<ReturnType<typeof listAllBankAccounts>> = [];
   let loadError: string | null = null;
 
   try {
@@ -64,6 +65,12 @@ export default async function DashboardPage({
     categorias = await listAllCategories(empresaId);
   } catch (e: any) {
     loadError = loadError ? `${loadError} | ${e?.message}` : (e?.message ?? "Error al cargar categorías");
+  }
+
+  try {
+    bankAccounts = await listAllBankAccounts(empresaId);
+  } catch (e: any) {
+    loadError = loadError ? `${loadError} | ${e?.message}` : (e?.message ?? "Error al cargar cuentas");
   }
 
   const today        = new Date();
@@ -122,7 +129,7 @@ export default async function DashboardPage({
         <div className="card">
           <h3 className="mb-3 text-sm font-semibold text-slate-300">Movimientos</h3>
           <Suspense fallback={<div className="h-64 animate-pulse rounded bg-slate-800" />}>
-            <ExpenseTable gastos={gastos} bankAccounts={[]} categorias={categorias} empresaId={empresaId} />
+            <ExpenseTable gastos={gastos} bankAccounts={bankAccounts} categorias={categorias} empresaId={empresaId} />
           </Suspense>
         </div>
 

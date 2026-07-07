@@ -7,17 +7,18 @@ import urllib.request
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS gastos4all.cuentas_retiro (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  folio        text UNIQUE NOT NULL,
-  nombre       text NOT NULL,
-  banco        text,
-  numero_mask  text,
-  tipo         text DEFAULT 'cuenta_corriente',
-  activo       boolean DEFAULT true,
-  empresa_id   text NOT NULL,
-  project_code text,
-  module_code  text,
-  created_at   timestamptz DEFAULT now()
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  folio               text UNIQUE NOT NULL,
+  nombre              text NOT NULL,
+  banco               text,
+  numero_mask         text,
+  tipo                text DEFAULT 'cuenta_corriente',
+  activo              boolean DEFAULT true,
+  empresa_id          text NOT NULL,
+  project_code        text,
+  module_code         text,
+  external_account_id text,
+  created_at          timestamptz DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_g4all_cuentas_empresa ON gastos4all.cuentas_retiro(empresa_id);
@@ -45,7 +46,7 @@ class Gastos4AllCuentasRetiroSetupService:
             return {
                 "ok": True,
                 "message": "Tabla cuentas_retiro creada en schema gastos4all",
-                "data": {"table": "gastos4all.cuentas_retiro", "columns": ["id", "folio", "nombre", "banco", "numero_mask", "tipo", "activo", "empresa_id"]},
+                "data": {"table": "gastos4all.cuentas_retiro", "columns": ["id", "folio", "nombre", "banco", "numero_mask", "tipo", "activo", "empresa_id", "external_account_id"]},
             }
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
