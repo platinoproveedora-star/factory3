@@ -46,3 +46,6 @@ export const unitRecord = (ctx: Ctx) => run("vertical_fleet4all_maintenance/unit
 export const rateManage = (ctx: Ctx) => run("vertical_fleet4all_quoting/rate_manage", ctx);
 export const quoteBuild = (ctx: Ctx) => run("vertical_fleet4all_quoting/quote_build", ctx);
 export const quotePdfSend = (ctx: Ctx) => run("vertical_fleet4all_quoting/quote_pdf_send", ctx);
+
+// Fleet4All Ops
+export const fleetDashboardSnapshot = (ctx: Ctx) => run("vertical_fleet4all_ops/fleet_dashboard_snapshot", ctx);

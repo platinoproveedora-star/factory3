@@ -5205,6 +5205,16 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_fleet4all_ops/fleet_dashboard_snapshot": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_ops/fleet_dashboard_snapshot",
+    "vertical": "vertical_fleet4all_ops",
+    "kind": "data",
+    "descripcion": "Snapshot operativo Fleet4All: KPIs, salud por modulo y pendientes criticos por empresa.",
+    "path": "skills/internos/vertical_fleet4all_ops/fleet_dashboard_snapshot",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_fleet4all_trips/fleet_message_handler": {
     "tipo": "interno",
     "nombre": "vertical_fleet4all_trips/fleet_message_handler",

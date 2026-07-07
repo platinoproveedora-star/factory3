@@ -26,6 +26,22 @@ type CompanyOption = {
   name?: string;
 };
 
+function fleetCompanies(json: any): CompanyOption[] {
+  const grants = Array.isArray(json.grants) ? json.grants : [];
+  const allowedCompanyIds: string[] = Array.from(
+    new Set(
+      grants
+        .filter((grant: any) => grant.modulo_code === MODULE_CODE)
+        .map((grant: any) => String(grant.company_id || ""))
+        .filter(Boolean)
+    )
+  );
+  const companiesById = new Map<string, CompanyOption>(
+    (Array.isArray(json.companies) ? json.companies : []).map((company: CompanyOption) => [company.company_id, company])
+  );
+  return allowedCompanyIds.map((companyId) => companiesById.get(companyId) || { company_id: companyId });
+}
+
 export default function Nav({ email }: { email: string }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -36,16 +52,7 @@ export default function Nav({ email }: { email: string }) {
     fetch("/api/auth/grants/me")
       .then((res) => res.json())
       .then((json) => {
-        const grants = Array.isArray(json.grants) ? json.grants : [];
-        const allowedCompanyIds = new Set(
-          grants
-            .filter((grant: any) => grant.modulo_code === MODULE_CODE)
-            .map((grant: any) => String(grant.company_id || ""))
-            .filter(Boolean)
-        );
-        const rows = (Array.isArray(json.companies) ? json.companies : []).filter((company: CompanyOption) =>
-          allowedCompanyIds.has(company.company_id)
-        );
+        const rows = fleetCompanies(json);
         setCompanies(rows);
         const stored = window.localStorage.getItem(COMPANY_STORAGE_KEY) || "";
         const current =
@@ -54,6 +61,10 @@ export default function Nav({ email }: { email: string }) {
           rows[0]?.company_id ||
           "";
         setSelectedCompanyId(current);
+        if (current) {
+          window.localStorage.setItem(COMPANY_STORAGE_KEY, current);
+          window.dispatchEvent(new CustomEvent(COMPANY_CHANGE_EVENT, { detail: current }));
+        }
       })
       .catch(() => null);
   }, []);
@@ -74,19 +85,23 @@ export default function Nav({ email }: { email: string }) {
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14 gap-3">
         <div className="flex items-center gap-1 overflow-x-auto">
           <span className="font-bold text-white mr-3 whitespace-nowrap">Fleet4All</span>
-          {companies.length > 1 ? (
-            <select
-              value={selectedCompanyId}
-              onChange={(event) => selectCompany(event.target.value)}
-              className="mr-3 rounded-md border border-border bg-bg px-2 py-1 text-xs text-slate-100 outline-none focus:border-primary"
-            >
-              {companies.map((company) => (
+          <select
+            value={selectedCompanyId}
+            onChange={(event) => selectCompany(event.target.value)}
+            disabled={!companies.length}
+            aria-label="Empresa"
+            className="mr-3 min-w-36 rounded-md border border-border bg-bg px-2 py-1 text-xs text-slate-100 outline-none focus:border-primary disabled:opacity-60"
+          >
+            {companies.length ? (
+              companies.map((company) => (
                 <option key={company.company_id} value={company.company_id}>
                   {company.name || company.company_id}
                 </option>
-              ))}
-            </select>
-          ) : null}
+              ))
+            ) : (
+              <option value="">Sin empresas</option>
+            )}
+          </select>
           {links.map((l) => (
             <Link
               key={l.href}
