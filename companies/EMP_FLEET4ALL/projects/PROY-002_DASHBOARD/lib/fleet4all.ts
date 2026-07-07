@@ -49,3 +49,4 @@ export const quotePdfSend = (ctx: Ctx) => run("vertical_fleet4all_quoting/quote_
 
 // Fleet4All Ops
 export const fleetDashboardSnapshot = (ctx: Ctx) => run("vertical_fleet4all_ops/fleet_dashboard_snapshot", ctx);
+export const fleetOperationalData = (ctx: Ctx) => run("vertical_fleet4all_ops/fleet_operational_data", ctx);

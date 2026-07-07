@@ -1,15 +1,16 @@
 "use client";
 import { useState } from "react";
 import { useCompany } from "@/lib/useCompany";
+import { useFleetOps } from "@/lib/useFleetOps";
 
 const fmt = (n: number, c = "MXN") => Number(n || 0).toLocaleString("es-MX", { style: "currency", currency: c });
 
 export default function CobranzaPage() {
   const { selectedCompanyId, loading: loadingCompany } = useCompany();
+  const { data: ops, loading: loadingOps } = useFleetOps(selectedCompanyId, ["trips", "receivables"]);
   const [payForm, setPayForm] = useState({ trip_folio: "", amount: "", payment_date: "", method: "transfer" });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
-  const [receivable, setReceivable] = useState<any>(null);
 
   const [stFilters, setStFilters] = useState({ customer: "", from: "", to: "" });
   const [statement, setStatement] = useState<any>(null);
@@ -27,15 +28,7 @@ export default function CobranzaPage() {
       });
       const data = await res.json();
       if (!data.ok) { setStatus(data.error || "Error al registrar pago"); return; }
-      setStatus(`Pago ${data.data?.payment?.payment_folio} registrado.`);
-
-      const syncRes = await fetch("/api/cobranza", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "sync", empresa_id: selectedCompanyId, trip_folio: payForm.trip_folio, dry_run: false }),
-      });
-      const syncData = await syncRes.json();
-      if (syncData.ok) setReceivable(syncData.data?.receivable || null);
+      setStatus(`Pago ${data.data?.payment?.payment_folio} registrado.${data.data?.warnings?.length ? " (" + data.data.warnings.join("; ") + ")" : ""}`);
       setPayForm({ trip_folio: "", amount: "", payment_date: "", method: "transfer" });
     } catch {
       setStatus("Error de conexion");
@@ -81,7 +74,10 @@ export default function CobranzaPage() {
           <div className="card">
             <h2 className="font-semibold mb-4">Registrar pago</h2>
             <form onSubmit={handlePayment} className="space-y-3">
-              <div><label className="label">Folio de viaje</label><input className="input font-mono" placeholder="T-0001" value={payForm.trip_folio} onChange={(e) => setPayForm((f) => ({ ...f, trip_folio: e.target.value.toUpperCase() }))} required /></div>
+              <div><label className="label">Folio de viaje</label><input list="payment-trips" className="input font-mono" placeholder="T-0001" value={payForm.trip_folio} onChange={(e) => setPayForm((f) => ({ ...f, trip_folio: e.target.value.toUpperCase() }))} required /></div>
+              <datalist id="payment-trips">
+                {(ops.trips || []).map((trip: any) => <option key={trip.trip_folio} value={trip.trip_folio}>{trip.customer || trip.trip_folio}</option>)}
+              </datalist>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="label">Monto</label><input type="number" className="input" value={payForm.amount} onChange={(e) => setPayForm((f) => ({ ...f, amount: e.target.value }))} required /></div>
                 <div><label className="label">Fecha</label><input type="date" className="input" value={payForm.payment_date} onChange={(e) => setPayForm((f) => ({ ...f, payment_date: e.target.value }))} /></div>
@@ -97,18 +93,15 @@ export default function CobranzaPage() {
               </div>
               <button type="submit" className="btn-primary w-full" disabled={saving}>{saving ? "Guardando..." : "Registrar pago"}</button>
             </form>
-            {receivable && (
-              <div className="mt-4 pt-4 border-t border-border text-sm space-y-1">
-                <p><span className="text-muted">Saldo:</span> {fmt(receivable.balance, receivable.currency)}</p>
-                <p><span className="text-muted">Status:</span> {receivable.collection_status}</p>
-              </div>
-            )}
           </div>
 
           <div className="card">
             <h2 className="font-semibold mb-4">Estado de cuenta</h2>
             <form onSubmit={handleStatement} className="space-y-3">
-              <div><label className="label">Cliente</label><input className="input" value={stFilters.customer} onChange={(e) => setStFilters((f) => ({ ...f, customer: e.target.value }))} required /></div>
+              <div><label className="label">Cliente</label><input list="statement-customers" className="input" value={stFilters.customer} onChange={(e) => setStFilters((f) => ({ ...f, customer: e.target.value }))} required /></div>
+              <datalist id="statement-customers">
+                {Array.from(new Set((ops.trips || []).map((trip: any) => trip.customer).filter(Boolean))).map((customer: any) => <option key={customer} value={customer} />)}
+              </datalist>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="label">Desde</label><input type="date" className="input" value={stFilters.from} onChange={(e) => setStFilters((f) => ({ ...f, from: e.target.value }))} /></div>
                 <div><label className="label">Hasta</label><input type="date" className="input" value={stFilters.to} onChange={(e) => setStFilters((f) => ({ ...f, to: e.target.value }))} /></div>
@@ -127,6 +120,37 @@ export default function CobranzaPage() {
                 {statement.lines.length === 0 && <p className="text-muted text-xs">Sin viajes para este cliente/periodo.</p>}
               </div>
             )}
+          </div>
+          <div className="card lg:col-span-2">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold">Cuentas por cobrar</h2>
+              {loadingOps && <span className="text-muted text-xs">Cargando...</span>}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-muted text-xs">
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2">Viaje</th>
+                    <th className="text-left py-2">Cliente</th>
+                    <th className="text-left py-2">Vence</th>
+                    <th className="text-left py-2">Status</th>
+                    <th className="text-right py-2">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(ops.receivables || []).slice(0, 10).map((row: any) => (
+                    <tr key={row.receivable_folio} className="border-b border-border/50">
+                      <td className="py-2 font-mono">{row.trip_folio || row.receivable_folio}</td>
+                      <td className="py-2">{row.customer || "-"}</td>
+                      <td className="py-2">{row.due_date || "-"}</td>
+                      <td className="py-2">{row.collection_status}</td>
+                      <td className="py-2 text-right">{fmt(row.balance, row.currency)}</td>
+                    </tr>
+                  ))}
+                  {!(ops.receivables || []).length && <tr><td colSpan={5} className="py-6 text-center text-muted">Sin cuentas por cobrar.</td></tr>}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

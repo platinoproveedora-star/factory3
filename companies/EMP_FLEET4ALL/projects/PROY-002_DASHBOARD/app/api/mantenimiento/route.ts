@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const action = body.action || "plan";
   const result =
     action === "service" ? await serviceCapture(body) :
-    action === "kardex" ? await partsKardex(body) :
+    action === "kardex" || action === "part_upsert" ? await partsKardex(body) :
     await maintenanceSchedule(body);
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }

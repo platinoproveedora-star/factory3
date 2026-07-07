@@ -33,6 +33,7 @@ class TripCreateService:
             "currency": str(context.get("currency") or "MXN").strip().upper(),
             "driver_key": context.get("driver_key"),
             "unit_key": context.get("unit_key"),
+            "distance_km": self._to_amount(context.get("distance_km")),
             "departure_date": context.get("departure_date"),
         }
 

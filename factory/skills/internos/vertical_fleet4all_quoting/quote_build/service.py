@@ -112,7 +112,8 @@ class QuoteBuildService:
                 {
                     "empresa_id": empresa_id, "customer": customer, "origin": origin, "destination": destination,
                     "sale_price": created["quoted_price"], "currency": currency, "driver_key": context.get("driver_key"),
-                    "unit_key": context.get("unit_key"), "dry_run": False,
+                    "unit_key": context.get("unit_key"), "departure_date": context.get("departure_date"),
+                    "distance_km": distance_km, "dry_run": False,
                 },
             )
             if trip_res.get("ok"):

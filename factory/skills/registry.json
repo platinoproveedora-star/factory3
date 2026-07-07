@@ -5215,6 +5215,16 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_fleet4all_ops/fleet_operational_data": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_ops/fleet_operational_data",
+    "vertical": "vertical_fleet4all_ops",
+    "kind": "data",
+    "descripcion": "Datos operativos Fleet4All para dashboard: viajes, operadores, unidades, CxC, fuel, mantenimiento, partes, tarifas y cotizaciones.",
+    "path": "skills/internos/vertical_fleet4all_ops/fleet_operational_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_fleet4all_trips/fleet_message_handler": {
     "tipo": "interno",
     "nombre": "vertical_fleet4all_trips/fleet_message_handler",

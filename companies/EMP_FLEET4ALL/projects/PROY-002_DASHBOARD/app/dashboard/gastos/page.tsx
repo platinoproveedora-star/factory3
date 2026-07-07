@@ -1,12 +1,14 @@
 "use client";
 import { useState } from "react";
 import { useCompany } from "@/lib/useCompany";
+import { useFleetOps } from "@/lib/useFleetOps";
 
 const fmt = (n: number, c = "MXN") => Number(n || 0).toLocaleString("es-MX", { style: "currency", currency: c });
 
 export default function GastosPage() {
   const { selectedCompanyId, loading: loadingCompany } = useCompany();
-  const [form, setForm] = useState({ trip_folio: "", amount: "", concept: "", expense_date: "" });
+  const { data: ops, loading: loadingOps } = useFleetOps(selectedCompanyId, ["trips"]);
+  const [form, setForm] = useState({ trip_folio: "", amount: "", concept: "", expense_type: "", expense_date: "" });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
   const [lastExpense, setLastExpense] = useState<any>(null);
@@ -25,7 +27,7 @@ export default function GastosPage() {
       if (!data.ok) { setStatus(data.error || "Error al capturar gasto"); return; }
       setLastExpense(data.data?.expense || null);
       setStatus(`Gasto ${data.data?.expense?.expense_folio} registrado (tipo: ${data.data?.expense?.expense_type}).`);
-      setForm({ trip_folio: "", amount: "", concept: "", expense_date: "" });
+      setForm({ trip_folio: "", amount: "", concept: "", expense_type: "", expense_date: "" });
     } catch {
       setStatus("Error de conexion");
     } finally {
@@ -50,8 +52,22 @@ export default function GastosPage() {
               <div><label className="label">Monto</label><input type="number" className="input" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} required /></div>
               <div><label className="label">Fecha</label><input type="date" className="input" value={form.expense_date} onChange={(e) => setForm((f) => ({ ...f, expense_date: e.target.value }))} /></div>
             </div>
-            <div><label className="label">Folio de viaje (opcional)</label><input className="input font-mono" placeholder="T-0001" value={form.trip_folio} onChange={(e) => setForm((f) => ({ ...f, trip_folio: e.target.value.toUpperCase() }))} /></div>
-            <p className="text-muted text-xs">El tipo de gasto (fuel, tolls, food, repair) se infiere del concepto automaticamente.</p>
+            <div>
+              <label className="label">Tipo</label>
+              <select className="input" value={form.expense_type} onChange={(e) => setForm((f) => ({ ...f, expense_type: e.target.value }))}>
+                <option value="">Inferir automaticamente</option>
+                <option value="fuel">Combustible</option>
+                <option value="tolls">Casetas</option>
+                <option value="food">Comida</option>
+                <option value="repair">Reparacion</option>
+                <option value="other">Otro</option>
+              </select>
+            </div>
+            <div><label className="label">Folio de viaje (opcional)</label><input list="expense-trips" className="input font-mono" placeholder="T-0001" value={form.trip_folio} onChange={(e) => setForm((f) => ({ ...f, trip_folio: e.target.value.toUpperCase() }))} /></div>
+            <datalist id="expense-trips">
+              {(ops.trips || []).map((trip: any) => <option key={trip.trip_folio} value={trip.trip_folio}>{trip.customer || trip.trip_folio}</option>)}
+            </datalist>
+            <p className={form.trip_folio ? "text-muted text-xs" : "text-yellow-300 text-xs"}>{form.trip_folio ? "Este gasto impactara el costo del viaje al cerrar." : "Sin viaje ligado, el gasto queda registrado pero no impacta profit de un viaje."} {loadingOps ? "Cargando viajes..." : ""}</p>
             <button type="submit" className="btn-primary w-full" disabled={saving}>{saving ? "Guardando..." : "Registrar gasto"}</button>
           </form>
         </div>

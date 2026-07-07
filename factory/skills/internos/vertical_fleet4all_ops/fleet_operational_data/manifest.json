@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_ops/fleet_operational_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Datos operativos Fleet4All para dashboard: viajes, operadores, unidades, CxC, fuel, mantenimiento, partes, tarifas y cotizaciones.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
