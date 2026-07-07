@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { fetchCatalog, getCompanyContextFromSession } from "@/lib/coti4all";
+import { requireCompanyModuleGrant } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   try {
     const selectedCompanyId = searchParams.get("company_id") || user.company_id;
+    try {
+      await requireCompanyModuleGrant(user.sub, selectedCompanyId);
+    } catch (error: any) {
+      return NextResponse.json({ ok: false, error: error?.message || "Sin acceso" }, { status: 403 });
+    }
     const context = {
       ...(await getCompanyContextFromSession(user)),
       company_id: selectedCompanyId,

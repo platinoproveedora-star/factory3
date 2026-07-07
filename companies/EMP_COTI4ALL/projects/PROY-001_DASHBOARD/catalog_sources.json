@@ -1,4 +1,11 @@
 {
+  "ARQCON": {
+    "skill": "vertical_erp_ventas/erp_ventas_product_list",
+    "schema": "uc101_proy004",
+    "schema_inventario": "uc101_proy004",
+    "project_code": "PROY-004",
+    "module_code": "inventario"
+  },
   "EMP_DURALON": {
     "skill": "vertical_erp_ventas/erp_ventas_product_list",
     "schema": "uc101_proy004",

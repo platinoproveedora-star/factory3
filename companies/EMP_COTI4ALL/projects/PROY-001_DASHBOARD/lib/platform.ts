@@ -23,6 +23,8 @@ export type Company = {
   status?: string;
 };
 
+const ACTIVE_STATUSES = new Set(["active", "trialing", "manual", "comped"]);
+
 function platformEnv() {
   const url = process.env.PLATFORM_SUPABASE_URL?.replace(/\/$/, "") || process.env.SUPABASE_URL?.replace(/\/$/, "");
   const key = process.env.PLATFORM_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -68,6 +70,18 @@ export async function listGrants(userId: string) {
     order: "company_id.asc,modulo_code.asc"
   });
   return platformFetch<AccessGrant[]>(`access_grants?${qs.toString()}`);
+}
+
+export async function requireCompanyModuleGrant(userId: string, companyId: string, moduloCode = "coti4all_portal") {
+  const grants = await listGrants(userId);
+  const grant = grants.find((row) => {
+    const subscription = String(row.subscription_status || row.status || "manual");
+    return row.company_id === companyId && row.modulo_code === moduloCode && ACTIVE_STATUSES.has(subscription);
+  });
+  if (!grant) {
+    throw new Error(`Sin acceso a ${moduloCode} para ${companyId}`);
+  }
+  return grant;
 }
 
 export async function listCompanies(companyIds: string[]) {

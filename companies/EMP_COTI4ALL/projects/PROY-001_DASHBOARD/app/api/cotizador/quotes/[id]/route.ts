@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { fetchQuoteById, getCompanyContextFromSession } from "@/lib/coti4all";
+import { requireCompanyModuleGrant } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!user) return NextResponse.json({ ok: false, error: "No autorizado" }, { status: 401 });
   const { id } = await params;
   const companyId = req.nextUrl.searchParams.get("company_id") || user.company_id;
+  try {
+    await requireCompanyModuleGrant(user.sub, companyId);
+  } catch (error: any) {
+    return NextResponse.json({ ok: false, error: error?.message || "Sin acceso" }, { status: 403 });
+  }
   const context = await getCompanyContextFromSession({ ...user, company_id: companyId });
   const result = await fetchQuoteById(context, id);
   return NextResponse.json(result, { status: result.ok ? 200 : 502 });
