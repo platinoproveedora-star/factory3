@@ -41,7 +41,11 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
   const [gastos, setGastos]         = useState<Gasto[]>(initialGastos);
   const [categorias, setCategorias] = useState<Categoria[]>(initialCategorias);
   const [q, setQ]                   = useState("");
-  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaDesde, setFechaDesde] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 2);
+    return d.toISOString().slice(0, 10);
+  });
   const [fechaHasta, setFechaHasta] = useState("");
   const [page, setPage]             = useState(0);
   const [sortCol, setSortCol]       = useState<keyof Gasto>("fecha");
@@ -382,7 +386,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, cate
                         <button onClick={() => setEdit(null)} className="rounded bg-slate-700 p-1 text-slate-300 hover:bg-slate-600"><X size={13} /></button>
                       </div>
                     ) : (
-                      <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <div className="flex gap-1">
                         <button onClick={() => startEdit(g)} className="rounded p-1 text-muted hover:bg-slate-700 hover:text-white"><Pencil size={13} /></button>
                         <button onClick={() => deleteRow(g.folio)} disabled={saving} className="rounded p-1 text-muted hover:bg-red-900/50 hover:text-red-400 disabled:opacity-40"><Trash2 size={13} /></button>
                       </div>

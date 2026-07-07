@@ -48,18 +48,22 @@ export default async function DashboardPage({
     name: companyName(companies, grant.company_id)
   }));
 
-  let stats:  ReturnType<typeof calcStats> | null = null;
+  let stats:  ReturnType<typeof calcStats> = { total:0, count:0, avg:0, por_categoria:[], totalMes:0, totalMesAnt:0, variacion:0 };
   let gastos: Awaited<ReturnType<typeof getGastos>> = [];
   let categorias: Awaited<ReturnType<typeof listAllCategories>> = [];
   let loadError: string | null = null;
 
   try {
-    gastos     = await getGastos(empresaId, 2000);
-    stats      = calcStats(gastos);
+    gastos = await getGastos(empresaId, 2000);
+    stats  = calcStats(gastos);
+  } catch (e: any) {
+    loadError = e?.message ?? "Error al cargar gastos";
+  }
+
+  try {
     categorias = await listAllCategories(empresaId);
   } catch (e: any) {
-    loadError = e?.message ?? "Error al cargar datos";
-    stats = { total:0, count:0, avg:0, por_categoria:[], totalMes:0, totalMesAnt:0, variacion:0 };
+    loadError = loadError ? `${loadError} | ${e?.message}` : (e?.message ?? "Error al cargar categorías");
   }
 
   const today        = new Date();
