@@ -3,11 +3,11 @@
 import { useState, useMemo } from "react";
 import {
   Search, Download, ChevronLeft, ChevronRight,
-  Plus, Trash2, Pencil, Check, X, ChevronUp, ChevronDown,
+  Plus, Trash2, Pencil, Check, X, ChevronUp, ChevronDown, Tag, RotateCcw,
 } from "lucide-react";
-import type { BankAccount, Gasto } from "@/lib/db";
+import type { BankAccount, Categoria, Gasto } from "@/lib/db";
 
-type Props = { gastos: Gasto[]; bankAccounts: BankAccount[]; empresaId: string; projectCode?: string };
+type Props = { gastos: Gasto[]; bankAccounts: BankAccount[]; categorias: Categoria[]; empresaId: string; projectCode?: string };
 type EditDraft = { monto: string; fecha: string; descripcion: string; categoria: string; vehiculo: string; cta_retiro_id: string };
 
 const PAGE_SIZE = 50;
@@ -37,8 +37,9 @@ function gastosToCSV(rows: Gasto[]) {
   return [h.join(","), ...b].join("\n");
 }
 
-export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empresaId, projectCode = "GASTOS4ALL_V1" }: Props) {
+export default function ExpenseTable({ gastos: initialGastos, bankAccounts, categorias: initialCategorias, empresaId, projectCode = "GASTOS4ALL_V1" }: Props) {
   const [gastos, setGastos]         = useState<Gasto[]>(initialGastos);
+  const [categorias, setCategorias] = useState<Categoria[]>(initialCategorias);
   const [q, setQ]                   = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
@@ -51,11 +52,17 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empr
   const [error, setError]           = useState("");
   const [adding, setAdding]         = useState(false);
   const [newRow, setNewRow]         = useState<EditDraft>({ monto:"", fecha: new Date().toISOString().slice(0,10), descripcion:"", categoria:"", vehiculo:"", cta_retiro_id:"" });
+  const [manageCats, setManageCats] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [catSaving, setCatSaving]   = useState(false);
+  const [catError, setCatError]     = useState("");
 
   const CATEGORIES = useMemo(() => {
+    const active = categorias.filter((c) => c.activo).map((c) => c.nombre);
+    if (active.length > 0) return active;
     const from = Array.from(new Set(gastos.map((g) => g.categoria).filter(Boolean))).sort();
-    return from.length > 0 ? from : ["combustible","gastos varios","taller","nomina","otros"];
-  }, [gastos]);
+    return from.length > 0 ? from : ["combustible", "gastos varios", "taller", "nomina", "otros"];
+  }, [categorias, gastos]);
 
   const accountById = useMemo(() => new Map(bankAccounts.map((a) => [a.id, a])), [bankAccounts]);
 
@@ -68,6 +75,43 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empr
     const json = await res.json();
     if (!res.ok || json?.ok === false) throw new Error(json?.error ?? "Error en la operación");
     return json;
+  }
+
+  async function apiPostCategoria(action: string, extra: object) {
+    const res = await fetch("/api/categorias", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, company_id: empresaId, ...extra }),
+    });
+    const json = await res.json();
+    if (!res.ok || json?.ok === false) throw new Error(json?.error ?? "Error en la operación");
+    return json;
+  }
+
+  async function addCategory() {
+    const nombre = newCatName.trim();
+    if (!nombre) return;
+    setCatSaving(true); setCatError("");
+    try {
+      const result = await apiPostCategoria("create", { nombre });
+      const categoria: Categoria = result.categoria;
+      setCategorias((prev) => {
+        const exists = prev.some((c) => c.id === categoria.id);
+        return exists ? prev.map((c) => (c.id === categoria.id ? categoria : c)) : [...prev, categoria];
+      });
+      setNewCatName("");
+    } catch (e: any) { setCatError(e.message); }
+    finally { setCatSaving(false); }
+  }
+
+  async function toggleCategory(cat: Categoria) {
+    setCatSaving(true); setCatError("");
+    try {
+      const result = await apiPostCategoria("toggle", { id: cat.id, activo: !cat.activo });
+      const categoria: Categoria = result.categoria;
+      setCategorias((prev) => prev.map((c) => (c.id === categoria.id ? categoria : c)));
+    } catch (e: any) { setCatError(e.message); }
+    finally { setCatSaving(false); }
   }
 
   const filtered = useMemo(() => {
@@ -209,12 +253,57 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts, empr
         <button onClick={() => { setAdding(true); setError(""); }} className="btn-primary inline-flex items-center gap-1.5">
           <Plus size={14} /> Nuevo gasto
         </button>
+        <button onClick={() => { setManageCats((v) => !v); setCatError(""); }} className="btn-ghost inline-flex items-center gap-2">
+          <Tag size={14} /> Categorías
+        </button>
         <button onClick={handleExport} className="btn-ghost inline-flex items-center gap-2">
           <Download size={14} /> CSV
         </button>
       </div>
 
       {error && <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 px-4 py-2 text-xs text-red-400">{error}</div>}
+
+      {/* Category management */}
+      {manageCats && (
+        <div className="mb-4 rounded-xl border border-primary/40 bg-primary/5 p-4">
+          <p className="mb-3 text-xs font-semibold text-primary">Categorías de {empresaId}</p>
+          {catError && <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 px-3 py-1.5 text-xs text-red-400">{catError}</div>}
+          <div className="mb-3 flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Nueva categoría"
+              value={newCatName}
+              onChange={(e) => setNewCatName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") addCategory(); }}
+              className={inputCls + " w-56"}
+            />
+            <button onClick={addCategory} disabled={catSaving || !newCatName.trim()} className="btn-primary inline-flex items-center gap-1 disabled:opacity-40">
+              <Plus size={13} /> Agregar
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categorias.length === 0 && <span className="text-xs text-muted">Sin categorías configuradas todavía.</span>}
+            {categorias.map((c) => (
+              <span
+                key={c.id}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${
+                  c.activo ? "bg-slate-700 text-slate-200" : "bg-slate-800 text-slate-500 line-through"
+                }`}
+              >
+                {c.nombre}
+                <button
+                  onClick={() => toggleCategory(c)}
+                  disabled={catSaving}
+                  title={c.activo ? "Quitar" : "Reactivar"}
+                  className="text-current hover:opacity-70 disabled:opacity-40"
+                >
+                  {c.activo ? <X size={11} /> : <RotateCcw size={11} />}
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* New expense form */}
       {adding && (

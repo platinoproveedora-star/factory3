@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { calcStats, getGastos } from "@/lib/db";
+import { calcStats, getGastos, listAllCategories } from "@/lib/db";
 import { companyName, listCompanies, listGrants } from "@/lib/platform";
 import Nav                   from "@/components/Nav";
 import KpiGrid               from "@/components/KpiGrid";
@@ -50,11 +50,13 @@ export default async function DashboardPage({
 
   let stats:  ReturnType<typeof calcStats> | null = null;
   let gastos: Awaited<ReturnType<typeof getGastos>> = [];
+  let categorias: Awaited<ReturnType<typeof listAllCategories>> = [];
   let loadError: string | null = null;
 
   try {
-    gastos = await getGastos(empresaId, 2000);
-    stats  = calcStats(gastos);
+    gastos     = await getGastos(empresaId, 2000);
+    stats      = calcStats(gastos);
+    categorias = await listAllCategories(empresaId);
   } catch (e: any) {
     loadError = e?.message ?? "Error al cargar datos";
     stats = { total:0, count:0, avg:0, por_categoria:[], totalMes:0, totalMesAnt:0, variacion:0 };
@@ -116,7 +118,7 @@ export default async function DashboardPage({
         <div className="card">
           <h3 className="mb-3 text-sm font-semibold text-slate-300">Movimientos</h3>
           <Suspense fallback={<div className="h-64 animate-pulse rounded bg-slate-800" />}>
-            <ExpenseTable gastos={gastos} bankAccounts={[]} empresaId={empresaId} />
+            <ExpenseTable gastos={gastos} bankAccounts={[]} categorias={categorias} empresaId={empresaId} />
           </Suspense>
         </div>
 

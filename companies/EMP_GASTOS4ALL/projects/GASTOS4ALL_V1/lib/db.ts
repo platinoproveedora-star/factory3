@@ -24,6 +24,8 @@ export type BankAccount = {
   current_balance: number;
 };
 
+export type Categoria = { id: string; nombre: string; activo: boolean };
+
 export type StatCategoria = { categoria: string; total: number; count: number };
 
 export type Stats = {
@@ -90,6 +92,32 @@ async function nextFolio(table: string, prefix: string): Promise<string> {
 async function listCategories(empresaId: string) {
   const qs = new URLSearchParams({ select: "id,nombre", empresa_id: `eq.${empresaId}`, activo: "eq.true", order: "nombre.asc" });
   return sbGet<Array<{ id: string; nombre: string }>>(`categorias_gasto?${qs}`);
+}
+
+export async function listAllCategories(empresaId: string): Promise<Categoria[]> {
+  const qs = new URLSearchParams({ select: "id,nombre,activo", empresa_id: `eq.${empresaId}`, order: "nombre.asc" });
+  return sbGet<Categoria[]>(`categorias_gasto?${qs}`);
+}
+
+export async function createCategory(empresaId: string, nombre: string): Promise<Categoria> {
+  const clean = nombre.trim();
+  if (!clean) throw new Error("nombre de categoría requerido");
+  const existing = await listAllCategories(empresaId);
+  const match = existing.find((c) => c.nombre.toLowerCase() === clean.toLowerCase());
+  if (match) {
+    if (match.activo) throw new Error("Esa categoría ya existe");
+    return setCategoryActive(empresaId, match.id, true);
+  }
+  const row = { folio: await nextFolio("categorias_gasto", "CAT"), nombre: clean, activo: true, empresa_id: empresaId };
+  const saved = await sbWrite<Categoria[]>("categorias_gasto", { method: "POST", body: JSON.stringify(row) });
+  return saved[0];
+}
+
+export async function setCategoryActive(empresaId: string, id: string, activo: boolean): Promise<Categoria> {
+  const qs = new URLSearchParams({ id: `eq.${id}`, empresa_id: `eq.${empresaId}` });
+  const rows = await sbWrite<Categoria[]>(`categorias_gasto?${qs}`, { method: "PATCH", body: JSON.stringify({ activo }) });
+  if (!rows[0]) throw new Error("categoría no encontrada");
+  return rows[0];
 }
 
 async function ensureDashboardUser(empresaId: string) {
