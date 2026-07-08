@@ -7,7 +7,7 @@ const fmt = (n: number, c = "MXN") => Number(n || 0).toLocaleString("es-MX", { s
 
 export default function CobranzaPage() {
   const { selectedCompanyId, loading: loadingCompany } = useCompany();
-  const { data: ops, loading: loadingOps } = useFleetOps(selectedCompanyId, ["trips", "receivables"]);
+  const { data: ops, loading: loadingOps } = useFleetOps(selectedCompanyId, ["trips", "receivables", "payments"]);
   const [payForm, setPayForm] = useState({ trip_folio: "", amount: "", payment_date: "", method: "transfer" });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
@@ -15,6 +15,8 @@ export default function CobranzaPage() {
   const [stFilters, setStFilters] = useState({ customer: "", from: "", to: "" });
   const [statement, setStatement] = useState<any>(null);
   const [loadingStatement, setLoadingStatement] = useState(false);
+  const pendingReceivables = (ops.receivables || []).filter((row: any) => Number(row.balance || 0) > 0);
+  const payments = ops.payments || [];
 
   async function handlePayment(e: React.FormEvent) {
     e.preventDefault();
@@ -138,7 +140,7 @@ export default function CobranzaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(ops.receivables || []).slice(0, 10).map((row: any) => (
+                  {pendingReceivables.slice(0, 50).map((row: any) => (
                     <tr key={row.receivable_folio} className="border-b border-border/50">
                       <td className="py-2 font-mono">{row.trip_folio || row.receivable_folio}</td>
                       <td className="py-2">{row.customer || "-"}</td>
@@ -147,7 +149,40 @@ export default function CobranzaPage() {
                       <td className="py-2 text-right">{fmt(row.balance, row.currency)}</td>
                     </tr>
                   ))}
-                  {!(ops.receivables || []).length && <tr><td colSpan={5} className="py-6 text-center text-muted">Sin cuentas por cobrar.</td></tr>}
+                  {!pendingReceivables.length && <tr><td colSpan={5} className="py-6 text-center text-muted">Sin saldos pendientes por cobrar.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="card lg:col-span-2">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold">Pagos realizados</h2>
+              {loadingOps && <span className="text-muted text-xs">Cargando...</span>}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-muted text-xs">
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2">Folio pago</th>
+                    <th className="text-left py-2">Viaje</th>
+                    <th className="text-left py-2">Cliente</th>
+                    <th className="text-left py-2">Fecha</th>
+                    <th className="text-left py-2">Metodo</th>
+                    <th className="text-right py-2">Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.slice(0, 50).map((row: any) => (
+                    <tr key={row.payment_folio} className="border-b border-border/50">
+                      <td className="py-2 font-mono">{row.payment_folio}</td>
+                      <td className="py-2 font-mono">{row.trip_folio || "-"}</td>
+                      <td className="py-2">{row.customer || "-"}</td>
+                      <td className="py-2">{row.payment_date || "-"}</td>
+                      <td className="py-2">{row.method || "-"}</td>
+                      <td className="py-2 text-right">{fmt(row.amount, row.currency)}</td>
+                    </tr>
+                  ))}
+                  {!payments.length && <tr><td colSpan={6} className="py-6 text-center text-muted">Sin pagos registrados.</td></tr>}
                 </tbody>
               </table>
             </div>

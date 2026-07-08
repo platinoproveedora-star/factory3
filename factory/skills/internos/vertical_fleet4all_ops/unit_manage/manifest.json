@@ -2,7 +2,7 @@
   "type": "skill",
   "name": "vertical_fleet4all_ops/unit_manage",
   "version": "0.1.0",
-  "kind": "action",
+  "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Crea o actualiza unidades Fleet4All por empresa.",
   "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]

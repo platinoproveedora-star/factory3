@@ -33,6 +33,7 @@ class PaymentCaptureService:
         base = {
             "empresa_id": empresa_id,
             "trip_folio": trip_folio,
+            "customer": context.get("customer"),
             "amount": amount,
             "payment_date": context.get("payment_date"),
             "method": method,

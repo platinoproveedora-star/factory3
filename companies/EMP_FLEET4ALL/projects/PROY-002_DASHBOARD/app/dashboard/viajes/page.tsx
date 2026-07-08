@@ -23,7 +23,7 @@ const fmt = (n: number, c = "MXN") => Number(n || 0).toLocaleString("es-MX", { s
 export default function ViajesPage() {
   const { selectedCompanyId, loading: loadingCompany } = useCompany();
   const { data: ops, loading: loadingOps, error: opsError } = useFleetOps(selectedCompanyId, ["trips", "drivers", "units"]);
-  const [form, setForm] = useState({ customer: "", origin: "", destination: "", sale_price: "", departure_date: "", driver_key: "", unit_key: "", distance_km: "" });
+  const [form, setForm] = useState({ customer: "", origin: "", destination: "", sale_price: "", departure_date: "", driver_key: "", unit_key: "", distance_km: "", payment_status: "receivable", payment_mode: "credito", payment_method: "transfer", credit_days: "30", paid_amount: "" });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
   const [lastTrip, setLastTrip] = useState<Trip | null>(null);
@@ -43,8 +43,10 @@ export default function ViajesPage() {
       const data = await res.json();
       if (!data.ok) { setStatus(data.error || "Error al crear viaje"); return; }
       setLastTrip(data.data?.trip || null);
-      setStatus(`Viaje ${data.data?.trip?.trip_folio} creado.`);
-      setForm({ customer: "", origin: "", destination: "", sale_price: "", departure_date: "", driver_key: "", unit_key: "", distance_km: "" });
+      const payment = data.data?.collection?.payment?.payment_folio;
+      const receivable = data.data?.collection?.receivable?.receivable_folio;
+      setStatus(`Viaje ${data.data?.trip?.trip_folio} creado.${payment ? " Pago " + payment + " generado." : ""}${receivable ? " CxC " + receivable + " generada." : ""}`);
+      setForm({ customer: "", origin: "", destination: "", sale_price: "", departure_date: "", driver_key: "", unit_key: "", distance_km: "", payment_status: "receivable", payment_mode: "credito", payment_method: "transfer", credit_days: "30", paid_amount: "" });
     } catch {
       setStatus("Error de conexion");
     } finally {
@@ -109,6 +111,39 @@ export default function ViajesPage() {
                 </div>
                 <div><label className="label">Km</label><input type="number" className="input" value={form.distance_km} onChange={(e) => setForm((f) => ({ ...f, distance_km: e.target.value }))} /></div>
               </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="label">Status de pago</label>
+                  <select className="input" value={form.payment_status} onChange={(e) => setForm((f) => ({ ...f, payment_status: e.target.value, paid_amount: e.target.value === "partial" ? f.paid_amount : "" }))}>
+                    <option value="receivable">Por cobrar</option>
+                    <option value="paid">Pagado total</option>
+                    <option value="partial">Pagado parcial</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Forma de pago</label>
+                  <select className="input" value={form.payment_mode} onChange={(e) => setForm((f) => ({ ...f, payment_mode: e.target.value, payment_status: e.target.value === "contado" ? "paid" : f.payment_status }))}>
+                    <option value="contado">Contado</option>
+                    <option value="credito">Credito</option>
+                    <option value="cob">Cob</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Metodo</label>
+                  <select className="input" value={form.payment_method} onChange={(e) => setForm((f) => ({ ...f, payment_method: e.target.value }))}>
+                    <option value="transfer">Transferencia</option>
+                    <option value="cash">Efectivo</option>
+                    <option value="check">Cheque</option>
+                    <option value="card">Tarjeta</option>
+                  </select>
+                </div>
+              </div>
+              {(form.payment_mode === "credito" || form.payment_mode === "cob" || form.payment_status === "partial") && (
+                <div className="grid grid-cols-2 gap-3">
+                  {(form.payment_mode === "credito" || form.payment_mode === "cob") && <div><label className="label">Dias de credito</label><input type="number" className="input" value={form.credit_days} onChange={(e) => setForm((f) => ({ ...f, credit_days: e.target.value }))} /></div>}
+                  {form.payment_status === "partial" && <div><label className="label">Monto pagado</label><input type="number" className="input" value={form.paid_amount} onChange={(e) => setForm((f) => ({ ...f, paid_amount: e.target.value }))} required /></div>}
+                </div>
+              )}
               <datalist id="fleet-drivers">
                 {(ops.drivers || []).map((driver: any) => <option key={driver.driver_key} value={driver.driver_key}>{driver.full_name || driver.driver_key}</option>)}
               </datalist>
@@ -145,6 +180,7 @@ export default function ViajesPage() {
                   <th className="text-right py-2">Precio venta</th>
                   <th className="text-right py-2">Gastos</th>
                   <th className="text-right py-2">Profit</th>
+                  <th className="text-left py-2">Pago</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,10 +194,11 @@ export default function ViajesPage() {
                     <td className="py-2 text-right">{fmt(trip.sale_price || 0, trip.currency)}</td>
                     <td className="py-2 text-right">{fmt(trip.expenses_total ?? trip.trip_cost ?? 0, trip.currency)}</td>
                     <td className="py-2 text-right">{fmt(trip.live_trip_profit ?? trip.trip_profit ?? 0, trip.currency)}</td>
+                    <td className="py-2">{trip.payment_status || "receivable"}</td>
                   </tr>
                 ))}
                 {!(ops.trips || []).length && (
-                  <tr><td colSpan={8} className="py-6 text-center text-muted">Sin viajes registrados.</td></tr>
+                  <tr><td colSpan={9} className="py-6 text-center text-muted">Sin viajes registrados.</td></tr>
                 )}
               </tbody>
             </table>
