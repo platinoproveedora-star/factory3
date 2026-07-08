@@ -9,6 +9,7 @@ function run<T = any>(skill: string, context: Ctx): Promise<SkillResult<T>> {
 
 // ── TRIPS4ALL ─────────────────────────────────────────────────────────────
 export const tripCreate = (ctx: Ctx) => run("vertical_fleet4all_trips/trip_create", ctx);
+export const tripManage = (ctx: Ctx) => run("vertical_fleet4all_trips/trip_manage", ctx);
 export const expenseCapture = (ctx: Ctx) => run("vertical_fleet4all_trips/expense_capture", ctx);
 export const expenseManage = (ctx: Ctx) => run("vertical_fleet4all_trips/expense_manage", ctx);
 export const tripClose = (ctx: Ctx) => run("vertical_fleet4all_trips/trip_close", ctx);
@@ -52,3 +53,4 @@ export const quotePdfSend = (ctx: Ctx) => run("vertical_fleet4all_quoting/quote_
 export const fleetDashboardSnapshot = (ctx: Ctx) => run("vertical_fleet4all_ops/fleet_dashboard_snapshot", ctx);
 export const fleetOperationalData = (ctx: Ctx) => run("vertical_fleet4all_ops/fleet_operational_data", ctx);
 export const unitManage = (ctx: Ctx) => run("vertical_fleet4all_ops/unit_manage", ctx);
+export const driverManage = (ctx: Ctx) => run("vertical_fleet4all_ops/driver_manage", ctx);

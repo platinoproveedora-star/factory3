@@ -5177,6 +5177,16 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_fleet4all_trips/trip_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_trips/trip_manage",
+    "vertical": "vertical_fleet4all_trips",
+    "kind": "executable",
+    "descripcion": "Actualiza o borra viajes Fleet4All; al borrar libera gastos y pagos y elimina CxC.",
+    "path": "skills/internos/vertical_fleet4all_trips/trip_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_fleet4all_trips/expense_capture": {
     "tipo": "interno",
     "nombre": "vertical_fleet4all_trips/expense_capture",
@@ -5242,6 +5252,16 @@
     "kind": "executable",
     "descripcion": "Crea o actualiza unidades Fleet4All por empresa.",
     "path": "skills/internos/vertical_fleet4all_ops/unit_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_ops/driver_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_ops/driver_manage",
+    "vertical": "vertical_fleet4all_ops",
+    "kind": "executable",
+    "descripcion": "Crea o actualiza choferes Fleet4All por empresa.",
+    "path": "skills/internos/vertical_fleet4all_ops/driver_manage",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

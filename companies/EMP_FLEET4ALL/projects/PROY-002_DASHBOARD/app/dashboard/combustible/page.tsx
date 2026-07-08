@@ -12,15 +12,11 @@ export default function CombustiblePage() {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
   const [lastLoad, setLastLoad] = useState<any>(null);
-
   const [mileageForm, setMileageForm] = useState({ unit_key: "", from: "", to: "" });
   const [efficiency, setEfficiency] = useState<any>(null);
   const [calculating, setCalculating] = useState(false);
-  const [unitForm, setUnitForm] = useState({ unit_key: "", plate: "", brand: "", model: "", year: "", unit_type: "tractor", odometer_km: "" });
-  const [savingUnit, setSavingUnit] = useState(false);
-  const [createdUnits, setCreatedUnits] = useState<any[]>([]);
 
-  const units = [...(ops.data?.units || []), ...createdUnits.filter((created) => !(ops.data?.units || []).some((unit: any) => unit.unit_key === created.unit_key))];
+  const units = ops.data?.units || [];
   const drivers = ops.data?.drivers || [];
   const trips = ops.data?.trips || [];
   const fuelLoads = ops.data?.fuel_loads || [];
@@ -69,33 +65,6 @@ export default function CombustiblePage() {
     }
   }
 
-  async function handleUnit(e: React.FormEvent) {
-    e.preventDefault();
-    setSavingUnit(true);
-    setStatus("");
-    try {
-      const res = await fetch("/api/combustible", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "unit", empresa_id: selectedCompanyId, ...unitForm }),
-      });
-      const data = await res.json();
-      if (!data.ok) { setStatus(data.error || "Error al guardar unidad"); return; }
-      const unit = data.data?.unit;
-      if (unit) {
-        setCreatedUnits((rows) => [unit, ...rows.filter((row) => row.unit_key !== unit.unit_key)]);
-        setForm((f) => ({ ...f, unit_key: unit.unit_key, odometer_km: unit.odometer_km ? String(unit.odometer_km) : f.odometer_km }));
-        setMileageForm((f) => ({ ...f, unit_key: unit.unit_key }));
-      }
-      setUnitForm({ unit_key: "", plate: "", brand: "", model: "", year: "", unit_type: "tractor", odometer_km: "" });
-      setStatus(`Unidad ${unit?.unit_key || ""} guardada.`);
-    } catch {
-      setStatus("Error de conexion");
-    } finally {
-      setSavingUnit(false);
-    }
-  }
-
   if (loadingCompany) return null;
 
   return (
@@ -112,34 +81,6 @@ export default function CombustiblePage() {
           <datalist id="fuel-trips">{trips.map((trip: any) => <option key={trip.trip_folio} value={trip.trip_folio}>{trip.origin} - {trip.destination}</option>)}</datalist>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="card">
-              <h2 className="font-semibold mb-4">Alta rapida de unidad</h2>
-              <form onSubmit={handleUnit} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div><label className="label">Clave unidad</label><input className="input" placeholder="TR-01" value={unitForm.unit_key} onChange={(e) => setUnitForm((f) => ({ ...f, unit_key: e.target.value.toUpperCase() }))} required /></div>
-                  <div><label className="label">Placas</label><input className="input" value={unitForm.plate} onChange={(e) => setUnitForm((f) => ({ ...f, plate: e.target.value.toUpperCase() }))} /></div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div><label className="label">Marca</label><input className="input" value={unitForm.brand} onChange={(e) => setUnitForm((f) => ({ ...f, brand: e.target.value }))} /></div>
-                  <div><label className="label">Modelo</label><input className="input" value={unitForm.model} onChange={(e) => setUnitForm((f) => ({ ...f, model: e.target.value }))} /></div>
-                  <div><label className="label">Año</label><input type="number" className="input" value={unitForm.year} onChange={(e) => setUnitForm((f) => ({ ...f, year: e.target.value }))} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">Tipo</label>
-                    <select className="input" value={unitForm.unit_type} onChange={(e) => setUnitForm((f) => ({ ...f, unit_type: e.target.value }))}>
-                      <option value="tractor">Tractor</option>
-                      <option value="trailer">Remolque</option>
-                      <option value="van">Van</option>
-                      <option value="pickup">Pickup</option>
-                    </select>
-                  </div>
-                  <div><label className="label">Odometro actual</label><input type="number" className="input" value={unitForm.odometer_km} onChange={(e) => setUnitForm((f) => ({ ...f, odometer_km: e.target.value }))} /></div>
-                </div>
-                <button type="submit" className="btn-ghost w-full" disabled={savingUnit}>{savingUnit ? "Guardando..." : "Guardar unidad"}</button>
-              </form>
-            </div>
-
             <div className="card">
               <h2 className="font-semibold mb-4">Registrar carga</h2>
               <form onSubmit={handleCapture} className="space-y-3">

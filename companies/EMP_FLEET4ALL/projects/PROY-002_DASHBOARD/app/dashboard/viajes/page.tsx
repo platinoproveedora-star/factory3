@@ -8,12 +8,17 @@ type Trip = {
   customer?: string;
   origin?: string;
   destination?: string;
+  departure_date?: string;
+  arrival_date?: string;
   sale_price?: number;
   currency?: string;
   trip_cost?: number;
   trip_profit?: number;
   expenses_total?: number;
   live_trip_profit?: number;
+  driver_key?: string;
+  unit_key?: string;
+  distance_km?: number;
   trip_status?: string;
   payment_status?: string;
 };
@@ -29,6 +34,19 @@ export default function ViajesPage() {
   const [lastTrip, setLastTrip] = useState<Trip | null>(null);
   const [closeFolio, setCloseFolio] = useState("");
   const [closing, setClosing] = useState(false);
+  const [editingFolio, setEditingFolio] = useState("");
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [tripOverrides, setTripOverrides] = useState<Record<string, Trip>>({});
+  const [deletedTripFolios, setDeletedTripFolios] = useState<Record<string, boolean>>({});
+
+  const trips = ((ops.trips || []) as Trip[])
+    .slice(0, 20)
+    .map((trip) => {
+      const folio = trip.trip_folio || "";
+      return tripOverrides[folio] ? { ...trip, ...tripOverrides[folio] } : trip;
+    })
+    .filter((trip) => !deletedTripFolios[trip.trip_folio || ""]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -72,6 +90,71 @@ export default function ViajesPage() {
       setStatus("Error de conexion");
     } finally {
       setClosing(false);
+    }
+  }
+
+  function startEdit(trip: Trip) {
+    setEditingFolio(trip.trip_folio || "");
+    setEditForm({
+      customer: trip.customer || "",
+      origin: trip.origin || "",
+      destination: trip.destination || "",
+      departure_date: trip.departure_date || "",
+      arrival_date: trip.arrival_date || "",
+      sale_price: String(trip.sale_price ?? ""),
+      currency: trip.currency || "MXN",
+      driver_key: trip.driver_key || "",
+      unit_key: trip.unit_key || "",
+      distance_km: String(trip.distance_km ?? ""),
+      trip_status: trip.trip_status || "active",
+    });
+    setStatus("");
+  }
+
+  async function saveEdit(tripFolio: string) {
+    setSavingEdit(true);
+    setStatus("");
+    try {
+      const res = await fetch("/api/viajes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ empresa_id: selectedCompanyId, trip_folio: tripFolio, ...editForm, dry_run: false }),
+      });
+      const data = await res.json();
+      if (!data.ok) { setStatus(data.error || "Error al actualizar viaje"); return; }
+      const updated = data.data?.trip || {};
+      setTripOverrides((current) => ({ ...current, [tripFolio]: updated }));
+      setEditingFolio("");
+      setStatus(`Viaje ${tripFolio} actualizado.`);
+    } catch {
+      setStatus("Error de conexion");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
+  async function deleteTrip(trip: Trip) {
+    const tripFolio = trip.trip_folio || "";
+    if (!tripFolio) return;
+    if (!window.confirm(`Borrar viaje ${tripFolio}? Sus pagos y gastos quedaran libres, sin folio de viaje.`)) return;
+    setSavingEdit(true);
+    setStatus("");
+    try {
+      const res = await fetch("/api/viajes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ empresa_id: selectedCompanyId, trip_folio: tripFolio, dry_run: false }),
+      });
+      const data = await res.json();
+      if (!data.ok) { setStatus(data.error || "Error al borrar viaje"); return; }
+      setDeletedTripFolios((current) => ({ ...current, [tripFolio]: true }));
+      const freed = data.data?.freed || {};
+      const deleted = data.data?.deleted || {};
+      setStatus(`Viaje ${tripFolio} borrado. Gastos libres: ${freed.expenses || 0}. Pagos libres: ${freed.payments || 0}. CxC eliminadas: ${deleted.receivables || 0}.`);
+    } catch {
+      setStatus("Error de conexion");
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -175,30 +258,86 @@ export default function ViajesPage() {
                   <th className="text-left py-2">Folio</th>
                   <th className="text-left py-2">Cliente</th>
                   <th className="text-left py-2">Ruta</th>
+                  <th className="text-left py-2">Salida</th>
+                  <th className="text-left py-2">Llegada</th>
                   <th className="text-left py-2">Operador</th>
                   <th className="text-left py-2">Unidad</th>
+                  <th className="text-right py-2">Km</th>
                   <th className="text-right py-2">Precio venta</th>
                   <th className="text-right py-2">Gastos</th>
                   <th className="text-right py-2">Profit</th>
+                  <th className="text-left py-2">Viaje</th>
                   <th className="text-left py-2">Pago</th>
+                  <th className="text-right py-2">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {(ops.trips || []).slice(0, 20).map((trip: any) => (
-                  <tr key={trip.trip_folio} className="border-b border-border/50">
+                {trips.map((trip: Trip) => {
+                  const isEditing = editingFolio === trip.trip_folio;
+                  return (
+                  <tr key={trip.trip_folio} className="border-b border-border/50 align-top">
                     <td className="py-2 font-mono">{trip.trip_folio}</td>
-                    <td className="py-2">{trip.customer || "-"}</td>
-                    <td className="py-2">{trip.origin || "-"} {"-"} {trip.destination || "-"}</td>
-                    <td className="py-2">{trip.driver_key || <span className="text-yellow-300">pendiente</span>}</td>
-                    <td className="py-2">{trip.unit_key || <span className="text-yellow-300">pendiente</span>}</td>
-                    <td className="py-2 text-right">{fmt(trip.sale_price || 0, trip.currency)}</td>
+                    <td className="py-2 min-w-28">
+                      {isEditing ? <input className="input h-8 text-xs" value={editForm.customer || ""} onChange={(e) => setEditForm((f) => ({ ...f, customer: e.target.value }))} /> : (trip.customer || "-")}
+                    </td>
+                    <td className="py-2 min-w-44">
+                      {isEditing ? (
+                        <div className="grid gap-1">
+                          <input className="input h-8 text-xs" value={editForm.origin || ""} onChange={(e) => setEditForm((f) => ({ ...f, origin: e.target.value }))} />
+                          <input className="input h-8 text-xs" value={editForm.destination || ""} onChange={(e) => setEditForm((f) => ({ ...f, destination: e.target.value }))} />
+                        </div>
+                      ) : (
+                        <span>{trip.origin || "-"} {"-"} {trip.destination || "-"}</span>
+                      )}
+                    </td>
+                    <td className="py-2 min-w-28">
+                      {isEditing ? <input type="date" className="input h-8 text-xs" value={editForm.departure_date || ""} onChange={(e) => setEditForm((f) => ({ ...f, departure_date: e.target.value }))} /> : (trip.departure_date || "-")}
+                    </td>
+                    <td className="py-2 min-w-28">
+                      {isEditing ? <input type="date" className="input h-8 text-xs" value={editForm.arrival_date || ""} onChange={(e) => setEditForm((f) => ({ ...f, arrival_date: e.target.value }))} /> : (trip.arrival_date || "-")}
+                    </td>
+                    <td className="py-2 min-w-24">
+                      {isEditing ? <input list="fleet-drivers" className="input h-8 text-xs" value={editForm.driver_key || ""} onChange={(e) => setEditForm((f) => ({ ...f, driver_key: e.target.value }))} /> : (trip.driver_key || <span className="text-yellow-300">pendiente</span>)}
+                    </td>
+                    <td className="py-2 min-w-24">
+                      {isEditing ? <input list="fleet-units" className="input h-8 text-xs" value={editForm.unit_key || ""} onChange={(e) => setEditForm((f) => ({ ...f, unit_key: e.target.value }))} /> : (trip.unit_key || <span className="text-yellow-300">pendiente</span>)}
+                    </td>
+                    <td className="py-2 text-right min-w-20">
+                      {isEditing ? <input type="number" className="input h-8 text-xs text-right" value={editForm.distance_km || ""} onChange={(e) => setEditForm((f) => ({ ...f, distance_km: e.target.value }))} /> : (trip.distance_km ?? "-")}
+                    </td>
+                    <td className="py-2 text-right min-w-28">
+                      {isEditing ? <input type="number" className="input h-8 text-xs text-right" value={editForm.sale_price || ""} onChange={(e) => setEditForm((f) => ({ ...f, sale_price: e.target.value }))} /> : fmt(trip.sale_price || 0, trip.currency)}
+                    </td>
                     <td className="py-2 text-right">{fmt(trip.expenses_total ?? trip.trip_cost ?? 0, trip.currency)}</td>
                     <td className="py-2 text-right">{fmt(trip.live_trip_profit ?? trip.trip_profit ?? 0, trip.currency)}</td>
-                    <td className="py-2">{trip.payment_status || "receivable"}</td>
+                    <td className="py-2 min-w-28">
+                      {isEditing ? (
+                        <select className="input h-8 text-xs" value={editForm.trip_status || "active"} onChange={(e) => setEditForm((f) => ({ ...f, trip_status: e.target.value }))}>
+                          <option value="active">Activo</option>
+                          <option value="closed">Cerrado</option>
+                          <option value="cancelled">Cancelado</option>
+                        </select>
+                      ) : (trip.trip_status || "active")}
+                    </td>
+                    <td className="py-2 min-w-28">{trip.payment_status || "receivable"}</td>
+                    <td className="py-2">
+                      {isEditing ? (
+                        <div className="flex gap-2 justify-end">
+                          <button type="button" className="btn-primary px-3 py-1 text-xs" disabled={savingEdit} onClick={() => saveEdit(trip.trip_folio || "")}>Guardar</button>
+                          <button type="button" className="btn-ghost px-3 py-1 text-xs" disabled={savingEdit} onClick={() => setEditingFolio("")}>Cancelar</button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2 justify-end">
+                          <button type="button" className="btn-ghost px-2 py-1 text-xs" title="Editar viaje" disabled={savingEdit} onClick={() => startEdit(trip)}>Editar</button>
+                          <button type="button" className="btn-ghost px-2 py-1 text-xs text-red-300" title="Borrar viaje" disabled={savingEdit} onClick={() => deleteTrip(trip)}>Borrar</button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
-                ))}
-                {!(ops.trips || []).length && (
-                  <tr><td colSpan={9} className="py-6 text-center text-muted">Sin viajes registrados.</td></tr>
+                  );
+                })}
+                {!trips.length && (
+                  <tr><td colSpan={14} className="py-6 text-center text-muted">Sin viajes registrados.</td></tr>
                 )}
               </tbody>
             </table>

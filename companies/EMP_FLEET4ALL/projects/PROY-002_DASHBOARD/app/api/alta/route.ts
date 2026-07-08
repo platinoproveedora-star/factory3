@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireFleetCompanyAccess } from "@/lib/access";
-import { fuelLoadCapture, mileageCalculate, deviationAlert } from "@/lib/fleet4all";
+import { driverManage, unitManage } from "@/lib/fleet4all";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +14,11 @@ export async function POST(req: NextRequest) {
   if (!(await requireFleetCompanyAccess(user.sub, empresaId))) {
     return NextResponse.json({ ok: false, error: "Sin acceso a esta empresa" }, { status: 403 });
   }
-  const action = body.action || "load";
+
+  const action = String(body.action || "").trim().toLowerCase();
   const result =
-    action === "mileage" ? await mileageCalculate(body) :
-    action === "alert" ? await deviationAlert(body) :
-    await fuelLoadCapture(body);
+    action === "driver" ? await driverManage({ ...body, dry_run: false }) :
+    action === "unit" ? await unitManage({ ...body, dry_run: false }) :
+    { ok: false, error: "action_invalida" };
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }
