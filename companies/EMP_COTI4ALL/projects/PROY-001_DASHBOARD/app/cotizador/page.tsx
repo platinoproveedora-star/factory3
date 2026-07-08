@@ -990,7 +990,7 @@ export default function CotizadorPage() {
                 className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm"
               >
                 {loading && <Loader2 className="animate-spin" size={16} />}
-                {loading ? "Generando..." : "Abrir documento"}
+                {loading ? "Generando..." : "Guardar PDF"}
               </button>
             )}
           </div>

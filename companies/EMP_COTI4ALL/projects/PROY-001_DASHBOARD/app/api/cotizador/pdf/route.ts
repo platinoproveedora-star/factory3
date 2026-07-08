@@ -26,20 +26,24 @@ function buildQuoteDocument(quote: any, user: any) {
   const total = subtotal + iva;
   const companyName = quote.empresa_cotiza || "Empresa que cotiza";
   const title = "Cotizacion";
+  const docTitle = quote.folio ? `${title} ${quote.folio}` : title;
   const html = `<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>${escapeHtml(title)}</title>
+  <title>${escapeHtml(docTitle)}</title>
   <style>
     :root { color-scheme: light; }
     body { margin: 0; background: #f4f6f8; color: #1f2933; font-family: Arial, sans-serif; }
     .page { max-width: 860px; margin: 24px auto; background: #fff; padding: 36px; border: 1px solid #d9e1e8; }
+    .save-pdf-bar { max-width: 860px; margin: 16px auto 0; display: flex; justify-content: flex-end; }
+    .save-pdf-btn { background: #1d4ed8; color: #fff; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .save-pdf-btn:hover { background: #1e40af; }
     .top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #1d4ed8; padding-bottom: 18px; }
     h1 { margin: 0; font-size: 28px; color: #0f172a; }
     h2 { margin: 0 0 8px; font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: .08em; }
     .muted { color: #64748b; font-size: 13px; line-height: 1.5; }
-    .box { margin-top: 24px; border: 1px solid #e2e8f0; padding: 16px; }
+    .box { margin-top: 24px; border: 1px solid #e2e8f0; padding: 16px; page-break-inside: avoid; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
     .label { color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
     .value { margin-top: 3px; font-size: 14px; color: #0f172a; }
@@ -50,10 +54,13 @@ function buildQuoteDocument(quote: any, user: any) {
     .totals { margin-left: auto; margin-top: 20px; width: 280px; font-size: 14px; }
     .totals div { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #e2e8f0; }
     .total { font-weight: 700; color: #0f172a; font-size: 18px; }
-    @media print { body { background: #fff; } .page { margin: 0; border: 0; max-width: none; } }
+    @media print { body { background: #fff; } .page { margin: 0; border: 0; max-width: none; } .no-print { display: none !important; } }
   </style>
 </head>
 <body>
+  <div class="save-pdf-bar no-print">
+    <button type="button" class="save-pdf-btn" onclick="window.print()">Guardar PDF</button>
+  </div>
   <main class="page">
     <section class="top">
       <div>
