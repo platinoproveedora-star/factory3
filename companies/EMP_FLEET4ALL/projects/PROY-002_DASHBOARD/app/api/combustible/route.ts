@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireFleetCompanyAccess } from "@/lib/access";
-import { fuelLoadCapture, mileageCalculate, deviationAlert } from "@/lib/fleet4all";
+import { fuelLoadCapture, mileageCalculate, deviationAlert, unitManage } from "@/lib/fleet4all";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
   }
   const action = body.action || "load";
   const result =
+    action === "unit" ? await unitManage({ ...body, dry_run: false }) :
     action === "mileage" ? await mileageCalculate(body) :
     action === "alert" ? await deviationAlert(body) :
     await fuelLoadCapture(body);

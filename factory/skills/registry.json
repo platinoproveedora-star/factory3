@@ -5186,6 +5186,16 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_fleet4all_trips/expense_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_trips/expense_manage",
+    "vertical": "vertical_fleet4all_trips",
+    "kind": "action",
+    "descripcion": "Lista, actualiza y borra gastos Fleet4All por empresa, folio y rango de fechas.",
+    "path": "skills/internos/vertical_fleet4all_trips/expense_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_fleet4all_trips/trip_close": {
     "tipo": "interno",
     "nombre": "vertical_fleet4all_trips/trip_close",
@@ -5222,6 +5232,16 @@
     "kind": "data",
     "descripcion": "Datos operativos Fleet4All para dashboard: viajes, operadores, unidades, CxC, fuel, mantenimiento, partes, tarifas y cotizaciones.",
     "path": "skills/internos/vertical_fleet4all_ops/fleet_operational_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_ops/unit_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_ops/unit_manage",
+    "vertical": "vertical_fleet4all_ops",
+    "kind": "action",
+    "descripcion": "Crea o actualiza unidades Fleet4All por empresa.",
+    "path": "skills/internos/vertical_fleet4all_ops/unit_manage",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

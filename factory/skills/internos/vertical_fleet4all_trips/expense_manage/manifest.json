@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_fleet4all_trips/expense_manage",
+  "version": "0.1.0",
+  "kind": "action",
+  "entrypoint": "skill.py",
+  "description": "Lista, actualiza y borra gastos Fleet4All por empresa, folio y rango de fechas.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

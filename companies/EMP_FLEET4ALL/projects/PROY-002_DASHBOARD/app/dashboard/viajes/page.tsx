@@ -12,6 +12,8 @@ type Trip = {
   currency?: string;
   trip_cost?: number;
   trip_profit?: number;
+  expenses_total?: number;
+  live_trip_profit?: number;
   trip_status?: string;
   payment_status?: string;
 };
@@ -128,7 +130,7 @@ export default function ViajesPage() {
         </div>
         <div className="card">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Viajes recientes</h2>
+            <h2 className="font-semibold">Ultimos 20 viajes</h2>
             {loadingOps && <span className="text-muted text-xs">Cargando...</span>}
           </div>
           <div className="overflow-x-auto">
@@ -140,22 +142,26 @@ export default function ViajesPage() {
                   <th className="text-left py-2">Ruta</th>
                   <th className="text-left py-2">Operador</th>
                   <th className="text-left py-2">Unidad</th>
+                  <th className="text-right py-2">Precio venta</th>
+                  <th className="text-right py-2">Gastos</th>
                   <th className="text-right py-2">Profit</th>
                 </tr>
               </thead>
               <tbody>
-                {(ops.trips || []).slice(0, 10).map((trip: any) => (
+                {(ops.trips || []).slice(0, 20).map((trip: any) => (
                   <tr key={trip.trip_folio} className="border-b border-border/50">
                     <td className="py-2 font-mono">{trip.trip_folio}</td>
                     <td className="py-2">{trip.customer || "-"}</td>
                     <td className="py-2">{trip.origin || "-"} {"-"} {trip.destination || "-"}</td>
                     <td className="py-2">{trip.driver_key || <span className="text-yellow-300">pendiente</span>}</td>
                     <td className="py-2">{trip.unit_key || <span className="text-yellow-300">pendiente</span>}</td>
-                    <td className="py-2 text-right">{fmt(trip.trip_profit || 0, trip.currency)}</td>
+                    <td className="py-2 text-right">{fmt(trip.sale_price || 0, trip.currency)}</td>
+                    <td className="py-2 text-right">{fmt(trip.expenses_total ?? trip.trip_cost ?? 0, trip.currency)}</td>
+                    <td className="py-2 text-right">{fmt(trip.live_trip_profit ?? trip.trip_profit ?? 0, trip.currency)}</td>
                   </tr>
                 ))}
                 {!(ops.trips || []).length && (
-                  <tr><td colSpan={6} className="py-6 text-center text-muted">Sin viajes registrados.</td></tr>
+                  <tr><td colSpan={8} className="py-6 text-center text-muted">Sin viajes registrados.</td></tr>
                 )}
               </tbody>
             </table>

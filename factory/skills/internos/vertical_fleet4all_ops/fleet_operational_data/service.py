@@ -96,7 +96,38 @@ class FleetOperationalDataService:
         )
         if not res.get("ok"):
             return {"ok": False, "error": res.get("error")}
-        return {"ok": True, "data": res.get("data") or []}
+        trips = res.get("data") or []
+        if not trips:
+            return {"ok": True, "data": []}
+
+        folios = [str(trip.get("trip_folio") or "").strip() for trip in trips if trip.get("trip_folio")]
+        expenses_by_trip = {folio: 0.0 for folio in folios}
+        if folios:
+            expenses_res = db.rest_select(
+                "expenses",
+                filters={"empresa_id": f"eq.{empresa_id}", "trip_folio": f"in.({','.join(folios)})"},
+                select="trip_folio,amount",
+            )
+            if not expenses_res.get("ok"):
+                return {"ok": False, "error": expenses_res.get("error")}
+            for expense in expenses_res.get("data") or []:
+                folio = str(expense.get("trip_folio") or "").strip()
+                expenses_by_trip[folio] = expenses_by_trip.get(folio, 0.0) + float(expense.get("amount") or 0)
+
+        enriched = []
+        for trip in trips:
+            expenses_total = round(expenses_by_trip.get(str(trip.get("trip_folio") or ""), 0.0), 2)
+            sale_price = float(trip.get("sale_price") or 0)
+            live_profit = round(sale_price - expenses_total, 2)
+            enriched.append({
+                **trip,
+                "expenses_total": expenses_total,
+                "live_trip_cost": expenses_total,
+                "live_trip_profit": live_profit,
+                "trip_cost": expenses_total,
+                "trip_profit": live_profit,
+            })
+        return {"ok": True, "data": enriched}
 
     def _receivables(self, db: SupabaseClient, empresa_id: str, limit: int) -> dict:
         res = db.rest_select(
