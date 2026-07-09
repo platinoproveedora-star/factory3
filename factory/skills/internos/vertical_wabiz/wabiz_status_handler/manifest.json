@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "wabiz_status_handler",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Procesa eventos de status (sent, delivered, read, failed) de WhatsApp Cloud API y actualiza wabiz_messages por wa_message_id.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

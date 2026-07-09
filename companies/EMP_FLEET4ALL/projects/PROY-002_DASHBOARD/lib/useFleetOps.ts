@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function useFleetOps(selectedCompanyId: string, sections: string[]) {
   const [data, setData] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [reloadTick, setReloadTick] = useState(0);
   const sectionKey = sections.join(",");
 
   useEffect(() => {
@@ -24,7 +25,9 @@ export function useFleetOps(selectedCompanyId: string, sections: string[]) {
       })
       .catch(() => setError("No se pudieron cargar datos operativos"))
       .finally(() => setLoading(false));
-  }, [selectedCompanyId, sectionKey, sections.length]);
+  }, [selectedCompanyId, sectionKey, sections.length, reloadTick]);
 
-  return { data, loading, error };
+  const refetch = useCallback(() => setReloadTick((t) => t + 1), []);
+
+  return { data, loading, error, refetch };
 }

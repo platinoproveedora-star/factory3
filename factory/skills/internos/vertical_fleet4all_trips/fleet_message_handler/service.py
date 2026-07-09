@@ -22,6 +22,8 @@ MESSAGES = {
             "Luego: `monto,concepto,dd/mm/aa,viaje(opcional)`\n"
             "Ej: `500,gasolina,05/07/26,T-0025`\n"
             "O envía una foto del comprobante.\n\n"
+            "*Ver resumen:*\n"
+            "Escribe: resumen\n\n"
             "Escribe *ayuda* para ver este mensaje de nuevo."
         ),
         "prompt_trip": "Envía el viaje:\n`cliente,origen,destino,precio`\nEj: `Cliente X,CDMX,Monterrey,15000`",
@@ -45,6 +47,15 @@ MESSAGES = {
         "draft_cancelled": "Gasto descartado.",
         "draft_reprompt": "Escribe *confirmar* para guardar o *cancelar* para descartar.",
         "media_error": "No pude leer el archivo: {error}",
+        "summary": (
+            "📊 *Resumen Fleet4All*\n\n"
+            "Viajes activos: {active_trips}\n"
+            "Utilidad semana: {utilidad_semana} MXN\n"
+            "Utilidad mes: {utilidad_mes} MXN\n"
+            "{top_expenses}"
+        ),
+        "summary_no_expenses": "Sin gastos registrados en este periodo.",
+        "summary_top_expenses": "\nTop gastos:\n{lines}",
     },
     "en": {
         "help": (
@@ -58,6 +69,8 @@ MESSAGES = {
             "Then: `amount,concept,dd/mm/yy,trip(optional)`\n"
             "Eg: `500,fuel,05/07/26,T-0025`\n"
             "Or send a photo of the receipt.\n\n"
+            "*View summary:*\n"
+            "Type: summary\n\n"
             "Type *help* to see this message again."
         ),
         "prompt_trip": "Send the trip:\n`customer,origin,destination,price`\nEg: `Customer X,CDMX,Monterrey,15000`",
@@ -81,6 +94,15 @@ MESSAGES = {
         "draft_cancelled": "Expense discarded.",
         "draft_reprompt": "Type *confirm* to save or *cancel* to discard.",
         "media_error": "Couldn't read the file: {error}",
+        "summary": (
+            "📊 *Fleet4All summary*\n\n"
+            "Active trips: {active_trips}\n"
+            "Week profit: {utilidad_semana} MXN\n"
+            "Month profit: {utilidad_mes} MXN\n"
+            "{top_expenses}"
+        ),
+        "summary_no_expenses": "No expenses logged for this period.",
+        "summary_top_expenses": "\nTop expenses:\n{lines}",
     },
 }
 
@@ -102,6 +124,9 @@ class FleetMessageHandlerService:
         if lang not in MESSAGES:
             lang = "es"
         msg_type = context.get("type", "text")
+        if msg_type == "interactive":
+            # respuesta de boton/lista: el id llega en "body", se enruta igual que texto tecleado
+            msg_type = "text"
         body = str(context.get("body") or "").strip()
         media_id = context.get("media_id") or ""
         dry_run = context.get("dry_run", True)
@@ -116,21 +141,25 @@ class FleetMessageHandlerService:
         text_lower = body.lower().lstrip("/")
         new_state = dict(state)
         reply = ""
+        interactive: dict | None = None
 
         if msg_type == "text" and text_lower in ("ayuda", "help"):
-            reply = self._t(lang, "help")
             new_state = {}
+            interactive = self._menu_interactive(lang)
         elif msg_type == "text" and text_lower in ("gasto", "expense"):
             new_state = {"hint": "expense"}
             reply = self._t(lang, "prompt_expense")
         elif msg_type == "text" and text_lower in ("viaje", "trip"):
             new_state = {"hint": "trip"}
             reply = self._t(lang, "prompt_trip")
+        elif msg_type == "text" and text_lower in ("resumen", "kpis", "summary"):
+            reply = self._handle_summary(empresa_id, lang)
+            new_state = {}
         elif hint == "expense_confirm":
             reply, new_state = self._handle_confirm(text_lower, state, empresa_id, dry_run, lang)
         elif hint == "expense":
             if msg_type in ("image", "document") and media_id:
-                reply, new_state = self._handle_expense_media(media_id, empresa_id, state, lang)
+                reply, new_state, interactive = self._handle_expense_media(media_id, empresa_id, state, lang)
             elif msg_type == "text" and body:
                 reply, new_state = self._handle_expense_text(body, empresa_id, dry_run, lang)
             else:
@@ -146,15 +175,24 @@ class FleetMessageHandlerService:
         if not dry_run:
             self._save_state(chat_id, new_state)
 
+        if interactive:
+            return {"ok": True, "data": {"interactive": interactive}}
         return {"ok": True, "data": {"reply": reply}}
 
     # ── HANDLERS ──────────────────────────────────────────────────────────────
 
     def _handle_trip_text(self, body: str, empresa_id: str, dry_run: bool, lang: str) -> tuple[str, dict]:
         parts = [p.strip() for p in body.split(",")]
-        if len(parts) != 4:
-            return self._t(lang, "invalid_trip"), {"hint": "trip"}
-        customer, origin, destination, sale_price = parts
+        if len(parts) == 4:
+            customer, origin, destination, sale_price = parts
+        else:
+            fields = self._parse_trip_ai(body)
+            customer = fields.get("customer") or ""
+            origin = fields.get("origin") or ""
+            destination = fields.get("destination") or ""
+            sale_price = fields.get("sale_price")
+            if not (customer and origin and destination and sale_price):
+                return self._t(lang, "invalid_trip"), {"hint": "trip"}
         res = _runner().run(
             "vertical_fleet4all_trips/trip_create",
             {
@@ -181,6 +219,43 @@ class FleetMessageHandlerService:
             currency=trip.get("currency"),
         ), {}
 
+    def _handle_summary(self, empresa_id: str, lang: str) -> str:
+        res = _runner().run("vertical_fleet4all_trips/trip_kpis", {"empresa_id": empresa_id})
+        if not res.get("ok"):
+            return self._t(lang, "error_saving", error=res.get("error"))
+        kpis = (res.get("data") or {}).get("trip_kpis") or {}
+        top = kpis.get("top_expenses_by_type") or []
+        if top:
+            lines = "\n".join(f"• {e['expense_type']}: {e['amount']} MXN" for e in top[:5])
+            top_expenses = self._t(lang, "summary_top_expenses", lines=lines)
+        else:
+            top_expenses = self._t(lang, "summary_no_expenses")
+        return self._t(
+            lang,
+            "summary",
+            active_trips=kpis.get("active_trips", 0),
+            utilidad_semana=kpis.get("utilidad_semana", 0),
+            utilidad_mes=kpis.get("utilidad_mes", 0),
+            top_expenses=top_expenses,
+        )
+
+    def _parse_trip_ai(self, text: str) -> dict:
+        res = _runner().run(
+            "vertical_factory_utils/ai_interpreter",
+            {
+                "mode": "extract",
+                "text": text,
+                "schema": {"customer": None, "origin": None, "destination": None, "sale_price": None},
+                "context": (
+                    "Extrae los datos de un viaje de flotilla de transporte a partir de una frase "
+                    "en español o inglés. sale_price debe ser solo el número (sin signo de moneda)."
+                ),
+            },
+        )
+        if not res.get("ok"):
+            return {}
+        return (res.get("data") or {}).get("extracted") or {}
+
     def _handle_expense_text(self, body: str, empresa_id: str, dry_run: bool, lang: str) -> tuple[str, dict]:
         res = _runner().run(
             "vertical_fleet4all_trips/expense_capture",
@@ -188,10 +263,10 @@ class FleetMessageHandlerService:
         )
         return self._reply_from_expense_result(res, lang)
 
-    def _handle_expense_media(self, media_id: str, empresa_id: str, state: dict, lang: str) -> tuple[str, dict]:
+    def _handle_expense_media(self, media_id: str, empresa_id: str, state: dict, lang: str) -> tuple[str, dict, dict | None]:
         dl = _runner().run("vertical_wabiz/wabiz_media_downloader", {"media_id": media_id, "empresa_id": empresa_id})
         if not dl.get("ok"):
-            return self._t(lang, "media_error", error=dl.get("error")), state
+            return self._t(lang, "media_error", error=dl.get("error")), state, None
         content_b64 = (dl.get("data") or {}).get("content_b64")
         mime_type = (dl.get("data") or {}).get("mime_type") or "image/jpeg"
         res = _runner().run(
@@ -199,16 +274,45 @@ class FleetMessageHandlerService:
             {"empresa_id": empresa_id, "image_base64": content_b64, "media_type": mime_type},
         )
         if not res.get("ok"):
-            return self._t(lang, "error_saving", error=res.get("error")), state
+            return self._t(lang, "error_saving", error=res.get("error")), state, None
         draft = (res.get("data") or {}).get("expense_draft") or {}
         new_state = {"hint": "expense_confirm", "draft": draft}
-        return self._t(
+        body_text = self._t(
             lang,
             "expense_draft_confirm",
             amount=draft.get("amount"),
             concept=draft.get("concept"),
             expense_date=draft.get("expense_date"),
-        ), new_state
+        )
+        return "", new_state, self._confirm_buttons(lang, body_text)
+
+    def _menu_interactive(self, lang: str) -> dict:
+        rows = {
+            "es": [
+                {"id": "viaje", "title": "📦 Viaje", "description": "Registrar un viaje"},
+                {"id": "gasto", "title": "💸 Gasto", "description": "Registrar un gasto"},
+                {"id": "resumen", "title": "📊 Resumen", "description": "Ver utilidad y KPIs"},
+            ],
+            "en": [
+                {"id": "trip", "title": "📦 Trip", "description": "Log a trip"},
+                {"id": "expense", "title": "💸 Expense", "description": "Log an expense"},
+                {"id": "summary", "title": "📊 Summary", "description": "View profit and KPIs"},
+            ],
+        }
+        return {
+            "body": self._t(lang, "help"),
+            "interactive_type": "list",
+            "button_label": "Elegir" if lang == "es" else "Choose",
+            "section_title": "Fleet4All",
+            "rows": rows.get(lang, rows["es"]),
+        }
+
+    def _confirm_buttons(self, lang: str, body_text: str) -> dict:
+        if lang == "en":
+            buttons = [{"id": "confirm", "title": "✅ Confirm"}, {"id": "cancel", "title": "❌ Cancel"}]
+        else:
+            buttons = [{"id": "confirmar", "title": "✅ Confirmar"}, {"id": "cancelar", "title": "❌ Cancelar"}]
+        return {"body": body_text, "interactive_type": "button", "buttons": buttons}
 
     def _handle_confirm(self, text_lower: str, state: dict, empresa_id: str, dry_run: bool, lang: str) -> tuple[str, dict]:
         if text_lower in _CANCEL_WORDS:
@@ -250,7 +354,9 @@ class FleetMessageHandlerService:
     # ── EMPRESA RESOLUTION ───────────────────────────────────────────────────
 
     def _resolve_empresa_id(self, context: dict, from_phone: str) -> str | None:
-        explicit = str(context.get("empresa_id") or "").strip()
+        # usuario_empresa_id: empresa real del usuario registrado (viene de wabiz_channel_router).
+        # empresa_id: puede ser el tenant del canal WhatsApp compartido (ej. "factory3"), no la empresa real.
+        explicit = str(context.get("usuario_empresa_id") or context.get("empresa_id") or "").strip()
         if explicit:
             return explicit
         registry = context.get("phone_registry")

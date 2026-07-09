@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "wabiz_send_interactive",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Envia botones de respuesta rapida (hasta 3) o lista desplegable (hasta 10) via WhatsApp Cloud API. Registra en wabiz_messages con direction=out.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

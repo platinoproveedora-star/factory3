@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "wabiz_send_media",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Sube un archivo (base64) o referencia un link publico y lo envia por WhatsApp Cloud API (imagen, documento, audio, video). Registra en wabiz_messages con direction=out.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

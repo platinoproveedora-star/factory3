@@ -12,11 +12,13 @@ export const tripCreate = (ctx: Ctx) => run("vertical_fleet4all_trips/trip_creat
 export const tripManage = (ctx: Ctx) => run("vertical_fleet4all_trips/trip_manage", ctx);
 export const expenseCapture = (ctx: Ctx) => run("vertical_fleet4all_trips/expense_capture", ctx);
 export const expenseManage = (ctx: Ctx) => run("vertical_fleet4all_trips/expense_manage", ctx);
+export const expenseCategoryManage = (ctx: Ctx) => run("vertical_fleet4all_trips/expense_category_manage", ctx);
 export const tripClose = (ctx: Ctx) => run("vertical_fleet4all_trips/trip_close", ctx);
 export const tripKpis = (ctx: Ctx) => run("vertical_fleet4all_trips/trip_kpis", ctx);
 
 // ── COLLECT4ALL ───────────────────────────────────────────────────────────
 export const paymentCapture = (ctx: Ctx) => run("vertical_fleet4all_collections/payment_capture", ctx);
+export const paymentManage = (ctx: Ctx) => run("vertical_fleet4all_collections/payment_manage", ctx);
 export const receivablesSync = (ctx: Ctx) => run("vertical_fleet4all_collections/receivables_sync", ctx);
 export const statementGenerate = (ctx: Ctx) => run("vertical_fleet4all_collections/statement_generate", ctx);
 export const collectionReminder = (ctx: Ctx) => run("vertical_fleet4all_collections/collection_reminder", ctx);

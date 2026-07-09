@@ -10,13 +10,15 @@ from pathlib import Path
 _UA = "FactoryFactory/0.1 (+https://github.com/)"
 
 _MODO_HANDLERS: dict[str, str] = {
-    "logplat": "emp_logplat_message_handler",
+    "logplat":  "emp_logplat_message_handler",
+    "fleet4all": "vertical_fleet4all_trips/fleet_message_handler",
 }
 
 _MODO_LABELS: dict[str, str] = {
-    "logplat": "📦 *logplat* — Platino Logística",
-    "rh":      "👥 *rh* — Recursos Humanos",
-    "sat":     "🧾 *sat* — SAT / Fiscal",
+    "logplat":   "📦 *logplat* — Platino Logística",
+    "rh":        "👥 *rh* — Recursos Humanos",
+    "sat":       "🧾 *sat* — SAT / Fiscal",
+    "fleet4all": "🚚 *fleet4all* — Fleet4All",
 }
 
 _MSG_NO_ACCESO = (
@@ -42,8 +44,14 @@ class WabizChannelRouterService:
         user       = self._get_user(from_phone)
 
         # ── Ayuda ─────────────────────────────────────────────────────────────
+        # Si el usuario tiene un solo modo con handler registrado, "ayuda" se
+        # delega a ese handler (puede regresar un menu interactivo propio) en
+        # vez de mostrar el listado generico de modulos.
+        user_modes_ayuda = (user.get("user_mode") or []) if user else []
+        single_mode_ayuda = user_modes_ayuda[0] if len(user_modes_ayuda) == 1 else None
         if msg_type == "text" and body_lower in ("ayuda", "/ayuda"):
-            return self._reply(self._txt_ayuda(user, state), empresa_id, from_phone, dry_run)
+            if not (user and single_mode_ayuda and single_mode_ayuda in _MODO_HANDLERS):
+                return self._reply(self._txt_ayuda(user, state), empresa_id, from_phone, dry_run)
 
         # ── No registrado → flujo de registro ─────────────────────────────────
         if not user:
@@ -100,8 +108,12 @@ class WabizChannelRouterService:
                 self._send_text(empresa_id, from_phone, "⚠️ Ocurrió un error. Intenta de nuevo.")
             return result
 
-        reply = result.get("data", {}).get("reply", "")
-        if reply and not dry_run:
+        data = result.get("data", {})
+        interactive = data.get("interactive")
+        reply = data.get("reply", "")
+        if interactive and not dry_run:
+            self._send_interactive(empresa_id, from_phone, interactive)
+        elif reply and not dry_run:
             self._send_text(empresa_id, from_phone, reply)
 
         return result
@@ -314,6 +326,18 @@ class WabizChannelRouterService:
             spec.loader.exec_module(mod)
             return mod.WabizSendTextService().ejecutar({
                 "empresa_id": empresa_id, "to": to, "body": body, "dry_run": False,
+            })
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def _send_interactive(self, empresa_id: str, to: str, interactive: dict) -> dict:
+        try:
+            svc_path = Path(__file__).parent.parent / "wabiz_send_interactive" / "service.py"
+            spec     = importlib.util.spec_from_file_location("wabiz_send_interactive_service", svc_path)
+            mod      = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod.WabizSendInteractiveService().ejecutar({
+                **interactive, "empresa_id": empresa_id, "to": to, "dry_run": False,
             })
         except Exception as e:
             return {"ok": False, "error": str(e)}

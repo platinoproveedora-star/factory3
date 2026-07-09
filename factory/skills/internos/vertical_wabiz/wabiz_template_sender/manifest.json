@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "wabiz_template_sender",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Envia un mensaje usando una plantilla Meta pre-aprobada (nombre + parametros de body), para alertas fuera de la ventana de 24h. Registra en wabiz_messages con direction=out.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

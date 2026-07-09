@@ -1,13 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useCompany } from "@/lib/useCompany";
 import { useFleetOps } from "@/lib/useFleetOps";
 
 const fmt = (n: number, c = "MXN") => Number(n || 0).toLocaleString("es-MX", { style: "currency", currency: c });
 
+const METHOD_LABEL: Record<string, string> = { transfer: "Transferencia", cash: "Efectivo", check: "Cheque", card: "Tarjeta" };
+
+const emptyPaymentEdit = { amount: "", payment_date: "", method: "transfer" };
+
 export default function CobranzaPage() {
   const { selectedCompanyId, loading: loadingCompany } = useCompany();
-  const { data: ops, loading: loadingOps } = useFleetOps(selectedCompanyId, ["trips", "receivables", "payments"]);
+  const { data: ops, loading: loadingOps, refetch } = useFleetOps(selectedCompanyId, ["trips", "receivables", "payments"]);
   const [payForm, setPayForm] = useState({ trip_folio: "", amount: "", payment_date: "", method: "transfer" });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
@@ -15,9 +19,31 @@ export default function CobranzaPage() {
   const [stFilters, setStFilters] = useState({ customer: "", from: "", to: "" });
   const [statement, setStatement] = useState<any>(null);
   const [loadingStatement, setLoadingStatement] = useState(false);
+
+  const [editingPayment, setEditingPayment] = useState("");
+  const [paymentEdit, setPaymentEdit] = useState(emptyPaymentEdit);
+
   const pendingReceivables = (ops.receivables || []).filter((row: any) => Number(row.balance || 0) > 0);
   const payments = ops.payments || [];
-  const paidTrips = (ops.trips || []).filter((trip: any) => String(trip.payment_status || "").toLowerCase() === "paid");
+  const paidTrips = (ops.trips || []).filter((trip: any) => ["paid", "partial"].includes(String(trip.payment_status || "").toLowerCase()));
+
+  const tripByFolio = useMemo(() => {
+    const map: Record<string, any> = {};
+    for (const t of ops.trips || []) map[t.trip_folio] = t;
+    return map;
+  }, [ops.trips]);
+
+  const receivableByTrip = useMemo(() => {
+    const map: Record<string, any> = {};
+    for (const r of ops.receivables || []) map[r.trip_folio] = r;
+    return map;
+  }, [ops.receivables]);
+
+  function route(tripFolio: string) {
+    const t = tripByFolio[tripFolio];
+    if (!t) return "-";
+    return `${t.origin || "-"} - ${t.destination || "-"}`;
+  }
 
   async function handlePayment(e: React.FormEvent) {
     e.preventDefault();
@@ -33,6 +59,55 @@ export default function CobranzaPage() {
       if (!data.ok) { setStatus(data.error || "Error al registrar pago"); return; }
       setStatus(`Pago ${data.data?.payment?.payment_folio} registrado.${data.data?.warnings?.length ? " (" + data.data.warnings.join("; ") + ")" : ""}`);
       setPayForm({ trip_folio: "", amount: "", payment_date: "", method: "transfer" });
+      refetch?.();
+    } catch {
+      setStatus("Error de conexion");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startEditPayment(payment: any) {
+    setEditingPayment(payment.payment_folio);
+    setPaymentEdit({ amount: String(payment.amount || ""), payment_date: payment.payment_date || "", method: payment.method || "transfer" });
+    setStatus("");
+  }
+
+  async function saveEditPayment(paymentFolio: string) {
+    setSaving(true);
+    setStatus("");
+    try {
+      const res = await fetch("/api/cobranza", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "payment_update", empresa_id: selectedCompanyId, payment_folio: paymentFolio, ...paymentEdit }),
+      });
+      const data = await res.json();
+      if (!data.ok) { setStatus(data.error || "Error al actualizar pago"); return; }
+      setEditingPayment("");
+      setStatus(`Pago ${paymentFolio} actualizado.`);
+      refetch?.();
+    } catch {
+      setStatus("Error de conexion");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function cancelPayment(payment: any) {
+    if (!window.confirm(`¿Cancelar el pago ${payment.payment_folio} por ${fmt(payment.amount, payment.currency)}? El saldo pendiente del viaje se restaura.`)) return;
+    setSaving(true);
+    setStatus("");
+    try {
+      const res = await fetch("/api/cobranza", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "payment_cancel", empresa_id: selectedCompanyId, payment_folio: payment.payment_folio }),
+      });
+      const data = await res.json();
+      if (!data.ok) { setStatus(data.error || "Error al cancelar pago"); return; }
+      setStatus(`Pago ${payment.payment_folio} cancelado.`);
+      refetch?.();
     } catch {
       setStatus("Error de conexion");
     } finally {
@@ -64,6 +139,27 @@ export default function CobranzaPage() {
   }
 
   if (loadingCompany) return null;
+
+  const paidTripsTotals = paidTrips.reduce(
+    (acc: any, t: any) => {
+      const receivable = receivableByTrip[t.trip_folio];
+      const paid = receivable ? Number(receivable.paid_amount || 0) : Number(t.sale_price || 0);
+      const pending = receivable ? Number(receivable.balance || 0) : 0;
+      return {
+        sale: acc.sale + Number(t.sale_price || 0),
+        paid: acc.paid + paid,
+        pending: acc.pending + pending,
+        expenses: acc.expenses + Number(t.expenses_total ?? t.trip_cost ?? 0),
+        profit: acc.profit + Number(t.live_trip_profit ?? t.trip_profit ?? 0),
+      };
+    },
+    { sale: 0, paid: 0, pending: 0, expenses: 0, profit: 0 }
+  );
+
+  const receivablesTotals = pendingReceivables.reduce(
+    (acc: any, r: any) => ({ total: acc.total + Number(r.total_amount || 0), balance: acc.balance + Number(r.balance || 0) }),
+    { total: 0, balance: 0 }
+  );
 
   return (
     <div>
@@ -124,6 +220,7 @@ export default function CobranzaPage() {
               </div>
             )}
           </div>
+
           <div className="card lg:col-span-2">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">Cuentas por cobrar</h2>
@@ -135,8 +232,10 @@ export default function CobranzaPage() {
                   <tr className="border-b border-border">
                     <th className="text-left py-2">Viaje</th>
                     <th className="text-left py-2">Cliente</th>
+                    <th className="text-left py-2">Ruta</th>
                     <th className="text-left py-2">Vence</th>
                     <th className="text-left py-2">Status</th>
+                    <th className="text-right py-2">Total viaje</th>
                     <th className="text-right py-2">Saldo</th>
                   </tr>
                 </thead>
@@ -145,16 +244,28 @@ export default function CobranzaPage() {
                     <tr key={row.receivable_folio} className="border-b border-border/50">
                       <td className="py-2 font-mono">{row.trip_folio || row.receivable_folio}</td>
                       <td className="py-2">{row.customer || "-"}</td>
+                      <td className="py-2">{route(row.trip_folio)}</td>
                       <td className="py-2">{row.due_date || "-"}</td>
                       <td className="py-2">{row.collection_status}</td>
-                      <td className="py-2 text-right">{fmt(row.balance, row.currency)}</td>
+                      <td className="py-2 text-right">{fmt(row.total_amount, row.currency)}</td>
+                      <td className="py-2 text-right font-semibold">{fmt(row.balance, row.currency)}</td>
                     </tr>
                   ))}
-                  {!pendingReceivables.length && <tr><td colSpan={5} className="py-6 text-center text-muted">Sin saldos pendientes por cobrar.</td></tr>}
+                  {!pendingReceivables.length && <tr><td colSpan={7} className="py-6 text-center text-muted">Sin saldos pendientes por cobrar.</td></tr>}
                 </tbody>
+                {pendingReceivables.length > 0 && (
+                  <tfoot>
+                    <tr className="border-t border-border">
+                      <td colSpan={5} className="py-2 text-xs font-semibold text-muted">Total</td>
+                      <td className="py-2 text-right font-bold">{fmt(receivablesTotals.total)}</td>
+                      <td className="py-2 text-right font-bold text-primary">{fmt(receivablesTotals.balance)}</td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
           </div>
+
           <div className="card lg:col-span-2">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">Pagos realizados</h2>
@@ -166,28 +277,65 @@ export default function CobranzaPage() {
                   <tr className="border-b border-border">
                     <th className="text-left py-2">Folio pago</th>
                     <th className="text-left py-2">Viaje</th>
+                    <th className="text-left py-2">Ruta</th>
                     <th className="text-left py-2">Cliente</th>
                     <th className="text-left py-2">Fecha</th>
                     <th className="text-left py-2">Metodo</th>
                     <th className="text-right py-2">Monto</th>
+                    <th className="text-right py-2">Total viaje</th>
+                    <th className="text-right py-2">Saldo pendiente</th>
+                    <th className="text-right py-2">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {payments.slice(0, 50).map((row: any) => (
-                    <tr key={row.payment_folio} className="border-b border-border/50">
-                      <td className="py-2 font-mono">{row.payment_folio}</td>
-                      <td className="py-2 font-mono">{row.trip_folio || "-"}</td>
-                      <td className="py-2">{row.customer || "-"}</td>
-                      <td className="py-2">{row.payment_date || "-"}</td>
-                      <td className="py-2">{row.method || "-"}</td>
-                      <td className="py-2 text-right">{fmt(row.amount, row.currency)}</td>
-                    </tr>
-                  ))}
-                  {!payments.length && <tr><td colSpan={6} className="py-6 text-center text-muted">Sin pagos registrados.</td></tr>}
+                  {payments.slice(0, 50).map((row: any) => {
+                    const cancelled = row.status === "cancelled";
+                    const editing = editingPayment === row.payment_folio;
+                    const receivable = receivableByTrip[row.trip_folio];
+                    return (
+                      <tr key={row.payment_folio} className={`border-b border-border/50 ${cancelled ? "opacity-50" : ""}`}>
+                        <td className="py-2 font-mono">{row.payment_folio}</td>
+                        <td className="py-2 font-mono">{row.trip_folio || "-"}</td>
+                        <td className="py-2">{route(row.trip_folio)}</td>
+                        <td className="py-2">{row.customer || "-"}</td>
+                        <td className="py-2">{editing ? <input type="date" className="input" value={paymentEdit.payment_date} onChange={(e) => setPaymentEdit((f) => ({ ...f, payment_date: e.target.value }))} /> : (row.payment_date || "-")}</td>
+                        <td className="py-2">
+                          {editing ? (
+                            <select className="input" value={paymentEdit.method} onChange={(e) => setPaymentEdit((f) => ({ ...f, method: e.target.value }))}>
+                              <option value="transfer">Transferencia</option>
+                              <option value="cash">Efectivo</option>
+                              <option value="check">Cheque</option>
+                              <option value="card">Tarjeta</option>
+                            </select>
+                          ) : (METHOD_LABEL[row.method] || row.method || "-")}
+                        </td>
+                        <td className="py-2 text-right">{editing ? <input type="number" className="input text-right" value={paymentEdit.amount} onChange={(e) => setPaymentEdit((f) => ({ ...f, amount: e.target.value }))} /> : fmt(row.amount, row.currency)}</td>
+                        <td className="py-2 text-right text-muted">{receivable ? fmt(receivable.total_amount, row.currency) : "-"}</td>
+                        <td className="py-2 text-right text-muted">{receivable ? fmt(receivable.balance, row.currency) : "-"}</td>
+                        <td className="py-2 text-right whitespace-nowrap">
+                          {cancelled ? (
+                            <span className="text-xs text-red-400 font-semibold">Cancelado</span>
+                          ) : editing ? (
+                            <>
+                              <button type="button" className="btn-primary px-3 py-1 mr-2" onClick={() => saveEditPayment(row.payment_folio)} disabled={saving}>Guardar</button>
+                              <button type="button" className="btn-ghost px-3 py-1" onClick={() => setEditingPayment("")}>Cancelar</button>
+                            </>
+                          ) : (
+                            <>
+                              <button type="button" className="btn-ghost px-2 py-1 mr-2" title="Modificar" aria-label="Modificar" onClick={() => startEditPayment(row)}>✎</button>
+                              <button type="button" className="btn-ghost px-2 py-1 text-red-300" title="Cancelar pago" aria-label="Cancelar pago" onClick={() => cancelPayment(row)} disabled={saving}>🗑</button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {!payments.length && <tr><td colSpan={10} className="py-6 text-center text-muted">Sin pagos registrados.</td></tr>}
                 </tbody>
               </table>
             </div>
           </div>
+
           <div className="card lg:col-span-2">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">Viajes pagados</h2>
@@ -204,26 +352,45 @@ export default function CobranzaPage() {
                     <th className="text-left py-2">Operador</th>
                     <th className="text-left py-2">Unidad</th>
                     <th className="text-right py-2">Venta</th>
+                    <th className="text-right py-2">Importe pagado</th>
+                    <th className="text-right py-2">Saldo</th>
                     <th className="text-right py-2">Gastos</th>
                     <th className="text-right py-2">Profit</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paidTrips.slice(0, 50).map((trip: any) => (
-                    <tr key={trip.trip_folio} className="border-b border-border/50">
-                      <td className="py-2 font-mono">{trip.trip_folio}</td>
-                      <td className="py-2">{trip.customer || "-"}</td>
-                      <td className="py-2">{trip.origin || "-"} - {trip.destination || "-"}</td>
-                      <td className="py-2">{trip.departure_date || "-"}</td>
-                      <td className="py-2">{trip.driver_key || "-"}</td>
-                      <td className="py-2">{trip.unit_key || "-"}</td>
-                      <td className="py-2 text-right">{fmt(trip.sale_price, trip.currency)}</td>
-                      <td className="py-2 text-right">{fmt(trip.expenses_total ?? trip.trip_cost ?? 0, trip.currency)}</td>
-                      <td className="py-2 text-right">{fmt(trip.live_trip_profit ?? trip.trip_profit ?? 0, trip.currency)}</td>
-                    </tr>
-                  ))}
-                  {!paidTrips.length && <tr><td colSpan={9} className="py-6 text-center text-muted">Sin viajes pagados todavia.</td></tr>}
+                  {paidTrips.slice(0, 50).map((trip: any) => {
+                    const receivable = receivableByTrip[trip.trip_folio];
+                    return (
+                      <tr key={trip.trip_folio} className="border-b border-border/50">
+                        <td className="py-2 font-mono">{trip.trip_folio}</td>
+                        <td className="py-2">{trip.customer || "-"}</td>
+                        <td className="py-2">{trip.origin || "-"} - {trip.destination || "-"}</td>
+                        <td className="py-2">{trip.departure_date || "-"}</td>
+                        <td className="py-2">{trip.driver_key || "-"}</td>
+                        <td className="py-2">{trip.unit_key || "-"}</td>
+                        <td className="py-2 text-right">{fmt(trip.sale_price, trip.currency)}</td>
+                        <td className="py-2 text-right">{receivable ? fmt(receivable.paid_amount, trip.currency) : fmt(trip.sale_price, trip.currency)}</td>
+                        <td className={`py-2 text-right ${receivable && receivable.balance > 0 ? "text-yellow-300 font-semibold" : ""}`}>{receivable ? fmt(receivable.balance, trip.currency) : fmt(0, trip.currency)}</td>
+                        <td className="py-2 text-right">{fmt(trip.expenses_total ?? trip.trip_cost ?? 0, trip.currency)}</td>
+                        <td className="py-2 text-right">{fmt(trip.live_trip_profit ?? trip.trip_profit ?? 0, trip.currency)}</td>
+                      </tr>
+                    );
+                  })}
+                  {!paidTrips.length && <tr><td colSpan={11} className="py-6 text-center text-muted">Sin viajes pagados todavia.</td></tr>}
                 </tbody>
+                {paidTrips.length > 0 && (
+                  <tfoot>
+                    <tr className="border-t border-border">
+                      <td colSpan={6} className="py-2 text-xs font-semibold text-muted">Total</td>
+                      <td className="py-2 text-right font-bold">{fmt(paidTripsTotals.sale)}</td>
+                      <td className="py-2 text-right font-bold">{fmt(paidTripsTotals.paid)}</td>
+                      <td className="py-2 text-right font-bold text-yellow-300">{fmt(paidTripsTotals.pending)}</td>
+                      <td className="py-2 text-right font-bold">{fmt(paidTripsTotals.expenses)}</td>
+                      <td className="py-2 text-right font-bold text-primary">{fmt(paidTripsTotals.profit)}</td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
           </div>

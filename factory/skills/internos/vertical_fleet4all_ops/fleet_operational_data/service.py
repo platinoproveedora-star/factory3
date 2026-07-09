@@ -65,7 +65,7 @@ class FleetOperationalDataService:
             "drivers": lambda: self._simple(db, "drivers", empresa_id, "driver_key,full_name,phone,license_number,pay_scheme,pay_rate,status", "full_name.asc", limit),
             "units": lambda: self._simple(db, "units", empresa_id, "unit_key,plate,brand,model,year,unit_type,odometer_km,status", "unit_key.asc", limit),
             "receivables": lambda: self._receivables(db, empresa_id, limit),
-            "payments": lambda: self._simple(db, "payments", empresa_id, "payment_folio,trip_folio,customer,payment_date,amount,currency,method,tracking_key,notes,created_at", "payment_date.desc", limit),
+            "payments": lambda: self._simple(db, "payments", empresa_id, "payment_folio,trip_folio,customer,payment_date,amount,currency,method,tracking_key,notes,status,created_at", "payment_date.desc", limit),
             "rates": lambda: self._simple(db, "rates", empresa_id, "rate_key,origin,destination,cargo_type,base_price,price_per_km,price_per_ton,currency,status", "origin.asc", limit),
             "quotes": lambda: self._simple(db, "quotes", empresa_id, "quote_folio,customer,origin,destination,cargo_type,quoted_price,currency,valid_until,status,trip_folio,created_at", "created_at.desc", limit),
             "fuel_loads": lambda: self._simple(db, "fuel_loads", empresa_id, "fuel_folio,unit_key,driver_key,trip_folio,load_date,liters,amount,currency,price_per_liter,odometer_km,station", "load_date.desc", limit),

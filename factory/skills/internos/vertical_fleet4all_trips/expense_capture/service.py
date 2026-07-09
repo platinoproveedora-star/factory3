@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date
 from pathlib import Path
 
 from factory.engine import SupabaseClient
@@ -99,11 +100,48 @@ class ExpenseCaptureService:
     def _resolve_fields(self, context: dict) -> dict:
         text = str(context.get("text") or "").strip()
         if text:
-            return self._parse_text(text)
+            if self._looks_like_csv(text):
+                return self._parse_text(text)
+            return self._parse_text_ai(text)
         return {
             "amount": context.get("amount"),
             "concept": context.get("concept"),
             "expense_date": context.get("expense_date"),
+        }
+
+    def _looks_like_csv(self, text: str) -> bool:
+        parts = text.split(",")
+        if len(parts) < 2:
+            return False
+        try:
+            float(parts[0].strip())
+            return True
+        except ValueError:
+            return False
+
+    def _parse_text_ai(self, text: str) -> dict:
+        result = _runner().run(
+            "vertical_factory_utils/ai_interpreter",
+            {
+                "mode": "extract",
+                "text": text,
+                "schema": {"amount": None, "concept": None, "expense_date": None, "trip_folio": None},
+                "context": (
+                    "Extrae los datos de un gasto de flotilla de transporte a partir de una frase "
+                    "en español o inglés. expense_date en formato YYYY-MM-DD; si dice 'hoy'/'today' "
+                    f"usa {date.today().isoformat()}. trip_folio solo si se menciona explícitamente "
+                    "un folio de viaje tipo T-0001."
+                ),
+            },
+        )
+        if not result.get("ok"):
+            return {"amount": None, "concept": "", "expense_date": None, "trip_folio": None}
+        extracted = (result.get("data") or {}).get("extracted") or {}
+        return {
+            "amount": extracted.get("amount"),
+            "concept": extracted.get("concept") or "",
+            "expense_date": extracted.get("expense_date"),
+            "trip_folio": extracted.get("trip_folio"),
         }
 
     def _parse_text(self, text: str) -> dict:

@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "payment_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Edita o cancela un pago Fleet4All (baja logica, status=cancelled). Re-sincroniza receivables del viaje tras cada cambio.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

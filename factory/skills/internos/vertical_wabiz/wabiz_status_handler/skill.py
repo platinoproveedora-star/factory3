@@ -1,0 +1,7 @@
+from __future__ import annotations
+from service import WabizStatusHandlerService
+
+def run(context: dict) -> dict:
+    if not isinstance(context, dict):
+        return {"ok": False, "error": "context debe ser dict"}
+    return WabizStatusHandlerService().ejecutar(context)

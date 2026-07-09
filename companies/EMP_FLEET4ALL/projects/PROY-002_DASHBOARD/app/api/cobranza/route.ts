@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireFleetCompanyAccess } from "@/lib/access";
-import { paymentCapture, receivablesSync, statementGenerate, collectionReminder } from "@/lib/fleet4all";
+import { paymentCapture, paymentManage, receivablesSync, statementGenerate, collectionReminder } from "@/lib/fleet4all";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +19,8 @@ export async function POST(req: NextRequest) {
     action === "sync" ? await receivablesSync(body) :
     action === "statement" ? await statementGenerate(body) :
     action === "reminder" ? await collectionReminder(body) :
+    action === "payment_update" ? await paymentManage({ ...body, action: "update", dry_run: false }) :
+    action === "payment_cancel" ? await paymentManage({ ...body, action: "cancel", dry_run: false }) :
     await paymentCapture(body);
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }

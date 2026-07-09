@@ -65,7 +65,7 @@ class ReceivablesSyncService:
 
         payments_res = db.rest_select(
             "payments",
-            filters={"empresa_id": f"eq.{empresa_id}", "trip_folio": f"eq.{trip_folio}"},
+            filters={"empresa_id": f"eq.{empresa_id}", "trip_folio": f"eq.{trip_folio}", "status": "eq.active"},
             select="amount",
         )
         if not payments_res.get("ok"):

@@ -858,5 +858,7 @@ Log de todos los mensajes WhatsApp entrantes y salientes por empresa. Sirve como
 | `body` | text | SÍ | — | Texto del mensaje o media_id si es archivo |
 | `wa_message_id` | text | SÍ | — | ID de mensaje Meta (para dedup y status tracking) |
 | `timestamp` | timestamptz | NO | now() | Timestamp original del evento Meta |
+| `status` | text | SÍ | — | Último status reportado por Meta para mensajes `out`: sent, delivered, read, failed |
+| `status_updated_at` | timestamptz | SÍ | — | Timestamp del último status recibido |
 
 Índice: `(empresa_id, from_phone, timestamp DESC)` para cargar historial de conversación.

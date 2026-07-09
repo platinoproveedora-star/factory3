@@ -39,6 +39,7 @@ class PaymentCaptureService:
             "method": method,
             "tracking_key": context.get("tracking_key"),
             "notes": context.get("notes"),
+            "status": "active",
         }
 
         if context.get("dry_run", True):

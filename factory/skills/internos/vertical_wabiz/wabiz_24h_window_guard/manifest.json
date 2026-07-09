@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "wabiz_24h_window_guard",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Verifica si el ultimo mensaje entrante del usuario fue hace menos de 24h. Si no, hay que usar plantilla (wabiz_template_sender) en vez de texto libre.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

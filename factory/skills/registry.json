@@ -5250,6 +5250,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_fleet4all_trips/expense_category_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_trips/expense_category_manage",
+    "vertical": "vertical_fleet4all_trips",
+    "descripcion": "CRUD de categorias de gasto Fleet4All por empresa: list, create, toggle (activar/desactivar).",
+    "path": "skills/internos/vertical_fleet4all_trips/expense_category_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_fleet4all_trips/expense_manage": {
     "tipo": "interno",
     "nombre": "vertical_fleet4all_trips/expense_manage",
@@ -5344,6 +5353,15 @@
     "vertical": "vertical_fleet4all_collections",
     "descripcion": "Registra un pago Fleet4All con folio P-NNNN secuencial por empresa; dispara receivables_sync del trip.",
     "path": "skills/internos/vertical_fleet4all_collections/payment_capture",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_fleet4all_collections/payment_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_collections/payment_manage",
+    "vertical": "vertical_fleet4all_collections",
+    "descripcion": "Edita o cancela un pago Fleet4All (baja logica, status=cancelled). Re-sincroniza receivables del viaje tras cada cambio.",
+    "path": "skills/internos/vertical_fleet4all_collections/payment_manage",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

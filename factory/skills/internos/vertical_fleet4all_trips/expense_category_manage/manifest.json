@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "expense_category_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "CRUD de categorias de gasto Fleet4All por empresa: list, create, toggle (activar/desactivar).",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

@@ -486,6 +486,12 @@ async def wabiz_events(empresa_id: str, request: Request, background_tasks: Back
                         {**event, "dry_run": False},
                         source="internos",
                     )
+                elif event.get("kind") == "status":
+                    runner.run(
+                        "vertical_wabiz/wabiz_status_handler",
+                        {**event, "dry_run": False},
+                        source="internos",
+                    )
         except Exception:
             pass  # Meta requiere 200 siempre; errores quedan en logs de Render
 
