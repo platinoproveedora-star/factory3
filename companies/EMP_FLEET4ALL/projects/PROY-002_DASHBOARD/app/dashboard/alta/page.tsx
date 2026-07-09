@@ -199,7 +199,7 @@ export default function AltaPage() {
               </div>
               <form onSubmit={saveDriver} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="label">Clave chofer</label><input className="input" value={driverForm.driver_key} onChange={(e) => setDriverForm((f) => ({ ...f, driver_key: e.target.value.trim().toUpperCase() }))} placeholder="DRV-001" required disabled={!!editingDriverKey} /></div>
+                  <div><label className="label">Clave chofer</label><input className="input" value={editingDriverKey ? driverForm.driver_key : "Se asigna automático"} disabled /></div>
                   <div><label className="label">Nombre</label><input className="input" value={driverForm.full_name} onChange={(e) => setDriverForm((f) => ({ ...f, full_name: e.target.value }))} required /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -235,7 +235,7 @@ export default function AltaPage() {
               </div>
               <form onSubmit={saveUnit} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="label">Clave unidad</label><input className="input" value={unitForm.unit_key} onChange={(e) => setUnitForm((f) => ({ ...f, unit_key: e.target.value.trim().toUpperCase() }))} placeholder="TR-001" required disabled={!!editingUnitKey} /></div>
+                  <div><label className="label">Clave unidad</label><input className="input" value={editingUnitKey ? unitForm.unit_key : "Se asigna automático"} disabled /></div>
                   <div><label className="label">Placas</label><input className="input" value={unitForm.plate} onChange={(e) => setUnitForm((f) => ({ ...f, plate: e.target.value.toUpperCase() }))} /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
