@@ -23,7 +23,23 @@ type Trip = {
   payment_status?: string;
 };
 
+type TripMonth = {
+  key: string;
+  label: string;
+  from: string;
+  to: string;
+  trips: Trip[];
+  totals: {
+    count: number;
+    sale_price: number;
+    expenses: number;
+    profit: number;
+  };
+};
+
 const fmt = (n: number, c = "MXN") => Number(n || 0).toLocaleString("es-MX", { style: "currency", currency: c });
+
+const emptyMonthTotals = { count: 0, sale_price: 0, expenses: 0, profit: 0 };
 
 export default function ViajesPage() {
   const { selectedCompanyId, loading: loadingCompany } = useCompany();
@@ -40,13 +56,45 @@ export default function ViajesPage() {
   const [tripOverrides, setTripOverrides] = useState<Record<string, Trip>>({});
   const [deletedTripFolios, setDeletedTripFolios] = useState<Record<string, boolean>>({});
 
-  const trips = ((ops.trips || []) as Trip[])
-    .slice(0, 20)
-    .map((trip) => {
-      const folio = trip.trip_folio || "";
-      return tripOverrides[folio] ? { ...trip, ...tripOverrides[folio] } : trip;
-    })
-    .filter((trip) => !deletedTripFolios[trip.trip_folio || ""]);
+  const applyLocalTripState = (trip: Trip) => {
+    const folio = trip.trip_folio || "";
+    const merged = tripOverrides[folio] ? { ...trip, ...tripOverrides[folio] } : trip;
+    return deletedTripFolios[folio] ? null : merged;
+  };
+  const recalcMonth = (month: TripMonth): TripMonth => {
+    const rows = (month.trips || []).map(applyLocalTripState).filter(Boolean) as Trip[];
+    const sale = rows.reduce((sum, trip) => sum + Number(trip.sale_price || 0), 0);
+    const expenses = rows.reduce((sum, trip) => sum + Number(trip.expenses_total ?? trip.trip_cost ?? 0), 0);
+    const profit = rows.reduce((sum, trip) => sum + Number(trip.live_trip_profit ?? trip.trip_profit ?? 0), 0);
+    return {
+      ...month,
+      trips: rows,
+      totals: {
+        count: rows.length,
+        sale_price: sale,
+        expenses,
+        profit,
+      },
+    };
+  };
+  const tripMonths = ((ops.trip_months || []) as TripMonth[]).map(recalcMonth);
+  const fallbackTrips = ((ops.trips || []) as Trip[]).map(applyLocalTripState).filter(Boolean) as Trip[];
+  const monthSections = tripMonths.length
+    ? tripMonths
+    : [{
+        key: "sin-mes",
+        label: "Viajes",
+        from: "",
+        to: "",
+        trips: fallbackTrips,
+        totals: {
+          ...emptyMonthTotals,
+          count: fallbackTrips.length,
+          sale_price: fallbackTrips.reduce((sum, trip) => sum + Number(trip.sale_price || 0), 0),
+          expenses: fallbackTrips.reduce((sum, trip) => sum + Number(trip.expenses_total ?? trip.trip_cost ?? 0), 0),
+          profit: fallbackTrips.reduce((sum, trip) => sum + Number(trip.live_trip_profit ?? trip.trip_profit ?? 0), 0),
+        },
+      }];
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -246,102 +294,132 @@ export default function ViajesPage() {
             </form>
           </div>
         </div>
-        <div className="card">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Ultimos 20 viajes</h2>
-            {loadingOps && <span className="text-muted text-xs">Cargando...</span>}
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-muted text-xs">
-                <tr className="border-b border-border">
-                  <th className="text-left py-2">Folio</th>
-                  <th className="text-left py-2">Cliente</th>
-                  <th className="text-left py-2">Ruta</th>
-                  <th className="text-left py-2">Salida</th>
-                  <th className="text-left py-2">Llegada</th>
-                  <th className="text-left py-2">Operador</th>
-                  <th className="text-left py-2">Unidad</th>
-                  <th className="text-right py-2">Km</th>
-                  <th className="text-right py-2">Precio venta</th>
-                  <th className="text-right py-2">Gastos</th>
-                  <th className="text-right py-2">Profit</th>
-                  <th className="text-left py-2">Viaje</th>
-                  <th className="text-left py-2">Pago</th>
-                  <th className="text-right py-2">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trips.map((trip: Trip) => {
-                  const isEditing = editingFolio === trip.trip_folio;
-                  return (
-                  <tr key={trip.trip_folio} className="border-b border-border/50 align-top">
-                    <td className="py-2 font-mono">{trip.trip_folio}</td>
-                    <td className="py-2 min-w-28">
-                      {isEditing ? <input className="input h-8 text-xs" value={editForm.customer || ""} onChange={(e) => setEditForm((f) => ({ ...f, customer: e.target.value }))} /> : (trip.customer || "-")}
-                    </td>
-                    <td className="py-2 min-w-44">
-                      {isEditing ? (
-                        <div className="grid gap-1">
-                          <input className="input h-8 text-xs" value={editForm.origin || ""} onChange={(e) => setEditForm((f) => ({ ...f, origin: e.target.value }))} />
-                          <input className="input h-8 text-xs" value={editForm.destination || ""} onChange={(e) => setEditForm((f) => ({ ...f, destination: e.target.value }))} />
-                        </div>
-                      ) : (
-                        <span>{trip.origin || "-"} {"-"} {trip.destination || "-"}</span>
-                      )}
-                    </td>
-                    <td className="py-2 min-w-28">
-                      {isEditing ? <input type="date" className="input h-8 text-xs" value={editForm.departure_date || ""} onChange={(e) => setEditForm((f) => ({ ...f, departure_date: e.target.value }))} /> : (trip.departure_date || "-")}
-                    </td>
-                    <td className="py-2 min-w-28">
-                      {isEditing ? <input type="date" className="input h-8 text-xs" value={editForm.arrival_date || ""} onChange={(e) => setEditForm((f) => ({ ...f, arrival_date: e.target.value }))} /> : (trip.arrival_date || "-")}
-                    </td>
-                    <td className="py-2 min-w-24">
-                      {isEditing ? <input list="fleet-drivers" className="input h-8 text-xs" value={editForm.driver_key || ""} onChange={(e) => setEditForm((f) => ({ ...f, driver_key: e.target.value }))} /> : (trip.driver_key || <span className="text-yellow-300">pendiente</span>)}
-                    </td>
-                    <td className="py-2 min-w-24">
-                      {isEditing ? <input list="fleet-units" className="input h-8 text-xs" value={editForm.unit_key || ""} onChange={(e) => setEditForm((f) => ({ ...f, unit_key: e.target.value }))} /> : (trip.unit_key || <span className="text-yellow-300">pendiente</span>)}
-                    </td>
-                    <td className="py-2 text-right min-w-20">
-                      {isEditing ? <input type="number" className="input h-8 text-xs text-right" value={editForm.distance_km || ""} onChange={(e) => setEditForm((f) => ({ ...f, distance_km: e.target.value }))} /> : (trip.distance_km ?? "-")}
-                    </td>
-                    <td className="py-2 text-right min-w-28">
-                      {isEditing ? <input type="number" className="input h-8 text-xs text-right" value={editForm.sale_price || ""} onChange={(e) => setEditForm((f) => ({ ...f, sale_price: e.target.value }))} /> : fmt(trip.sale_price || 0, trip.currency)}
-                    </td>
-                    <td className="py-2 text-right">{fmt(trip.expenses_total ?? trip.trip_cost ?? 0, trip.currency)}</td>
-                    <td className="py-2 text-right">{fmt(trip.live_trip_profit ?? trip.trip_profit ?? 0, trip.currency)}</td>
-                    <td className="py-2 min-w-28">
-                      {isEditing ? (
-                        <select className="input h-8 text-xs" value={editForm.trip_status || "active"} onChange={(e) => setEditForm((f) => ({ ...f, trip_status: e.target.value }))}>
-                          <option value="active">Activo</option>
-                          <option value="closed">Cerrado</option>
-                          <option value="cancelled">Cancelado</option>
-                        </select>
-                      ) : (trip.trip_status || "active")}
-                    </td>
-                    <td className="py-2 min-w-28">{trip.payment_status || "receivable"}</td>
-                    <td className="py-2">
-                      {isEditing ? (
-                        <div className="flex gap-2 justify-end">
-                          <button type="button" className="btn-primary px-3 py-1 text-xs" disabled={savingEdit} onClick={() => saveEdit(trip.trip_folio || "")}>Guardar</button>
-                          <button type="button" className="btn-ghost px-3 py-1 text-xs" disabled={savingEdit} onClick={() => setEditingFolio("")}>Cancelar</button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2 justify-end">
-                          <button type="button" className="btn-ghost px-2 py-1 text-xs" title="Editar viaje" disabled={savingEdit} onClick={() => startEdit(trip)}>Editar</button>
-                          <button type="button" className="btn-ghost px-2 py-1 text-xs text-red-300" title="Borrar viaje" disabled={savingEdit} onClick={() => deleteTrip(trip)}>Borrar</button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                  );
-                })}
-                {!trips.length && (
-                  <tr><td colSpan={14} className="py-6 text-center text-muted">Sin viajes registrados.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="space-y-4">
+          {monthSections.map((month) => (
+            <div className="card" key={month.key}>
+              <div className="flex flex-col gap-3 mb-3 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h2 className="font-semibold">{month.label}</h2>
+                  <p className="text-muted text-xs">{month.from && month.to ? `${month.from} a ${month.to}` : "Viajes cargados"}</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-right text-xs sm:min-w-[460px]">
+                  <div className="rounded-md border border-border bg-background/40 px-3 py-2">
+                    <p className="text-muted">Precio venta</p>
+                    <p className="font-semibold text-sm">{fmt(month.totals.sale_price)}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background/40 px-3 py-2">
+                    <p className="text-muted">Gastos</p>
+                    <p className="font-semibold text-sm">{fmt(month.totals.expenses)}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background/40 px-3 py-2">
+                    <p className="text-muted">Profit</p>
+                    <p className="font-semibold text-sm text-green-400">{fmt(month.totals.profit)}</p>
+                  </div>
+                </div>
+                {loadingOps && <span className="text-muted text-xs">Cargando...</span>}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-muted text-xs">
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2">Folio</th>
+                      <th className="text-left py-2">Cliente</th>
+                      <th className="text-left py-2">Ruta</th>
+                      <th className="text-left py-2">Salida</th>
+                      <th className="text-left py-2">Llegada</th>
+                      <th className="text-left py-2">Operador</th>
+                      <th className="text-left py-2">Unidad</th>
+                      <th className="text-right py-2">Km</th>
+                      <th className="text-right py-2">Precio venta</th>
+                      <th className="text-right py-2">Gastos</th>
+                      <th className="text-right py-2">Profit</th>
+                      <th className="text-left py-2">Viaje</th>
+                      <th className="text-left py-2">Pago</th>
+                      <th className="text-right py-2">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {month.trips.map((trip: Trip) => {
+                      const isEditing = editingFolio === trip.trip_folio;
+                      return (
+                      <tr key={trip.trip_folio} className="border-b border-border/50 align-top">
+                        <td className="py-2 font-mono">{trip.trip_folio}</td>
+                        <td className="py-2 min-w-28">
+                          {isEditing ? <input className="input h-8 text-xs" value={editForm.customer || ""} onChange={(e) => setEditForm((f) => ({ ...f, customer: e.target.value }))} /> : (trip.customer || "-")}
+                        </td>
+                        <td className="py-2 min-w-44">
+                          {isEditing ? (
+                            <div className="grid gap-1">
+                              <input className="input h-8 text-xs" value={editForm.origin || ""} onChange={(e) => setEditForm((f) => ({ ...f, origin: e.target.value }))} />
+                              <input className="input h-8 text-xs" value={editForm.destination || ""} onChange={(e) => setEditForm((f) => ({ ...f, destination: e.target.value }))} />
+                            </div>
+                          ) : (
+                            <span>{trip.origin || "-"} {"-"} {trip.destination || "-"}</span>
+                          )}
+                        </td>
+                        <td className="py-2 min-w-28">
+                          {isEditing ? <input type="date" className="input h-8 text-xs" value={editForm.departure_date || ""} onChange={(e) => setEditForm((f) => ({ ...f, departure_date: e.target.value }))} /> : (trip.departure_date || "-")}
+                        </td>
+                        <td className="py-2 min-w-28">
+                          {isEditing ? <input type="date" className="input h-8 text-xs" value={editForm.arrival_date || ""} onChange={(e) => setEditForm((f) => ({ ...f, arrival_date: e.target.value }))} /> : (trip.arrival_date || "-")}
+                        </td>
+                        <td className="py-2 min-w-24">
+                          {isEditing ? <input list="fleet-drivers" className="input h-8 text-xs" value={editForm.driver_key || ""} onChange={(e) => setEditForm((f) => ({ ...f, driver_key: e.target.value }))} /> : (trip.driver_key || <span className="text-yellow-300">pendiente</span>)}
+                        </td>
+                        <td className="py-2 min-w-24">
+                          {isEditing ? <input list="fleet-units" className="input h-8 text-xs" value={editForm.unit_key || ""} onChange={(e) => setEditForm((f) => ({ ...f, unit_key: e.target.value }))} /> : (trip.unit_key || <span className="text-yellow-300">pendiente</span>)}
+                        </td>
+                        <td className="py-2 text-right min-w-20">
+                          {isEditing ? <input type="number" className="input h-8 text-xs text-right" value={editForm.distance_km || ""} onChange={(e) => setEditForm((f) => ({ ...f, distance_km: e.target.value }))} /> : (trip.distance_km ?? "-")}
+                        </td>
+                        <td className="py-2 text-right min-w-28">
+                          {isEditing ? <input type="number" className="input h-8 text-xs text-right" value={editForm.sale_price || ""} onChange={(e) => setEditForm((f) => ({ ...f, sale_price: e.target.value }))} /> : fmt(trip.sale_price || 0, trip.currency)}
+                        </td>
+                        <td className="py-2 text-right">{fmt(trip.expenses_total ?? trip.trip_cost ?? 0, trip.currency)}</td>
+                        <td className="py-2 text-right">{fmt(trip.live_trip_profit ?? trip.trip_profit ?? 0, trip.currency)}</td>
+                        <td className="py-2 min-w-28">
+                          {isEditing ? (
+                            <select className="input h-8 text-xs" value={editForm.trip_status || "active"} onChange={(e) => setEditForm((f) => ({ ...f, trip_status: e.target.value }))}>
+                              <option value="active">Activo</option>
+                              <option value="closed">Cerrado</option>
+                              <option value="cancelled">Cancelado</option>
+                            </select>
+                          ) : (trip.trip_status || "active")}
+                        </td>
+                        <td className="py-2 min-w-28">{trip.payment_status || "receivable"}</td>
+                        <td className="py-2">
+                          {isEditing ? (
+                            <div className="flex gap-2 justify-end">
+                              <button type="button" className="btn-primary px-3 py-1 text-xs" disabled={savingEdit} onClick={() => saveEdit(trip.trip_folio || "")}>Guardar</button>
+                              <button type="button" className="btn-ghost px-3 py-1 text-xs" disabled={savingEdit} onClick={() => setEditingFolio("")}>Cancelar</button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2 justify-end">
+                              <button type="button" className="btn-ghost px-2 py-1 text-xs" title="Editar viaje" disabled={savingEdit} onClick={() => startEdit(trip)}>Editar</button>
+                              <button type="button" className="btn-ghost px-2 py-1 text-xs text-red-300" title="Borrar viaje" disabled={savingEdit} onClick={() => deleteTrip(trip)}>Borrar</button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                      );
+                    })}
+                    {!month.trips.length && (
+                      <tr><td colSpan={14} className="py-6 text-center text-muted">Sin viajes registrados en este mes.</td></tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-border text-xs font-semibold">
+                      <td className="py-2" colSpan={8}>Total {month.label} ({month.totals.count} viajes)</td>
+                      <td className="py-2 text-right">{fmt(month.totals.sale_price)}</td>
+                      <td className="py-2 text-right">{fmt(month.totals.expenses)}</td>
+                      <td className="py-2 text-right text-green-400">{fmt(month.totals.profit)}</td>
+                      <td className="py-2" colSpan={3} />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          ))}
         </div>
         </div>
       )}

@@ -34,6 +34,10 @@ export default function AltaPage() {
   const [savingDriver, setSavingDriver] = useState(false);
   const [savingUnit, setSavingUnit] = useState(false);
   const [status, setStatus] = useState("");
+  const [editingDriverKey, setEditingDriverKey] = useState<string | null>(null);
+  const [editingUnitKey, setEditingUnitKey] = useState<string | null>(null);
+  const [bajaDriverKey, setBajaDriverKey] = useState<string | null>(null);
+  const [bajaUnitKey, setBajaUnitKey] = useState<string | null>(null);
 
   const drivers = mergeByKey((ops.drivers || []) as Driver[], driverOverrides, "driver_key");
   const units = mergeByKey((ops.units || []) as Unit[], unitOverrides, "unit_key");
@@ -53,6 +57,7 @@ export default function AltaPage() {
       const driver = data.data?.driver || {};
       setDriverOverrides((current) => ({ ...current, [driver.driver_key]: driver }));
       setDriverForm({ driver_key: "", full_name: "", phone: "", license_number: "", pay_scheme: "commission", pay_rate: "", status: "active" });
+      setEditingDriverKey(null);
       setStatus(`Chofer ${driver.driver_key} guardado.`);
     } catch {
       setStatus("Error de conexion");
@@ -76,11 +81,97 @@ export default function AltaPage() {
       const unit = data.data?.unit || {};
       setUnitOverrides((current) => ({ ...current, [unit.unit_key]: unit }));
       setUnitForm({ unit_key: "", plate: "", brand: "", model: "", year: "", unit_type: "tractor", odometer_km: "", status: "active" });
+      setEditingUnitKey(null);
       setStatus(`Unidad ${unit.unit_key} guardada.`);
     } catch {
       setStatus("Error de conexion");
     } finally {
       setSavingUnit(false);
+    }
+  }
+
+  function startEditDriver(driver: Driver) {
+    setDriverForm({
+      driver_key: driver.driver_key || "",
+      full_name: driver.full_name || "",
+      phone: driver.phone || "",
+      license_number: driver.license_number || "",
+      pay_scheme: driver.pay_scheme || "commission",
+      pay_rate: String(driver.pay_rate ?? ""),
+      status: driver.status || "active",
+    });
+    setEditingDriverKey(driver.driver_key || null);
+    setStatus("");
+  }
+
+  function cancelEditDriver() {
+    setDriverForm({ driver_key: "", full_name: "", phone: "", license_number: "", pay_scheme: "commission", pay_rate: "", status: "active" });
+    setEditingDriverKey(null);
+  }
+
+  function startEditUnit(unit: Unit) {
+    setUnitForm({
+      unit_key: unit.unit_key || "",
+      plate: unit.plate || "",
+      brand: unit.brand || "",
+      model: unit.model || "",
+      year: String(unit.year ?? ""),
+      unit_type: unit.unit_type || "tractor",
+      odometer_km: String(unit.odometer_km ?? ""),
+      status: unit.status || "active",
+    });
+    setEditingUnitKey(unit.unit_key || null);
+    setStatus("");
+  }
+
+  function cancelEditUnit() {
+    setUnitForm({ unit_key: "", plate: "", brand: "", model: "", year: "", unit_type: "tractor", odometer_km: "", status: "active" });
+    setEditingUnitKey(null);
+  }
+
+  async function bajaDriver(driver: Driver) {
+    if (!driver.driver_key) return;
+    if (!confirm(`¿Dar de baja al chofer ${driver.full_name || driver.driver_key}? Su historial se conserva, pero ya no aparecerá disponible para nuevas operaciones.`)) return;
+    setBajaDriverKey(driver.driver_key);
+    setStatus("");
+    try {
+      const res = await fetch("/api/alta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "driver", empresa_id: selectedCompanyId, driver_key: driver.driver_key, baja: true }),
+      });
+      const data = await res.json();
+      if (!data.ok) { setStatus(data.error || "Error al dar de baja"); return; }
+      const updated = data.data?.driver || { ...driver, status: "inactive" };
+      setDriverOverrides((current) => ({ ...current, [driver.driver_key as string]: { ...driver, ...updated } }));
+      setStatus(`Chofer ${driver.driver_key} dado de baja.`);
+    } catch {
+      setStatus("Error de conexion");
+    } finally {
+      setBajaDriverKey(null);
+    }
+  }
+
+  async function bajaUnit(unit: Unit) {
+    if (!unit.unit_key) return;
+    if (!confirm(`¿Dar de baja la unidad ${unit.plate || unit.unit_key}? Su historial se conserva, pero ya no aparecerá disponible para nuevas operaciones.`)) return;
+    setBajaUnitKey(unit.unit_key);
+    setStatus("");
+    try {
+      const res = await fetch("/api/alta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "unit", empresa_id: selectedCompanyId, unit_key: unit.unit_key, baja: true }),
+      });
+      const data = await res.json();
+      if (!data.ok) { setStatus(data.error || "Error al dar de baja"); return; }
+      const updated = data.data?.unit || { ...unit, status: "inactive" };
+      setUnitOverrides((current) => ({ ...current, [unit.unit_key as string]: { ...unit, ...updated } }));
+      setStatus(`Unidad ${unit.unit_key} dada de baja.`);
+    } catch {
+      setStatus("Error de conexion");
+    } finally {
+      setBajaUnitKey(null);
     }
   }
 
@@ -98,10 +189,13 @@ export default function AltaPage() {
           {opsError && <div className="card border-red-800 bg-red-900/20 text-red-300 text-sm">{opsError}</div>}
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="card">
-              <h2 className="font-semibold mb-4">Alta de chofer</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold">{editingDriverKey ? `Editando chofer ${editingDriverKey}` : "Alta de chofer"}</h2>
+                {editingDriverKey && <button type="button" onClick={cancelEditDriver} className="text-xs text-muted hover:text-fg">Cancelar edición</button>}
+              </div>
               <form onSubmit={saveDriver} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="label">Clave chofer</label><input className="input" value={driverForm.driver_key} onChange={(e) => setDriverForm((f) => ({ ...f, driver_key: e.target.value.trim().toUpperCase() }))} placeholder="DRV-001" required /></div>
+                  <div><label className="label">Clave chofer</label><input className="input" value={driverForm.driver_key} onChange={(e) => setDriverForm((f) => ({ ...f, driver_key: e.target.value.trim().toUpperCase() }))} placeholder="DRV-001" required disabled={!!editingDriverKey} /></div>
                   <div><label className="label">Nombre</label><input className="input" value={driverForm.full_name} onChange={(e) => setDriverForm((f) => ({ ...f, full_name: e.target.value }))} required /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -126,15 +220,18 @@ export default function AltaPage() {
                     </select>
                   </div>
                 </div>
-                <button type="submit" className="btn-primary w-full" disabled={savingDriver}>{savingDriver ? "Guardando..." : "Guardar chofer"}</button>
+                <button type="submit" className="btn-primary w-full" disabled={savingDriver}>{savingDriver ? "Guardando..." : editingDriverKey ? "Actualizar chofer" : "Guardar chofer"}</button>
               </form>
             </div>
 
             <div className="card">
-              <h2 className="font-semibold mb-4">Alta de unidad</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold">{editingUnitKey ? `Editando unidad ${editingUnitKey}` : "Alta de unidad"}</h2>
+                {editingUnitKey && <button type="button" onClick={cancelEditUnit} className="text-xs text-muted hover:text-fg">Cancelar edición</button>}
+              </div>
               <form onSubmit={saveUnit} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="label">Clave unidad</label><input className="input" value={unitForm.unit_key} onChange={(e) => setUnitForm((f) => ({ ...f, unit_key: e.target.value.trim().toUpperCase() }))} placeholder="TR-001" required /></div>
+                  <div><label className="label">Clave unidad</label><input className="input" value={unitForm.unit_key} onChange={(e) => setUnitForm((f) => ({ ...f, unit_key: e.target.value.trim().toUpperCase() }))} placeholder="TR-001" required disabled={!!editingUnitKey} /></div>
                   <div><label className="label">Placas</label><input className="input" value={unitForm.plate} onChange={(e) => setUnitForm((f) => ({ ...f, plate: e.target.value.toUpperCase() }))} /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -162,7 +259,7 @@ export default function AltaPage() {
                     </select>
                   </div>
                 </div>
-                <button type="submit" className="btn-primary w-full" disabled={savingUnit}>{savingUnit ? "Guardando..." : "Guardar unidad"}</button>
+                <button type="submit" className="btn-primary w-full" disabled={savingUnit}>{savingUnit ? "Guardando..." : editingUnitKey ? "Actualizar unidad" : "Guardar unidad"}</button>
               </form>
             </div>
           </div>
@@ -186,21 +283,30 @@ export default function AltaPage() {
                       <th className="text-left py-2">Pago</th>
                       <th className="text-right py-2">Tarifa</th>
                       <th className="text-left py-2">Status</th>
+                      <th className="text-right py-2">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {drivers.map((driver) => (
-                      <tr key={driver.driver_key} className="border-b border-border/50">
+                      <tr key={driver.driver_key} className={`border-b border-border/50 ${driver.status === "inactive" ? "opacity-50" : ""}`}>
                         <td className="py-2 font-mono">{driver.driver_key}</td>
                         <td className="py-2">{driver.full_name || "-"}</td>
                         <td className="py-2">{driver.phone || "-"}</td>
                         <td className="py-2">{driver.license_number || "-"}</td>
                         <td className="py-2">{driver.pay_scheme || "-"}</td>
                         <td className="py-2 text-right">{Number(driver.pay_rate || 0).toLocaleString("es-MX")}</td>
-                        <td className="py-2">{driver.status || "active"}</td>
+                        <td className="py-2">{driver.status === "inactive" ? "Dado de baja" : "Activo"}</td>
+                        <td className="py-2 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button type="button" title="Editar" onClick={() => startEditDriver(driver)} className="text-muted hover:text-fg">✎</button>
+                            {driver.status !== "inactive" && (
+                              <button type="button" title="Dar de baja" onClick={() => bajaDriver(driver)} disabled={bajaDriverKey === driver.driver_key} className="text-muted hover:text-red-400 disabled:opacity-50">🗑</button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
-                    {!drivers.length && <tr><td colSpan={7} className="py-6 text-center text-muted">Sin choferes registrados.</td></tr>}
+                    {!drivers.length && <tr><td colSpan={8} className="py-6 text-center text-muted">Sin choferes registrados.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -223,11 +329,12 @@ export default function AltaPage() {
                       <th className="text-left py-2">Tipo</th>
                       <th className="text-right py-2">Km</th>
                       <th className="text-left py-2">Status</th>
+                      <th className="text-right py-2">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {units.map((unit) => (
-                      <tr key={unit.unit_key} className="border-b border-border/50">
+                      <tr key={unit.unit_key} className={`border-b border-border/50 ${unit.status === "inactive" ? "opacity-50" : ""}`}>
                         <td className="py-2 font-mono">{unit.unit_key}</td>
                         <td className="py-2">{unit.plate || "-"}</td>
                         <td className="py-2">{unit.brand || "-"}</td>
@@ -235,10 +342,18 @@ export default function AltaPage() {
                         <td className="py-2 text-right">{unit.year || "-"}</td>
                         <td className="py-2">{unit.unit_type || "-"}</td>
                         <td className="py-2 text-right">{Number(unit.odometer_km || 0).toLocaleString("es-MX")}</td>
-                        <td className="py-2">{unit.status || "active"}</td>
+                        <td className="py-2">{unit.status === "inactive" ? "Dado de baja" : unit.status === "maintenance" ? "Mantenimiento" : "Activo"}</td>
+                        <td className="py-2 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button type="button" title="Editar" onClick={() => startEditUnit(unit)} className="text-muted hover:text-fg">✎</button>
+                            {unit.status !== "inactive" && (
+                              <button type="button" title="Dar de baja" onClick={() => bajaUnit(unit)} disabled={bajaUnitKey === unit.unit_key} className="text-muted hover:text-red-400 disabled:opacity-50">🗑</button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
-                    {!units.length && <tr><td colSpan={8} className="py-6 text-center text-muted">Sin unidades registradas.</td></tr>}
+                    {!units.length && <tr><td colSpan={9} className="py-6 text-center text-muted">Sin unidades registradas.</td></tr>}
                   </tbody>
                 </table>
               </div>

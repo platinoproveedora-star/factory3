@@ -12,7 +12,7 @@ export function useFleetOps(selectedCompanyId: string, sections: string[]) {
     const qs = new URLSearchParams({
       empresa_id: selectedCompanyId,
       sections: sectionKey,
-      limit: "120",
+      limit: "200",
     });
     setLoading(true);
     setError("");

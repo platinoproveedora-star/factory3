@@ -14,6 +14,9 @@ class DriverManageService:
         if not driver_key:
             return {"ok": False, "error": "driver_key_requerido"}
 
+        if context.get("baja"):
+            return self._baja(context, empresa_id, driver_key)
+
         row = {
             "empresa_id": empresa_id,
             "driver_key": driver_key,
@@ -45,6 +48,31 @@ class DriverManageService:
         if not res.get("ok"):
             return {"ok": False, "error": "db_persistence_failed", "data": {"detail": res.get("error")}}
         return {"ok": True, "data": {"driver": (res.get("data") or [row])[0], "warnings": []}}
+
+    def _baja(self, context: dict, empresa_id: str, driver_key: str) -> dict:
+        if context.get("dry_run", True):
+            return {
+                "ok": True,
+                "message": "dry_run: no se dio de baja",
+                "data": {"driver": {"driver_key": driver_key, "status": "inactive"}},
+            }
+
+        db = SupabaseClient({**context, "schema": context.get("schema") or _SCHEMA})
+        existing = db.rest_select(
+            "drivers",
+            filters={"empresa_id": f"eq.{empresa_id}", "driver_key": f"eq.{driver_key}"},
+            select="driver_key",
+            limit=1,
+        )
+        if not existing.get("ok"):
+            return {"ok": False, "error": "db_query_failed", "data": {"detail": existing.get("error")}}
+        if not existing.get("data"):
+            return {"ok": False, "error": "driver_not_found"}
+
+        res = db.rest_update("drivers", {"status": "inactive"}, {"empresa_id": f"eq.{empresa_id}", "driver_key": f"eq.{driver_key}"})
+        if not res.get("ok"):
+            return {"ok": False, "error": "db_persistence_failed", "data": {"detail": res.get("error")}}
+        return {"ok": True, "data": {"driver": (res.get("data") or [{}])[0], "warnings": []}}
 
     def _blank_to_none(self, value):
         text = str(value or "").strip()

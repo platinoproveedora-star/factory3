@@ -14,6 +14,9 @@ class UnitManageService:
         if not unit_key:
             return {"ok": False, "error": "unit_key_requerido"}
 
+        if context.get("baja"):
+            return self._baja(context, empresa_id, unit_key)
+
         row = {
             "empresa_id": empresa_id,
             "unit_key": unit_key,
@@ -46,6 +49,31 @@ class UnitManageService:
         if not res.get("ok"):
             return {"ok": False, "error": "db_persistence_failed", "data": {"detail": res.get("error")}}
         return {"ok": True, "data": {"unit": (res.get("data") or [row])[0], "warnings": []}}
+
+    def _baja(self, context: dict, empresa_id: str, unit_key: str) -> dict:
+        if context.get("dry_run", True):
+            return {
+                "ok": True,
+                "message": "dry_run: no se dio de baja",
+                "data": {"unit": {"unit_key": unit_key, "status": "inactive"}},
+            }
+
+        db = SupabaseClient({**context, "schema": context.get("schema") or _SCHEMA})
+        existing = db.rest_select(
+            "units",
+            filters={"empresa_id": f"eq.{empresa_id}", "unit_key": f"eq.{unit_key}"},
+            select="unit_key",
+            limit=1,
+        )
+        if not existing.get("ok"):
+            return {"ok": False, "error": "db_query_failed", "data": {"detail": existing.get("error")}}
+        if not existing.get("data"):
+            return {"ok": False, "error": "unit_not_found"}
+
+        res = db.rest_update("units", {"status": "inactive"}, {"empresa_id": f"eq.{empresa_id}", "unit_key": f"eq.{unit_key}"})
+        if not res.get("ok"):
+            return {"ok": False, "error": "db_persistence_failed", "data": {"detail": res.get("error")}}
+        return {"ok": True, "data": {"unit": (res.get("data") or [{}])[0], "warnings": []}}
 
     def _blank_to_none(self, value):
         text = str(value or "").strip()

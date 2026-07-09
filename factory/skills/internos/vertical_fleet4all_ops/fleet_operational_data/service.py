@@ -25,6 +25,21 @@ _SECTIONS = {
     "settlements",
 }
 
+_MONTH_NAMES = (
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+)
+
 
 class FleetOperationalDataService:
     def ejecutar(self, context: dict) -> dict:
@@ -69,6 +84,8 @@ class FleetOperationalDataService:
                 data[section] = []
             else:
                 data[section] = result.get("data") or []
+                if section == "trips":
+                    data["trip_months"] = self._trip_months(data[section])
 
         if "maintenance_plans" in data and "units" in data:
             data["maintenance_due_soon"] = self._due_soon(data["maintenance_plans"], data["units"])
@@ -130,6 +147,53 @@ class FleetOperationalDataService:
                 "trip_profit": live_profit,
             })
         return {"ok": True, "data": enriched}
+
+    def _trip_months(self, trips: list[dict]) -> list[dict]:
+        today = date.today()
+        months = [self._month_window(today, offset) for offset in range(3)]
+        result = []
+        for month in months:
+            rows = [trip for trip in trips if self._trip_in_month(trip, month["key"])]
+            sale_total = round(sum(float(trip.get("sale_price") or 0) for trip in rows), 2)
+            expense_total = round(sum(float(trip.get("expenses_total") or trip.get("trip_cost") or 0) for trip in rows), 2)
+            profit_total = round(sum(float(trip.get("live_trip_profit") or trip.get("trip_profit") or 0) for trip in rows), 2)
+            result.append(
+                {
+                    **month,
+                    "trips": rows,
+                    "totals": {
+                        "count": len(rows),
+                        "sale_price": sale_total,
+                        "expenses": expense_total,
+                        "profit": profit_total,
+                    },
+                }
+            )
+        return result
+
+    def _month_window(self, today: date, offset: int) -> dict:
+        year = today.year
+        month = today.month - offset
+        while month <= 0:
+            month += 12
+            year -= 1
+        start = date(year, month, 1)
+        if month == 12:
+            end = date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end = date(year, month + 1, 1) - timedelta(days=1)
+        label = f"{_MONTH_NAMES[start.month - 1]} {start.year}"
+        return {
+            "key": start.strftime("%Y-%m"),
+            "label": label,
+            "from": start.isoformat(),
+            "to": end.isoformat(),
+            "offset": offset,
+        }
+
+    def _trip_in_month(self, trip: dict, month_key: str) -> bool:
+        raw_date = str(trip.get("departure_date") or trip.get("arrival_date") or "").strip()
+        return raw_date.startswith(month_key)
 
     def _receivables(self, db: SupabaseClient, empresa_id: str, limit: int) -> dict:
         res = db.rest_select(
