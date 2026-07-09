@@ -130,6 +130,7 @@ export default function CotizadorPage() {
   const [catalogStatus, setCatalogStatus] = useState("Selecciona empresa para cargar catálogo.");
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogVisibleCount, setCatalogVisibleCount] = useState(30);
+  const [bulkMarginPercent, setBulkMarginPercent] = useState(DEFAULT_MARGIN_PERCENT);
   const [saveStatus, setSaveStatus] = useState("");
   const [savingQuote, setSavingQuote] = useState(false);
   const [quotes, setQuotes] = useState<QuoteListRow[]>([]);
@@ -366,7 +367,7 @@ export default function CotizadorPage() {
       ...current,
       lineas: [
         ...current.lineas,
-        { nombre: "", cantidad: 1, precio_unitario: 0, costo_unitario: 0, margen_porcentaje: DEFAULT_MARGIN_PERCENT, unidad: "PZA" },
+        { nombre: "", cantidad: 1, precio_unitario: 0, costo_unitario: 0, margen_porcentaje: bulkMarginPercent, unidad: "PZA" },
       ],
     }));
   };
@@ -374,7 +375,7 @@ export default function CotizadorPage() {
   const addProduct = (product: Producto) => {
     const name = product.nombre || product.product_name || product.sku || product.product_code || "Producto";
     const cost = Number(product.costo ?? product.costo_referencia ?? 0);
-    const price = priceFromCostAndMargin(cost, DEFAULT_MARGIN_PERCENT);
+    const price = priceFromCostAndMargin(cost, bulkMarginPercent);
     const unidad = String(product.unit || product.unidad || "PZA").toUpperCase();
     setForm((current) => ({
       ...current,
@@ -386,7 +387,7 @@ export default function CotizadorPage() {
           cantidad: 1,
           precio_unitario: price,
           costo_unitario: cost,
-          margen_porcentaje: DEFAULT_MARGIN_PERCENT,
+          margen_porcentaje: bulkMarginPercent,
           unidad,
         },
       ],
@@ -428,6 +429,18 @@ export default function CotizadorPage() {
             }
           : line
       ),
+    }));
+  };
+
+  const setAllLineMargins = (value: number) => {
+    setBulkMarginPercent(value);
+    setForm((current) => ({
+      ...current,
+      lineas: current.lineas.map((line) => ({
+        ...line,
+        margen_porcentaje: value,
+        precio_unitario: priceFromCostAndMargin(line.costo_unitario || 0, value),
+      })),
     }));
   };
 
@@ -805,7 +818,7 @@ export default function CotizadorPage() {
                         const name = item.nombre || item.product_name || "Producto";
                         const code = item.sku || item.product_code || "";
                         const cost = Number(item.costo ?? item.costo_referencia ?? 0);
-                        const price = priceFromCostAndMargin(cost, DEFAULT_MARGIN_PERCENT);
+                        const price = priceFromCostAndMargin(cost, bulkMarginPercent);
                         const addedCount = form.lineas.filter((line) => line.producto_id === item.id).length;
                         return (
                           <div key={item.id} className="flex items-center justify-between rounded-md border border-border bg-white px-3 py-2 text-sm">
@@ -844,7 +857,18 @@ export default function CotizadorPage() {
         {step === 2 && (
           <section className="space-y-4">
             <div className="card">
-              <h2 className="text-lg font-semibold text-ink">Resumen</h2>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <h2 className="text-lg font-semibold text-ink">Resumen</h2>
+                <label className="flex items-center gap-2 text-sm text-slate-600">
+                  <span className="font-medium">% margen general</span>
+                  <input
+                    type="number"
+                    className="w-24 rounded border border-border bg-white px-2 py-1 text-sm text-ink"
+                    value={bulkMarginPercent}
+                    onChange={(e) => setAllLineMargins(Number(e.target.value))}
+                  />
+                </label>
+              </div>
               <div className="mt-4 overflow-x-auto rounded-md border border-border">
                 <table className="min-w-full text-sm">
                   <thead className="bg-slate-50 text-slate-500">
