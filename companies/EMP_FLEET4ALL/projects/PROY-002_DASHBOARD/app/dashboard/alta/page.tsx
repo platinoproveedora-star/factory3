@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useCompany } from "@/lib/useCompany";
 import { useFleetOps } from "@/lib/useFleetOps";
 
@@ -38,6 +38,8 @@ export default function AltaPage() {
   const [editingUnitKey, setEditingUnitKey] = useState<string | null>(null);
   const [bajaDriverKey, setBajaDriverKey] = useState<string | null>(null);
   const [bajaUnitKey, setBajaUnitKey] = useState<string | null>(null);
+  const driverFormRef = useRef<HTMLDivElement>(null);
+  const unitFormRef = useRef<HTMLDivElement>(null);
 
   const drivers = mergeByKey((ops.drivers || []) as Driver[], driverOverrides, "driver_key");
   const units = mergeByKey((ops.units || []) as Unit[], unitOverrides, "unit_key");
@@ -102,6 +104,7 @@ export default function AltaPage() {
     });
     setEditingDriverKey(driver.driver_key || null);
     setStatus("");
+    driverFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function cancelEditDriver() {
@@ -122,6 +125,7 @@ export default function AltaPage() {
     });
     setEditingUnitKey(unit.unit_key || null);
     setStatus("");
+    unitFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function cancelEditUnit() {
@@ -188,7 +192,7 @@ export default function AltaPage() {
         <div className="space-y-4">
           {opsError && <div className="card border-red-800 bg-red-900/20 text-red-300 text-sm">{opsError}</div>}
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="card">
+            <div className={`card ${editingDriverKey ? "ring-2 ring-primary" : ""}`} ref={driverFormRef}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold">{editingDriverKey ? `Editando chofer ${editingDriverKey}` : "Alta de chofer"}</h2>
                 {editingDriverKey && <button type="button" onClick={cancelEditDriver} className="text-xs text-muted hover:text-fg">Cancelar edición</button>}
@@ -224,7 +228,7 @@ export default function AltaPage() {
               </form>
             </div>
 
-            <div className="card">
+            <div className={`card ${editingUnitKey ? "ring-2 ring-primary" : ""}`} ref={unitFormRef}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold">{editingUnitKey ? `Editando unidad ${editingUnitKey}` : "Alta de unidad"}</h2>
                 {editingUnitKey && <button type="button" onClick={cancelEditUnit} className="text-xs text-muted hover:text-fg">Cancelar edición</button>}
