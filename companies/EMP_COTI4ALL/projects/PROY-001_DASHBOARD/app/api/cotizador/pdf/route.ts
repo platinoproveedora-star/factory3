@@ -25,6 +25,7 @@ function buildQuoteDocument(quote: any, user: any) {
   const iva = subtotal * 0.16;
   const total = subtotal + iva;
   const companyName = quote.empresa_cotiza || "Empresa que cotiza";
+  const logoDataUrl = safeImageDataUrl(quote.logo_data_url);
   const title = "Cotizacion";
   const docTitle = quote.folio ? `${title} ${quote.folio}` : title;
   const html = `<!doctype html>
@@ -40,6 +41,9 @@ function buildQuoteDocument(quote: any, user: any) {
     .save-pdf-btn { background: #1d4ed8; color: #fff; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
     .save-pdf-btn:hover { background: #1e40af; }
     .top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #1d4ed8; padding-bottom: 18px; }
+    .brand { min-width: 240px; }
+    .brand-logo { display: block; max-width: 190px; max-height: 92px; object-fit: contain; margin: 0 0 10px; }
+    .brand-name { margin: 0 0 6px; font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: .08em; }
     h1 { margin: 0; font-size: 28px; color: #0f172a; }
     h2 { margin: 0 0 8px; font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: .08em; }
     .muted { color: #64748b; font-size: 13px; line-height: 1.5; }
@@ -63,8 +67,9 @@ function buildQuoteDocument(quote: any, user: any) {
   </div>
   <main class="page">
     <section class="top">
-      <div>
-        <h2>${escapeHtml(companyName)}</h2>
+      <div class="brand">
+        ${logoDataUrl ? `<img class="brand-logo" src="${escapeHtml(logoDataUrl)}" alt="Logo" />` : ""}
+        <p class="brand-name">${escapeHtml(companyName)}</p>
         <h1>${escapeHtml(title)}${quote.folio ? ` ${escapeHtml(String(quote.folio))}` : ""}</h1>
       </div>
       <div class="muted">
@@ -131,6 +136,12 @@ function renderNotes(quote: any) {
   const notes = [quote.nota2, quote.nota3].map((note) => String(note || "").trim()).filter(Boolean);
   if (!notes.length) return "";
   return `<section class="box"><h2>Notas</h2>${notes.map((note, index) => `<div class="value">${index + 1}. ${escapeHtml(note)}</div>`).join("")}</section>`;
+}
+
+function safeImageDataUrl(value: unknown) {
+  const dataUrl = String(value || "").trim();
+  if (/^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i.test(dataUrl)) return dataUrl;
+  return "";
 }
 
 function escapeHtml(value: unknown) {

@@ -49,6 +49,7 @@ const DEFAULT_MARGIN_PERCENT = 15;
 type Cotizacion = {
   id?: string;
   folio?: string;
+  logo_data_url?: string;
   empresa_cotiza: string;
   cliente_empresa: string;
   cliente_persona: string;
@@ -136,7 +137,9 @@ export default function CotizadorPage() {
   const [quotes, setQuotes] = useState<QuoteListRow[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [quotesError, setQuotesError] = useState("");
+  const [logoStatus, setLogoStatus] = useState("");
   const [form, setForm] = useState<Cotizacion>({
+    logo_data_url: "",
     empresa_cotiza: "",
     cliente_empresa: "",
     cliente_persona: "",
@@ -241,6 +244,7 @@ export default function CotizadorPage() {
     ...documentPayload,
     folio: form.folio,
     dashboard_form: {
+      logo_data_url: form.logo_data_url,
       empresa_cotiza: form.empresa_cotiza,
       cliente_empresa: form.cliente_empresa,
       cliente_persona: form.cliente_persona,
@@ -310,6 +314,7 @@ export default function CotizadorPage() {
       setForm({
         id: quote.id,
         folio: quote.folio,
+        logo_data_url: df.logo_data_url || quote.logo_data_url || "",
         empresa_cotiza: df.empresa_cotiza || "",
         cliente_empresa: df.cliente_empresa || "",
         cliente_persona: df.cliente_persona || quote.client_nombre || "",
@@ -521,6 +526,31 @@ export default function CotizadorPage() {
     setForm((current) => ({ ...current, empresa_cotiza: company.empresa_cotiza }));
   };
 
+  const handleLogoUpload = (file?: File | null) => {
+    setLogoStatus("");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setLogoStatus("El archivo debe ser una imagen.");
+      return;
+    }
+    if (file.size > 1_000_000) {
+      setLogoStatus("Usa una imagen menor a 1 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
+      if (!dataUrl.startsWith("data:image/")) {
+        setLogoStatus("No se pudo leer el logo.");
+        return;
+      }
+      setForm((current) => ({ ...current, logo_data_url: dataUrl }));
+      setLogoStatus("Logo cargado.");
+    };
+    reader.onerror = () => setLogoStatus("No se pudo leer el logo.");
+    reader.readAsDataURL(file);
+  };
+
   const applySavedClient = (clientId: string) => {
     const client = savedClients.find((item) => item.id === clientId);
     if (!client) return;
@@ -718,6 +748,40 @@ export default function CotizadorPage() {
                   </button>
                 </div>
                 {quoteCompanySaveStatus && <p className="text-xs font-medium text-slate-500">{quoteCompanySaveStatus}</p>}
+                <Field label="Logo">
+                  <div className="flex flex-col gap-2 rounded-md border border-border bg-slate-50 p-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      {form.logo_data_url ? (
+                        <img src={form.logo_data_url} alt="Logo" className="h-14 w-28 rounded border border-border bg-white object-contain p-1" />
+                      ) : (
+                        <div className="flex h-14 w-28 items-center justify-center rounded border border-dashed border-slate-300 bg-white text-xs text-slate-400">
+                          Sin logo
+                        </div>
+                      )}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="text-sm text-slate-600 file:mr-3 file:rounded-md file:border file:border-border file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700"
+                          onChange={(event) => handleLogoUpload(event.target.files?.[0])}
+                        />
+                        {form.logo_data_url && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setForm((current) => ({ ...current, logo_data_url: "" }));
+                              setLogoStatus("Logo quitado.");
+                            }}
+                            className="rounded-md border border-border bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-red-200 hover:text-red-600"
+                          >
+                            Quitar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {logoStatus && <p className="text-xs font-medium text-slate-500">{logoStatus}</p>}
+                  </div>
+                </Field>
                 <div className="grid grid-cols-2 gap-2">
                   <Field label="Empresa">
                     <input className="input" placeholder="Empresa cliente" value={form.cliente_empresa} onChange={(e) => setForm({ ...form, cliente_empresa: e.target.value })} />

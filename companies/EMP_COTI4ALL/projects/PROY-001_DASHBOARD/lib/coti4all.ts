@@ -110,6 +110,7 @@ function normalizeQuote(quote: Record<string, unknown>) {
         notes: line.notas || line.notes || "",
       }));
   const dashboardForm = quote.dashboard_form || {
+    logo_data_url: quote.logo_data_url || "",
     empresa_cotiza: quote.empresa_cotiza || "",
     cliente_empresa: quote.cliente_empresa || "",
     cliente_persona: quote.cliente_persona || "",
