@@ -7,10 +7,11 @@
     "module_code": "inventario"
   },
   "EMP_DURALON": {
-    "skill": "vertical_erp_ventas/erp_ventas_product_list",
-    "schema": "uc101_proy004",
-    "schema_inventario": "uc101_proy004",
-    "project_code": "PROY-004",
-    "module_code": "inventario"
+    "skill": "vertical_coti4all/coti4all_product_catalog",
+    "schema": "coti4all"
+  },
+  "EMP_DRENAFORT": {
+    "skill": "vertical_coti4all/coti4all_product_catalog",
+    "schema": "coti4all"
   }
 }

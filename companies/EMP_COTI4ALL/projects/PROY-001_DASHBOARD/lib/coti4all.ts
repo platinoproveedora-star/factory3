@@ -45,6 +45,10 @@ export async function saveCatalogItem(context: Record<string, unknown>, item: Re
   return callSkill<SkillMap>("vertical_coti4all/coti4all_product_catalog", { ...context, item, dry_run: true });
 }
 
+export async function saveCatalogItemCost(context: Record<string, unknown>) {
+  return callSkill<SkillMap>("vertical_coti4all/coti4all_catalog_item_manage", { ...context, dry_run: false });
+}
+
 export async function fetchPriceLists(context: Record<string, unknown>, productId?: string, priceListId?: string) {
   return callSkill<SkillMap>("vertical_coti4all/coti4all_price_list", {
     ...context,

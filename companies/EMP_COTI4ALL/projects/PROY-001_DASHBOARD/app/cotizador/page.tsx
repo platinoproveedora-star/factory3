@@ -118,7 +118,7 @@ export default function CotizadorPage() {
   const [mounted, setMounted] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [auth, setAuth] = useState<Record<string, unknown>>({});
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [loading, setLoading] = useState(false);
   const [catalogo, setCatalogo] = useState<Producto[]>([]);
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
@@ -132,6 +132,15 @@ export default function CotizadorPage() {
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogVisibleCount, setCatalogVisibleCount] = useState(30);
   const [bulkMarginPercent, setBulkMarginPercent] = useState(DEFAULT_MARGIN_PERCENT);
+  const [costeoCompanyId, setCosteoCompanyId] = useState("");
+  const [costeoItems, setCosteoItems] = useState<Producto[]>([]);
+  const [costeoLoading, setCosteoLoading] = useState(false);
+  const [costeoStatus, setCosteoStatus] = useState("Selecciona empresa para ver su tabla de costos.");
+  const [costeoSearch, setCosteoSearch] = useState("");
+  const [costeoVisibleCount, setCosteoVisibleCount] = useState(30);
+  const [costeoEditingSku, setCosteoEditingSku] = useState("");
+  const [costeoEditValue, setCosteoEditValue] = useState("");
+  const [costeoSaving, setCosteoSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
   const [savingQuote, setSavingQuote] = useState(false);
   const [quotes, setQuotes] = useState<QuoteListRow[]>([]);
@@ -182,6 +191,7 @@ export default function CotizadorPage() {
         );
         setSelectedCompanyId((current) => current || initialCompany);
         setCatalogCompanyId((current) => current || initialCompany);
+        setCosteoCompanyId((current) => current || initialCompany);
       })
       .catch(() => {})
       .finally(() => setAuthLoading(false));
@@ -209,6 +219,62 @@ export default function CotizadorPage() {
       })
       .catch(() => setCatalogStatus("No se pudo cargar el catálogo."));
   }, [catalogCompanyId]);
+
+  useEffect(() => {
+    if (!costeoCompanyId || step !== 2) return;
+    setCosteoLoading(true);
+    setCosteoStatus("Cargando tabla de costos...");
+    const q = new URLSearchParams({ company_id: costeoCompanyId });
+    fetch(`/api/cotizador?${q}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          setCosteoStatus("No hay catalogo conectado para esta empresa todavia.");
+          setCosteoItems([]);
+          return;
+        }
+        const json = await res.json();
+        const products = json.catalogo?.products || json.catalogo || [];
+        setCosteoItems(products);
+        setCosteoStatus(products.length ? `${products.length} productos.` : "Sin productos para esta empresa.");
+      })
+      .catch(() => setCosteoStatus("No se pudo cargar la tabla de costos."))
+      .finally(() => setCosteoLoading(false));
+  }, [costeoCompanyId, step]);
+
+  const startEditCosteo = (item: Producto) => {
+    setCosteoEditingSku(item.sku || item.product_code || "");
+    setCosteoEditValue(String(item.costo_referencia ?? item.costo ?? 0));
+  };
+
+  const saveCosteoItem = async (item: Producto) => {
+    const sku = item.sku || item.product_code || "";
+    if (!sku) return;
+    setCosteoSaving(true);
+    setCosteoStatus("");
+    try {
+      const res = await fetch("/api/cotizador/costeo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          empresa_id: costeoCompanyId,
+          sku,
+          nombre: item.nombre || item.product_name,
+          costo: Number(costeoEditValue || 0),
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok) { setCosteoStatus(json.error || "Error al guardar costo"); return; }
+      setCosteoItems((current) =>
+        current.map((p) => ((p.sku || p.product_code) === sku ? { ...p, ...(json.data?.item || {}) } : p))
+      );
+      setCosteoEditingSku("");
+      setCosteoStatus(`Costo de ${sku} actualizado.`);
+    } catch {
+      setCosteoStatus("Error de conexion");
+    } finally {
+      setCosteoSaving(false);
+    }
+  };
 
   const totals = form.lineas.reduce(
     (acc, line) => {
@@ -271,7 +337,7 @@ export default function CotizadorPage() {
   };
 
   useEffect(() => {
-    if (step === 4) loadQuotes();
+    if (step === 5) loadQuotes();
   }, [step, selectedCompanyId]);
 
   const saveQuote = async () => {
@@ -293,7 +359,7 @@ export default function CotizadorPage() {
       const quoteId = json.data?.quote_id;
       if (folio) setForm((current) => ({ ...current, folio, id: quoteId || current.id }));
       setSaveStatus(folio ? `Cotizacion guardada: ${folio}` : "Cotizacion guardada.");
-      if (step === 4) loadQuotes();
+      if (step === 5) loadQuotes();
     } catch (err) {
       setSaveStatus((err as Error).message);
     } finally {
@@ -664,10 +730,10 @@ export default function CotizadorPage() {
         </section>
 
         <ol className="flex flex-wrap items-center gap-2 text-sm">
-          {["Cotizacion", "Revision", "Documento", "Cotizaciones"].map((label, idx) => (
+          {["Cotizacion", "Costeo", "Revision", "Documento", "Cotizaciones"].map((label, idx) => (
             <li key={label} className="flex items-center gap-2">
               <button
-                onClick={() => setStep((idx + 1) as 1 | 2 | 3 | 4)}
+                onClick={() => setStep((idx + 1) as 1 | 2 | 3 | 4 | 5)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
                   step === idx + 1
                     ? "border-blue-500 bg-blue-500 text-white"
@@ -678,7 +744,7 @@ export default function CotizadorPage() {
               >
                 {idx + 1}. {label}
               </button>
-              {idx < 3 && <ChevronRight className="text-slate-600" size={14} />}
+              {idx < 4 && <ChevronRight className="text-slate-600" size={14} />}
             </li>
           ))}
         </ol>
@@ -919,6 +985,111 @@ export default function CotizadorPage() {
         )}
 
         {step === 2 && (
+          <section className="card space-y-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-ink">Tabla de costos</h2>
+                <p className="text-sm text-slate-500">
+                  Costo por producto guardado aqui — no toca el inventario real de la empresa. Actualizalo cuando cambien
+                  precios y ya no hace falta capturarlo en cada cotizacion.
+                </p>
+              </div>
+              <select
+                className="rounded-md border border-border bg-white px-2 py-2 text-sm font-semibold text-ink"
+                value={costeoCompanyId}
+                onChange={(event) => setCosteoCompanyId(event.target.value)}
+              >
+                {companies.map((company) => (
+                  <option key={company.company_id} value={company.company_id}>
+                    Costos de: {company.name || company.company_id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <input
+              className="input"
+              placeholder="Buscar producto por nombre o SKU..."
+              value={costeoSearch}
+              onChange={(e) => {
+                setCosteoSearch(e.target.value);
+                setCosteoVisibleCount(30);
+              }}
+            />
+            {(() => {
+              const q = costeoSearch.trim().toLowerCase();
+              const filtered = q
+                ? costeoItems.filter((item) => {
+                    const name = String(item.nombre || item.product_name || "").toLowerCase();
+                    const code = String(item.sku || item.product_code || "").toLowerCase();
+                    return name.includes(q) || code.includes(q);
+                  })
+                : costeoItems;
+              const visible = filtered.slice(0, costeoVisibleCount);
+              return (
+                <>
+                  <p className="text-xs text-slate-500">
+                    Mostrando {visible.length} de {filtered.length} productos
+                    {q ? ` (filtrado de ${costeoItems.length})` : ""}
+                  </p>
+                  <div className="max-h-[420px] space-y-2 overflow-auto pr-1">
+                    {filtered.length === 0 && (
+                      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+                        {costeoLoading ? "Cargando..." : costeoStatus}
+                      </div>
+                    )}
+                    {visible.map((item) => {
+                      const sku = item.sku || item.product_code || "";
+                      const name = item.nombre || item.product_name || "Producto";
+                      const currentCost = Number(item.costo_referencia ?? item.costo ?? 0);
+                      const editing = costeoEditingSku === sku;
+                      return (
+                        <div key={sku || name} className="flex items-center justify-between rounded-md border border-border bg-white px-3 py-2 text-sm">
+                          <div>
+                            <p className="font-medium text-ink">{name}</p>
+                            <p className="text-xs text-slate-500">{sku || "Sin SKU"}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {editing ? (
+                              <>
+                                <input
+                                  type="number"
+                                  className="input w-28 text-right"
+                                  value={costeoEditValue}
+                                  onChange={(e) => setCosteoEditValue(e.target.value)}
+                                  autoFocus
+                                />
+                                <button type="button" onClick={() => saveCosteoItem(item)} disabled={costeoSaving} className="btn-primary px-3 py-1.5 text-xs">
+                                  Guardar
+                                </button>
+                                <button type="button" onClick={() => setCosteoEditingSku("")} className="btn-ghost px-3 py-1.5 text-xs">
+                                  Cancelar
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-sm font-medium text-ink">{currency.format(currentCost)}</span>
+                                <button type="button" onClick={() => startEditCosteo(item)} className="btn-ghost inline-flex items-center gap-1 px-3 py-1.5 text-xs">
+                                  <Pencil size={13} /> Editar
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {filtered.length > visible.length && (
+                    <button type="button" onClick={() => setCosteoVisibleCount((n) => n + 30)} className="btn-ghost w-full py-2 text-sm">
+                      Mostrar más ({filtered.length - visible.length} restantes)
+                    </button>
+                  )}
+                </>
+              );
+            })()}
+          </section>
+        )}
+
+        {step === 3 && (
           <section className="space-y-4">
             <div className="card">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -1052,14 +1223,14 @@ export default function CotizadorPage() {
           </section>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <section className="card">
             <h2 className="text-lg font-semibold text-ink">Documento imprimible</h2>
             <PreviewPdf form={documentPayload} />
           </section>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <section className="card">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -1146,11 +1317,11 @@ export default function CotizadorPage() {
           </div>
           <div className="flex items-center gap-2">
             {step > 1 && (
-              <button onClick={() => setStep((current) => (current - 1) as 1 | 2 | 3 | 4)} className="btn-ghost px-3 py-2 text-sm">
+              <button onClick={() => setStep((current) => (current - 1) as 1 | 2 | 3 | 4 | 5)} className="btn-ghost px-3 py-2 text-sm">
                 Anterior
               </button>
             )}
-            {step < 4 && (
+            {step < 5 && step !== 2 && (
               <button
                 type="button"
                 disabled={savingQuote}
@@ -1161,12 +1332,12 @@ export default function CotizadorPage() {
                 Guardar cotizacion
               </button>
             )}
-            {step < 4 && (
-              <button onClick={() => setStep((current) => (current + 1) as 1 | 2 | 3 | 4)} className="btn-primary px-3 py-2 text-sm">
+            {step < 5 && (
+              <button onClick={() => setStep((current) => (current + 1) as 1 | 2 | 3 | 4 | 5)} className="btn-primary px-3 py-2 text-sm">
                 Siguiente
               </button>
             )}
-            {step === 3 && (
+            {step === 4 && (
               <button
                 disabled={loading}
                 onClick={async () => {

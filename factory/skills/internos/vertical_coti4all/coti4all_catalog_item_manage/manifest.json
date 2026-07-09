@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_coti4all/coti4all_catalog_item_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea o actualiza un item de catalog_items (nombre, costo_referencia) por empresa_id+sku. Upsert idempotente, no toca el inventario real de origen.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
