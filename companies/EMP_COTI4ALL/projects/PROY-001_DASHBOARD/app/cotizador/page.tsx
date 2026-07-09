@@ -39,10 +39,12 @@ type Linea = {
   cantidad: number;
   precio_unitario: number;
   costo_unitario: number;
+  margen_porcentaje?: number;
   unidad: string;
 };
 
 const UNIDAD_PRESETS = ["KG", "TON", "BULTO", "PZA"];
+const DEFAULT_MARGIN_PERCENT = 15;
 
 type Cotizacion = {
   id?: string;
@@ -92,6 +94,25 @@ const portalHref = process.env.NEXT_PUBLIC_APPS4ALL_URL || "http://localhost:301
 const MODULE_CODE = "coti4all_portal";
 const IVA_RATE = 0.16;
 
+function roundMoney(value: number) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+function priceFromCostAndMargin(cost: number, marginPercent: number) {
+  return roundMoney((Number(cost) || 0) * (1 + (Number(marginPercent) || 0) / 100));
+}
+
+function marginFromCostAndPrice(cost: number, price: number) {
+  const base = Number(cost) || 0;
+  if (!base) return 0;
+  return Math.round((((Number(price) || 0) - base) / base) * 10000) / 100;
+}
+
+function lineMarginPercent(line: Linea) {
+  if (typeof line.margen_porcentaje === "number" && Number.isFinite(line.margen_porcentaje)) return line.margen_porcentaje;
+  return marginFromCostAndPrice(line.costo_unitario, line.precio_unitario);
+}
+
 export default function CotizadorPage() {
   const [mounted, setMounted] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -107,6 +128,8 @@ export default function CotizadorPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [catalogCompanyId, setCatalogCompanyId] = useState("");
   const [catalogStatus, setCatalogStatus] = useState("Selecciona empresa para cargar catálogo.");
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogVisibleCount, setCatalogVisibleCount] = useState(30);
   const [saveStatus, setSaveStatus] = useState("");
   const [savingQuote, setSavingQuote] = useState(false);
   const [quotes, setQuotes] = useState<QuoteListRow[]>([]);
@@ -164,6 +187,8 @@ export default function CotizadorPage() {
     if (!catalogCompanyId) return;
     setCatalogStatus("Cargando catálogo...");
     setCatalogo([]);
+    setCatalogSearch("");
+    setCatalogVisibleCount(30);
     const q = new URLSearchParams({
       company_id: catalogCompanyId,
     });
@@ -280,6 +305,7 @@ export default function CotizadorPage() {
       const quote = json.data?.quote || {};
       const items = Array.isArray(json.data?.items) ? json.data.items : [];
       const df = json.data?.dashboard_form || {};
+      const metadataItems = Array.isArray(quote.metadata?.items) ? quote.metadata.items : [];
       setForm({
         id: quote.id,
         folio: quote.folio,
@@ -293,13 +319,19 @@ export default function CotizadorPage() {
         nota3: df.nota3 || "",
         moneda: quote.moneda || "MXN",
         validez_dias: Number(quote.validez_dias || 30),
-        lineas: items.map((it: any) => ({
-          nombre: it.nombre || it.sku || "Producto",
-          cantidad: Number(it.cantidad || 0),
-          precio_unitario: Number(it.precio_unitario || 0),
-          costo_unitario: Number(it.costo_unitario || 0),
-          unidad: it.unidad || "PZA",
-        })),
+        lineas: items.map((it: any, idx: number) => {
+          const meta = metadataItems[idx] || {};
+          const cost = Number(it.costo_unitario || 0);
+          const price = Number(it.precio_unitario || 0);
+          return {
+            nombre: it.nombre || it.sku || "Producto",
+            cantidad: Number(it.cantidad || 0),
+            precio_unitario: price,
+            costo_unitario: cost,
+            margen_porcentaje: Number(meta.margin_percent ?? meta.margen_porcentaje ?? it.margen_porcentaje ?? marginFromCostAndPrice(cost, price)),
+            unidad: it.unidad || "PZA",
+          };
+        }),
       });
       setSaveStatus(`Editando ${quote.folio || ""}`);
       setStep(1);
@@ -332,14 +364,17 @@ export default function CotizadorPage() {
   const addManualLine = () => {
     setForm((current) => ({
       ...current,
-      lineas: [...current.lineas, { nombre: "", cantidad: 1, precio_unitario: 0, costo_unitario: 0, unidad: "PZA" }],
+      lineas: [
+        ...current.lineas,
+        { nombre: "", cantidad: 1, precio_unitario: 0, costo_unitario: 0, margen_porcentaje: DEFAULT_MARGIN_PERCENT, unidad: "PZA" },
+      ],
     }));
   };
 
   const addProduct = (product: Producto) => {
     const name = product.nombre || product.product_name || product.sku || product.product_code || "Producto";
-    const price = Number(product.precio ?? product.list_price_base ?? product.costo_referencia ?? product.costo ?? 0);
     const cost = Number(product.costo ?? product.costo_referencia ?? 0);
+    const price = priceFromCostAndMargin(cost, DEFAULT_MARGIN_PERCENT);
     const unidad = String(product.unit || product.unidad || "PZA").toUpperCase();
     setForm((current) => ({
       ...current,
@@ -351,6 +386,7 @@ export default function CotizadorPage() {
           cantidad: 1,
           precio_unitario: price,
           costo_unitario: cost,
+          margen_porcentaje: DEFAULT_MARGIN_PERCENT,
           unidad,
         },
       ],
@@ -361,6 +397,52 @@ export default function CotizadorPage() {
     setForm((current) => ({
       ...current,
       lineas: current.lineas.map((line, idx) => (idx === index ? { ...line, ...patch } : line)),
+    }));
+  };
+
+  const setLineCost = (index: number, value: number) => {
+    setForm((current) => ({
+      ...current,
+      lineas: current.lineas.map((line, idx) => {
+        if (idx !== index) return line;
+        const margin = lineMarginPercent(line);
+        return {
+          ...line,
+          costo_unitario: value,
+          margen_porcentaje: margin,
+          precio_unitario: priceFromCostAndMargin(value, margin),
+        };
+      }),
+    }));
+  };
+
+  const setLineMargin = (index: number, value: number) => {
+    setForm((current) => ({
+      ...current,
+      lineas: current.lineas.map((line, idx) =>
+        idx === index
+          ? {
+              ...line,
+              margen_porcentaje: value,
+              precio_unitario: priceFromCostAndMargin(line.costo_unitario || 0, value),
+            }
+          : line
+      ),
+    }));
+  };
+
+  const setLinePrice = (index: number, value: number) => {
+    setForm((current) => ({
+      ...current,
+      lineas: current.lineas.map((line, idx) =>
+        idx === index
+          ? {
+              ...line,
+              precio_unitario: value,
+              margen_porcentaje: marginFromCostAndPrice(line.costo_unitario || 0, value),
+            }
+          : line
+      ),
     }));
   };
 
@@ -688,52 +770,73 @@ export default function CotizadorPage() {
                   ))}
                 </select>
               </div>
-              <div className="flex justify-end">
-                <select
-                  className="rounded-md border border-border bg-white px-2 py-2 text-sm text-ink"
-                  onChange={(event) => {
-                    const product = catalogo.find((item) => item.id === event.target.value);
-                    if (product) addProduct(product);
-                    event.currentTarget.value = "";
-                  }}
-                >
-                  <option value="">Agregar producto...</option>
-                  {catalogo.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.nombre || item.product_name || item.sku || item.product_code}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="max-h-[360px] space-y-2 overflow-auto pr-1">
-                {catalogo.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
-                    {catalogStatus}
-                  </div>
-                )}
-                {catalogo.slice(0, 20).map((item) => {
-                  const name = item.nombre || item.product_name || "Producto";
-                  const code = item.sku || item.product_code || "";
-                  const price = Number(item.precio ?? item.list_price_base ?? item.costo_referencia ?? item.costo ?? 0);
-                  const addedCount = form.lineas.filter((line) => line.producto_id === item.id).length;
-                  return (
-                    <div key={item.id} className="flex items-center justify-between rounded-md border border-border bg-white px-3 py-2 text-sm">
-                      <div>
-                        <p className="font-medium text-ink">{name}</p>
-                        <p className="text-xs text-slate-500">
-                          {code || "Sin SKU"} {addedCount ? `· Agregado: ${addedCount}` : ""}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-ink">{price ? currency.format(price) : "-"}</span>
-                        <button onClick={() => addProduct(item)} className="btn-primary inline-flex items-center gap-1 px-3 py-1.5 text-xs">
-                          <PlusCircle size={14} /> Agregar
-                        </button>
-                      </div>
+              <input
+                className="input"
+                placeholder="Buscar producto por nombre o SKU..."
+                value={catalogSearch}
+                onChange={(e) => {
+                  setCatalogSearch(e.target.value);
+                  setCatalogVisibleCount(30);
+                }}
+              />
+              {(() => {
+                const q = catalogSearch.trim().toLowerCase();
+                const filtered = q
+                  ? catalogo.filter((item) => {
+                      const name = String(item.nombre || item.product_name || "").toLowerCase();
+                      const code = String(item.sku || item.product_code || "").toLowerCase();
+                      return name.includes(q) || code.includes(q);
+                    })
+                  : catalogo;
+                const visible = filtered.slice(0, catalogVisibleCount);
+                return (
+                  <>
+                    <p className="text-xs text-slate-500">
+                      Mostrando {visible.length} de {filtered.length} productos
+                      {q ? ` (filtrado de ${catalogo.length})` : ""}
+                    </p>
+                    <div className="max-h-[360px] space-y-2 overflow-auto pr-1">
+                      {filtered.length === 0 && (
+                        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
+                          {catalogo.length === 0 ? catalogStatus : "Sin productos que coincidan con la búsqueda."}
+                        </div>
+                      )}
+                      {visible.map((item) => {
+                        const name = item.nombre || item.product_name || "Producto";
+                        const code = item.sku || item.product_code || "";
+                        const cost = Number(item.costo ?? item.costo_referencia ?? 0);
+                        const price = priceFromCostAndMargin(cost, DEFAULT_MARGIN_PERCENT);
+                        const addedCount = form.lineas.filter((line) => line.producto_id === item.id).length;
+                        return (
+                          <div key={item.id} className="flex items-center justify-between rounded-md border border-border bg-white px-3 py-2 text-sm">
+                            <div>
+                              <p className="font-medium text-ink">{name}</p>
+                              <p className="text-xs text-slate-500">
+                                {code || "Sin SKU"} {addedCount ? `· Agregado: ${addedCount}` : ""}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-ink">{price ? currency.format(price) : "-"}</span>
+                              <button onClick={() => addProduct(item)} className="btn-primary inline-flex items-center gap-1 px-3 py-1.5 text-xs">
+                                <PlusCircle size={14} /> Agregar
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                    {filtered.length > visible.length && (
+                      <button
+                        type="button"
+                        onClick={() => setCatalogVisibleCount((n) => n + 30)}
+                        className="btn-ghost w-full py-2 text-sm"
+                      >
+                        Mostrar más ({filtered.length - visible.length} restantes)
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </section>
         )}
@@ -748,6 +851,7 @@ export default function CotizadorPage() {
                     <tr>
                       <th className="px-3 py-2 text-left">Costo unitario</th>
                       <th className="px-3 py-2 text-right">Costo</th>
+                      <th className="px-3 py-2">% margen</th>
                       <th className="px-3 py-2 text-right">Margen venta</th>
                       <th className="px-3 py-2 text-left">Nombre</th>
                       <th className="px-3 py-2">Cant</th>
@@ -760,7 +864,7 @@ export default function CotizadorPage() {
                   <tbody className="divide-y divide-border">
                     {form.lineas.length === 0 && (
                       <tr>
-                        <td colSpan={9} className="px-3 py-8 text-center text-sm text-slate-500">
+                        <td colSpan={10} className="px-3 py-8 text-center text-sm text-slate-500">
                           Agrega productos o renglones manuales para revisar la cotizacion.
                         </td>
                       </tr>
@@ -773,10 +877,18 @@ export default function CotizadorPage() {
                       return (
                         <tr key={index}>
                           <td className="px-3 py-2">
-                            <input type="number" className="w-28 rounded border border-border bg-white px-2 py-1 text-sm text-ink" value={line.costo_unitario} onChange={(e) => setLine(index, { costo_unitario: Number(e.target.value) })} />
+                            <input type="number" className="w-28 rounded border border-border bg-white px-2 py-1 text-sm text-ink" value={line.costo_unitario} onChange={(e) => setLineCost(index, Number(e.target.value))} />
                           </td>
                           <td className="px-3 py-2 text-right text-ink">
                             {currency.format(rowCosto)}
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="number"
+                              className="w-24 rounded border border-border bg-white px-2 py-1 text-sm text-ink"
+                              value={lineMarginPercent(line)}
+                              onChange={(e) => setLineMargin(index, Number(e.target.value))}
+                            />
                           </td>
                           <td className="px-3 py-2 text-right text-ink">
                             {currency.format(rowMargen)}
@@ -788,7 +900,7 @@ export default function CotizadorPage() {
                             <input type="number" className="w-16 rounded border border-border bg-white px-2 py-1 text-sm text-ink" value={line.cantidad} onChange={(e) => setLine(index, { cantidad: Number(e.target.value) })} />
                           </td>
                           <td className="px-3 py-2">
-                            <input type="number" className="w-28 rounded border border-border bg-white px-2 py-1 text-sm text-ink" value={line.precio_unitario} onChange={(e) => setLine(index, { precio_unitario: Number(e.target.value) })} />
+                            <input type="number" className="w-28 rounded border border-border bg-white px-2 py-1 text-sm text-ink" value={line.precio_unitario} onChange={(e) => setLinePrice(index, Number(e.target.value))} />
                           </td>
                           <td className="px-3 py-2">
                             <select
@@ -835,6 +947,7 @@ export default function CotizadorPage() {
                       <td className="px-3 py-2 text-right">
                         <TotalStack subtotal={totals.costoSubtotal} iva={costoIva} total={costoTotal} ivaLabel="IVA (16%)" />
                       </td>
+                      <td className="px-3 py-2" />
                       <td className="px-3 py-2 text-right">
                         <TotalStack subtotal={totals.margenSubtotal} iva={margenIva} total={margenTotal} ivaLabel="IVA (0%)" />
                       </td>

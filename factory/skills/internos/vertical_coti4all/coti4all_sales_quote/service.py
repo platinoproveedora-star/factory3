@@ -71,6 +71,7 @@ class Coti4AllSalesQuoteService:
             qty = _dec(it.get("quantity") or it.get("qty") or 0)
             unit_price = _dec(it.get("unit_price_ex_vat") or it.get("price") or 0)
             unit_cost = _dec(it.get("unit_cost") or it.get("costo_unitario") or 0)
+            margin_percent = _dec(it.get("margin_percent") or it.get("margen_porcentaje") or it.get("markup_percent") or 0)
             unit = str(it.get("unit") or it.get("unidad") or "PZA").strip() or "PZA"
             line_sub = _r(unit_price * qty)
             line_vat = _r(line_sub * vat_rate)
@@ -87,6 +88,7 @@ class Coti4AllSalesQuoteService:
                     "quantity": float(qty),
                     "unit_price_ex_vat": float(unit_price),
                     "unit_cost": float(unit_cost),
+                    "margin_percent": float(margin_percent),
                     "unit": unit,
                     "vat_rate": float(vat_rate),
                     "line_subtotal": float(line_sub),

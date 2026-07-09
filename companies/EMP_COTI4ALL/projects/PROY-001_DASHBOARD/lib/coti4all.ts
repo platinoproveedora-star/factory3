@@ -105,6 +105,7 @@ function normalizeQuote(quote: Record<string, unknown>) {
         quantity: Number(line.cantidad || line.quantity || 0),
         price: Number(line.precio_unitario || line.price || 0),
         unit_cost: Number(line.costo_unitario || line.unit_cost || 0),
+        margin_percent: Number(line.margen_porcentaje ?? line.margin_percent ?? line.markup_percent ?? 0),
         unit: line.unidad || line.unit || "PZA",
         notes: line.notas || line.notes || "",
       }));
