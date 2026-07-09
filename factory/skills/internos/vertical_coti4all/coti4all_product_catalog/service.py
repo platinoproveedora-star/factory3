@@ -50,7 +50,7 @@ class Coti4AllProductCatalogService:
             filters["categoria"] = f"eq.{category}"
 
         sort_expr = f"{_SORT_MAP.get(sort, 'nombre')}.{order_dir if order_dir in ('asc','desc') else 'asc'}"
-        res = SupabaseClient(ctx).rest_select("catalog_items", filters=filters, select=fields, order=sort_expr)
+        res = SupabaseClient(ctx).rest_select_all("catalog_items", filters=filters, select=fields, order=sort_expr)
         if not res.get("ok"):
             return res
         items = res.get("data") or []

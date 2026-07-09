@@ -1,0 +1,8 @@
+{
+  "name": "vertical_erp_inventory/erp_inventory_price_import",
+  "vertical": "vertical_erp_inventory",
+  "descripcion": "Carga o actualiza precios de un catalogo de productos por SKU (upsert), sin duplicar, y opcionalmente sincroniza el costo hacia coti4all.catalog_items.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

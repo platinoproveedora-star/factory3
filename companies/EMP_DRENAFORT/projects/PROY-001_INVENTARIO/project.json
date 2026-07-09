@@ -1,0 +1,15 @@
+{
+  "company_id": "EMP_DRENAFORT",
+  "project_code": "PROY-001",
+  "module_code": "inventario",
+  "project_name": "Inventario y catalogo Drenafort",
+  "schema": "drenafort_proy001",
+  "supabase_schema": "drenafort_proy001",
+  "platform": "internal",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "status": "planned",
+  "erp_ready": false
+}

@@ -71,6 +71,7 @@ class SupabaseClient:
         filters: dict[str, Any] | None = None,
         select: str = "*",
         limit: int | None = None,
+        offset: int | None = None,
         order: str | None = None,
     ) -> dict[str, Any]:
         check = self.check_config(require_rest=True)
@@ -81,10 +82,41 @@ class SupabaseClient:
             params[key] = self._filter_value(value)
         if limit is not None:
             params["limit"] = str(limit)
+        if offset is not None:
+            params["offset"] = str(offset)
         if order:
             params["order"] = order
         endpoint = self._rest_url(table, params)
         return self._request("GET", endpoint, None, self._rest_headers())
+
+    def rest_select_all(
+        self,
+        table: str,
+        filters: dict[str, Any] | None = None,
+        select: str = "*",
+        order: str | None = None,
+        page_size: int = 1000,
+        max_rows: int = 50000,
+    ) -> dict[str, Any]:
+        """Paginate through rest_select until all rows are fetched.
+
+        PostgREST/Supabase caps a single response at the server's
+        db-max-rows setting (1000 by default), so callers that need the
+        full result set must page with limit/offset instead of raising
+        `limit` past that cap.
+        """
+        items: list[Any] = []
+        offset = 0
+        while len(items) < max_rows:
+            res = self.rest_select(table, filters=filters, select=select, limit=page_size, offset=offset, order=order)
+            if not res.get("ok"):
+                return res
+            page = res.get("data") or []
+            items.extend(page)
+            if len(page) < page_size:
+                break
+            offset += page_size
+        return {"ok": True, "data": items}
 
     def rest_insert(self, table: str, rows: list[dict[str, Any]] | dict[str, Any]) -> dict[str, Any]:
         check = self.check_config(require_rest=True)
