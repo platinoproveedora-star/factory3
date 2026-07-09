@@ -5319,6 +5319,16 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_fleet4all_migration/logplat_import": {
+    "tipo": "interno",
+    "nombre": "vertical_fleet4all_migration/logplat_import",
+    "vertical": "vertical_fleet4all_migration",
+    "kind": "executable",
+    "descripcion": "Migra datos legacy de logplat.* hacia fleet4all.* para EMP_LOGPLAT con dry-run e idempotencia.",
+    "path": "skills/internos/vertical_fleet4all_migration/logplat_import",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_fleet4all_trips/fleet_message_handler": {
     "tipo": "interno",
     "nombre": "vertical_fleet4all_trips/fleet_message_handler",

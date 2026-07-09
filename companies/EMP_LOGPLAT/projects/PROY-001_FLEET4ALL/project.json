@@ -1,0 +1,27 @@
+{
+  "company_id": "EMP_LOGPLAT",
+  "project_code": "PROY-001",
+  "project_name": "Logplat Fleet4All",
+  "module_code": "fleet4all",
+  "schema": "fleet4all",
+  "platform": "vercel",
+  "requires_env": [
+    "FACTORY_API_URL",
+    "FACTORY_API_SECRET",
+    "PLATFORM_JWT_SECRET",
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY",
+    "NEXT_PUBLIC_APPS4ALL_URL"
+  ],
+  "legacy_source": {
+    "path": "EMP_LOGPLAT",
+    "schema": "logplat",
+    "tables": [
+      "viajes",
+      "gastos",
+      "pagos",
+      "cuentas_por_cobrar",
+      "viaje_docs"
+    ]
+  }
+}
