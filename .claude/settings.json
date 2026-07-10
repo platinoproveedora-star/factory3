@@ -10,7 +10,15 @@
       "Write(docs/**)",
       "Edit(docs/**)",
       "Bash(python *)",
-      "Bash(mkdir *)"
+      "Bash(mkdir *)",
+      "WebFetch(domain:smartfleetapp.com)",
+      "WebFetch(domain:es.smartfleetapp.com)",
+      "WebFetch(domain:app.smartfleet.ai)",
+      "WebFetch(domain:misflotillas.com)",
+      "WebFetch(domain:www.gestioninteligente.com.mx)",
+      "WebFetch(domain:www.briocsolutions.com)",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)"
     ]
   }
 }

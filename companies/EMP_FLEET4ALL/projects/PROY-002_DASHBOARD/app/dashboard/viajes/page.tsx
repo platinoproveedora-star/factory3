@@ -38,8 +38,14 @@ type TripMonth = {
 };
 
 const fmt = (n: number, c = "MXN") => Number(n || 0).toLocaleString("es-MX", { style: "currency", currency: c });
+const SAVE_TIMEOUT_MS = 35000;
 
 const emptyMonthTotals = { count: 0, sale_price: 0, expenses: 0, profit: 0 };
+const toNumberOrUndefined = (value: string) => {
+  if (value === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
 
 export default function ViajesPage() {
   const { selectedCompanyId, loading: loadingCompany } = useCompany();
@@ -55,6 +61,7 @@ export default function ViajesPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [tripOverrides, setTripOverrides] = useState<Record<string, Trip>>({});
   const [deletedTripFolios, setDeletedTripFolios] = useState<Record<string, boolean>>({});
+  const [rowStatus, setRowStatus] = useState<Record<string, { type: "ok" | "error" | "saving"; text: string }>>({});
 
   const applyLocalTripState = (trip: Trip) => {
     const folio = trip.trip_folio || "";
@@ -95,6 +102,7 @@ export default function ViajesPage() {
           profit: fallbackTrips.reduce((sum, trip) => sum + Number(trip.live_trip_profit ?? trip.trip_profit ?? 0), 0),
         },
       }];
+  const unitOptions = (ops.units || []) as Array<{ unit_key?: string; plate?: string; brand?: string; model?: string; status?: string }>;
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -143,6 +151,11 @@ export default function ViajesPage() {
 
   function startEdit(trip: Trip) {
     setEditingFolio(trip.trip_folio || "");
+    setRowStatus((current) => {
+      const next = { ...current };
+      delete next[trip.trip_folio || ""];
+      return next;
+    });
     setEditForm({
       customer: trip.customer || "",
       origin: trip.origin || "",
@@ -159,24 +172,70 @@ export default function ViajesPage() {
     setStatus("");
   }
 
-  async function saveEdit(tripFolio: string) {
+  async function saveEdit(trip: Trip) {
+    const tripFolio = trip.trip_folio || "";
+    if (!selectedCompanyId) {
+      setStatus("Selecciona una empresa antes de guardar.");
+      return;
+    }
+    if (!tripFolio) {
+      setStatus("Folio de viaje requerido para guardar cambios.");
+      return;
+    }
     setSavingEdit(true);
     setStatus("");
+    setRowStatus((current) => ({ ...current, [tripFolio]: { type: "saving", text: "Guardando cambios..." } }));
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), SAVE_TIMEOUT_MS);
     try {
+      const payload: Record<string, unknown> = { empresa_id: selectedCompanyId, trip_folio: tripFolio, ...editForm, dry_run: false };
+      if (editForm.distance_km === "") delete payload.distance_km;
       const res = await fetch("/api/viajes", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ empresa_id: selectedCompanyId, trip_folio: tripFolio, ...editForm, dry_run: false }),
+        body: JSON.stringify(payload),
+        signal: controller.signal,
       });
-      const data = await res.json();
-      if (!data.ok) { setStatus(data.error || "Error al actualizar viaje"); return; }
+      const data = await res.json().catch(async () => ({ ok: false, error: await res.text().catch(() => "Respuesta invalida del servidor") }));
+      if (!res.ok || !data.ok) {
+        const message = data.error || `Error al actualizar viaje (${res.status})`;
+        setStatus(message);
+        setRowStatus((current) => ({ ...current, [tripFolio]: { type: "error", text: message } }));
+        return;
+      }
       const updated = data.data?.trip || {};
-      setTripOverrides((current) => ({ ...current, [tripFolio]: updated }));
+      const salePrice = toNumberOrUndefined(editForm.sale_price) ?? Number(updated.sale_price ?? trip.sale_price ?? 0);
+      const expensesTotal = Number(trip.expenses_total ?? updated.trip_cost ?? trip.trip_cost ?? 0);
+      const liveProfit = Number((salePrice - expensesTotal).toFixed(2));
+      const visibleUpdate: Trip = {
+        ...updated,
+        customer: editForm.customer,
+        origin: editForm.origin,
+        destination: editForm.destination,
+        departure_date: editForm.departure_date || undefined,
+        arrival_date: editForm.arrival_date || undefined,
+        currency: editForm.currency || updated.currency || trip.currency || "MXN",
+        driver_key: editForm.driver_key || undefined,
+        unit_key: editForm.unit_key || undefined,
+        distance_km: toNumberOrUndefined(editForm.distance_km),
+        sale_price: salePrice,
+        expenses_total: expensesTotal,
+        live_trip_profit: liveProfit,
+        trip_profit: liveProfit,
+        trip_status: editForm.trip_status || updated.trip_status || trip.trip_status,
+      };
+      setTripOverrides((current) => ({ ...current, [tripFolio]: { ...(current[tripFolio] || {}), ...visibleUpdate } }));
       setEditingFolio("");
       setStatus(`Viaje ${tripFolio} actualizado.`);
-    } catch {
-      setStatus("Error de conexion");
+      setRowStatus((current) => ({ ...current, [tripFolio]: { type: "ok", text: "Guardado." } }));
+    } catch (error) {
+      const message = error instanceof Error && error.name === "AbortError"
+        ? "Factory tardo demasiado en guardar. Intenta de nuevo en unos segundos."
+        : "Error de conexion";
+      setStatus(message);
+      setRowStatus((current) => ({ ...current, [tripFolio]: { type: "error", text: message } }));
     } finally {
+      window.clearTimeout(timer);
       setSavingEdit(false);
     }
   }
@@ -341,6 +400,8 @@ export default function ViajesPage() {
                   <tbody>
                     {month.trips.map((trip: Trip) => {
                       const isEditing = editingFolio === trip.trip_folio;
+                      const isSavingThisTrip = savingEdit && isEditing;
+                      const currentRowStatus = rowStatus[trip.trip_folio || ""];
                       return (
                       <tr key={trip.trip_folio} className="border-b border-border/50 align-top">
                         <td className="py-2 font-mono">{trip.trip_folio}</td>
@@ -367,7 +428,19 @@ export default function ViajesPage() {
                           {isEditing ? <input list="fleet-drivers" className="input h-8 text-xs" value={editForm.driver_key || ""} onChange={(e) => setEditForm((f) => ({ ...f, driver_key: e.target.value }))} /> : (trip.driver_key || <span className="text-yellow-300">pendiente</span>)}
                         </td>
                         <td className="py-2 min-w-24">
-                          {isEditing ? <input list="fleet-units" className="input h-8 text-xs" value={editForm.unit_key || ""} onChange={(e) => setEditForm((f) => ({ ...f, unit_key: e.target.value }))} /> : (trip.unit_key || <span className="text-yellow-300">pendiente</span>)}
+                          {isEditing ? (
+                            <select className="input h-8 text-xs min-w-36" value={editForm.unit_key || ""} onChange={(e) => setEditForm((f) => ({ ...f, unit_key: e.target.value }))}>
+                              <option value="">Pendiente</option>
+                              {editForm.unit_key && !unitOptions.some((unit) => unit.unit_key === editForm.unit_key) && (
+                                <option value={editForm.unit_key}>{editForm.unit_key}</option>
+                              )}
+                              {unitOptions.map((unit) => (
+                                <option key={unit.unit_key} value={unit.unit_key || ""}>
+                                  {unit.unit_key}{unit.plate ? ` - ${unit.plate}` : ""}{unit.status ? ` (${unit.status})` : ""}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (trip.unit_key || <span className="text-yellow-300">pendiente</span>)}
                         </td>
                         <td className="py-2 text-right min-w-20">
                           {isEditing ? <input type="number" className="input h-8 text-xs text-right" value={editForm.distance_km || ""} onChange={(e) => setEditForm((f) => ({ ...f, distance_km: e.target.value }))} /> : (trip.distance_km ?? "-")}
@@ -389,14 +462,28 @@ export default function ViajesPage() {
                         <td className="py-2 min-w-28">{trip.payment_status || "receivable"}</td>
                         <td className="py-2">
                           {isEditing ? (
-                            <div className="flex gap-2 justify-end">
-                              <button type="button" className="btn-primary px-3 py-1 text-xs" disabled={savingEdit} onClick={() => saveEdit(trip.trip_folio || "")}>Guardar</button>
-                              <button type="button" className="btn-ghost px-3 py-1 text-xs" disabled={savingEdit} onClick={() => setEditingFolio("")}>Cancelar</button>
+                            <div className="grid gap-1 justify-items-end">
+                              <div className="flex gap-2 justify-end">
+                                <button type="button" className="btn-primary px-3 py-1 text-xs disabled:opacity-60" disabled={savingEdit} onClick={() => saveEdit(trip)}>{isSavingThisTrip ? "Guardando..." : "Guardar"}</button>
+                                <button type="button" className="btn-ghost px-3 py-1 text-xs" disabled={savingEdit} onClick={() => setEditingFolio("")}>Cancelar</button>
+                              </div>
+                              {currentRowStatus && (
+                                <span className={currentRowStatus.type === "error" ? "text-xs text-red-300" : "text-xs text-green-300"}>
+                                  {currentRowStatus.text}
+                                </span>
+                              )}
                             </div>
                           ) : (
-                            <div className="flex gap-2 justify-end">
-                              <button type="button" className="btn-ghost px-2 py-1 text-xs" title="Editar viaje" disabled={savingEdit} onClick={() => startEdit(trip)}>Editar</button>
-                              <button type="button" className="btn-ghost px-2 py-1 text-xs text-red-300" title="Borrar viaje" disabled={savingEdit} onClick={() => deleteTrip(trip)}>Borrar</button>
+                            <div className="grid gap-1 justify-items-end">
+                              <div className="flex gap-2 justify-end">
+                                <button type="button" className="btn-ghost px-2 py-1 text-xs" title="Editar viaje" disabled={savingEdit} onClick={() => startEdit(trip)}>Editar</button>
+                                <button type="button" className="btn-ghost px-2 py-1 text-xs text-red-300" title="Borrar viaje" disabled={savingEdit} onClick={() => deleteTrip(trip)}>Borrar</button>
+                              </div>
+                              {currentRowStatus && (
+                                <span className={currentRowStatus.type === "error" ? "text-xs text-red-300" : "text-xs text-green-300"}>
+                                  {currentRowStatus.text}
+                                </span>
+                              )}
                             </div>
                           )}
                         </td>

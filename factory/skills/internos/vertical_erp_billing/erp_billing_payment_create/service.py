@@ -49,6 +49,16 @@ class ErpBillingPaymentCreateService:
                 ],
             }
         receipt_file_url = blank(context.get("receipt_file_url") or context.get("document_file_url"))
+        destination_bank_account_id = blank(context.get("destination_bank_account_id") or context.get("bank_account_id"))
+        destination_billing_account_id = blank(context.get("destination_billing_money_account_id") or context.get("billing_money_account_id"))
+        raw_destination_account_id = blank(context.get("destination_money_account_id"))
+        if not destination_bank_account_id and not destination_billing_account_id:
+            if str(context.get("banks_schema") or context.get("banks_supabase_schema") or "").strip():
+                destination_bank_account_id = raw_destination_account_id
+            else:
+                destination_billing_account_id = raw_destination_account_id
+        if destination_bank_account_id:
+            metadata = {**metadata, "destination_bank_account_id": destination_bank_account_id}
         row = {
             **identity_row(ctx),
             "collection_folio_id": blank(context.get("collection_folio_id") or (collection or {}).get("id")),
@@ -60,7 +70,7 @@ class ErpBillingPaymentCreateService:
             "unapplied_amount": amount,
             "payment_date": str(context.get("payment_date") or today_iso()),
             "source_money_account_id": blank(context.get("source_money_account_id")),
-            "destination_money_account_id": blank(context.get("destination_money_account_id")),
+            "destination_money_account_id": destination_billing_account_id,
             "bank_name": blank(context.get("bank_name")),
             "sender_account": blank(context.get("sender_account")),
             "receiver_account": blank(context.get("receiver_account")),
@@ -93,7 +103,7 @@ class ErpBillingPaymentCreateService:
         return {"ok": True, "data": {"payment": payment}}
 
     def _record_bank_movement(self, context: dict, ctx: dict, payment: dict, amount: float) -> None:
-        account_id = blank(context.get("destination_money_account_id"))
+        account_id = blank(context.get("destination_bank_account_id") or context.get("bank_account_id") or context.get("destination_money_account_id"))
         account_folio = blank(context.get("destination_account_folio"))
         if not account_id and not account_folio:
             return

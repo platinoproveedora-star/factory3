@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import SupabaseClient, blank, fetch_one, identity_row, insert_event, money, reserve_folio, resolve_billing_context, sales_context, utc_now  # noqa: E402
+from _common import SupabaseClient, blank, fetch_one, insert_event, money, resolve_billing_context, sales_context, utc_now  # noqa: E402
 
 
 class ErpBillingAnticipoApplyService:
@@ -66,27 +66,11 @@ class ErpBillingAnticipoApplyService:
         billing_db = SupabaseClient(ctx)
         sales_db = SupabaseClient(sales_ctx)
 
-        # Insertar aplicacion en billing_payment_applications reutilizando la tabla
-        folio_result = reserve_folio(ctx, "billing_payment_applications", "BAPP")
-        if not folio_result.get("ok"):
-            return folio_result
-        application = {
-            **identity_row(ctx),
-            "folio": folio_result["data"]["folio"],
-            "payment_id": anticipo["id"],
-            "payment_folio": anticipo.get("folio"),
-            "sales_schema": sales_ctx["schema"],
-            "sales_document_id": document["id"],
-            "sales_folio": document.get("folio"),
-            "amount_applied": amount,
-            "status": "aplicado",
-            "metadata": {"source": "anticipo", "document_balance_after": new_balance, "document_status_after": doc_status},
-        }
-        app_result = billing_db.rest_insert("billing_payment_applications", application)
-        if not app_result.get("ok"):
-            return app_result
-
-        sales_db.rest_update("sales_documents", {"paid_total": new_paid, "balance_total": new_balance, "status": doc_status, "updated_at": utc_now()}, {"id": document["id"]})
-        billing_db.rest_update("billing_anticipos", {"unapplied_amount": new_unapplied, "status": anticipo_status, "updated_at": utc_now()}, {"id": anticipo["id"]})
+        doc_result = sales_db.rest_update("sales_documents", {"paid_total": new_paid, "balance_total": new_balance, "status": doc_status, "updated_at": utc_now()}, {"id": document["id"]})
+        if not doc_result.get("ok"):
+            return doc_result
+        anticipo_result = billing_db.rest_update("billing_anticipos", {"unapplied_amount": new_unapplied, "status": anticipo_status, "updated_at": utc_now()}, {"id": anticipo["id"]})
+        if not anticipo_result.get("ok"):
+            return anticipo_result
         insert_event(ctx, "anticipo_applied", {"anticipo_id": anticipo["id"], "document_id": document["id"], "amount": amount}, False)
-        return {"ok": True, "data": {**preview, "application_folio": folio_result["data"]["folio"]}}
+        return {"ok": True, "data": {**preview, "anticipo_id": anticipo["id"], "sales_document_id": document["id"]}}

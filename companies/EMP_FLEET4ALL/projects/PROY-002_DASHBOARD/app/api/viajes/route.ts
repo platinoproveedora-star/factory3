@@ -41,8 +41,17 @@ export async function PUT(req: NextRequest) {
   if (!(await requireFleetCompanyAccess(user.sub, empresaId))) {
     return NextResponse.json({ ok: false, error: "Sin acceso a esta empresa" }, { status: 403 });
   }
-  const result = await tripManage({ ...body, action: "update" });
-  return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  try {
+    const payload = { ...body };
+    if (payload.distance_km === null || String(payload.distance_km ?? "").trim() === "") {
+      delete payload.distance_km;
+    }
+    const result = await tripManage({ ...payload, action: "update" });
+    return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error al actualizar viaje";
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: NextRequest) {

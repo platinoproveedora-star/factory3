@@ -36,7 +36,7 @@
   "expense_categories": [
     "combustible", "gastos varios", "taller mecanico", "papeleria",
     "telmex", "gas", "internet", "recargas celulares",
-    "nomina", "gps", "imss", "sat"
+    "nomina", "gps", "imss", "sat", "ing. correa"
   ],
   "export_requirements": { "excel": true, "pdf": false },
   "approval_required": false,

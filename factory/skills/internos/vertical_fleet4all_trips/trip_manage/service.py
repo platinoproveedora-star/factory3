@@ -52,7 +52,11 @@ class TripManageService:
 
         for field in ("sale_price", "distance_km"):
             if field in context:
-                amount = self._to_amount(context.get(field))
+                raw = context.get(field)
+                if field == "distance_km" and (raw is None or str(raw).strip() == ""):
+                    values[field] = None
+                    continue
+                amount = self._to_amount(raw)
                 if amount is None or amount < 0:
                     return {"ok": False, "error": f"{field}_invalido"}
                 values[field] = amount

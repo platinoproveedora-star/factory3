@@ -4,13 +4,17 @@ import { COOKIE_NAME, cookieOptions, MODULO_CODE } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  if (!body?.email || !body?.password) {
+  const rawLogin = String(body?.email || "").trim().toLowerCase();
+  const compactLogin = rawLogin.replace(/\s+/g, "");
+  const email = compactLogin === "admintotal" ? "admintotal@apps4all.local" : rawLogin;
+  const password = String(body?.password || "");
+  if (!email || !password) {
     return NextResponse.json({ ok: false, error: "email y password requeridos" }, { status: 400 });
   }
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
   const result = await callSkill("vertical_auth_security/security_user_login", {
-    email: body.email,
-    password: body.password,
+    email,
+    password,
     ip,
     modulo_code: MODULO_CODE,
     dry_run: false,

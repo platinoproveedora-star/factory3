@@ -52,7 +52,6 @@ const fmtDate = (d?: string | null) =>
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-const METODOS = ['efectivo', 'tarjeta', 'transferencia', 'deposito', 'cheque'];
 const PAYMENT_METHODS = ['cash', 'card', 'transfer', 'deposit', 'check', 'other'];
 
 const METODO_LABEL: Record<string, string> = {
@@ -276,17 +275,28 @@ export default function BillingDashboard() {
     if (!amount || !form.method) return setFormErr('Importe y método requeridos');
     setSaving(true);
     try {
-      await api.createPayment({
+      const paymentResult = await api.createPayment({
         customer_name: modal.remision.customer_name_snapshot,
         sales_document_id: modal.remision.id,
         sales_folio: modal.remision.folio,
         payment_method: form.method,
         amount,
-        destination_money_account_id: form.account_id || undefined,
+        destination_bank_account_id: form.account_id || undefined,
         tracking_key: form.tracking_key || undefined,
         reference: form.reference || undefined,
         notes: form.notes || undefined,
       });
+      await api.applyPayment({
+        payment_id: paymentResult.payment.id,
+        sales_document_id: modal.remision.id,
+        amount_applied: amount,
+      });
+      if (!['cash', 'card'].includes(form.method)) {
+        await api.confirmPayment({
+          payment_id: paymentResult.payment.id,
+          bank_reference: form.tracking_key || form.reference || undefined,
+        });
+      }
       setModal(null);
       reload();
     } catch (e: any) {
@@ -313,7 +323,7 @@ export default function BillingDashboard() {
         payment_method: form.method,
         amount,
         payment_date: form.payment_date || undefined,
-        destination_money_account_id: form.account_id,
+        destination_bank_account_id: form.account_id,
         tracking_key: form.tracking_key || undefined,
         reference: form.reference || undefined,
         notes: form.notes || undefined,
@@ -366,7 +376,7 @@ export default function BillingDashboard() {
     if (!amount || !form.method || !form.customer) return setFormErr('Cliente, importe y método requeridos');
     setSaving(true);
     try {
-      await api.createAnticipo({ customer_name: form.customer, amount, payment_method: form.method, destination_money_account_id: form.account_id || undefined });
+      await api.createAnticipo({ customer_name: form.customer, amount, payment_method: form.method, destination_bank_account_id: form.account_id || undefined });
       setModal(null);
       setAnticipos(await api.getAnticipos({ limit: 100 }));
     } catch (e: any) {
@@ -1341,10 +1351,10 @@ export default function BillingDashboard() {
           <Field label="Método de pago">
             <select className={inputCls} value={form.method ?? ''} onChange={(e) => setF('method', e.target.value)}>
               <option value="">Seleccionar...</option>
-              {METODOS.map((m) => <option key={m} value={m}>{METODO_LABEL[m]}</option>)}
+              {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{METODO_LABEL[m]}</option>)}
             </select>
           </Field>
-          {['transferencia', 'deposito'].includes(form.method ?? '') && (
+          {['transfer', 'deposit'].includes(form.method ?? '') && (
             <Field label="Clave de rastreo / referencia">
               <input className={inputCls} value={form.tracking_key ?? ''} onChange={(e) => setF('tracking_key', e.target.value)} />
             </Field>
@@ -1487,7 +1497,7 @@ export default function BillingDashboard() {
           <Field label="Método de pago">
             <select className={inputCls} value={form.method ?? ''} onChange={(e) => setF('method', e.target.value)}>
               <option value="">Seleccionar...</option>
-              {METODOS.map((m) => <option key={m} value={m}>{METODO_LABEL[m]}</option>)}
+              {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{METODO_LABEL[m]}</option>)}
             </select>
           </Field>
           <Field label="Cuenta destino (opcional)">

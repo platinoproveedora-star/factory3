@@ -44,7 +44,7 @@ class ErpBillingPaymentCreateAndApplyService:
 
         payment_method = self._method(context.get("payment_method"))
         amount = money(context.get("amount"))
-        destination_account_id = blank(context.get("destination_money_account_id"))
+        destination_account_id = blank(context.get("destination_bank_account_id") or context.get("bank_account_id") or context.get("destination_money_account_id"))
         applications = self._applications(context.get("applications"))
 
         if not payment_method:
@@ -71,7 +71,8 @@ class ErpBillingPaymentCreateAndApplyService:
             **context,
             "payment_method": payment_method,
             "amount": amount,
-            "destination_money_account_id": destination_account_id,
+            "destination_bank_account_id": destination_account_id,
+            "destination_money_account_id": blank(context.get("destination_billing_money_account_id") or context.get("billing_money_account_id")),
             "customer_id": customer.get("customer_id"),
             "customer_name": customer.get("customer_name"),
             "metadata": {

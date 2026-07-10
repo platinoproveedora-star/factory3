@@ -370,6 +370,7 @@ export async function createPayment(payload: {
   payment_method: string;
   amount: number;
   destination_money_account_id?: string;
+  destination_bank_account_id?: string;
   bank_name?: string;
   tracking_key?: string;
   reference?: string;
@@ -398,7 +399,8 @@ export async function createAndApplyPayment(payload: {
   payment_method: string;
   amount: number;
   payment_date?: string;
-  destination_money_account_id: string;
+  destination_money_account_id?: string;
+  destination_bank_account_id?: string;
   tracking_key?: string;
   reference?: string;
   notes?: string;
@@ -442,6 +444,7 @@ export async function createAnticipo(payload: {
   amount: number;
   payment_method: string;
   destination_money_account_id?: string;
+  destination_bank_account_id?: string;
   notes?: string;
 }) {
   return request<{ anticipo: Anticipo }>('vertical_erp_billing/erp_billing_anticipo_create', {

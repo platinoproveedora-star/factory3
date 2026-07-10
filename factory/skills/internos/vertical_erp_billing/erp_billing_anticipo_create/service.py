@@ -27,6 +27,17 @@ class ErpBillingAnticipoCreateService:
         payment_method = str(context.get("payment_method") or "").strip()
         if payment_method not in _VALID_METHODS:
             return {"ok": False, "error": f"payment_method invalido. Validos: {sorted(_VALID_METHODS)}"}
+        destination_bank_account_id = blank(context.get("destination_bank_account_id") or context.get("bank_account_id"))
+        destination_billing_account_id = blank(context.get("destination_billing_money_account_id") or context.get("billing_money_account_id"))
+        raw_destination_account_id = blank(context.get("destination_money_account_id"))
+        if not destination_bank_account_id and not destination_billing_account_id:
+            if str(context.get("banks_schema") or context.get("banks_supabase_schema") or "").strip():
+                destination_bank_account_id = raw_destination_account_id
+            else:
+                destination_billing_account_id = raw_destination_account_id
+        metadata = context.get("metadata") if isinstance(context.get("metadata"), dict) else {}
+        if destination_bank_account_id:
+            metadata = {**metadata, "destination_bank_account_id": destination_bank_account_id}
 
         row = {
             **identity_row(ctx),
@@ -36,14 +47,14 @@ class ErpBillingAnticipoCreateService:
             "unapplied_amount": amount,
             "payment_method": payment_method,
             "payment_date": str(context.get("payment_date") or today_iso()),
-            "destination_money_account_id": blank(context.get("destination_money_account_id")),
+            "destination_money_account_id": destination_billing_account_id,
             "bank_name": blank(context.get("bank_name")),
             "reference": blank(context.get("reference")),
             "tracking_key": blank(context.get("tracking_key")),
             "receipt_file_url": blank(context.get("receipt_file_url")),
             "notes": blank(context.get("notes")),
             "status": "disponible",
-            "metadata": context.get("metadata") if isinstance(context.get("metadata"), dict) else {},
+            "metadata": metadata,
         }
 
         if context.get("dry_run", True):
@@ -64,7 +75,7 @@ class ErpBillingAnticipoCreateService:
         return {"ok": True, "data": {"anticipo": anticipo}}
 
     def _record_bank_movement(self, context: dict, ctx: dict, anticipo: dict, amount: float, method: str) -> None:
-        account_id = blank(context.get("destination_money_account_id"))
+        account_id = blank(context.get("destination_bank_account_id") or context.get("bank_account_id") or context.get("destination_money_account_id"))
         if not account_id:
             return
         banks_schema = str(context.get("banks_schema") or "").strip()

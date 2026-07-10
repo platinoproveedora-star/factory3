@@ -19,7 +19,7 @@ _SKILL        = "vertical_client_expenses/client_expenses_run"
 _CATEGORIES = [
     "combustible", "gastos varios", "taller mecanico", "papeleria",
     "telmex", "gas", "internet", "recargas celulares",
-    "nomina", "gps", "imss", "sat",
+    "nomina", "gps", "imss", "sat", "ing. correa",
 ]
 
 _KNOWN_USERS = {

@@ -1,7 +1,10 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+const LOGIN_TIMEOUT_MS = 12000;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,21 +17,28 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
+        signal: controller.signal,
       });
-      const data = await res.json();
-      if (!data.ok) {
-        setError(data.error || "Error al iniciar sesión");
+      const data = await res.json().catch(() => ({ ok: false, error: "Respuesta invalida del servidor" }));
+      if (!res.ok || !data.ok) {
+        setError(data.error || `Error al iniciar sesion (${res.status})`);
         return;
       }
       router.push("/dashboard");
-    } catch {
-      setError("Error de conexión");
+    } catch (error) {
+      const message = error instanceof Error && error.name === "AbortError"
+        ? "El login tardo demasiado. Intenta otra vez."
+        : "Error de conexion";
+      setError(message);
     } finally {
+      window.clearTimeout(timer);
       setLoading(false);
     }
   }
@@ -41,29 +51,31 @@ export default function LoginPage() {
           <p className="text-muted text-sm mt-1">Tu plataforma de gestion de flotilla</p>
         </div>
         <div className="card">
-          <h2 className="text-lg font-semibold mb-5">Iniciar sesión</h2>
+          <h2 className="text-lg font-semibold mb-5">Iniciar sesion</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="label">Correo electrónico</label>
+              <label className="label">Usuario o correo electronico</label>
               <input
-                type="email"
+                type="text"
                 className="input"
-                placeholder="tu@correo.com"
+                placeholder="admintotal"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoFocus
+                autoComplete="username"
               />
             </div>
             <div>
-              <label className="label">Contraseña</label>
+              <label className="label">Password</label>
               <input
                 type="password"
                 className="input"
-                placeholder="••••••••"
+                placeholder="admintotal"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
               />
             </div>
             {error && (
@@ -76,9 +88,9 @@ export default function LoginPage() {
             </button>
           </form>
           <p className="text-center text-sm text-muted mt-4">
-            ¿No tienes cuenta?{" "}
+            No tienes cuenta?{" "}
             <Link href="/register" className="text-primary hover:underline">
-              Regístrate
+              Registrate
             </Link>
           </p>
         </div>
