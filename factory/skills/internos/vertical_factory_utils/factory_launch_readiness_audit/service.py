@@ -159,32 +159,36 @@ class FactoryLaunchReadinessAuditService:
                 plans.append({"service_id": service_id, "plan": plan})
             except Exception as exc:
                 plans.append({"service_id": service_id, "error": str(exc)})
-        free_plans = [p for p in plans if str(p.get("plan", "")).lower() in ("free", "starter", "desconocido")]
+        free_plans = [p for p in plans if str(p.get("plan", "")).lower() in ("free", "desconocido")]
         status = "pendiente" if free_plans or not plans else "ok_pago"
         return {"check": "render_plan", "status": status, "detail": plans}
 
     def _check_supabase(self, context: dict) -> dict:
         token = context.get("supabase_access_token") or os.getenv("SUPABASE_ACCESS_TOKEN")
-        project_refs = context.get("supabase_project_refs") or []
-        if isinstance(project_refs, str):
-            project_refs = [s.strip() for s in project_refs.split(",") if s.strip()]
+        org_ids = context.get("supabase_org_ids") or []
+        if isinstance(org_ids, str):
+            org_ids = [s.strip() for s in org_ids.split(",") if s.strip()]
         if not token:
             return {"check": "supabase_plan", "status": "no_configurado", "detail": "SUPABASE_ACCESS_TOKEN ausente"}
-        if not project_refs:
-            return {"check": "supabase_plan", "status": "no_configurado", "detail": "supabase_project_refs requerido en context"}
+        if not org_ids:
+            try:
+                orgs = self._http_get_json("https://api.supabase.com/v1/organizations", {"Authorization": f"Bearer {token}"})
+                org_ids = [org.get("id") for org in orgs if org.get("id")]
+            except Exception as exc:
+                return {"check": "supabase_plan", "status": "error", "detail": str(exc)}
         info = []
-        for ref in project_refs:
+        for org_id in org_ids:
             try:
                 data = self._http_get_json(
-                    f"https://api.supabase.com/v1/projects/{ref}",
+                    f"https://api.supabase.com/v1/organizations/{org_id}",
                     {"Authorization": f"Bearer {token}"},
                 )
-                tier = data.get("subscription_tier") or data.get("plan") or "desconocido"
-                info.append({"project_ref": ref, "tier": tier})
+                plan = data.get("plan") or "desconocido"
+                info.append({"org_id": org_id, "name": data.get("name"), "plan": plan})
             except Exception as exc:
-                info.append({"project_ref": ref, "error": str(exc)})
-        free_tiers = [p for p in info if str(p.get("tier", "")).lower() in ("free", "desconocido")]
-        status = "pendiente" if free_tiers or not info else "ok_pago"
+                info.append({"org_id": org_id, "error": str(exc)})
+        free_plans = [p for p in info if str(p.get("plan", "")).lower() in ("free", "desconocido")]
+        status = "pendiente" if free_plans or not info else "ok_pago"
         return {"check": "supabase_plan", "status": status, "detail": info}
 
     def _http_get_json(self, url: str, headers: dict) -> dict:
