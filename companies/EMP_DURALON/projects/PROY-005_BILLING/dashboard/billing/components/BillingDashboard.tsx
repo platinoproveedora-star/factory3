@@ -218,7 +218,7 @@ export default function BillingDashboard() {
 
   // Tab 6 – Clientes
   const [ranking, setRanking] = useState<ClientRankingData | null>(null);
-  const [rankFilter, setRankFilter] = useState<'todos' | '8' | '15' | '21'>('todos');
+  const [rankFilter, setRankFilter] = useState<'todos' | '8' | '15' | '21' | 'call_due' | 'call_today' | 'call_scheduled'>('todos');
   const [rankSort, setRankSort] = useState<{ col: string; dir: 'desc' | 'asc' }>({ col: 'm_actual', dir: 'desc' });
   type ProductSlot = { input: string; stats: { label: string; por_cliente: Record<string, number> } | null; loading: boolean };
   const [slot1, setSlot1] = useState<ProductSlot>({ input: '', stats: null, loading: false });
@@ -611,10 +611,14 @@ export default function BillingDashboard() {
   };
 
   const filteredClientes = (() => {
+    const today = todayISO();
     const base = ranking?.clientes.filter((c) => {
       if (rankFilter === '8') return (c.dias_sin_comprar ?? 0) >= 8;
       if (rankFilter === '15') return (c.dias_sin_comprar ?? 0) >= 15;
       if (rankFilter === '21') return (c.dias_sin_comprar ?? 0) >= 21;
+      if (rankFilter === 'call_due') return !!c.next_followup_date && c.next_followup_date <= today;
+      if (rankFilter === 'call_today') return c.next_followup_date === today;
+      if (rankFilter === 'call_scheduled') return !!c.next_followup_date;
       return true;
     }) ?? [];
     const { col, dir } = rankSort;
@@ -626,6 +630,7 @@ export default function BillingDashboard() {
       else if (col === 'm1') { av = a.m1; bv = b.m1; }
       else if (col === 'm2') { av = a.m2; bv = b.m2; }
       else if (col === 'ultima_compra') { av = a.ultima_compra ?? ''; bv = b.ultima_compra ?? ''; }
+      else if (col === 'next_followup_date') { av = a.next_followup_date ?? '9999-12-31'; bv = b.next_followup_date ?? '9999-12-31'; }
       else if (col === 'ticket_promedio') { av = a.ticket_promedio; bv = b.ticket_promedio; }
       else if (col === 'producto1') { av = slot1.stats?.por_cliente[a.customer_name] ?? 0; bv = slot1.stats?.por_cliente[b.customer_name] ?? 0; }
       else if (col === 'producto2') { av = slot2.stats?.por_cliente[a.customer_name] ?? 0; bv = slot2.stats?.por_cliente[b.customer_name] ?? 0; }
@@ -1080,8 +1085,8 @@ export default function BillingDashboard() {
           </div>
 
           {/* Filters */}
-          <div className="flex gap-2 mb-4">
-            {([['todos', 'Todos'], ['8', '+8 días'], ['15', '+15 días'], ['21', '+21 días']] as const).map(([v, label]) => (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {([['todos', 'Todos'], ['8', '+8 días'], ['15', '+15 días'], ['21', '+21 días'], ['call_due', 'Por llamar'], ['call_today', 'Hoy'], ['call_scheduled', 'Con fecha']] as const).map(([v, label]) => (
               <button key={v} onClick={() => setRankFilter(v)} className={`px-3 py-1.5 rounded-full text-sm ${rankFilter === v ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'}`}>
                 {label}
               </button>
@@ -1089,7 +1094,7 @@ export default function BillingDashboard() {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-            <table className="w-full min-w-[1120px] text-sm">
+            <table className="w-full min-w-[1240px] text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs">
                 <tr>
                   <th className="text-center px-3 py-3">#</th>
@@ -1103,12 +1108,13 @@ export default function BillingDashboard() {
                   {slot1.stats && <SortTh col="producto1" sort={rankSort} onSort={setRankSort} align="right" className="text-blue-700">{slot1.stats.label}</SortTh>}
                   {slot2.stats && <SortTh col="producto2" sort={rankSort} onSort={setRankSort} align="right" className="text-purple-700">{slot2.stats.label}</SortTh>}
                   <SortTh col="ticket_promedio" sort={rankSort} onSort={setRankSort} align="right">Ticket Prom.</SortTh>
+                  <SortTh col="next_followup_date" sort={rankSort} onSort={setRankSort} align="center">Prox. llamada</SortTh>
                   <th className="text-left px-3 py-3 w-64">Seguimiento</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredClientes.length === 0 && (
-                  <tr><td colSpan={10 + (slot1.stats ? 1 : 0) + (slot2.stats ? 1 : 0)} className="text-center py-10 text-gray-400">Sin datos</td></tr>
+                  <tr><td colSpan={11 + (slot1.stats ? 1 : 0) + (slot2.stats ? 1 : 0)} className="text-center py-10 text-gray-400">Sin datos</td></tr>
                 )}
                 {filteredClientes.map((c, i) => (
                   <tr key={c.customer_key} className="border-t border-gray-100 hover:bg-gray-50">
@@ -1131,6 +1137,9 @@ export default function BillingDashboard() {
                       </td>
                     )}
                     <td className="px-3 py-2.5 text-right text-gray-600">{c.ticket_promedio > 0 ? fmt(c.ticket_promedio) : <span className="text-gray-300">—</span>}</td>
+                    <td className={`px-3 py-2.5 text-center text-xs font-medium ${c.next_followup_date && c.next_followup_date <= todayISO() ? 'text-red-700' : 'text-gray-600'}`}>
+                      {c.next_followup_date ? fmtDate(c.next_followup_date) : <span className="text-gray-300">—</span>}
+                    </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 text-xs text-gray-500">
@@ -1140,7 +1149,7 @@ export default function BillingDashboard() {
                               : 'Sin seguimiento'}
                           </p>
                           <p className="mt-0.5 whitespace-nowrap">
-                            Ll: {c.last_call_date ? fmtDate(c.last_call_date) : '-'} · Próx: {c.next_followup_date ? fmtDate(c.next_followup_date) : '-'}
+                            Ll: {c.last_call_date ? fmtDate(c.last_call_date) : '-'}
                           </p>
                         </div>
                         <button
