@@ -1,11 +1,21 @@
 from __future__ import annotations
-import sys
+import importlib.util
 from collections import defaultdict
 from datetime import date
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import SupabaseClient, money, resolve_billing_context, sales_context  # noqa: E402
+
+_COMMON_PATH = Path(__file__).resolve().parents[1] / "_common.py"
+_COMMON_SPEC = importlib.util.spec_from_file_location("vertical_erp_billing_common", _COMMON_PATH)
+if _COMMON_SPEC is None or _COMMON_SPEC.loader is None:
+    raise ImportError("no se pudo cargar vertical_erp_billing/_common.py")
+_COMMON = importlib.util.module_from_spec(_COMMON_SPEC)
+_COMMON_SPEC.loader.exec_module(_COMMON)
+
+SupabaseClient = _COMMON.SupabaseClient
+money = _COMMON.money
+resolve_billing_context = _COMMON.resolve_billing_context
+sales_context = _COMMON.sales_context
 
 
 def _month_key(offset: int) -> str:
