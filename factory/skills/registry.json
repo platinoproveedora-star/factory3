@@ -4475,7 +4475,7 @@
     "tipo": "interno",
     "nombre": "vertical_erp_client_followup/erp_client_followup_upsert",
     "vertical": "vertical_erp_client_followup",
-    "kind": "action",
+    "kind": "executable",
     "descripcion": "Crea o actualiza campos editables de seguimiento por cliente ERP.",
     "path": "skills/internos/vertical_erp_client_followup/erp_client_followup_upsert",
     "entrypoint": "skill.py",

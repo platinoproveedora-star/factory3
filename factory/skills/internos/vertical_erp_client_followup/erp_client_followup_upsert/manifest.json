@@ -2,7 +2,7 @@
   "type": "skill",
   "name": "vertical_erp_client_followup/erp_client_followup_upsert",
   "version": "0.1.0",
-  "kind": "action",
+  "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Crea o actualiza campos editables de seguimiento por cliente ERP.",
   "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
