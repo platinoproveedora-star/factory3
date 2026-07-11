@@ -134,8 +134,9 @@ const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm foc
 const btnPrimary = 'bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50';
 const btnSecondary = 'border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 text-sm font-medium';
 const FOLLOWUP_DRAFTS_KEY = 'billing_client_followup_drafts_v1';
+type FollowupDraft = Partial<ClientRankingRow> & { _dirty?: boolean };
 
-function readFollowupDrafts(): Record<string, Partial<ClientRankingRow>> {
+function readFollowupDrafts(): Record<string, FollowupDraft> {
   if (typeof window === 'undefined') return {};
   try {
     return JSON.parse(window.localStorage.getItem(FOLLOWUP_DRAFTS_KEY) || '{}');
@@ -147,7 +148,14 @@ function readFollowupDrafts(): Record<string, Partial<ClientRankingRow>> {
 function writeFollowupDraft(customerKey: string, patch: Partial<ClientRankingRow>) {
   if (typeof window === 'undefined') return;
   const drafts = readFollowupDrafts();
-  drafts[customerKey] = { ...(drafts[customerKey] ?? {}), ...patch };
+  drafts[customerKey] = { ...(drafts[customerKey] ?? {}), ...patch, _dirty: true };
+  window.localStorage.setItem(FOLLOWUP_DRAFTS_KEY, JSON.stringify(drafts));
+}
+
+function clearFollowupDraft(customerKey: string) {
+  if (typeof window === 'undefined') return;
+  const drafts = readFollowupDrafts();
+  delete drafts[customerKey];
   window.localStorage.setItem(FOLLOWUP_DRAFTS_KEY, JSON.stringify(drafts));
 }
 
@@ -155,7 +163,12 @@ function mergeFollowupDrafts(data: ClientRankingData): ClientRankingData {
   const drafts = readFollowupDrafts();
   return {
     ...data,
-    clientes: data.clientes.map((client) => ({ ...client, ...(drafts[client.customer_key] ?? {}) })),
+    clientes: data.clientes.map((client) => {
+      const draft = drafts[client.customer_key];
+      if (!draft?._dirty) return client;
+      const { _dirty, ...values } = draft;
+      return { ...client, ...values };
+    }),
   };
 }
 
@@ -289,20 +302,6 @@ export default function BillingDashboard() {
   useEffect(() => {
     loadTab(tab);
   }, [tab, loadTab]);
-
-  useEffect(() => {
-    if (!ranking?.clientes?.length) return;
-    for (const client of ranking.clientes) {
-      if (client.comments || client.last_call_date || client.next_followup_date || client.offer_prices) {
-        writeFollowupDraft(client.customer_key, {
-          comments: client.comments ?? '',
-          last_call_date: client.last_call_date ?? '',
-          next_followup_date: client.next_followup_date ?? '',
-          offer_prices: client.offer_prices ?? '',
-        });
-      }
-    }
-  }, [ranking]);
 
   const reload = () => loadTab(tab);
 
@@ -558,6 +557,7 @@ export default function BillingDashboard() {
         next_followup_date: row.next_followup_date || null,
         offer_prices: row.offer_prices ?? null,
       });
+      clearFollowupDraft(customerKey);
       setFollowSaved((prev) => ({ ...prev, [customerKey]: true }));
       setErr('');
       if (modal?.kind === 'client_followup') setModal(null);
@@ -590,6 +590,7 @@ export default function BillingDashboard() {
         next_followup_date: payload.next_followup_date || null,
         offer_prices: payload.offer_prices || null,
       });
+      clearFollowupDraft(client.customer_key);
       setRanking((prev) => {
         if (!prev) return prev;
         return {
