@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_client_followup/erp_client_followup_list",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Lista notas y fechas de seguimiento por cliente ERP.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

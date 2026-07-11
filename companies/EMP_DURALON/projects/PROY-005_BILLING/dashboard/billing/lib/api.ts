@@ -169,6 +169,12 @@ export type ClientRankingRow = {
   m_actual: number;
   m1: number;
   m2: number;
+  comments?: string | null;
+  last_call_date?: string | null;
+  next_followup_date?: string | null;
+  offer_prices?: string | null;
+  followup_status?: string | null;
+  followup_updated_at?: string | null;
 };
 
 export type ClientRankingData = {
@@ -518,6 +524,18 @@ export async function getClientStatement(
 
 export async function getClientRanking(): Promise<ClientRankingData> {
   return request<ClientRankingData>('vertical_erp_billing/erp_billing_client_ranking', {}, 'GET');
+}
+
+export async function upsertClientFollowup(payload: {
+  customer_key: string;
+  customer_name: string;
+  customer_id?: string | null;
+  comments?: string | null;
+  last_call_date?: string | null;
+  next_followup_date?: string | null;
+  offer_prices?: string | null;
+}) {
+  return request('vertical_erp_client_followup/erp_client_followup_upsert', { ...payload, dry_run: false });
 }
 
 export async function getClientProductMonth(filters: {

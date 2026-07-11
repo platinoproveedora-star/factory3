@@ -4451,6 +4451,36 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_client_followup/erp_client_followup_schema_plan": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_client_followup/erp_client_followup_schema_plan",
+    "vertical": "vertical_erp_client_followup",
+    "kind": "data",
+    "descripcion": "Genera SQL para tabla vendible de seguimiento de clientes ERP.",
+    "path": "skills/internos/vertical_erp_client_followup/erp_client_followup_schema_plan",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_client_followup/erp_client_followup_list": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_client_followup/erp_client_followup_list",
+    "vertical": "vertical_erp_client_followup",
+    "kind": "data",
+    "descripcion": "Lista notas y fechas de seguimiento por cliente ERP.",
+    "path": "skills/internos/vertical_erp_client_followup/erp_client_followup_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_erp_client_followup/erp_client_followup_upsert": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_client_followup/erp_client_followup_upsert",
+    "vertical": "vertical_erp_client_followup",
+    "kind": "action",
+    "descripcion": "Crea o actualiza campos editables de seguimiento por cliente ERP.",
+    "path": "skills/internos/vertical_erp_client_followup/erp_client_followup_upsert",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_billing/erp_billing_client_statement": {
     "tipo": "interno",
     "nombre": "vertical_erp_billing/erp_billing_client_statement",

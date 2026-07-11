@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -16,10 +16,12 @@ import {
   FileText,
   GitCompare,
   Loader2,
+  Pencil,
   Plus,
   Printer,
   RefreshCw,
   RotateCcw,
+  Save,
   Search,
   Users,
   WalletCards,
@@ -32,6 +34,7 @@ import type {
   CashCut,
   CashCutData,
   ClientRankingData,
+  ClientRankingRow,
   ClientStatementData,
   ConciliacionData,
   ConciliacionRow,
@@ -130,6 +133,31 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 const btnPrimary = 'bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50';
 const btnSecondary = 'border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 text-sm font-medium';
+const FOLLOWUP_DRAFTS_KEY = 'billing_client_followup_drafts_v1';
+
+function readFollowupDrafts(): Record<string, Partial<ClientRankingRow>> {
+  if (typeof window === 'undefined') return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(FOLLOWUP_DRAFTS_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function writeFollowupDraft(customerKey: string, patch: Partial<ClientRankingRow>) {
+  if (typeof window === 'undefined') return;
+  const drafts = readFollowupDrafts();
+  drafts[customerKey] = { ...(drafts[customerKey] ?? {}), ...patch };
+  window.localStorage.setItem(FOLLOWUP_DRAFTS_KEY, JSON.stringify(drafts));
+}
+
+function mergeFollowupDrafts(data: ClientRankingData): ClientRankingData {
+  const drafts = readFollowupDrafts();
+  return {
+    ...data,
+    clientes: data.clientes.map((client) => ({ ...client, ...(drafts[client.customer_key] ?? {}) })),
+  };
+}
 
 // ─── Tab type ─────────────────────────────────────────────────────────────────
 
@@ -182,6 +210,8 @@ export default function BillingDashboard() {
   type ProductSlot = { input: string; stats: { label: string; por_cliente: Record<string, number> } | null; loading: boolean };
   const [slot1, setSlot1] = useState<ProductSlot>({ input: '', stats: null, loading: false });
   const [slot2, setSlot2] = useState<ProductSlot>({ input: '', stats: null, loading: false });
+  const [followSaving, setFollowSaving] = useState<Record<string, boolean>>({});
+  const [followSaved, setFollowSaved] = useState<Record<string, boolean>>({});
 
   // Tab 7 – Corte
   const [cutDate, setCutDate] = useState(todayISO());
@@ -205,6 +235,7 @@ export default function BillingDashboard() {
     | { kind: 'nueva_dev' }
     | { kind: 'resolve_dev'; devolucion: Devolucion }
     | { kind: 'close_corte'; cut: CashCut }
+    | { kind: 'client_followup'; client: ClientRankingRow }
     | null;
   const [modal, setModal] = useState<ModalState>(null);
 
@@ -239,7 +270,7 @@ export default function BillingDashboard() {
         } else if (t === 'devoluciones') {
           setDevoluciones(await api.getDevoluciones({ limit: 100 }));
         } else if (t === 'clientes') {
-          setRanking(await api.getClientRanking());
+          setRanking(mergeFollowupDrafts(await api.getClientRanking()));
         } else if (t === 'corte') {
           setCutData(await api.getCashCutData(cutDate));
         } else if (t === 'conciliacion') {
@@ -258,6 +289,20 @@ export default function BillingDashboard() {
   useEffect(() => {
     loadTab(tab);
   }, [tab, loadTab]);
+
+  useEffect(() => {
+    if (!ranking?.clientes?.length) return;
+    for (const client of ranking.clientes) {
+      if (client.comments || client.last_call_date || client.next_followup_date || client.offer_prices) {
+        writeFollowupDraft(client.customer_key, {
+          comments: client.comments ?? '',
+          last_call_date: client.last_call_date ?? '',
+          next_followup_date: client.next_followup_date ?? '',
+          offer_prices: client.offer_prices ?? '',
+        });
+      }
+    }
+  }, [ranking]);
 
   const reload = () => loadTab(tab);
 
@@ -486,6 +531,84 @@ export default function BillingDashboard() {
       .catch((e) => { setErr(e.message); setter((p) => ({ ...p, loading: false })); });
   };
 
+  const patchClientFollowup = (customerKey: string, patch: Partial<ClientRankingRow>) => {
+    writeFollowupDraft(customerKey, patch);
+    setRanking((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        clientes: prev.clientes.map((client) => (
+          client.customer_key === customerKey ? { ...client, ...patch } : client
+        )),
+      };
+    });
+    setFollowSaved((prev) => ({ ...prev, [customerKey]: false }));
+  };
+
+  const commitClientFollowup = async (customerKey: string) => {
+    const row = ranking?.clientes.find((client) => client.customer_key === customerKey);
+    if (!row || followSaving[customerKey]) return;
+    setFollowSaving((prev) => ({ ...prev, [customerKey]: true }));
+    try {
+      await api.upsertClientFollowup({
+        customer_key: row.customer_key,
+        customer_name: row.customer_name,
+        comments: row.comments ?? null,
+        last_call_date: row.last_call_date || null,
+        next_followup_date: row.next_followup_date || null,
+        offer_prices: row.offer_prices ?? null,
+      });
+      setFollowSaved((prev) => ({ ...prev, [customerKey]: true }));
+      setErr('');
+      if (modal?.kind === 'client_followup') setModal(null);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setFollowSaving((prev) => ({ ...prev, [customerKey]: false }));
+    }
+  };
+
+  const submitClientFollowup = async (event: FormEvent<HTMLFormElement>, client: ClientRankingRow) => {
+    event.preventDefault();
+    if (followSaving[client.customer_key]) return;
+    const data = new FormData(event.currentTarget);
+    const payload = {
+      customer_key: client.customer_key,
+      customer_name: client.customer_name,
+      comments: String(data.get('comments') ?? ''),
+      last_call_date: String(data.get('last_call_date') ?? ''),
+      next_followup_date: String(data.get('next_followup_date') ?? ''),
+      offer_prices: String(data.get('offer_prices') ?? ''),
+    };
+    writeFollowupDraft(client.customer_key, payload);
+    setFollowSaving((prev) => ({ ...prev, [client.customer_key]: true }));
+    try {
+      await api.upsertClientFollowup({
+        ...payload,
+        comments: payload.comments || null,
+        last_call_date: payload.last_call_date || null,
+        next_followup_date: payload.next_followup_date || null,
+        offer_prices: payload.offer_prices || null,
+      });
+      setRanking((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          clientes: prev.clientes.map((row) => (
+            row.customer_key === client.customer_key ? { ...row, ...payload } : row
+          )),
+        };
+      });
+      setFollowSaved((prev) => ({ ...prev, [client.customer_key]: true }));
+      setErr('');
+      setModal(null);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setFollowSaving((prev) => ({ ...prev, [client.customer_key]: false }));
+    }
+  };
+
   const filteredClientes = (() => {
     const base = ranking?.clientes.filter((c) => {
       if (rankFilter === '8') return (c.dias_sin_comprar ?? 0) >= 8;
@@ -512,6 +635,10 @@ export default function BillingDashboard() {
   })();
 
   // Índice pago → remisiones aplicadas
+  const activeFollowupClient = modal?.kind === 'client_followup'
+    ? ranking?.clientes.find((client) => client.customer_key === modal.client.customer_key) ?? modal.client
+    : null;
+
   const appsMap = paymentApplications.reduce<Record<string, string[]>>((acc, a) => {
     if (a.payment_id && a.sales_folio) {
       if (!acc[a.payment_id]) acc[a.payment_id] = [];
@@ -960,8 +1087,8 @@ export default function BillingDashboard() {
             ))}
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+            <table className="w-full min-w-[1120px] text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs">
                 <tr>
                   <th className="text-center px-3 py-3">#</th>
@@ -975,11 +1102,12 @@ export default function BillingDashboard() {
                   {slot1.stats && <SortTh col="producto1" sort={rankSort} onSort={setRankSort} align="right" className="text-blue-700">{slot1.stats.label}</SortTh>}
                   {slot2.stats && <SortTh col="producto2" sort={rankSort} onSort={setRankSort} align="right" className="text-purple-700">{slot2.stats.label}</SortTh>}
                   <SortTh col="ticket_promedio" sort={rankSort} onSort={setRankSort} align="right">Ticket Prom.</SortTh>
+                  <th className="text-left px-3 py-3 w-64">Seguimiento</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredClientes.length === 0 && (
-                  <tr><td colSpan={9 + (slot1.stats ? 1 : 0) + (slot2.stats ? 1 : 0)} className="text-center py-10 text-gray-400">Sin datos</td></tr>
+                  <tr><td colSpan={10 + (slot1.stats ? 1 : 0) + (slot2.stats ? 1 : 0)} className="text-center py-10 text-gray-400">Sin datos</td></tr>
                 )}
                 {filteredClientes.map((c, i) => (
                   <tr key={c.customer_key} className="border-t border-gray-100 hover:bg-gray-50">
@@ -1002,6 +1130,28 @@ export default function BillingDashboard() {
                       </td>
                     )}
                     <td className="px-3 py-2.5 text-right text-gray-600">{c.ticket_promedio > 0 ? fmt(c.ticket_promedio) : <span className="text-gray-300">—</span>}</td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 text-xs text-gray-500">
+                          <p className="truncate">
+                            {c.comments || c.offer_prices || c.last_call_date || c.next_followup_date
+                              ? (c.comments || c.offer_prices || 'Con fechas capturadas')
+                              : 'Sin seguimiento'}
+                          </p>
+                          <p className="mt-0.5 whitespace-nowrap">
+                            Ll: {c.last_call_date ? fmtDate(c.last_call_date) : '-'} · Próx: {c.next_followup_date ? fmtDate(c.next_followup_date) : '-'}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          title="Editar seguimiento"
+                          onClick={() => openModal({ kind: 'client_followup', client: c })}
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        >
+                          {followSaved[c.customer_key] ? <CheckCircle size={15} className="text-green-600" /> : <Pencil size={15} />}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1338,6 +1488,60 @@ export default function BillingDashboard() {
       )}
 
       {/* ─── MODALS ─── */}
+
+      {activeFollowupClient && (
+        <Modal title={`Seguimiento - ${activeFollowupClient.customer_name}`} onClose={() => setModal(null)}>
+          <form onSubmit={(e) => submitClientFollowup(e, activeFollowupClient)}>
+          <Field label="Comentarios">
+            <textarea
+              name="comments"
+              className={`${inputCls} min-h-24 resize-y`}
+              value={activeFollowupClient.comments ?? ''}
+              onChange={(e) => patchClientFollowup(activeFollowupClient.customer_key, { comments: e.target.value })}
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Última llamada">
+              <input
+                name="last_call_date"
+                type="date"
+                className={inputCls}
+                value={activeFollowupClient.last_call_date ?? ''}
+                onChange={(e) => patchClientFollowup(activeFollowupClient.customer_key, { last_call_date: e.target.value })}
+              />
+            </Field>
+            <Field label="Marcar fecha">
+              <input
+                name="next_followup_date"
+                type="date"
+                className={inputCls}
+                value={activeFollowupClient.next_followup_date ?? ''}
+                onChange={(e) => patchClientFollowup(activeFollowupClient.customer_key, { next_followup_date: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field label="Precios a ofrecer">
+            <textarea
+              name="offer_prices"
+              className={`${inputCls} min-h-20 resize-y`}
+              value={activeFollowupClient.offer_prices ?? ''}
+              onChange={(e) => patchClientFollowup(activeFollowupClient.customer_key, { offer_prices: e.target.value })}
+            />
+          </Field>
+          <div className="flex gap-2 justify-end">
+            <button type="button" className={btnSecondary} onClick={() => setModal(null)}>Cancelar</button>
+            <button
+              type="submit"
+              className={`${btnPrimary} inline-flex items-center gap-1.5`}
+              disabled={followSaving[activeFollowupClient.customer_key]}
+            >
+              {followSaving[activeFollowupClient.customer_key] ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              Guardar
+            </button>
+          </div>
+          </form>
+        </Modal>
+      )}
 
       {/* Registrar Pago */}
       {modal?.kind === 'pago' && (

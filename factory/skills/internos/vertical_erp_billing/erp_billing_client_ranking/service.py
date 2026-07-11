@@ -43,6 +43,7 @@ class ErpBillingClientRankingService:
         m0 = _month_key(0)
         m1 = _month_key(1)
         m2 = _month_key(2)
+        followups_by_key = self._load_followups(ctx)
 
         # Construir datos por cliente desde remisiones
         client_info: dict = {}       # key -> {name, last_purchase}
@@ -96,6 +97,7 @@ class ErpBillingClientRankingService:
                 elif dias_sin_comprar >= 8:
                     semaforo = "amarillo"
 
+            followup = followups_by_key.get(key) or {}
             rows.append({
                 "customer_key": key,
                 "customer_name": info["name"],
@@ -106,6 +108,12 @@ class ErpBillingClientRankingService:
                 "m_actual": m_actual_v,
                 "m1": m1_v,
                 "m2": m2_v,
+                "comments": followup.get("comments"),
+                "last_call_date": followup.get("last_call_date"),
+                "next_followup_date": followup.get("next_followup_date"),
+                "offer_prices": followup.get("offer_prices"),
+                "followup_status": followup.get("status"),
+                "followup_updated_at": followup.get("updated_at"),
             })
 
         rows.sort(key=lambda x: (x["m_actual"] + x["m1"] + x["m2"]), reverse=True)
@@ -134,4 +142,23 @@ class ErpBillingClientRankingService:
                     "tendencia_pct": trend,
                 },
             },
+        }
+
+    def _load_followups(self, ctx: dict) -> dict:
+        result = SupabaseClient(ctx).rest_select(
+            "erp_client_followups",
+            filters={
+                "empresa_id": ctx.get("company_id") or ctx.get("empresa_id"),
+                "project_code": ctx.get("project_code"),
+                "module_code": ctx.get("module_code"),
+            },
+            select="customer_key,comments,last_call_date,next_followup_date,offer_prices,status,updated_at",
+            limit=5000,
+        )
+        if not result.get("ok"):
+            return {}
+        return {
+            str(row.get("customer_key") or "").strip().lower(): row
+            for row in result.get("data") or []
+            if str(row.get("customer_key") or "").strip()
         }

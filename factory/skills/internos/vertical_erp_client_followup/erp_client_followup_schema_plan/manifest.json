@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_client_followup/erp_client_followup_schema_plan",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Genera SQL para tabla vendible de seguimiento de clientes ERP.",
+  "requires_env": []
+}
