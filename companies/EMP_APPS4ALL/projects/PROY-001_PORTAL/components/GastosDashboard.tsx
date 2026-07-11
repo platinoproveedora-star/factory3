@@ -336,6 +336,15 @@ export function GastosDashboard({
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50 bg-card">
+              {filtered.length === 0 && !adding && (
+                <tr>
+                  <td colSpan={9} className="px-3 py-8 text-center text-muted">
+                    {gastos.length === 0
+                      ? "Sin movimientos para esta empresa todavia."
+                      : "Sin resultados para la busqueda."}
+                  </td>
+                </tr>
+              )}
               {filtered.map((row) => (
                 editing === row.folio ? (
                   <tr key={row.folio}>
