@@ -42,11 +42,7 @@ export default function ExpenseTable({ gastos: initialGastos, bankAccounts: init
   const [categorias, setCategorias] = useState<Categoria[]>(initialCategorias);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(initialBankAccounts);
   const [q, setQ]                   = useState("");
-  const [fechaDesde, setFechaDesde] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 2);
-    return d.toISOString().slice(0, 10);
-  });
+  const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [page, setPage]             = useState(0);
   const [sortCol, setSortCol]       = useState<keyof Gasto>("fecha");
