@@ -155,10 +155,18 @@ export function GastosDashboard({
   async function save(action: "create" | "update") {
     setSaving(true);
     setError("");
+    const account = bankAccounts.find((item) => item.id === draft.cta_retiro_id);
     const res = await fetch("/api/gastos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, company_id: selectedCompanyId, ...draft, monto: Number(draft.monto || 0) })
+      body: JSON.stringify({
+        action,
+        company_id: selectedCompanyId,
+        ...draft,
+        monto: Number(draft.monto || 0),
+        cta_retiro_folio: account?.folio || null,
+        cta_retiro_nombre: account?.account_name || null
+      })
     });
     const json = await res.json().catch(() => ({}));
     setSaving(false);
@@ -168,7 +176,6 @@ export function GastosDashboard({
     }
     if (action === "create" && json.gasto) setGastos((rows) => [json.gasto, ...rows]);
     if (action === "update") {
-      const account = bankAccounts.find((item) => item.id === draft.cta_retiro_id);
       setGastos((rows) =>
         rows.map((row) =>
           row.folio === draft.folio
