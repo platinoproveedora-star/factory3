@@ -45,6 +45,7 @@ class ErpClientFollowupUpsertService:
             "last_call_date": last_call_date,
             "next_followup_date": next_followup_date,
             "offer_prices": blank(context.get("offer_prices")),
+            "phone": blank(context.get("phone")),
             "status": blank(context.get("status")) or "activo",
             "updated_at": utc_now(),
         }

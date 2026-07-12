@@ -10,6 +10,7 @@ Guardar campos editables por cliente sin mezclar identidad de empresa en codigo:
 - `last_call_date`
 - `next_followup_date`
 - `offer_prices`
+- `phone`
 
 ## Contrato
 

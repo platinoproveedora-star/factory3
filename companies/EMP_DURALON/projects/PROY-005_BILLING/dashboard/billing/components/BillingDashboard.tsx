@@ -556,6 +556,7 @@ export default function BillingDashboard() {
         last_call_date: row.last_call_date || null,
         next_followup_date: row.next_followup_date || null,
         offer_prices: row.offer_prices ?? null,
+        phone: row.phone ?? null,
       });
       clearFollowupDraft(customerKey);
       setFollowSaved((prev) => ({ ...prev, [customerKey]: true }));
@@ -579,6 +580,7 @@ export default function BillingDashboard() {
       last_call_date: String(data.get('last_call_date') ?? ''),
       next_followup_date: String(data.get('next_followup_date') ?? ''),
       offer_prices: String(data.get('offer_prices') ?? ''),
+      phone: String(data.get('phone') ?? ''),
     };
     writeFollowupDraft(client.customer_key, payload);
     setFollowSaving((prev) => ({ ...prev, [client.customer_key]: true }));
@@ -589,6 +591,7 @@ export default function BillingDashboard() {
         last_call_date: payload.last_call_date || null,
         next_followup_date: payload.next_followup_date || null,
         offer_prices: payload.offer_prices || null,
+        phone: payload.phone || null,
       });
       clearFollowupDraft(client.customer_key);
       setRanking((prev) => {
@@ -1094,7 +1097,7 @@ export default function BillingDashboard() {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-            <table className="w-full min-w-[1240px] text-sm">
+            <table className="w-full min-w-[1340px] text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs">
                 <tr>
                   <th className="text-center px-3 py-3">#</th>
@@ -1109,12 +1112,13 @@ export default function BillingDashboard() {
                   {slot2.stats && <SortTh col="producto2" sort={rankSort} onSort={setRankSort} align="right" className="text-purple-700">{slot2.stats.label}</SortTh>}
                   <SortTh col="ticket_promedio" sort={rankSort} onSort={setRankSort} align="right">Ticket Prom.</SortTh>
                   <SortTh col="next_followup_date" sort={rankSort} onSort={setRankSort} align="center">Prox. llamada</SortTh>
+                  <th className="text-left px-3 py-3">Teléfono</th>
                   <th className="text-left px-3 py-3 w-64">Seguimiento</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredClientes.length === 0 && (
-                  <tr><td colSpan={11 + (slot1.stats ? 1 : 0) + (slot2.stats ? 1 : 0)} className="text-center py-10 text-gray-400">Sin datos</td></tr>
+                  <tr><td colSpan={12 + (slot1.stats ? 1 : 0) + (slot2.stats ? 1 : 0)} className="text-center py-10 text-gray-400">Sin datos</td></tr>
                 )}
                 {filteredClientes.map((c, i) => (
                   <tr key={c.customer_key} className="border-t border-gray-100 hover:bg-gray-50">
@@ -1139,6 +1143,9 @@ export default function BillingDashboard() {
                     <td className="px-3 py-2.5 text-right text-gray-600">{c.ticket_promedio > 0 ? fmt(c.ticket_promedio) : <span className="text-gray-300">—</span>}</td>
                     <td className={`px-3 py-2.5 text-center text-xs font-medium ${c.next_followup_date && c.next_followup_date <= todayISO() ? 'text-red-700' : 'text-gray-600'}`}>
                       {c.next_followup_date ? fmtDate(c.next_followup_date) : <span className="text-gray-300">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5 text-gray-600 text-xs whitespace-nowrap">
+                      {c.phone || <span className="text-gray-300">—</span>}
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-between gap-3">
@@ -1530,6 +1537,15 @@ export default function BillingDashboard() {
               />
             </Field>
           </div>
+          <Field label="Teléfono">
+            <input
+              name="phone"
+              type="tel"
+              className={inputCls}
+              value={activeFollowupClient.phone ?? ''}
+              onChange={(e) => patchClientFollowup(activeFollowupClient.customer_key, { phone: e.target.value })}
+            />
+          </Field>
           <Field label="Precios a ofrecer">
             <textarea
               name="offer_prices"

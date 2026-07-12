@@ -45,6 +45,9 @@ create table if not exists {schema}.erp_client_followups (
   constraint erp_client_followups_customer_unique unique (empresa_id, project_code, module_code, customer_key)
 );
 
+alter table if exists {schema}.erp_client_followups
+  add column if not exists phone text;
+
 create index if not exists erp_client_followups_next_followup_idx
   on {schema}.erp_client_followups (empresa_id, project_code, module_code, next_followup_date);
 

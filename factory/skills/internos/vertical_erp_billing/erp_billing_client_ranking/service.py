@@ -122,6 +122,7 @@ class ErpBillingClientRankingService:
                 "last_call_date": followup.get("last_call_date"),
                 "next_followup_date": followup.get("next_followup_date"),
                 "offer_prices": followup.get("offer_prices"),
+                "phone": followup.get("phone"),
                 "followup_status": followup.get("status"),
                 "followup_updated_at": followup.get("updated_at"),
             })
@@ -162,7 +163,7 @@ class ErpBillingClientRankingService:
                 "project_code": ctx.get("project_code"),
                 "module_code": ctx.get("module_code"),
             },
-            select="customer_key,comments,last_call_date,next_followup_date,offer_prices,status,updated_at",
+            select="customer_key,comments,last_call_date,next_followup_date,offer_prices,phone,status,updated_at",
             limit=5000,
         )
         if not result.get("ok"):

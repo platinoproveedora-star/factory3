@@ -173,6 +173,7 @@ export type ClientRankingRow = {
   last_call_date?: string | null;
   next_followup_date?: string | null;
   offer_prices?: string | null;
+  phone?: string | null;
   followup_status?: string | null;
   followup_updated_at?: string | null;
 };
@@ -534,6 +535,7 @@ export async function upsertClientFollowup(payload: {
   last_call_date?: string | null;
   next_followup_date?: string | null;
   offer_prices?: string | null;
+  phone?: string | null;
 }) {
   return request('vertical_erp_client_followup/erp_client_followup_upsert', { ...payload, dry_run: false });
 }

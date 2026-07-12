@@ -22,7 +22,7 @@ class ErpClientFollowupListService:
         result = SupabaseClient(ctx).rest_select(
             "erp_client_followups",
             filters=filters,
-            select="id,folio,customer_id,customer_key,customer_name,comments,last_call_date,next_followup_date,offer_prices,status,updated_at",
+            select="id,folio,customer_id,customer_key,customer_name,comments,last_call_date,next_followup_date,offer_prices,phone,status,updated_at",
             limit=int(context.get("limit") or 5000),
             order="next_followup_date.asc",
         )
