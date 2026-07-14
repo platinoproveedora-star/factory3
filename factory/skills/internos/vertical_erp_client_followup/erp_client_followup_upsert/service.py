@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import (  # noqa: E402
+from _followup_common import (  # noqa: E402
     SupabaseClient,
     blank,
     customer_key,
