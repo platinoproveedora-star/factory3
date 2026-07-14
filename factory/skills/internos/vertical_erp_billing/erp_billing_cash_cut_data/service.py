@@ -217,9 +217,13 @@ class ErpBillingCashCutDataService:
         schema = str(context.get("expenses_schema") or context.get("expense_schema") or "").strip()
         if not schema:
             return []
+        company_id = str(ctx.get("company_id") or "").strip()
+        filters = {"fecha": f"eq.{cut_date}"}
+        if company_id:
+            filters["empresa_id"] = f"eq.{company_id}"
         result = SupabaseClient({**ctx, "schema": schema}).rest_select(
             "gastos",
-            filters={"fecha": f"eq.{cut_date}"},
+            filters=filters,
             select="folio,fecha,monto,descripcion,cta_retiro_id,cta_retiro_folio,cta_retiro_nombre,categorias_gasto(nombre)",
             order="fecha.asc,folio.asc",
             limit=1000,

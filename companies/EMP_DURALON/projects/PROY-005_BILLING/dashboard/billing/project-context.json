@@ -12,8 +12,8 @@
   "banks_schema": "uc101_proy006",
   "banks_project_code": "PROY-006",
   "banks_module_code": "banks",
-  "expenses_schema": "uc101_proy001",
-  "expenses_project_code": "PROY-001",
-  "expenses_module_code": "gastos",
+  "expenses_schema": "gastos4all",
+  "expenses_project_code": "GASTOS4ALL_V1",
+  "expenses_module_code": "gastos4all",
   "factory_api_url": "https://factory3.onrender.com"
 }
