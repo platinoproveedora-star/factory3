@@ -1061,32 +1061,70 @@ async function openRemisionPdf(companyId: string, folio: string, hidePrices: boo
 
 function openLogisticsDayPdf(day: string, trips: TripRow[], catalogs: LogisticsData["catalogs"]) {
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Logistica ${escapeHtml(day)}</title><style>
-    body{font-family:Arial,sans-serif;color:#172033;margin:20px;font-size:12px}
-    h1{font-size:20px;margin:0 0 14px}
-    h2{font-size:15px;margin:18px 0 6px}
-    section{break-inside:avoid;margin:0 0 14px;padding:10px;border-left:8px solid #7aa6b8;border-radius:4px;background:#edf6f8}
+    @page{size:letter landscape;margin:8mm}
+    body{font-family:Arial,sans-serif;color:#172033;margin:0;font-size:9px}
+    h1{font-size:16px;margin:0 0 6px}
+    h2{font-size:12px;margin:0 0 3px}
+    section{break-inside:avoid;margin:0 0 7px;padding:6px;border-left:6px solid #7aa6b8;border-radius:4px;background:#edf6f8}
     section:nth-of-type(6n+2){border-left-color:#c6a46b;background:#fbf6eb}
     section:nth-of-type(6n+3){border-left-color:#91b58a;background:#f1f8ef}
     section:nth-of-type(6n+4){border-left-color:#b890a8;background:#faf0f5}
     section:nth-of-type(6n+5){border-left-color:#9e9ac8;background:#f3f2fa}
     section:nth-of-type(6n+6){border-left-color:#c6907c;background:#fbf1ed}
-    table{width:100%;border-collapse:collapse;margin-top:6px}
-    th,td{border:1px solid #d8dee8;padding:5px;text-align:left;vertical-align:top}
-    th{background:#f3f6f9;font-size:10px;text-transform:uppercase}
-    .muted{color:#667085}
+    table{width:100%;border-collapse:collapse;margin-top:4px;table-layout:fixed}
+    th,td{border:1px solid #d8dee8;padding:2px 3px;text-align:left;vertical-align:top;font-size:8px;line-height:1.1}
+    th{background:#f3f6f9;font-size:7px;text-transform:uppercase}
+    .muted{color:#667085;margin:0 0 3px}
+    .clip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .num{text-align:right;white-space:nowrap}
+    .customer{width:13%}
+    .address{width:14%}
+    .folio{width:7%}
+    .money{width:7%}
+    .short{width:6%}
+    .totals-row td{font-weight:bold;background:#eef2f7}
+    .payment-summary{margin:3px 0 0;font-size:9px;color:#065f46}
   </style></head><body><h1>Logistica ${escapeHtml(day)}</h1>${trips.map((trip) => `<section><h2>${escapeHtml(trip.hora_inicio?.slice(0, 5) || "--:--")} - ${escapeHtml(trip.folio)} · ${escapeHtml(vehicleName(catalogs.vehicles, trip.vehiculo_id) || "Sin vehiculo")}</h2><p class="muted">${trip.summary.orders_count} pedidos · ${number.format(trip.summary.peso_total_kg)} kg · ${money.format(trip.summary.importe_total)}</p>${printableTripTable(trip)}</section>`).join("")}<script>window.print()</script></body></html>`;
   openHtmlDocument(html);
 }
 
 function printableTripTable(trip: TripRow) {
   const products = topTripProducts(trip, 8);
-  return `<p style="font-weight:bold;color:#065f46;margin:6px 0">Total a cobrar: ${money.format(tripCollectTotal(trip))}</p><table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Remision</th><th>Peso</th><th>Importe</th><th>Cobrar</th><th>Forma de pago</th><th>Lugar de entrega</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${escapeHtml(remisionFolio(order) || "-")}</td><td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td><td>${money.format(orderCollectAmount(order))}</td><td>${escapeHtml(order.payment_method || "-")}</td><td>${escapeHtml(order.delivery_address || order.city || "Sin lugar")}</td></tr>`).join("")}</tbody></table>${printableProductTotals(trip)}`;
+  return `<table><thead><tr><th class="folio">Pedido</th><th class="customer">Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th class="short">Remision</th><th class="short">Peso</th><th class="money">Importe</th><th class="money">Cobrar</th><th class="short">Forma pago</th><th class="address">Lugar entrega</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td class="clip">${escapeHtml(order.folio)}</td><td class="clip">${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td class="num">${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td class="clip">${escapeHtml(remisionFolio(order) || "-")}</td><td class="num">${number.format(order.peso_kg || 0)} kg</td><td class="num">${money.format(order.importe || 0)}</td><td class="num">${money.format(orderCollectAmount(order))}</td><td class="clip">${escapeHtml(order.payment_method || "-")}</td><td class="clip">${escapeHtml(order.delivery_address || order.city || "Sin lugar")}</td></tr>`).join("")}</tbody><tfoot><tr class="totals-row"><td colspan="2">Totales</td>${products.map((product) => `<td class="num">${escapeHtml(productTotalQty(trip, product.key))}</td>`).join("")}<td></td><td class="num">${number.format(trip.summary.peso_total_kg || 0)} kg</td><td class="num">${money.format(trip.summary.importe_total || 0)}</td><td class="num">${money.format(tripCollectTotal(trip))}</td><td></td><td></td></tr></tfoot></table>${printablePaymentSummary(trip)}`;
 }
 
-function printableProductTotals(trip: TripRow) {
-  const totals = trip.summary.product_totals || [];
-  if (!totals.length) return "";
-  return `<div style="margin-top:8px"><h3 style="font-size:12px;margin:0 0 4px">Totales por producto</h3><table style="max-width:620px"><thead><tr><th>Producto</th><th>Cantidad</th><th>Peso</th><th>Importe</th></tr></thead><tbody>${totals.map((product) => `<tr><td>${escapeHtml(product.product_name)}</td><td>${number.format(product.quantity)} ${escapeHtml(product.unit || "")}</td><td>${number.format(product.weight_kg_total || 0)} kg</td><td>${money.format(product.line_total || 0)}</td></tr>`).join("")}</tbody></table></div>`;
+function productTotalQty(trip: TripRow, key: string) {
+  let quantity = 0;
+  let unit = "";
+  for (const order of trip.orders) {
+    for (const item of order.items || []) {
+      if (productKey(item) !== key) continue;
+      quantity += Number(item.quantity || 0);
+      unit = String(item.unit || unit || "");
+    }
+  }
+  return quantity ? `${number.format(quantity)} ${unit}` : "-";
+}
+
+function printablePaymentSummary(trip: TripRow) {
+  const totals = new Map<string, number>();
+  for (const order of trip.orders) {
+    const rawMethod = String(order.payment_method || "Sin forma de pago").trim() || "Sin forma de pago";
+    const method = normalizePaymentLabel(rawMethod);
+    totals.set(method, (totals.get(method) || 0) + orderCollectAmount(order));
+  }
+  if (!totals.size) return "";
+  const parts = Array.from(totals.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([method, total]) => `${escapeHtml(method)}: <strong>${money.format(total)}</strong>`);
+  return `<p class="payment-summary">${parts.join(" &nbsp; ")}</p>`;
+}
+
+function normalizePaymentLabel(method: string) {
+  const lower = method.toLowerCase();
+  if (lower === "cash" || lower === "efectivo") return "Efectivo/cash";
+  if (lower.includes("transfer")) return "Transferencia";
+  return method;
 }
 
 function openHtmlDocument(html: string) {
