@@ -1024,11 +1024,14 @@ function printableTripTable(trip: TripRow) {
 }
 
 function openHtmlDocument(html: string) {
-  const win = window.open("", "_blank", "noopener,noreferrer");
-  if (!win) return;
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (!win) {
+    URL.revokeObjectURL(url);
+    return;
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function escapeHtml(value: string) {
