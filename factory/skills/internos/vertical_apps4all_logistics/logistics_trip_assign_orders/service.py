@@ -41,6 +41,7 @@ class LogisticsTripAssignOrdersService:
             for link in existing_links
             if str(link.get("trip_id")) == trip_id and str(link.get("pedido_id")) in pedido_ids
         }
+        preserved_by_pedido = self._preserve_existing_values(ctx, trip_id, [str(item) for item in pedido_ids], existing_links)
         self._remove_existing_active_assignments(ctx, trip_id, [str(item) for item in pedido_ids], existing_links)
         new_pedido_ids = [pedido_id for pedido_id in pedido_ids if pedido_id not in existing_target_ids]
         if not new_pedido_ids:
@@ -51,6 +52,7 @@ class LogisticsTripAssignOrdersService:
             return folios_result
         folios = folios_result["data"]["folios"]
         for index, pedido_id in enumerate(new_pedido_ids, start=1):
+            preserved = preserved_by_pedido.get(pedido_id) or {}
             rows.append(
                 {
                     "folio": folios[index - 1],
@@ -59,13 +61,31 @@ class LogisticsTripAssignOrdersService:
                     "module_code": ctx["module_code"],
                     "trip_id": trip_id,
                     "pedido_id": pedido_id,
-                    "peso_override_kg": context.get("peso_override_kg"),
+                    "peso_override_kg": context.get("peso_override_kg") if "peso_override_kg" in context else preserved.get("peso_override_kg"),
+                    "fecha_entrega_override": context.get("fecha_entrega_override") if "fecha_entrega_override" in context else preserved.get("fecha_entrega_override"),
                     "orden_carga": index,
-                    "notes": context.get("notes"),
+                    "notes": context.get("notes") if "notes" in context else preserved.get("notes"),
+                    "metadata": preserved.get("metadata") if isinstance(preserved.get("metadata"), dict) else {},
                 }
             )
         result = db(ctx).rest_insert("logistics_trip_orders", rows)
         return result if not result.get("ok") else {"ok": True, "data": {"assigned": result.get("data") or [], "already_assigned": sorted(existing_target_ids)}}
+
+    def _preserve_existing_values(self, ctx: dict, target_trip_id: str, pedido_ids: list[str], existing_links: list[dict]) -> dict[str, dict]:
+        active_trip_ids = {str(trip.get("id")) for trip in list_trips(ctx) if str(trip.get("estado") or "") in ACTIVE_TRIP_STATUS}
+        preserved: dict[str, dict] = {}
+        for link in existing_links:
+            pedido_id = str(link.get("pedido_id") or "")
+            trip_id = str(link.get("trip_id") or "")
+            if pedido_id not in pedido_ids or trip_id == target_trip_id or trip_id not in active_trip_ids:
+                continue
+            preserved[pedido_id] = {
+                "peso_override_kg": link.get("peso_override_kg"),
+                "fecha_entrega_override": link.get("fecha_entrega_override"),
+                "notes": link.get("notes"),
+                "metadata": link.get("metadata") if isinstance(link.get("metadata"), dict) else {},
+            }
+        return preserved
 
     def _remove_existing_active_assignments(self, ctx: dict, target_trip_id: str, pedido_ids: list[str], existing_links: list[dict] | None = None) -> None:
         active_trip_ids = {str(trip.get("id")) for trip in list_trips(ctx) if str(trip.get("estado") or "") in ACTIVE_TRIP_STATUS}
