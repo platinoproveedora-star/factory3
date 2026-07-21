@@ -658,6 +658,9 @@ function TripPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="font-mono text-lg font-bold text-ink">{trip.folio}</p>
+            <p className="text-xs font-semibold text-slate-600">
+              {vehicleName(catalogs.vehicles, vehicle || trip.vehiculo_id) || "Sin vehiculo"} · {driverName(catalogs.drivers, driver || trip.driver_id) || "Sin chofer"}
+            </p>
             <p className="text-sm text-slate-600">{trip.summary.orders_count} pedidos · {number.format(trip.summary.peso_total_kg)} kg · {money.format(trip.summary.importe_total)}</p>
           </div>
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase text-slate-600">{trip.estado}</span>
@@ -998,6 +1001,10 @@ function CalendarProductMatrix({ trip, companyId }: { trip: TripRow; companyId?:
 
 function vehicleName(vehicles: CatalogRow[], id?: string | null) {
   return vehicles.find((row) => row.id === id)?.nombre || "";
+}
+
+function driverName(drivers: CatalogRow[], id?: string | null) {
+  return drivers.find((row) => row.id === id)?.nombre || "";
 }
 
 function vehicleColorStyle(index: number): CSSProperties {
