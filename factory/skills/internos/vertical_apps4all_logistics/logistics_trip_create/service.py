@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared import db, is_dry_run, list_orders, now_iso, reserve_folio, reserve_folios, resolve_context
+from _shared import ACTIVE_TRIP_STATUS, db, is_dry_run, list_orders, list_trip_orders, list_trips, now_iso, reserve_folio, reserve_folios, resolve_context, table_filters
 
 
 class LogisticsTripCreateService:
@@ -38,11 +38,12 @@ class LogisticsTripCreateService:
         if not created.get("ok"):
             return created
         trip = (created.get("data") or [{}])[0]
-        pedido_ids = [str(item) for item in (context.get("pedido_ids") or []) if str(item).strip()]
+        pedido_ids = list(dict.fromkeys(str(item) for item in (context.get("pedido_ids") or []) if str(item).strip()))
         available_by_id = {str(order.get("id")): order for order in list_orders(ctx, limit=1000)}
         invalid = [pedido_id for pedido_id in pedido_ids if pedido_id not in available_by_id]
         if invalid:
             return {"ok": False, "error": "pedido no disponible para viaje", "data": {"pedido_ids": invalid}}
+        self._remove_existing_active_assignments(ctx, pedido_ids)
         folios_result = reserve_folios(ctx, "logistics_trip_orders", "VIAP", len(pedido_ids))
         if not folios_result.get("ok"):
             return folios_result
@@ -69,3 +70,11 @@ class LogisticsTripCreateService:
             if not inserted.get("ok"):
                 return inserted
         return {"ok": True, "data": {"trip": trip, "assigned_count": len(links)}}
+
+    def _remove_existing_active_assignments(self, ctx: dict, pedido_ids: list[str]) -> None:
+        active_trip_ids = {str(trip.get("id")) for trip in list_trips(ctx) if str(trip.get("estado") or "") in ACTIVE_TRIP_STATUS}
+        if not active_trip_ids:
+            return
+        for link in list_trip_orders(ctx):
+            if str(link.get("trip_id")) in active_trip_ids and str(link.get("pedido_id")) in pedido_ids:
+                db(ctx).rest_delete("logistics_trip_orders", table_filters(ctx, {"id": f"eq.{link.get('id')}"}))

@@ -14,6 +14,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
   const [error, setError] = useState(initialError);
   const [tab, setTab] = useState<Tab>("orders");
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [targetTripId, setTargetTripId] = useState("");
   const [busy, setBusy] = useState("");
 
   function applyReviewAction(name: string, context: Record<string, unknown>) {
@@ -38,7 +39,32 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
         orders: selected,
         summary: summarizeOrders(selected)
       };
-      setData({ ...data, available_orders: data.available_orders.filter((order) => !ids.has(order.id)), trips: [...data.trips, trip] });
+      setData({
+        ...data,
+        available_orders: data.available_orders.map((order) => (ids.has(order.id) ? { ...order, logistics_assignment: { trip_id: trip.id, trip_folio: trip.folio, trip_estado: trip.estado } } : order)),
+        trips: [...data.trips, trip]
+      });
+      setError("");
+      return true;
+    }
+    if (name === "assign_orders") {
+      const ids = new Set((context.pedido_ids as string[]) || []);
+      const tripId = String(context.trip_id || "");
+      const target = data.trips.find((trip) => trip.id === tripId);
+      const selected = data.available_orders.filter((order) => ids.has(order.id));
+      if (!target || !selected.length) {
+        setError("Selecciona pedidos y viaje destino.");
+        return false;
+      }
+      const targetOrders = [...target.orders.filter((order) => !ids.has(order.id)), ...selected];
+      setData({
+        ...data,
+        available_orders: data.available_orders.map((order) => (ids.has(order.id) ? { ...order, logistics_assignment: { trip_id: target.id, trip_folio: target.folio, trip_estado: target.estado, fecha_viaje: target.fecha_viaje, hora_inicio: target.hora_inicio } } : order)),
+        trips: data.trips.map((trip) => {
+          if (trip.id === target.id) return { ...trip, orders: targetOrders, summary: summarizeOrders(targetOrders) };
+          return { ...trip, orders: trip.orders.filter((order) => !ids.has(order.id)), summary: summarizeOrders(trip.orders.filter((order) => !ids.has(order.id))) };
+        })
+      });
       setError("");
       return true;
     }
@@ -64,8 +90,20 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
     if (name === "catalog_manage" && context.action === "create") {
       const catalog = context.catalog === "driver" ? "drivers" : "vehicles";
       const prefix = catalog === "drivers" ? "CHO" : "VEH";
-      const row = { id: `review-${catalog}-${Date.now()}`, folio: `${prefix}-TMP`, nombre: String(context.nombre || "") };
+      const row = { id: `review-${catalog}-${Date.now()}`, folio: `${prefix}-TMP`, nombre: String(context.nombre || ""), tipo: context.tipo as string, placa: context.placa as string, telefono: context.telefono as string, capacidad_peso_kg: Number(context.capacidad_peso_kg || 0), activo: true };
       setData({ ...data, catalogs: { ...data.catalogs, [catalog]: [...data.catalogs[catalog], row] } });
+      setError("");
+      return true;
+    }
+    if (name === "catalog_manage" && context.action === "update") {
+      const catalog = context.catalog === "driver" ? "drivers" : "vehicles";
+      setData({
+        ...data,
+        catalogs: {
+          ...data.catalogs,
+          [catalog]: data.catalogs[catalog].map((row) => (row.id === context.id ? { ...row, ...context } : row))
+        }
+      });
       setError("");
       return true;
     }
@@ -143,6 +181,16 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
     }
   }
 
+  async function assignToExistingTrip() {
+    if (!selectedOrders.length || !targetTripId) return;
+    const ok = await action("assign_orders", { trip_id: targetTripId, pedido_ids: selectedOrders });
+    if (ok) {
+      setSelectedOrders([]);
+      setTargetTripId("");
+      setTab("trips");
+    }
+  }
+
   const orders = data?.available_orders || [];
   const trips = data?.trips || [];
 
@@ -151,7 +199,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
       <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-ink">{companyName}</h1>
-          <p className="text-sm text-slate-600">{orders.length} pedidos pendientes · {trips.length} viajes activos</p>
+          <p className="text-sm text-slate-600">{orders.length} pedidos ERP · {trips.length} viajes activos</p>
         </div>
         <button onClick={refresh} className="btn-soft" disabled={busy === "refresh"}>
           <RefreshCw size={16} />
@@ -175,6 +223,10 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
             selectedOrders={selectedOrders}
             setSelectedOrders={setSelectedOrders}
             createTrip={createTrip}
+            assignToExistingTrip={assignToExistingTrip}
+            trips={trips}
+            targetTripId={targetTripId}
+            setTargetTripId={setTargetTripId}
             busy={busy}
           />
         )}
@@ -195,17 +247,49 @@ function TabButton({ active, onClick, icon, label }: { active: boolean; onClick:
   );
 }
 
-function OrdersTab({ orders, selectedOrders, setSelectedOrders, createTrip, busy }: { orders: OrderRow[]; selectedOrders: string[]; setSelectedOrders: (rows: string[]) => void; createTrip: () => void; busy: string }) {
+function OrdersTab({
+  orders,
+  selectedOrders,
+  setSelectedOrders,
+  createTrip,
+  assignToExistingTrip,
+  trips,
+  targetTripId,
+  setTargetTripId,
+  busy
+}: {
+  orders: OrderRow[];
+  selectedOrders: string[];
+  setSelectedOrders: (rows: string[]) => void;
+  createTrip: () => void;
+  assignToExistingTrip: () => void;
+  trips: TripRow[];
+  targetTripId: string;
+  setTargetTripId: (value: string) => void;
+  busy: string;
+}) {
   function toggle(id: string) {
     setSelectedOrders(selectedOrders.includes(id) ? selectedOrders.filter((item) => item !== id) : [...selectedOrders, id]);
   }
+  const activeTrips = trips.filter((trip) => !["completado", "cancelado"].includes(trip.estado));
   return (
     <div>
-      <div className="sticky top-[116px] z-20 flex items-center justify-between gap-3 border border-line bg-white p-3 shadow-sm sm:top-[65px]">
+      <div className="sticky top-[116px] z-20 grid gap-3 border border-line bg-white p-3 shadow-sm sm:top-[65px] lg:grid-cols-[1fr_auto_auto] lg:items-center">
         <p className="text-sm font-semibold text-ink">{selectedOrders.length} seleccionados</p>
+        <div className="flex min-w-0 gap-2">
+          <select value={targetTripId} onChange={(event) => setTargetTripId(event.target.value)} className="input min-w-0" disabled={!activeTrips.length}>
+            <option value="">Viaje existente</option>
+            {activeTrips.map((trip) => (
+              <option key={trip.id} value={trip.id}>{trip.folio} · {trip.estado}</option>
+            ))}
+          </select>
+          <button onClick={assignToExistingTrip} className="btn-soft whitespace-nowrap" disabled={!selectedOrders.length || !targetTripId || Boolean(busy)}>
+            Agregar
+          </button>
+        </div>
         <button onClick={createTrip} className="btn-primary" disabled={!selectedOrders.length || Boolean(busy)}>
           <Plus size={16} />
-          Crear viaje
+          Nuevo viaje
         </button>
       </div>
       <div className="mt-3 grid gap-3">
@@ -220,6 +304,11 @@ function OrdersTab({ orders, selectedOrders, setSelectedOrders, createTrip, busy
                   <p className="font-mono text-sm font-bold text-ink">{order.folio}</p>
                   <p className="truncate text-sm font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</p>
                   <p className="text-sm text-slate-500">{order.city || "Sin ciudad"}</p>
+                  {order.logistics_assignment ? (
+                    <span className="rounded-full bg-steel/10 px-2 py-1 text-xs font-bold text-steel">{order.logistics_assignment.trip_folio} · {order.logistics_assignment.trip_estado}</span>
+                  ) : (
+                    <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">Pendiente de viaje</span>
+                  )}
                 </div>
                 <div className="mt-2 grid gap-2 text-xs text-slate-600 sm:grid-cols-5">
                   <span>{order.fecha_entrega || "Sin fecha"}</span>
@@ -282,6 +371,19 @@ function TripPanel({
   const [duracion, setDuracion] = useState(String(trip.duracion_minutos || 120));
   const [vehicle, setVehicle] = useState(trip.vehiculo_id || "");
   const [driver, setDriver] = useState(trip.driver_id || "");
+  const [draftOrders, setDraftOrders] = useState<Record<string, { peso: string; fecha: string }>>({});
+  function draftFor(order: OrderRow) {
+    return draftOrders[order.id] || { peso: String(order.peso_kg ?? 0), fecha: order.fecha_entrega || "" };
+  }
+  function setDraft(order: OrderRow, patch: Partial<{ peso: string; fecha: string }>) {
+    setDraftOrders((current) => ({ ...current, [order.id]: { ...draftFor(order), ...patch } }));
+  }
+  async function saveOrderDraft(order: OrderRow) {
+    const draft = draftFor(order);
+    const peso = draft.peso.trim() === "" ? 0 : Number(draft.peso);
+    if (!Number.isFinite(peso)) return;
+    await updateOrderLogistics(trip.id, order, { peso_kg: peso, fecha_entrega: draft.fecha || null });
+  }
   async function save() {
     await action("manage_trip", { trip_id: trip.id, fecha_viaje: fecha || null, hora_inicio: hora || null, duracion_minutos: Number(duracion || 120), vehiculo_id: vehicle || null, driver_id: driver || null });
   }
@@ -330,8 +432,9 @@ function TripPanel({
                 <td className="px-3 py-2">
                   <input
                     type="date"
-                    value={order.fecha_entrega || ""}
-                    onChange={(event) => updateOrderLogistics(trip.id, order, { fecha_entrega: event.target.value })}
+                    value={draftFor(order).fecha}
+                    onChange={(event) => setDraft(order, { fecha: event.target.value })}
+                    onBlur={() => saveOrderDraft(order)}
                     className="input h-9 min-w-36"
                   />
                 </td>
@@ -340,8 +443,12 @@ function TripPanel({
                     type="number"
                     min="0"
                     step="0.01"
-                    value={String(order.peso_kg || 0)}
-                    onChange={(event) => updateOrderLogistics(trip.id, order, { peso_kg: Number(event.target.value || 0) })}
+                    value={draftFor(order).peso}
+                    onChange={(event) => setDraft(order, { peso: event.target.value })}
+                    onBlur={() => saveOrderDraft(order)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") event.currentTarget.blur();
+                    }}
                     className="input h-9 w-32"
                   />
                 </td>
@@ -398,28 +505,36 @@ function CalendarTab({ trips }: { trips: TripRow[] }) {
 
 function ConfigTab({ catalogs, action, busy }: { catalogs: LogisticsData["catalogs"]; action: (name: string, context: Record<string, unknown>) => Promise<boolean>; busy: string }) {
   const [vehicle, setVehicle] = useState("");
+  const [vehiclePlate, setVehiclePlate] = useState("");
+  const [vehicleType, setVehicleType] = useState("");
+  const [vehicleCapacity, setVehicleCapacity] = useState("");
   const [driver, setDriver] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <section className="border border-line bg-white p-3">
         <h2 className="text-lg font-semibold">Vehiculos</h2>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_120px_120px_120px_auto]">
           <input value={vehicle} onChange={(event) => setVehicle(event.target.value)} className="input" placeholder="Nombre" />
-          <button disabled={!vehicle || Boolean(busy)} onClick={async () => { if (await action("catalog_manage", { action: "create", catalog: "vehicle", nombre: vehicle })) setVehicle(""); }} className="btn-primary px-3">
+          <input value={vehiclePlate} onChange={(event) => setVehiclePlate(event.target.value)} className="input" placeholder="Placa" />
+          <input value={vehicleType} onChange={(event) => setVehicleType(event.target.value)} className="input" placeholder="Tipo" />
+          <input value={vehicleCapacity} onChange={(event) => setVehicleCapacity(event.target.value)} type="number" min="0" step="0.01" className="input" placeholder="Kg max" />
+          <button disabled={!vehicle || Boolean(busy)} onClick={async () => { if (await action("catalog_manage", { action: "create", catalog: "vehicle", nombre: vehicle, placa: vehiclePlate || null, tipo: vehicleType || null, capacidad_peso_kg: vehicleCapacity ? Number(vehicleCapacity) : null })) { setVehicle(""); setVehiclePlate(""); setVehicleType(""); setVehicleCapacity(""); } }} className="btn-primary px-3">
             <Plus size={16} />
           </button>
         </div>
-        <CatalogList rows={catalogs.vehicles} />
+        <CatalogEditor catalog="vehicle" rows={catalogs.vehicles} action={action} busy={busy} />
       </section>
       <section className="border border-line bg-white p-3">
         <h2 className="text-lg font-semibold">Choferes</h2>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_150px_auto]">
           <input value={driver} onChange={(event) => setDriver(event.target.value)} className="input" placeholder="Nombre" />
-          <button disabled={!driver || Boolean(busy)} onClick={async () => { if (await action("catalog_manage", { action: "create", catalog: "driver", nombre: driver })) setDriver(""); }} className="btn-primary px-3">
+          <input value={driverPhone} onChange={(event) => setDriverPhone(event.target.value)} className="input" placeholder="Telefono" />
+          <button disabled={!driver || Boolean(busy)} onClick={async () => { if (await action("catalog_manage", { action: "create", catalog: "driver", nombre: driver, telefono: driverPhone || null })) { setDriver(""); setDriverPhone(""); } }} className="btn-primary px-3">
             <Plus size={16} />
           </button>
         </div>
-        <CatalogList rows={catalogs.drivers} />
+        <CatalogEditor catalog="driver" rows={catalogs.drivers} action={action} busy={busy} />
       </section>
       <section className="border border-line bg-white p-3 lg:col-span-2">
         <h2 className="text-lg font-semibold">Productos clave</h2>
@@ -442,6 +557,79 @@ function Select({ value, onChange, rows, placeholder, disabled = false }: { valu
         <option key={row.id} value={row.id}>{row.nombre}</option>
       ))}
     </select>
+  );
+}
+
+function CatalogEditor({ catalog, rows, action, busy }: { catalog: "vehicle" | "driver"; rows: CatalogRow[]; action: (name: string, context: Record<string, unknown>) => Promise<boolean>; busy: string }) {
+  return (
+    <div className="mt-3 grid gap-2">
+      {rows.map((row) => (
+        <CatalogEditorRow key={row.id} catalog={catalog} row={row} action={action} busy={busy} />
+      ))}
+      {!rows.length && <p className="border border-line px-3 py-2 text-sm text-slate-500">Sin registros</p>}
+    </div>
+  );
+}
+
+function CatalogEditorRow({ catalog, row, action, busy }: { catalog: "vehicle" | "driver"; row: CatalogRow; action: (name: string, context: Record<string, unknown>) => Promise<boolean>; busy: string }) {
+  const [nombre, setNombre] = useState(row.nombre || "");
+  const [tipo, setTipo] = useState(row.tipo || "");
+  const [placa, setPlaca] = useState(row.placa || "");
+  const [telefono, setTelefono] = useState(row.telefono || "");
+  const [capacidad, setCapacidad] = useState(row.capacidad_peso_kg == null ? "" : String(row.capacidad_peso_kg));
+  const [activo, setActivo] = useState(row.activo !== false);
+  const [status, setStatus] = useState(row.status || (catalog === "vehicle" ? "disponible" : "activo"));
+
+  async function save() {
+    await action("catalog_manage", {
+      action: "update",
+      catalog,
+      id: row.id,
+      nombre,
+      ...(catalog === "vehicle" ? { tipo: tipo || null, placa: placa || null, capacidad_peso_kg: capacidad === "" ? null : Number(capacidad), status, activo } : { telefono: telefono || null, status, activo })
+    });
+  }
+
+  return (
+    <div className="border border-line bg-slate-50 p-2">
+      <div className={`grid gap-2 ${catalog === "vehicle" ? "sm:grid-cols-[1fr_95px_95px_95px_120px_80px_auto]" : "sm:grid-cols-[1fr_150px_120px_auto_auto]"}`}>
+        <input value={nombre} onChange={(event) => setNombre(event.target.value)} className="input h-9" placeholder="Nombre" />
+        {catalog === "vehicle" ? (
+          <>
+            <input value={placa} onChange={(event) => setPlaca(event.target.value)} className="input h-9" placeholder="Placa" />
+            <input value={tipo} onChange={(event) => setTipo(event.target.value)} className="input h-9" placeholder="Tipo" />
+            <input value={capacidad} onChange={(event) => setCapacidad(event.target.value)} type="number" min="0" step="0.01" className="input h-9" placeholder="Kg max" />
+            <select value={status} onChange={(event) => setStatus(event.target.value)} className="input h-9">
+              <option value="disponible">Disponible</option>
+              <option value="en_ruta">En ruta</option>
+              <option value="mantenimiento">Mantenimiento</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </>
+        ) : (
+          <>
+            <input value={telefono} onChange={(event) => setTelefono(event.target.value)} className="input h-9" placeholder="Telefono" />
+            <select value={status} onChange={(event) => setStatus(event.target.value)} className="input h-9">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+            <label className="flex min-h-9 items-center gap-2 text-sm text-slate-600">
+              <input type="checkbox" checked={activo} onChange={(event) => setActivo(event.target.checked)} />
+              Activo
+            </label>
+          </>
+        )}
+        {catalog === "vehicle" && (
+          <label className="flex min-h-9 items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" checked={activo} onChange={(event) => setActivo(event.target.checked)} />
+            Activo
+          </label>
+        )}
+        <button onClick={save} disabled={!nombre || Boolean(busy)} className="btn-soft min-h-9 px-3">
+          Guardar
+        </button>
+      </div>
+    </div>
   );
 }
 

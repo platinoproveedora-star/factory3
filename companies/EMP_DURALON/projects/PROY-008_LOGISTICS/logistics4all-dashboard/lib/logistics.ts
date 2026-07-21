@@ -29,6 +29,17 @@ export type OrderRow = {
   partida_2?: string;
   partida_3?: string;
   otras_partidas?: string;
+  logistics_assignment?: {
+    trip_id: string;
+    trip_folio: string;
+    trip_estado: string;
+    fecha_viaje?: string | null;
+    hora_inicio?: string | null;
+  } | null;
+  trip_order?: {
+    id?: string;
+    folio?: string;
+  };
 };
 
 export type TripRow = {
@@ -68,6 +79,8 @@ export type CatalogRow = {
   placa?: string | null;
   telefono?: string | null;
   capacidad_peso_kg?: number | null;
+  status?: string | null;
+  activo?: boolean | null;
 };
 
 export type ProductConfigRow = {
