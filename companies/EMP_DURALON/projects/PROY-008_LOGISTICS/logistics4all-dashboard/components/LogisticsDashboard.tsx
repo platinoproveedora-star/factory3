@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, Check, Clock, PackagePlus, Plus, RefreshCw, Settings, Truck } from "lucide-react";
+import { Archive, CalendarDays, Check, Clock, PackagePlus, Plus, RefreshCw, Settings, Truck } from "lucide-react";
 import type { CatalogRow, LogisticsData, OrderRow, ProductTotal, TripRow } from "@/lib/logistics";
 
-type Tab = "orders" | "trips" | "calendar" | "config";
+type Tab = "orders" | "scheduled_orders" | "trips" | "calendar" | "completed_trips" | "config";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 2 });
@@ -81,7 +81,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
             vehiculo_id: (context.vehiculo_id as string | null) || null,
             driver_id: (context.driver_id as string | null) || null
           };
-          return { ...updated, estado: tripStatus(updated), hora_fin: tripEndTime(updated) };
+          return { ...updated, estado: (context.estado as string) || tripStatus(updated), hora_fin: tripEndTime(updated) };
         })
       });
       setError("");
@@ -194,13 +194,17 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
 
   const orders = data?.available_orders || [];
   const trips = data?.trips || [];
+  const activeTrips = trips.filter((trip) => !["completado", "cancelado"].includes(trip.estado));
+  const completedTrips = trips.filter((trip) => trip.estado === "completado");
+  const pendingOrders = orders.filter((order) => !order.logistics_assignment);
+  const scheduledOrders = orders.filter((order) => order.logistics_assignment);
 
   return (
     <div className="mx-auto max-w-7xl px-3 py-4 sm:px-5">
       <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-ink">{companyName}</h1>
-          <p className="text-sm text-slate-600">{orders.length} pedidos ERP · {trips.length} viajes activos</p>
+          <p className="text-sm text-slate-600">{pendingOrders.length} pedidos por programar · {activeTrips.length} viajes vivos · {completedTrips.length} terminados</p>
         </div>
         <button onClick={refresh} className="btn-soft" disabled={busy === "refresh"}>
           <RefreshCw size={16} />
@@ -210,29 +214,33 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
 
       {error && <div className="mt-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <nav className="mt-4 grid grid-cols-4 gap-2">
+      <nav className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
         <TabButton active={tab === "orders"} onClick={() => setTab("orders")} icon={<PackagePlus size={17} />} label="Pedidos" />
+        <TabButton active={tab === "scheduled_orders"} onClick={() => setTab("scheduled_orders")} icon={<Clock size={17} />} label="Programados" />
         <TabButton active={tab === "trips"} onClick={() => setTab("trips")} icon={<Truck size={17} />} label="Viajes" />
         <TabButton active={tab === "calendar"} onClick={() => setTab("calendar")} icon={<CalendarDays size={17} />} label="Calendario" />
+        <TabButton active={tab === "completed_trips"} onClick={() => setTab("completed_trips")} icon={<Archive size={17} />} label="Terminados" />
         <TabButton active={tab === "config"} onClick={() => setTab("config")} icon={<Settings size={17} />} label="Config" />
       </nav>
 
       <section className="mt-4">
         {tab === "orders" && (
           <OrdersTab
-            orders={orders}
+            orders={pendingOrders}
             selectedOrders={selectedOrders}
             setSelectedOrders={setSelectedOrders}
             createTrip={createTrip}
             assignToExistingTrip={assignToExistingTrip}
-            trips={trips}
+            trips={activeTrips}
             targetTripId={targetTripId}
             setTargetTripId={setTargetTripId}
             busy={busy}
           />
         )}
-        {tab === "trips" && <TripsTab trips={trips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} />}
-        {tab === "calendar" && <CalendarTab trips={trips} />}
+        {tab === "scheduled_orders" && <ScheduledOrdersTab orders={scheduledOrders} />}
+        {tab === "trips" && <TripsTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} />}
+        {tab === "calendar" && <CalendarTab trips={activeTrips} />}
+        {tab === "completed_trips" && <CompletedTripsTab trips={completedTrips} action={action} busy={busy} />}
         {tab === "config" && <ConfigTab catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} />}
       </section>
     </div>
@@ -338,6 +346,40 @@ function OrdersTab({
   );
 }
 
+function ScheduledOrdersTab({ orders }: { orders: OrderRow[] }) {
+  return (
+    <div className="grid gap-3">
+      {orders.map((order) => (
+        <div key={order.id} className="border border-line bg-white p-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="font-mono text-sm font-bold text-ink">{order.folio}</p>
+            <p className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</p>
+            <span className="rounded-full bg-steel/10 px-2 py-1 text-xs font-bold text-steel">
+              {order.logistics_assignment?.trip_folio} · {order.logistics_assignment?.trip_estado}
+            </span>
+          </div>
+          {order.logistics_assignment && (
+            <div className="mt-2 grid gap-2 text-xs text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
+              <span><strong className="text-ink">Fecha:</strong> {order.logistics_assignment.fecha_viaje || "Sin fecha"}</span>
+              <span><strong className="text-ink">Horario:</strong> {tripScheduleLabel(order.logistics_assignment)}</span>
+              <span><strong className="text-ink">Unidad:</strong> {order.logistics_assignment.vehiculo_nombre || "Sin vehiculo"}</span>
+              <span><strong className="text-ink">Chofer:</strong> {order.logistics_assignment.driver_nombre || "Sin chofer"}</span>
+            </div>
+          )}
+          <div className="mt-2 grid gap-2 text-xs text-slate-600 sm:grid-cols-5">
+            <span>{order.fecha_entrega || "Sin entrega"}</span>
+            <span>{number.format(order.peso_kg || 0)} kg</span>
+            <span>{order.partida_1 || "-"}</span>
+            <span>{order.partida_2 || order.partida_3 || "-"}</span>
+            <span className="font-semibold text-ink">{money.format(order.importe || 0)}</span>
+          </div>
+        </div>
+      ))}
+      {!orders.length && <Empty label="Sin pedidos programados" />}
+    </div>
+  );
+}
+
 function TripsTab({
   trips,
   catalogs,
@@ -415,10 +457,16 @@ function TripPanel({
           <Select value={vehicle} onChange={setVehicle} rows={catalogs.vehicles} placeholder="Vehiculo" />
           <Select value={driver} onChange={setDriver} rows={catalogs.drivers} placeholder="Chofer" />
         </div>
-        <button onClick={save} disabled={Boolean(busy)} className="btn-soft mt-3 w-full sm:w-auto">
-          <Clock size={16} />
-          Guardar programacion
-        </button>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <button onClick={save} disabled={Boolean(busy)} className="btn-soft w-full sm:w-auto">
+            <Clock size={16} />
+            Guardar programacion
+          </button>
+          <button onClick={() => action("manage_trip", { trip_id: trip.id, estado: "completado" })} disabled={Boolean(busy)} className="btn-primary w-full sm:w-auto">
+            <Check size={16} />
+            Terminar viaje
+          </button>
+        </div>
       </header>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] border-collapse text-sm">
@@ -490,6 +538,30 @@ function TripPanel({
   );
 }
 
+function CompletedTripsTab({ trips, action, busy }: { trips: TripRow[]; action: (name: string, context: Record<string, unknown>) => Promise<boolean>; busy: string }) {
+  return (
+    <div className="grid gap-4">
+      {trips.map((trip) => (
+        <article key={trip.id} className="border border-line bg-white shadow-sm">
+          <header className="flex flex-col gap-3 border-b border-line p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-mono text-lg font-bold text-ink">{trip.folio}</p>
+              <p className="text-sm text-slate-600">
+                {trip.fecha_viaje || "Sin fecha"} · {trip.hora_inicio?.slice(0, 5) || "--:--"}-{trip.hora_fin || "--:--"} · {trip.summary.orders_count} pedidos · {number.format(trip.summary.peso_total_kg)} kg · {money.format(trip.summary.importe_total)}
+              </p>
+            </div>
+            <button onClick={() => action("manage_trip", { trip_id: trip.id, estado: "programado" })} disabled={Boolean(busy)} className="btn-soft w-full sm:w-auto">
+              Regresar a viajes
+            </button>
+          </header>
+          <TripOrdersMiniTable orders={trip.orders} />
+        </article>
+      ))}
+      {!trips.length && <Empty label="Sin viajes terminados" />}
+    </div>
+  );
+}
+
 function CalendarTab({ trips }: { trips: TripRow[] }) {
   const days = useMemo(() => {
     const grouped = new Map<string, TripRow[]>();
@@ -510,23 +582,50 @@ function CalendarTab({ trips }: { trips: TripRow[] }) {
                 <p className="font-mono font-bold">{trip.hora_inicio?.slice(0, 5) || "--:--"}-{trip.hora_fin || "--:--"} · {trip.folio}</p>
                 <p className="text-sm text-slate-600">{trip.summary.orders_count} pedidos · {number.format(trip.summary.peso_total_kg)} kg · {money.format(trip.summary.importe_total)}</p>
                 <ProductTotals products={trip.summary.key_products} compact />
-                <div className="mt-3 grid gap-2">
-                  {trip.orders.map((order) => (
-                    <div key={order.id} className="grid gap-1 border border-line bg-white px-3 py-2 text-xs sm:grid-cols-[110px_1fr_110px_110px] sm:items-center">
-                      <span className="font-mono font-bold text-ink">{order.folio}</span>
-                      <span className="min-w-0 truncate font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</span>
-                      <span className="text-slate-600">{number.format(order.peso_kg || 0)} kg</span>
-                      <span className="font-semibold text-ink sm:text-right">{money.format(order.importe || 0)}</span>
-                      {order.fecha_entrega && <span className="text-slate-500 sm:col-span-4">Entrega: {order.fecha_entrega}</span>}
-                    </div>
-                  ))}
-                </div>
+                <TripOrdersMiniTable orders={trip.orders} />
               </div>
             ))}
           </div>
         </section>
       ))}
       {!days.length && <Empty label="Sin viajes programados" />}
+    </div>
+  );
+}
+
+function TripOrdersMiniTable({ orders }: { orders: OrderRow[] }) {
+  return (
+    <div className="mt-3 overflow-x-auto border border-line bg-white">
+      <table className="w-full min-w-[860px] border-collapse text-[11px]">
+        <thead className="bg-slate-50 text-left uppercase text-slate-500">
+          <tr>
+            <th className="px-2 py-2">Pedido</th>
+            <th className="px-2 py-2">Cliente</th>
+            <th className="px-2 py-2">Entrega</th>
+            <th className="px-2 py-2">Peso</th>
+            <th className="px-2 py-2">Partida 1</th>
+            <th className="px-2 py-2">Partida 2</th>
+            <th className="px-2 py-2">Partida 3</th>
+            <th className="px-2 py-2">Otras</th>
+            <th className="px-2 py-2 text-right">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => (
+            <tr key={order.id} className="border-t border-line">
+              <td className="px-2 py-2 font-mono font-bold text-ink">{order.folio}</td>
+              <td className="max-w-56 truncate px-2 py-2 font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</td>
+              <td className="px-2 py-2 text-slate-600">{order.fecha_entrega || "-"}</td>
+              <td className="px-2 py-2 text-slate-600">{number.format(order.peso_kg || 0)} kg</td>
+              <td className="max-w-40 truncate px-2 py-2 text-slate-600">{order.partida_1 || "-"}</td>
+              <td className="max-w-40 truncate px-2 py-2 text-slate-600">{order.partida_2 || "-"}</td>
+              <td className="max-w-40 truncate px-2 py-2 text-slate-600">{order.partida_3 || "-"}</td>
+              <td className="max-w-40 truncate px-2 py-2 text-slate-600">{order.otras_partidas || "-"}</td>
+              <td className="px-2 py-2 text-right font-semibold text-ink">{money.format(order.importe || 0)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

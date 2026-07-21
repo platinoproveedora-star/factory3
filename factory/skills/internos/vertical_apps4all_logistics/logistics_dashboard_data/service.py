@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared import ACTIVE_TRIP_STATUS, attach_orders_to_trips, list_catalogs, list_orders, list_trip_orders, list_trips, resolve_context, trip_end_time
+from _shared import attach_orders_to_trips, list_catalogs, list_orders, list_trip_orders, list_trips, resolve_context, trip_end_time
 
 
 class LogisticsDashboardDataService:
@@ -25,7 +25,7 @@ class LogisticsDashboardDataService:
         assignment_by_order = {}
         for link in trip_orders:
             trip = trips_by_id.get(str(link.get("trip_id")))
-            if not trip or str(trip.get("estado") or "") not in ACTIVE_TRIP_STATUS:
+            if not trip or str(trip.get("estado") or "") == "cancelado":
                 continue
             vehicle = vehicles_by_id.get(str(trip.get("vehiculo_id") or ""))
             driver = drivers_by_id.get(str(trip.get("driver_id") or ""))
