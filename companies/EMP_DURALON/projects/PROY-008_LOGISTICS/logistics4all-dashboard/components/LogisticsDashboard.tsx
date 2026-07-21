@@ -930,6 +930,7 @@ function CalendarProductMatrix({ trip }: { trip: TripRow }) {
             ))}
             <th className="px-2 py-2 text-right">Peso</th>
             <th className="px-2 py-2 text-right">Importe</th>
+            <th className="px-2 py-2">Lugar de entrega</th>
           </tr>
         </thead>
         <tbody>
@@ -942,6 +943,7 @@ function CalendarProductMatrix({ trip }: { trip: TripRow }) {
               ))}
               <td className="px-2 py-2 text-right text-slate-600">{number.format(order.peso_kg || 0)} kg</td>
               <td className="px-2 py-2 text-right font-semibold text-ink">{money.format(order.importe || 0)}</td>
+              <td className="max-w-72 px-2 py-2 text-slate-700">{order.delivery_address || order.city || "Sin lugar"}</td>
             </tr>
           ))}
         </tbody>
@@ -1026,7 +1028,7 @@ function openLogisticsDayPdf(day: string, trips: TripRow[], catalogs: LogisticsD
 
 function printableTripTable(trip: TripRow) {
   const products = topTripProducts(trip, 8);
-  return `<table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Peso</th><th>Importe</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td></tr>`).join("")}</tbody></table>${printableProductTotals(trip)}`;
+  return `<table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Peso</th><th>Importe</th><th>Lugar de entrega</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td><td>${escapeHtml(order.delivery_address || order.city || "Sin lugar")}</td></tr>`).join("")}</tbody></table>${printableProductTotals(trip)}`;
 }
 
 function printableProductTotals(trip: TripRow) {

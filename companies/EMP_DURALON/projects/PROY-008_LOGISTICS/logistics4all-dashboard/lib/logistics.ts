@@ -21,6 +21,7 @@ export type OrderRow = {
   external_folio?: string | null;
   customer_name_snapshot?: string | null;
   fecha_entrega?: string | null;
+  delivery_address?: string | null;
   city?: string | null;
   city_quadrant?: string | null;
   peso_kg?: number;
