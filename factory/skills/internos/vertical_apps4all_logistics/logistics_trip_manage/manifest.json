@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_logistics/logistics_trip_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Edita fecha, hora, duracion, vehiculo, chofer, estado, peso por pedido y notas de viajes Logistics4All.",
+  "requires_env": ["SUPABASE_URL"]
+}

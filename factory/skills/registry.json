@@ -5612,5 +5612,80 @@
     "path": "skills/internos/vertical_fleet4all_cartaporte/pac_stamp",
     "entrypoint": "skill.py",
     "version": "0.1.0"
+  },
+  "vertical_apps4all_logistics/logistics_calendar_data": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_logistics/logistics_calendar_data",
+    "vertical": "vertical_apps4all_logistics",
+    "descripcion": "Devuelve viajes programados por dia para calendario tipo agenda.",
+    "path": "skills/internos/vertical_apps4all_logistics/logistics_calendar_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "data"
+  },
+  "vertical_apps4all_logistics/logistics_catalog_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_logistics/logistics_catalog_manage",
+    "vertical": "vertical_apps4all_logistics",
+    "descripcion": "Lista y administra vehiculos, choferes y productos clave de Logistics4All.",
+    "path": "skills/internos/vertical_apps4all_logistics/logistics_catalog_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_logistics/logistics_dashboard_data": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_logistics/logistics_dashboard_data",
+    "vertical": "vertical_apps4all_logistics",
+    "descripcion": "Datos para dashboard Logistics4All: pedidos disponibles, viajes, catálogos y configuración.",
+    "path": "skills/internos/vertical_apps4all_logistics/logistics_dashboard_data",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "data"
+  },
+  "vertical_apps4all_logistics/logistics_schema_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_logistics/logistics_schema_setup",
+    "vertical": "vertical_apps4all_logistics",
+    "descripcion": "Genera o aplica el schema multiempresa de Logistics4All. dry_run=True devuelve SQL sin ejecutar.",
+    "path": "skills/internos/vertical_apps4all_logistics/logistics_schema_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_logistics/logistics_trip_assign_orders": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_logistics/logistics_trip_assign_orders",
+    "vertical": "vertical_apps4all_logistics",
+    "descripcion": "Asigna o quita pedidos de un viaje Logistics4All. dry_run=True por defecto.",
+    "path": "skills/internos/vertical_apps4all_logistics/logistics_trip_assign_orders",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_logistics/logistics_trip_create": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_logistics/logistics_trip_create",
+    "vertical": "vertical_apps4all_logistics",
+    "descripcion": "Crea un viaje Logistics4All y opcionalmente asigna pedidos seleccionados. dry_run=True por defecto.",
+    "path": "skills/internos/vertical_apps4all_logistics/logistics_trip_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_logistics/logistics_trip_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_logistics/logistics_trip_manage",
+    "vertical": "vertical_apps4all_logistics",
+    "descripcion": "Edita fecha, hora, duracion, vehiculo, chofer, estado, peso por pedido y notas de viajes Logistics4All.",
+    "path": "skills/internos/vertical_apps4all_logistics/logistics_trip_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_apps4all_logistics/logistics_trip_summary": {
+    "tipo": "interno",
+    "nombre": "vertical_apps4all_logistics/logistics_trip_summary",
+    "vertical": "vertical_apps4all_logistics",
+    "descripcion": "Devuelve resumen tipo Excel de un viaje: renglones por pedido, partidas y totales por producto.",
+    "path": "skills/internos/vertical_apps4all_logistics/logistics_trip_summary",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "data"
   }
 }

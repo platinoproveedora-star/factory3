@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_logistics/logistics_trip_assign_orders",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Asigna o quita pedidos de un viaje Logistics4All. dry_run=True por defecto.",
+  "requires_env": ["SUPABASE_URL"]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "logistics4all",
+  "company_id": "EMP_DURALON",
+  "project_code": "PROY-008",
+  "module_code": "logistics",
+  "platform": "vercel",
+  "factory_api": true
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_logistics/logistics_trip_summary",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Devuelve resumen tipo Excel de un viaje: renglones por pedido, partidas y totales por producto.",
+  "requires_env": ["SUPABASE_URL"]
+}

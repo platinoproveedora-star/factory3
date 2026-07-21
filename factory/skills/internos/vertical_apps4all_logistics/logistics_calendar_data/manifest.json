@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_logistics/logistics_calendar_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Devuelve viajes programados por dia para calendario tipo agenda.",
+  "requires_env": ["SUPABASE_URL"]
+}

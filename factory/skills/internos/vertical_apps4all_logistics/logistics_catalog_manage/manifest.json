@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_logistics/logistics_catalog_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Lista y administra vehiculos, choferes y productos clave de Logistics4All.",
+  "requires_env": ["SUPABASE_URL"]
+}

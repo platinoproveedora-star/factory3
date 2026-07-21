@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_logistics/logistics_schema_setup",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera o aplica el schema multiempresa de Logistics4All. dry_run=True devuelve SQL sin ejecutar.",
+  "requires_env": ["SUPABASE_URL"]
+}

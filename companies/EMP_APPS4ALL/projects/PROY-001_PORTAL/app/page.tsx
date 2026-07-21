@@ -60,6 +60,13 @@ const MODULES: Record<string, { title: string; description: string; href: string
     href: process.env.NEXT_PUBLIC_FLEET4ALL_URL || "#",
     icon: Truck,
     external: true
+  },
+  logistics: {
+    title: "Logistics4All",
+    description: "Viajes, pedidos, programacion y calendario logistico.",
+    href: process.env.NEXT_PUBLIC_LOGISTICS4ALL_URL || "#",
+    icon: Truck,
+    external: true
   }
 };
 

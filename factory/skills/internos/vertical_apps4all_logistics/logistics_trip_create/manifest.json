@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_logistics/logistics_trip_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea un viaje Logistics4All y opcionalmente asigna pedidos seleccionados. dry_run=True por defecto.",
+  "requires_env": ["SUPABASE_URL"]
+}

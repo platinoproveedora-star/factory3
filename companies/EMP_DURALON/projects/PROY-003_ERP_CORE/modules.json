@@ -83,6 +83,21 @@
       "dashboard_url": null,
       "depends_on": [],
       "notes": "Modulo generico de bancos: schema uc101_proy006 aplicado y expuesto; tablas/RPCs verificadas. Billing/compras/reconciliation deben llamar a Banks, no duplicar saldos."
+    },
+    {
+      "project_code": "PROY-008",
+      "module_code": "logistics",
+      "project_name": "Logistics4All",
+      "status": "in_progress",
+      "erp_ready": true,
+      "schema": "uc101_proy008",
+      "folder": "companies/EMP_DURALON/projects/PROY-008_LOGISTICS",
+      "dashboard_url": null,
+      "depends_on": [
+        "PROY-002",
+        "PROY-004"
+      ],
+      "notes": "Modulo Apps4All multiempresa para crear viajes desde pedidos PROY-002, programar fecha/hora/duracion, vehiculo y chofer, y operar calendario logistico."
     }
   ]
 }

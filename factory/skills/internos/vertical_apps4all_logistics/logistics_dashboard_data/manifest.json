@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_apps4all_logistics/logistics_dashboard_data",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Datos para dashboard Logistics4All: pedidos disponibles, viajes, catálogos y configuración.",
+  "requires_env": ["SUPABASE_URL"]
+}

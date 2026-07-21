@@ -1,0 +1,95 @@
+{
+  "company_id": "EMP_DURALON",
+  "legacy_client_id": "UC-101",
+  "project_code": "PROY-008",
+  "module_code": "logistics",
+  "project_name": "Logistics4All",
+  "product_name": "Logistics4All",
+  "status": "in_progress",
+  "erp_ready": true,
+  "erp_identity": {
+    "empresa_id": "EMP_DURALON",
+    "company_id": "EMP_DURALON",
+    "project_code": "PROY-008",
+    "module_code": "logistics",
+    "legacy_client_id": "UC-101",
+    "supabase_schema": "uc101_proy008"
+  },
+  "scope": "Modulo multiempresa y multiusuario para crear viajes manualmente desde pedidos ERP, programarlos por fecha/hora/duracion, asignar vehiculo y chofer, y ver calendario operativo tipo agenda.",
+  "schema": "uc101_proy008",
+  "supabase_schema": "uc101_proy008",
+  "sales_schema": "uc101_proy002",
+  "sales_project_code": "PROY-002",
+  "sales_module_code": "ventas",
+  "source_orders_contract": {
+    "schema": "uc101_proy002",
+    "documents_table": "sales_documents",
+    "items_table": "sales_document_items",
+    "available_statuses": [
+      "pedido",
+      "liberado"
+    ],
+    "date_field": "due_date",
+    "weight_field": "total_weight_kg",
+    "amount_field": "total"
+  },
+  "key_products": [
+    {
+      "key": "varilla_3_8",
+      "label": "Varilla 3/8"
+    },
+    {
+      "key": "varilla_1_2",
+      "label": "Varilla 1/2"
+    },
+    {
+      "key": "bron",
+      "label": "Bron"
+    },
+    {
+      "key": "cal",
+      "label": "Cal"
+    }
+  ],
+  "trip_defaults": {
+    "folio_prefix": "VIA",
+    "duration_minutes": 120,
+    "timezone": "America/Mexico_City"
+  },
+  "trip_statuses": [
+    "borrador",
+    "programado",
+    "confirmado",
+    "en_ruta",
+    "completado",
+    "cancelado"
+  ],
+  "dashboard_folder": "companies/EMP_DURALON/projects/PROY-008_LOGISTICS/logistics4all-dashboard",
+  "dashboard_vercel_project": "logistics4all",
+  "platform": "vercel",
+  "requires_env": [
+    "FACTORY_API_URL",
+    "FACTORY_RUN_SECRET",
+    "PLATFORM_JWT_SECRET",
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "roles": [
+    "platform_admin",
+    "company_admin",
+    "logistics_operator",
+    "viewer"
+  ],
+  "depends_on": [
+    "PROY-002",
+    "PROY-004"
+  ],
+  "deliverables": [
+    "Skills Factory3 reusable vertical_apps4all_logistics",
+    "Schema dry-run multiempresa para viajes, asignaciones, vehiculos, choferes y configuracion",
+    "Dashboard Vercel mobile/tablet con selector de empresa",
+    "Adapter de lectura sobre PROY-002 ventas sin duplicar pedidos"
+  ],
+  "created_at": "2026-07-20T00:00:00Z",
+  "updated_at": "2026-07-20T00:00:00Z"
+}
