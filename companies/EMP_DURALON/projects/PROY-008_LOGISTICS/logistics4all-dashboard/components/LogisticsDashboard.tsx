@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Archive, CalendarDays, Check, Clock, PackagePlus, Plus, RefreshCw, Settings, Truck } from "lucide-react";
+import { Archive, CalendarDays, Check, Clock, PackagePlus, Plus, RefreshCw, Save, Settings, Truck } from "lucide-react";
 import type { CatalogRow, LogisticsData, OrderRow, ProductTotal, TripRow } from "@/lib/logistics";
 
 type Tab = "orders" | "scheduled_orders" | "trips" | "calendar" | "completed_trips" | "config";
@@ -638,15 +638,15 @@ function ConfigTab({ catalogs, action, busy }: { catalogs: LogisticsData["catalo
   const [driver, setDriver] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-4">
       <section className="border border-line bg-white p-3">
         <h2 className="text-lg font-semibold">Vehiculos</h2>
-        <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_120px_120px_120px_auto]">
+        <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(180px,1fr)_120px_120px_120px_44px]">
           <input value={vehicle} onChange={(event) => setVehicle(event.target.value)} className="input" placeholder="Nombre" />
           <input value={vehiclePlate} onChange={(event) => setVehiclePlate(event.target.value)} className="input" placeholder="Placa" />
           <input value={vehicleType} onChange={(event) => setVehicleType(event.target.value)} className="input" placeholder="Tipo" />
           <input value={vehicleCapacity} onChange={(event) => setVehicleCapacity(event.target.value)} type="number" min="0" step="0.01" className="input" placeholder="Kg max" />
-          <button disabled={!vehicle || Boolean(busy)} onClick={async () => { if (await action("catalog_manage", { action: "create", catalog: "vehicle", nombre: vehicle, placa: vehiclePlate || null, tipo: vehicleType || null, capacidad_peso_kg: vehicleCapacity ? Number(vehicleCapacity) : null })) { setVehicle(""); setVehiclePlate(""); setVehicleType(""); setVehicleCapacity(""); } }} className="btn-primary px-3">
+          <button disabled={!vehicle || Boolean(busy)} onClick={async () => { if (await action("catalog_manage", { action: "create", catalog: "vehicle", nombre: vehicle, placa: vehiclePlate || null, tipo: vehicleType || null, capacidad_peso_kg: vehicleCapacity ? Number(vehicleCapacity) : null })) { setVehicle(""); setVehiclePlate(""); setVehicleType(""); setVehicleCapacity(""); } }} className="btn-primary h-10 w-11 justify-center px-0" title="Agregar vehiculo" aria-label="Agregar vehiculo">
             <Plus size={16} />
           </button>
         </div>
@@ -654,16 +654,16 @@ function ConfigTab({ catalogs, action, busy }: { catalogs: LogisticsData["catalo
       </section>
       <section className="border border-line bg-white p-3">
         <h2 className="text-lg font-semibold">Choferes</h2>
-        <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_150px_auto]">
+        <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(180px,1fr)_170px_44px]">
           <input value={driver} onChange={(event) => setDriver(event.target.value)} className="input" placeholder="Nombre" />
           <input value={driverPhone} onChange={(event) => setDriverPhone(event.target.value)} className="input" placeholder="Telefono" />
-          <button disabled={!driver || Boolean(busy)} onClick={async () => { if (await action("catalog_manage", { action: "create", catalog: "driver", nombre: driver, telefono: driverPhone || null })) { setDriver(""); setDriverPhone(""); } }} className="btn-primary px-3">
+          <button disabled={!driver || Boolean(busy)} onClick={async () => { if (await action("catalog_manage", { action: "create", catalog: "driver", nombre: driver, telefono: driverPhone || null })) { setDriver(""); setDriverPhone(""); } }} className="btn-primary h-10 w-11 justify-center px-0" title="Agregar chofer" aria-label="Agregar chofer">
             <Plus size={16} />
           </button>
         </div>
         <CatalogEditor catalog="driver" rows={catalogs.drivers} action={action} busy={busy} />
       </section>
-      <section className="border border-line bg-white p-3 lg:col-span-2">
+      <section className="border border-line bg-white p-3">
         <h2 className="text-lg font-semibold">Productos clave</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {catalogs.product_config.map((row) => (
@@ -720,9 +720,14 @@ function CatalogEditorRow({ catalog, row, action, busy }: { catalog: "vehicle" |
   return (
     <div className="border border-line bg-slate-50 p-3">
       <div className="grid gap-2">
-        <input value={nombre} onChange={(event) => setNombre(event.target.value)} className="input min-h-10 font-semibold" placeholder="Nombre" />
+        <div className="grid grid-cols-[minmax(0,1fr)_44px] gap-2">
+          <input value={nombre} onChange={(event) => setNombre(event.target.value)} className="input min-h-10 font-semibold" placeholder="Nombre" />
+          <button onClick={save} disabled={!nombre || Boolean(busy)} className="btn-soft h-10 w-11 justify-center px-0" title="Guardar cambios" aria-label="Guardar cambios">
+            <Save size={16} />
+          </button>
+        </div>
         {catalog === "vehicle" ? (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[120px_120px_120px_150px_90px_auto]">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[140px_140px_140px_180px_110px]">
             <input value={placa} onChange={(event) => setPlaca(event.target.value)} className="input h-9" placeholder="Placa" />
             <input value={tipo} onChange={(event) => setTipo(event.target.value)} className="input h-9" placeholder="Tipo" />
             <input value={capacidad} onChange={(event) => setCapacidad(event.target.value)} type="number" min="0" step="0.01" className="input h-9" placeholder="Kg max" />
@@ -736,12 +741,9 @@ function CatalogEditorRow({ catalog, row, action, busy }: { catalog: "vehicle" |
               <input type="checkbox" checked={activo} onChange={(event) => setActivo(event.target.checked)} />
               Activo
             </label>
-            <button onClick={save} disabled={!nombre || Boolean(busy)} className="btn-soft min-h-9 px-3">
-              Guardar
-            </button>
           </div>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-[1fr_130px_90px_auto]">
+          <div className="grid gap-2 sm:grid-cols-[minmax(180px,1fr)_150px_110px]">
             <input value={telefono} onChange={(event) => setTelefono(event.target.value)} className="input h-9" placeholder="Telefono" />
             <select value={status} onChange={(event) => setStatus(event.target.value)} className="input h-9">
               <option value="activo">Activo</option>
@@ -751,9 +753,6 @@ function CatalogEditorRow({ catalog, row, action, busy }: { catalog: "vehicle" |
               <input type="checkbox" checked={activo} onChange={(event) => setActivo(event.target.checked)} />
               Activo
             </label>
-            <button onClick={save} disabled={!nombre || Boolean(busy)} className="btn-soft min-h-9 px-3">
-              Guardar
-            </button>
           </div>
         )}
       </div>
