@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_ventas/erp_ventas_pedido_cancel",
+  "vertical": "vertical_erp_ventas",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "descripcion": "Cancela un pedido ERP de ventas que aun no fue remisionado, sin tocar inventario.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

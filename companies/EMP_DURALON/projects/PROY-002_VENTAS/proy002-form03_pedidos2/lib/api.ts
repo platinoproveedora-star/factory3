@@ -193,6 +193,10 @@ export async function pedidoToRemision(payload: { pedido_id: string; document_da
   return post('vertical_erp_ventas/erp_ventas_pedido_to_remision', { ...payload, dry_run: false });
 }
 
+export async function cancelPedido(payload: { id: string; cancel_reason?: string }): Promise<{ pedido: Pedido }> {
+  return post('vertical_erp_ventas/erp_ventas_pedido_cancel', { ...payload, dry_run: false });
+}
+
 export async function getPedidoPdfHtml(folio: string): Promise<string> {
   const data = await get<{ html: string }>('vertical_erp_ventas/erp_ventas_pedido_pdf', { folio });
   return data.html;

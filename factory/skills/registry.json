@@ -335,6 +335,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_ventas/erp_ventas_pedido_cancel": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_pedido_cancel",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Cancela un pedido ERP que aun no fue remisionado, sin afectar inventario.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_pedido_cancel",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_ventas/erp_ventas_pedido_pdf": {
     "tipo": "interno",
     "nombre": "vertical_erp_ventas/erp_ventas_pedido_pdf",

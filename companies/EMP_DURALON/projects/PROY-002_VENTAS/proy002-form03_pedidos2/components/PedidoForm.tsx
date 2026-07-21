@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  cancelPedido,
   createPedido,
   editableStatus,
   emptyItem,
@@ -339,6 +340,31 @@ export default function PedidoForm() {
     }
   }
 
+  async function cancelPedidoAction() {
+    if (!current) return;
+    setError('');
+    setNotice('');
+    if (!isEditable) {
+      setError('Este pedido ya esta bloqueado.');
+      return;
+    }
+    const reason = window.prompt('Motivo de cancelacion (opcional):');
+    if (reason === null) return;
+    const ok = window.confirm(`Cancelar ${current.folio}? Esta accion no se puede deshacer.`);
+    if (!ok) return;
+    setBusy('Cancelando pedido');
+    try {
+      const response = await cancelPedido({ id: current.id, cancel_reason: reason || undefined });
+      setCurrent(response.pedido);
+      setNotice(`${current.folio} cancelado.`);
+      await refreshPedidos();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo cancelar pedido');
+    } finally {
+      setBusy('');
+    }
+  }
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center px-5">
@@ -542,7 +568,12 @@ export default function PedidoForm() {
             {selectedRemisionFolio && <button type="button" onClick={() => openRemisionPdf(selectedRemisionFolio)} className="h-10 rounded border border-slate-200 px-3 text-xs font-bold text-slate-700">Remision</button>}
           </div>
           {isEditable ? (
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid gap-2 ${current ? 'grid-cols-3' : 'grid-cols-2'}`}>
+              {current && (
+                <button type="button" disabled={Boolean(busy)} onClick={cancelPedidoAction} className="h-12 rounded border border-red-300 text-sm font-bold text-red-700 disabled:opacity-50">
+                  Cancelar
+                </button>
+              )}
               <button type="button" disabled={Boolean(busy)} onClick={savePedido} className="h-12 rounded border border-slate-300 text-sm font-bold text-slate-800 disabled:opacity-50">
                 {busy ? busy : current ? 'Guardar cambios' : 'Generar pedido'}
               </button>
@@ -563,7 +594,14 @@ export default function PedidoForm() {
 
 function StatusPill({ status }: { status?: string }) {
   const label = status || 'nuevo';
-  const tone = status === 'remisionado' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : status === 'liberado' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-slate-50 text-slate-700 border-slate-200';
+  const tone =
+    status === 'remisionado'
+      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+      : status === 'liberado'
+        ? 'bg-amber-50 text-amber-800 border-amber-200'
+        : status === 'cancelado'
+          ? 'bg-red-50 text-red-700 border-red-200'
+          : 'bg-slate-50 text-slate-700 border-slate-200';
   return <span className={`rounded-full border px-2 py-1 text-[11px] font-bold uppercase ${tone}`}>{label}</span>;
 }
 
