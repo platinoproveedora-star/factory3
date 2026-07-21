@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { Archive, CalendarDays, Check, Clock, PackagePlus, Plus, RefreshCw, Save, Settings, Truck } from "lucide-react";
 import type { CatalogRow, LogisticsData, OrderRow, ProductTotal, TripRow } from "@/lib/logistics";
 
@@ -239,7 +240,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
         )}
         {tab === "scheduled_orders" && <ScheduledOrdersTab orders={scheduledOrders} />}
         {tab === "trips" && <TripsTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} />}
-        {tab === "calendar" && <CalendarTab trips={activeTrips} />}
+        {tab === "calendar" && <CalendarTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} companyId={companyId} refresh={refresh} setError={setError} />}
         {tab === "completed_trips" && <CompletedTripsTab trips={completedTrips} action={action} busy={busy} />}
         {tab === "config" && <ConfigTab catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} />}
       </section>
@@ -663,7 +664,7 @@ function CompletedTripsTab({ trips, action, busy }: { trips: TripRow[]; action: 
               Regresar a viajes
             </button>
           </header>
-          <TripOrdersMiniTable orders={trip.orders} />
+          <CalendarProductMatrix trip={trip} />
         </article>
       ))}
       {!trips.length && <Empty label="Sin viajes terminados" />}
@@ -671,7 +672,19 @@ function CompletedTripsTab({ trips, action, busy }: { trips: TripRow[]; action: 
   );
 }
 
-function CalendarTab({ trips }: { trips: TripRow[] }) {
+function CalendarTab({
+  trips,
+  catalogs,
+  companyId,
+  refresh,
+  setError
+}: {
+  trips: TripRow[];
+  catalogs: LogisticsData["catalogs"];
+  companyId: string;
+  refresh: () => Promise<void>;
+  setError: (value: string) => void;
+}) {
   const days = useMemo(() => {
     const grouped = new Map<string, TripRow[]>();
     trips.filter((trip) => trip.fecha_viaje).forEach((trip) => {
@@ -680,18 +693,66 @@ function CalendarTab({ trips }: { trips: TripRow[] }) {
     });
     return Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [trips]);
+  const vehicleIndex = useMemo(() => new Map(catalogs.vehicles.map((row, index) => [row.id, index])), [catalogs.vehicles]);
+
+  async function remisionarTrip(trip: TripRow, hidePrices: boolean) {
+    if (!trip.orders.length) return;
+    const ok = window.confirm(`Remisionar ${trip.orders.length} pedidos de ${trip.folio}?`);
+    if (!ok) return;
+    setError("");
+    const remisiones: string[] = [];
+    for (const order of trip.orders) {
+      const res = await fetch("/api/logistics/action", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "pedido_to_remision",
+          company_id: companyId,
+          dry_run: false,
+          context: {
+            pedido_id: order.id,
+            document_date: trip.fecha_viaje || undefined,
+            notes: `Remision generada desde viaje ${trip.folio}`
+          }
+        })
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        setError(json.error || `No se pudo remisionar ${order.folio}`);
+        await refresh();
+        return;
+      }
+      const folio = String(json.data?.remision?.folio || json.data?.remision?.document?.folio || "");
+      if (folio) remisiones.push(folio);
+    }
+    await refresh();
+    for (const folio of remisiones) {
+      await openRemisionPdf(companyId, folio, hidePrices);
+    }
+  }
   return (
     <div className="grid gap-4">
       {days.map(([day, rows]) => (
         <section key={day} className="border border-line bg-white">
-          <h2 className="border-b border-line px-3 py-2 text-lg font-semibold">{day}</h2>
+          <header className="flex flex-col gap-2 border-b border-line px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-semibold">{day}</h2>
+            <button onClick={() => openLogisticsDayPdf(day, rows, catalogs)} className="btn-soft w-full sm:w-auto">
+              PDF del dia
+            </button>
+          </header>
           <div className="grid gap-3 p-3">
             {rows.map((trip) => (
-              <div key={trip.id} className="border-l-4 border-steel bg-slate-50 p-3">
+              <div key={trip.id} className="border-l-4 p-3" style={vehicleColorStyle(vehicleIndex.get(String(trip.vehiculo_id || "")) ?? 0)}>
                 <p className="font-mono font-bold">{trip.hora_inicio?.slice(0, 5) || "--:--"}-{trip.hora_fin || "--:--"} · {trip.folio}</p>
                 <p className="text-sm text-slate-600">{trip.summary.orders_count} pedidos · {number.format(trip.summary.peso_total_kg)} kg · {money.format(trip.summary.importe_total)}</p>
+                <p className="text-xs font-semibold text-slate-600">{vehicleName(catalogs.vehicles, trip.vehiculo_id) || "Sin vehiculo"}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button onClick={() => remisionarTrip(trip, false)} className="btn-soft px-3 text-xs">Remisionar $</button>
+                  <button onClick={() => remisionarTrip(trip, true)} className="btn-soft px-3 text-xs">Remisionar sin $</button>
+                </div>
                 <ProductTotals products={trip.summary.key_products} compact />
-                <TripOrdersMiniTable orders={trip.orders} />
+                <CalendarProductMatrix trip={trip} />
               </div>
             ))}
           </div>
@@ -702,34 +763,31 @@ function CalendarTab({ trips }: { trips: TripRow[] }) {
   );
 }
 
-function TripOrdersMiniTable({ orders }: { orders: OrderRow[] }) {
+function CalendarProductMatrix({ trip }: { trip: TripRow }) {
+  const products = topTripProducts(trip, 6);
   return (
     <div className="mt-3 overflow-x-auto border border-line bg-white">
-      <table className="w-full min-w-[860px] border-collapse text-[11px]">
+      <table className="w-full min-w-[900px] border-collapse text-[11px]">
         <thead className="bg-slate-50 text-left uppercase text-slate-500">
           <tr>
             <th className="px-2 py-2">Pedido</th>
             <th className="px-2 py-2">Cliente</th>
-            <th className="px-2 py-2">Entrega</th>
-            <th className="px-2 py-2">Peso</th>
-            <th className="px-2 py-2">Partida 1</th>
-            <th className="px-2 py-2">Partida 2</th>
-            <th className="px-2 py-2">Partida 3</th>
-            <th className="px-2 py-2">Otras</th>
+            {products.map((product) => (
+              <th key={product.key} className="px-2 py-2 text-right">{product.label}</th>
+            ))}
+            <th className="px-2 py-2 text-right">Peso</th>
             <th className="px-2 py-2 text-right">Importe</th>
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => (
+          {trip.orders.map((order) => (
             <tr key={order.id} className="border-t border-line">
               <td className="px-2 py-2 font-mono font-bold text-ink">{order.folio}</td>
               <td className="max-w-56 truncate px-2 py-2 font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</td>
-              <td className="px-2 py-2 text-slate-600">{order.fecha_entrega || "-"}</td>
-              <td className="px-2 py-2 text-slate-600">{number.format(order.peso_kg || 0)} kg</td>
-              <td className="max-w-40 truncate px-2 py-2 text-slate-600">{order.partida_1 || "-"}</td>
-              <td className="max-w-40 truncate px-2 py-2 text-slate-600">{order.partida_2 || "-"}</td>
-              <td className="max-w-40 truncate px-2 py-2 text-slate-600">{order.partida_3 || "-"}</td>
-              <td className="max-w-40 truncate px-2 py-2 text-slate-600">{order.otras_partidas || "-"}</td>
+              {products.map((product) => (
+                <td key={product.key} className="px-2 py-2 text-right text-slate-700">{productQty(order, product.key)}</td>
+              ))}
+              <td className="px-2 py-2 text-right text-slate-600">{number.format(order.peso_kg || 0)} kg</td>
               <td className="px-2 py-2 text-right font-semibold text-ink">{money.format(order.importe || 0)}</td>
             </tr>
           ))}
@@ -737,6 +795,91 @@ function TripOrdersMiniTable({ orders }: { orders: OrderRow[] }) {
       </table>
     </div>
   );
+}
+
+function vehicleName(vehicles: CatalogRow[], id?: string | null) {
+  return vehicles.find((row) => row.id === id)?.nombre || "";
+}
+
+function vehicleColorStyle(index: number): CSSProperties {
+  const colors = [
+    { borderColor: "#7aa6b8", backgroundColor: "#edf6f8" },
+    { borderColor: "#c6a46b", backgroundColor: "#fbf6eb" },
+    { borderColor: "#91b58a", backgroundColor: "#f1f8ef" },
+    { borderColor: "#b890a8", backgroundColor: "#faf0f5" },
+    { borderColor: "#9e9ac8", backgroundColor: "#f3f2fa" },
+    { borderColor: "#c6907c", backgroundColor: "#fbf1ed" }
+  ];
+  return colors[index % colors.length];
+}
+
+function productKey(item: NonNullable<OrderRow["items"]>[number]) {
+  return String(item.inventory_product_id || item.product_id || item.product_name_snapshot || item.description || "producto");
+}
+
+function productLabel(item: NonNullable<OrderRow["items"]>[number]) {
+  return String(item.product_name_snapshot || item.description || "Producto");
+}
+
+function topTripProducts(trip: TripRow, limit: number) {
+  const totals = new Map<string, { key: string; label: string; quantity: number }>();
+  for (const order of trip.orders) {
+    for (const item of order.items || []) {
+      const key = productKey(item);
+      const current = totals.get(key) || { key, label: productLabel(item), quantity: 0 };
+      current.quantity += Number(item.quantity || 0);
+      totals.set(key, current);
+    }
+  }
+  return Array.from(totals.values()).sort((a, b) => b.quantity - a.quantity || a.label.localeCompare(b.label)).slice(0, limit);
+}
+
+function productQty(order: OrderRow, key: string) {
+  let quantity = 0;
+  let unit = "";
+  for (const item of order.items || []) {
+    if (productKey(item) !== key) continue;
+    quantity += Number(item.quantity || 0);
+    unit = String(item.unit || unit || "");
+  }
+  return quantity ? `${number.format(quantity)} ${unit}` : "-";
+}
+
+async function openRemisionPdf(companyId: string, folio: string, hidePrices: boolean) {
+  const res = await fetch(`/api/logistics/remision-pdf?company_id=${encodeURIComponent(companyId)}&folio=${encodeURIComponent(folio)}&hide_prices=${hidePrices ? "true" : "false"}`, { credentials: "same-origin" });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json.ok || !json.data?.html) return;
+  openHtmlDocument(json.data.html);
+}
+
+function openLogisticsDayPdf(day: string, trips: TripRow[], catalogs: LogisticsData["catalogs"]) {
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Logistica ${escapeHtml(day)}</title><style>
+    body{font-family:Arial,sans-serif;color:#172033;margin:20px;font-size:12px}
+    h1{font-size:20px;margin:0 0 14px}
+    h2{font-size:15px;margin:18px 0 6px}
+    table{width:100%;border-collapse:collapse;margin-top:6px}
+    th,td{border:1px solid #d8dee8;padding:5px;text-align:left;vertical-align:top}
+    th{background:#f3f6f9;font-size:10px;text-transform:uppercase}
+    .muted{color:#667085}
+  </style></head><body><h1>Logistica ${escapeHtml(day)}</h1>${trips.map((trip) => `<section><h2>${escapeHtml(trip.hora_inicio?.slice(0, 5) || "--:--")} - ${escapeHtml(trip.folio)} · ${escapeHtml(vehicleName(catalogs.vehicles, trip.vehiculo_id) || "Sin vehiculo")}</h2><p class="muted">${trip.summary.orders_count} pedidos · ${number.format(trip.summary.peso_total_kg)} kg · ${money.format(trip.summary.importe_total)}</p>${printableTripTable(trip)}</section>`).join("")}<script>window.print()</script></body></html>`;
+  openHtmlDocument(html);
+}
+
+function printableTripTable(trip: TripRow) {
+  const products = topTripProducts(trip, 8);
+  return `<table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Peso</th><th>Importe</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td></tr>`).join("")}</tbody></table>`;
+}
+
+function openHtmlDocument(html: string) {
+  const win = window.open("", "_blank", "noopener,noreferrer");
+  if (!win) return;
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char] || char));
 }
 
 function ConfigTab({ catalogs, action, busy }: { catalogs: LogisticsData["catalogs"]; action: (name: string, context: Record<string, unknown>) => Promise<boolean>; busy: string }) {
