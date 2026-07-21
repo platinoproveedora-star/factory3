@@ -238,7 +238,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
             busy={busy}
           />
         )}
-        {tab === "scheduled_orders" && <ScheduledOrdersTab orders={scheduledOrders} />}
+        {tab === "scheduled_orders" && <ScheduledOrdersTab orders={scheduledOrders} trips={activeTrips} action={action} busy={busy} />}
         {tab === "trips" && <TripsTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} />}
         {tab === "calendar" && <CalendarTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} companyId={companyId} refresh={refresh} setError={setError} />}
         {tab === "completed_trips" && <CompletedTripsTab trips={completedTrips} action={action} busy={busy} />}
@@ -405,11 +405,55 @@ function OrdersTab({
   );
 }
 
-function ScheduledOrdersTab({ orders }: { orders: OrderRow[] }) {
+function ScheduledOrdersTab({
+  orders,
+  trips,
+  action,
+  busy
+}: {
+  orders: OrderRow[];
+  trips: TripRow[];
+  action: (name: string, context: Record<string, unknown>) => Promise<boolean>;
+  busy: string;
+}) {
   return (
     <div className="grid gap-3">
       {orders.map((order) => (
-        <div key={order.id} className="border border-line bg-white p-3 shadow-sm">
+        <ScheduledOrderRow key={order.id} order={order} trips={trips} action={action} busy={busy} />
+      ))}
+      {!orders.length && <Empty label="Sin pedidos programados" />}
+    </div>
+  );
+}
+
+function ScheduledOrderRow({
+  order,
+  trips,
+  action,
+  busy
+}: {
+  order: OrderRow;
+  trips: TripRow[];
+  action: (name: string, context: Record<string, unknown>) => Promise<boolean>;
+  busy: string;
+}) {
+  const currentTripId = order.logistics_assignment?.trip_id || "";
+  const [targetTripId, setTargetTripId] = useState("");
+  const targetTrips = trips.filter((trip) => trip.id !== currentTripId);
+
+  async function removeTrip() {
+    if (!currentTripId) return;
+    await action("assign_orders", { action: "remove", trip_id: currentTripId, pedido_ids: [order.id] });
+  }
+
+  async function moveTrip() {
+    if (!targetTripId) return;
+    await action("assign_orders", { trip_id: targetTripId, pedido_ids: [order.id] });
+    setTargetTripId("");
+  }
+
+  return (
+    <div className="border border-line bg-white p-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="font-mono text-sm font-bold text-ink">{order.folio}</p>
             <p className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</p>
@@ -425,6 +469,20 @@ function ScheduledOrdersTab({ orders }: { orders: OrderRow[] }) {
               <span><strong className="text-ink">Chofer:</strong> {order.logistics_assignment.driver_nombre || "Sin chofer"}</span>
             </div>
           )}
+          <div className="mt-3 grid gap-2 border border-line bg-slate-50 p-2 sm:grid-cols-[minmax(180px,1fr)_auto_auto]">
+            <select value={targetTripId} onChange={(event) => setTargetTripId(event.target.value)} className="input h-9" disabled={!targetTrips.length || Boolean(busy)}>
+              <option value="">Cambiar a otro viaje</option>
+              {targetTrips.map((trip) => (
+                <option key={trip.id} value={trip.id}>{trip.folio} · {trip.estado}</option>
+              ))}
+            </select>
+            <button onClick={moveTrip} disabled={!targetTripId || Boolean(busy)} className="btn-soft min-h-9 px-3">
+              Mover
+            </button>
+            <button onClick={removeTrip} disabled={!currentTripId || Boolean(busy)} className="btn-soft min-h-9 px-3">
+              Quitar viaje
+            </button>
+          </div>
           <div className="mt-2 grid gap-2 text-xs text-slate-600 sm:grid-cols-5">
             <span>{order.fecha_entrega || "Sin entrega"}</span>
             <span>{number.format(order.peso_kg || 0)} kg</span>
@@ -433,9 +491,6 @@ function ScheduledOrdersTab({ orders }: { orders: OrderRow[] }) {
             <span className="font-semibold text-ink">{money.format(order.importe || 0)}</span>
           </div>
           <OrderItemsMiniTable items={order.items || []} />
-        </div>
-      ))}
-      {!orders.length && <Empty label="Sin pedidos programados" />}
     </div>
   );
 }
