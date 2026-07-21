@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared import db, is_dry_run, list_orders, now_iso, reserve_folio, resolve_context
+from _shared import db, is_dry_run, list_orders, now_iso, reserve_folio, reserve_folios, resolve_context
 
 
 class LogisticsTripCreateService:
@@ -43,15 +43,16 @@ class LogisticsTripCreateService:
         invalid = [pedido_id for pedido_id in pedido_ids if pedido_id not in available_by_id]
         if invalid:
             return {"ok": False, "error": "pedido no disponible para viaje", "data": {"pedido_ids": invalid}}
+        folios_result = reserve_folios(ctx, "logistics_trip_orders", "VIAP", len(pedido_ids))
+        if not folios_result.get("ok"):
+            return folios_result
+        folios = folios_result["data"]["folios"]
         links = []
         for index, pedido_id in enumerate(pedido_ids, start=1):
-            link_folio = reserve_folio(ctx, "logistics_trip_orders", "VIAP")
-            if not link_folio.get("ok"):
-                return link_folio
             order = available_by_id[pedido_id]
             links.append(
                 {
-                    "folio": link_folio["data"]["folio"],
+                    "folio": folios[index - 1],
                     "empresa_id": ctx["company_id"],
                     "project_code": ctx["project_code"],
                     "module_code": ctx["module_code"],

@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared import LOCKED_TRIP_STATUS, db, is_dry_run, reserve_folio, resolve_context, table_filters
+from _shared import LOCKED_TRIP_STATUS, db, is_dry_run, reserve_folios, resolve_context, table_filters
 
 
 class LogisticsTripAssignOrdersService:
@@ -36,13 +36,14 @@ class LogisticsTripAssignOrdersService:
                 deleted.extend(res.get("data") or [])
             return {"ok": True, "data": {"removed": deleted}}
         rows = []
+        folios_result = reserve_folios(ctx, "logistics_trip_orders", "VIAP", len(pedido_ids))
+        if not folios_result.get("ok"):
+            return folios_result
+        folios = folios_result["data"]["folios"]
         for index, pedido_id in enumerate(pedido_ids, start=1):
-            folio = reserve_folio(ctx, "logistics_trip_orders", "VIAP")
-            if not folio.get("ok"):
-                return folio
             rows.append(
                 {
-                    "folio": folio["data"]["folio"],
+                    "folio": folios[index - 1],
                     "empresa_id": ctx["company_id"],
                     "project_code": ctx["project_code"],
                     "module_code": ctx["module_code"],

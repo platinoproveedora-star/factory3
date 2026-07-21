@@ -107,6 +107,18 @@ def reserve_folio(ctx: dict, table: str, prefix: str) -> dict:
     return {"ok": True, "data": {"folio": f"{prefix}-{max_num + 1:05d}"}}
 
 
+def reserve_folios(ctx: dict, table: str, prefix: str, count: int) -> dict:
+    first = reserve_folio(ctx, table, prefix)
+    if not first.get("ok"):
+        return first
+    folio = str((first.get("data") or {}).get("folio") or "")
+    match = re.match(rf"^{re.escape(prefix)}-(\d+)$", folio)
+    if not match:
+        return {"ok": False, "error": f"folio base invalido: {folio}"}
+    start = int(match.group(1))
+    return {"ok": True, "data": {"folios": [f"{prefix}-{start + offset:05d}" for offset in range(max(count, 0))]}}
+
+
 def create_sql(schema: str) -> str:
     return f"""
 create schema if not exists {schema};
