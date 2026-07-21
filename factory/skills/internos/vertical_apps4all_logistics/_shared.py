@@ -255,7 +255,7 @@ def list_catalogs(ctx: dict) -> dict:
 def list_orders(ctx: dict, limit: int = 500) -> list[dict]:
     docs = sales_db(ctx).rest_select(
         "sales_documents",
-        filters={"empresa_id": f"eq.{ctx['company_id']}", "document_type": "eq.pedido", "status": "in.(pedido,liberado)"},
+        filters={"empresa_id": f"eq.{ctx['company_id']}", "document_type": "eq.pedido", "status": "in.(pedido,liberado,remisionado)"},
         select="id,folio,external_folio,customer_id,customer_name_snapshot,status,document_date,due_date,delivery_address,payment_method,city,city_quadrant,total_weight_kg,subtotal,tax_total,total,balance_total,notes,metadata,created_at",
         order="due_date.asc,created_at.desc",
         limit=limit,
@@ -288,11 +288,14 @@ def format_order(row: dict, items: list[dict]) -> dict:
         unit = str(item.get("unit") or "").strip()
         label = f"{name} {num(qty)} {unit}".strip()
         parts.append(label)
+    metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
     return {
         **row,
         "fecha_entrega": row.get("due_date") or row.get("document_date"),
         "peso_kg": float(row.get("total_weight_kg") or 0),
         "importe": float(row.get("total") or 0),
+        "remision_folio": metadata.get("remision_folio") or metadata.get("converted_to_remision_folio"),
+        "remision_id": metadata.get("remision_id") or metadata.get("converted_to_remision_id"),
         "partida_1": parts[0] if len(parts) > 0 else "",
         "partida_2": parts[1] if len(parts) > 1 else "",
         "partida_3": parts[2] if len(parts) > 2 else "",

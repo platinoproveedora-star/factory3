@@ -26,6 +26,9 @@ export type OrderRow = {
   city_quadrant?: string | null;
   payment_method?: string | null;
   balance_total?: number | null;
+  status?: string | null;
+  remision_folio?: string | null;
+  remision_id?: string | null;
   peso_kg?: number;
   importe?: number;
   partida_1?: string;

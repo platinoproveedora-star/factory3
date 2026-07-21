@@ -220,7 +220,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
   const trips = data?.trips || [];
   const activeTrips = trips.filter((trip) => !closedTripStatuses.has(trip.estado));
   const completedTrips = trips.filter((trip) => trip.estado === "completado");
-  const pendingOrders = orders.filter((order) => !order.logistics_assignment);
+  const pendingOrders = orders.filter((order) => !order.logistics_assignment && order.status !== "remisionado");
   const scheduledOrders = orders.filter((order) => {
     const assignment = order.logistics_assignment;
     return assignment && !closedTripStatuses.has(String(assignment.trip_estado || ""));
@@ -266,7 +266,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
           />
         )}
         {tab === "scheduled_orders" && <ScheduledOrdersTab orders={scheduledOrders} trips={activeTrips} action={action} busy={busy} />}
-        {tab === "trips" && <TripsTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} createEmptyTrip={createEmptyTrip} />}
+        {tab === "trips" && <TripsTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} createEmptyTrip={createEmptyTrip} companyId={companyId} />}
         {tab === "calendar" && <CalendarTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} companyId={companyId} refresh={refresh} setError={setError} />}
         {tab === "completed_trips" && <CompletedTripsTab trips={completedTrips} action={action} busy={busy} />}
         {tab === "config" && <ConfigTab catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} />}
@@ -585,7 +585,8 @@ function TripsTab({
   busy,
   reviewMode,
   updateOrderLogistics,
-  createEmptyTrip
+  createEmptyTrip,
+  companyId
 }: {
   trips: TripRow[];
   catalogs: LogisticsData["catalogs"];
@@ -594,6 +595,7 @@ function TripsTab({
   reviewMode?: boolean;
   updateOrderLogistics: (tripId: string, order: OrderRow, patch: Partial<OrderRow>) => Promise<void>;
   createEmptyTrip: () => void;
+  companyId: string;
 }) {
   return (
     <div className="grid gap-4">
@@ -604,7 +606,7 @@ function TripsTab({
         </button>
       </div>
       {trips.map((trip) => (
-        <TripPanel key={trip.id} trip={trip} trips={trips} catalogs={catalogs} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} />
+        <TripPanel key={trip.id} trip={trip} trips={trips} catalogs={catalogs} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} companyId={companyId} />
       ))}
       {!trips.length && <Empty label="Sin viajes activos" />}
     </div>
@@ -617,7 +619,8 @@ function TripPanel({
   catalogs,
   action,
   busy,
-  updateOrderLogistics
+  updateOrderLogistics,
+  companyId
 }: {
   trip: TripRow;
   trips: TripRow[];
@@ -626,6 +629,7 @@ function TripPanel({
   busy: string;
   reviewMode?: boolean;
   updateOrderLogistics: (tripId: string, order: OrderRow, patch: Partial<OrderRow>) => Promise<void>;
+  companyId: string;
 }) {
   const [fecha, setFecha] = useState(trip.fecha_viaje || "");
   const [hora, setHora] = useState((trip.hora_inicio || "").slice(0, 5));
@@ -677,7 +681,7 @@ function TripPanel({
         </div>
       </header>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1080px] border-collapse text-sm">
+        <table className="w-full min-w-[1320px] border-collapse text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
               <th className="px-3 py-2">Pedido</th>
@@ -688,6 +692,7 @@ function TripPanel({
               <th className="px-3 py-2">Partida 2</th>
               <th className="px-3 py-2">Partida 3</th>
               <th className="px-3 py-2">Otras</th>
+              <th className="px-3 py-2">Remision</th>
               <th className="px-3 py-2 text-right">Importe</th>
               <th className="px-3 py-2 text-right">Cambios</th>
               <th className="px-3 py-2">Mover</th>
@@ -725,6 +730,9 @@ function TripPanel({
                 <td className="px-3 py-2">{order.partida_2 || "-"}</td>
                 <td className="px-3 py-2">{order.partida_3 || "-"}</td>
                 <td className="px-3 py-2">{order.otras_partidas || "-"}</td>
+                <td className="px-3 py-2">
+                  <RemisionPrintCell order={order} companyId={companyId} />
+                </td>
                 <td className="px-3 py-2 text-right font-semibold">{money.format(order.importe || 0)}</td>
                 <td className="px-3 py-2 text-right">
                   <button onClick={() => saveOrderDraft(order)} disabled={Boolean(busy)} className="btn-soft min-h-9 px-3">
@@ -738,7 +746,7 @@ function TripPanel({
             ))}
             {!trip.orders.length && (
               <tr className="border-t border-line">
-                <td colSpan={11} className="px-3 py-5 text-center text-sm text-slate-500">
+                <td colSpan={12} className="px-3 py-5 text-center text-sm text-slate-500">
                   Viaje vacio. Puedes mover pedidos aqui desde Pedidos programados o desde otro viaje.
                 </td>
               </tr>
@@ -801,6 +809,28 @@ function MoveOrderCell({
   );
 }
 
+function remisionFolio(order: OrderRow) {
+  return String(order.remision_folio || "").trim();
+}
+
+function RemisionPrintCell({ order, companyId, compact = false }: { order: OrderRow; companyId: string; compact?: boolean }) {
+  const folio = remisionFolio(order);
+  if (!folio) return <span className="text-xs font-semibold text-slate-400">Sin remision</span>;
+  return (
+    <div className={compact ? "flex min-w-44 flex-col gap-1" : "flex min-w-56 flex-col gap-1"}>
+      <span className="font-mono text-xs font-bold text-emerald-800">{folio}</span>
+      <div className="flex flex-wrap gap-1">
+        <button onClick={() => openRemisionPdf(companyId, folio, false)} className="btn-soft min-h-8 px-2 text-xs">
+          Imprimir $
+        </button>
+        <button onClick={() => openRemisionPdf(companyId, folio, true)} className="btn-soft min-h-8 px-2 text-xs">
+          Sin precio
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CompletedTripsTab({ trips, action, busy }: { trips: TripRow[]; action: (name: string, context: Record<string, unknown>) => Promise<boolean>; busy: string }) {
   return (
     <div className="grid gap-4">
@@ -855,6 +885,11 @@ function CalendarTab({
     setError("");
     const remisiones: string[] = [];
     for (const order of trip.orders) {
+      const existingRemision = remisionFolio(order);
+      if (existingRemision) {
+        remisiones.push(existingRemision);
+        continue;
+      }
       const res = await fetch("/api/logistics/action", {
         method: "POST",
         credentials: "same-origin",
@@ -906,7 +941,7 @@ function CalendarTab({
                   <button onClick={() => remisionarTrip(trip, true)} className="btn-soft px-3 text-xs">Remisionar sin $</button>
                 </div>
                 <ProductTotals products={trip.summary.key_products} compact />
-                <CalendarProductMatrix trip={trip} />
+                <CalendarProductMatrix trip={trip} companyId={companyId} />
               </div>
             ))}
           </div>
@@ -917,7 +952,7 @@ function CalendarTab({
   );
 }
 
-function CalendarProductMatrix({ trip }: { trip: TripRow }) {
+function CalendarProductMatrix({ trip, companyId }: { trip: TripRow; companyId?: string }) {
   const products = topTripProducts(trip, 6);
   return (
     <div className="mt-3 overflow-x-auto border border-line bg-white">
@@ -929,6 +964,7 @@ function CalendarProductMatrix({ trip }: { trip: TripRow }) {
             {products.map((product) => (
               <th key={product.key} className="px-2 py-2 text-right">{product.label}</th>
             ))}
+            <th className="px-2 py-2">Remision</th>
             <th className="px-2 py-2 text-right">Peso</th>
             <th className="px-2 py-2 text-right">Importe</th>
             <th className="px-2 py-2 text-right">Cobrar</th>
@@ -944,6 +980,9 @@ function CalendarProductMatrix({ trip }: { trip: TripRow }) {
               {products.map((product) => (
                 <td key={product.key} className="px-2 py-2 text-right text-slate-700">{productQty(order, product.key)}</td>
               ))}
+              <td className="px-2 py-2">
+                {companyId ? <RemisionPrintCell order={order} companyId={companyId} compact /> : remisionFolio(order) || "-"}
+              </td>
               <td className="px-2 py-2 text-right text-slate-600">{number.format(order.peso_kg || 0)} kg</td>
               <td className="px-2 py-2 text-right font-semibold text-ink">{money.format(order.importe || 0)}</td>
               <td className="px-2 py-2 text-right font-semibold text-emerald-800">{money.format(orderCollectAmount(order))}</td>
@@ -1041,7 +1080,7 @@ function openLogisticsDayPdf(day: string, trips: TripRow[], catalogs: LogisticsD
 
 function printableTripTable(trip: TripRow) {
   const products = topTripProducts(trip, 8);
-  return `<p style="font-weight:bold;color:#065f46;margin:6px 0">Total a cobrar: ${money.format(tripCollectTotal(trip))}</p><table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Peso</th><th>Importe</th><th>Cobrar</th><th>Forma de pago</th><th>Lugar de entrega</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td><td>${money.format(orderCollectAmount(order))}</td><td>${escapeHtml(order.payment_method || "-")}</td><td>${escapeHtml(order.delivery_address || order.city || "Sin lugar")}</td></tr>`).join("")}</tbody></table>${printableProductTotals(trip)}`;
+  return `<p style="font-weight:bold;color:#065f46;margin:6px 0">Total a cobrar: ${money.format(tripCollectTotal(trip))}</p><table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Remision</th><th>Peso</th><th>Importe</th><th>Cobrar</th><th>Forma de pago</th><th>Lugar de entrega</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${escapeHtml(remisionFolio(order) || "-")}</td><td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td><td>${money.format(orderCollectAmount(order))}</td><td>${escapeHtml(order.payment_method || "-")}</td><td>${escapeHtml(order.delivery_address || order.city || "Sin lugar")}</td></tr>`).join("")}</tbody></table>${printableProductTotals(trip)}`;
 }
 
 function printableProductTotals(trip: TripRow) {
