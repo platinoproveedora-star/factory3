@@ -9,6 +9,7 @@ type Tab = "orders" | "scheduled_orders" | "trips" | "calendar" | "completed_tri
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 2 });
+const closedTripStatuses = new Set(["completado", "cancelado"]);
 
 export function LogisticsDashboard({ initialData, initialError, companyId, companyName, reviewMode = false }: { initialData: LogisticsData | null; initialError: string; companyId: string; companyName: string; reviewMode?: boolean }) {
   const [data, setData] = useState<LogisticsData | null>(initialData);
@@ -204,10 +205,13 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
 
   const orders = data?.available_orders || [];
   const trips = data?.trips || [];
-  const activeTrips = trips.filter((trip) => !["completado", "cancelado"].includes(trip.estado));
+  const activeTrips = trips.filter((trip) => !closedTripStatuses.has(trip.estado));
   const completedTrips = trips.filter((trip) => trip.estado === "completado");
   const pendingOrders = orders.filter((order) => !order.logistics_assignment);
-  const scheduledOrders = orders.filter((order) => order.logistics_assignment);
+  const scheduledOrders = orders.filter((order) => {
+    const assignment = order.logistics_assignment;
+    return assignment && !closedTripStatuses.has(String(assignment.trip_estado || ""));
+  });
 
   return (
     <div className="mx-auto max-w-7xl px-3 py-4 sm:px-5">
