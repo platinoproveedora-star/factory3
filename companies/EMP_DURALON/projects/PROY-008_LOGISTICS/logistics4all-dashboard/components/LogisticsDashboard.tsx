@@ -1010,6 +1010,12 @@ function openLogisticsDayPdf(day: string, trips: TripRow[], catalogs: LogisticsD
     body{font-family:Arial,sans-serif;color:#172033;margin:20px;font-size:12px}
     h1{font-size:20px;margin:0 0 14px}
     h2{font-size:15px;margin:18px 0 6px}
+    section{break-inside:avoid;margin:0 0 14px;padding:10px;border-left:8px solid #7aa6b8;border-radius:4px;background:#edf6f8}
+    section:nth-of-type(6n+2){border-left-color:#c6a46b;background:#fbf6eb}
+    section:nth-of-type(6n+3){border-left-color:#91b58a;background:#f1f8ef}
+    section:nth-of-type(6n+4){border-left-color:#b890a8;background:#faf0f5}
+    section:nth-of-type(6n+5){border-left-color:#9e9ac8;background:#f3f2fa}
+    section:nth-of-type(6n+6){border-left-color:#c6907c;background:#fbf1ed}
     table{width:100%;border-collapse:collapse;margin-top:6px}
     th,td{border:1px solid #d8dee8;padding:5px;text-align:left;vertical-align:top}
     th{background:#f3f6f9;font-size:10px;text-transform:uppercase}
