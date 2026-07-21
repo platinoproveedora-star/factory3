@@ -1026,7 +1026,13 @@ function openLogisticsDayPdf(day: string, trips: TripRow[], catalogs: LogisticsD
 
 function printableTripTable(trip: TripRow) {
   const products = topTripProducts(trip, 8);
-  return `<table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Peso</th><th>Importe</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td></tr>`).join("")}</tbody></table>`;
+  return `<table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Peso</th><th>Importe</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td></tr>`).join("")}</tbody></table>${printableProductTotals(trip)}`;
+}
+
+function printableProductTotals(trip: TripRow) {
+  const totals = trip.summary.product_totals || [];
+  if (!totals.length) return "";
+  return `<div style="margin-top:8px"><h3 style="font-size:12px;margin:0 0 4px">Totales por producto</h3><table style="max-width:620px"><thead><tr><th>Producto</th><th>Cantidad</th><th>Peso</th><th>Importe</th></tr></thead><tbody>${totals.map((product) => `<tr><td>${escapeHtml(product.product_name)}</td><td>${number.format(product.quantity)} ${escapeHtml(product.unit || "")}</td><td>${number.format(product.weight_kg_total || 0)} kg</td><td>${money.format(product.line_total || 0)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 function openHtmlDocument(html: string) {
