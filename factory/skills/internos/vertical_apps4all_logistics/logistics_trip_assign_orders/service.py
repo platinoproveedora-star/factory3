@@ -35,13 +35,22 @@ class LogisticsTripAssignOrdersService:
                     return res
                 deleted.extend(res.get("data") or [])
             return {"ok": True, "data": {"removed": deleted}}
-        self._remove_existing_active_assignments(ctx, trip_id, [str(item) for item in pedido_ids])
+        existing_links = list_trip_orders(ctx)
+        existing_target_ids = {
+            str(link.get("pedido_id"))
+            for link in existing_links
+            if str(link.get("trip_id")) == trip_id and str(link.get("pedido_id")) in pedido_ids
+        }
+        self._remove_existing_active_assignments(ctx, trip_id, [str(item) for item in pedido_ids], existing_links)
+        new_pedido_ids = [pedido_id for pedido_id in pedido_ids if pedido_id not in existing_target_ids]
+        if not new_pedido_ids:
+            return {"ok": True, "data": {"assigned": [], "already_assigned": sorted(existing_target_ids)}}
         rows = []
-        folios_result = reserve_folios(ctx, "logistics_trip_orders", "VIAP", len(pedido_ids))
+        folios_result = reserve_folios(ctx, "logistics_trip_orders", "VIAP", len(new_pedido_ids))
         if not folios_result.get("ok"):
             return folios_result
         folios = folios_result["data"]["folios"]
-        for index, pedido_id in enumerate(pedido_ids, start=1):
+        for index, pedido_id in enumerate(new_pedido_ids, start=1):
             rows.append(
                 {
                     "folio": folios[index - 1],
@@ -55,12 +64,12 @@ class LogisticsTripAssignOrdersService:
                     "notes": context.get("notes"),
                 }
             )
-        result = db(ctx).rest_upsert("logistics_trip_orders", rows, on_conflict="trip_id,pedido_id")
-        return result if not result.get("ok") else {"ok": True, "data": {"assigned": result.get("data") or []}}
+        result = db(ctx).rest_insert("logistics_trip_orders", rows)
+        return result if not result.get("ok") else {"ok": True, "data": {"assigned": result.get("data") or [], "already_assigned": sorted(existing_target_ids)}}
 
-    def _remove_existing_active_assignments(self, ctx: dict, target_trip_id: str, pedido_ids: list[str]) -> None:
+    def _remove_existing_active_assignments(self, ctx: dict, target_trip_id: str, pedido_ids: list[str], existing_links: list[dict] | None = None) -> None:
         active_trip_ids = {str(trip.get("id")) for trip in list_trips(ctx) if str(trip.get("estado") or "") in ACTIVE_TRIP_STATUS}
-        for link in list_trip_orders(ctx):
+        for link in (existing_links if existing_links is not None else list_trip_orders(ctx)):
             if str(link.get("trip_id")) == target_trip_id:
                 continue
             if str(link.get("trip_id")) in active_trip_ids and str(link.get("pedido_id")) in pedido_ids:

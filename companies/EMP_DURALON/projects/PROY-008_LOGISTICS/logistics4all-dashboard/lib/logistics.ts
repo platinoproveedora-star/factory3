@@ -35,6 +35,12 @@ export type OrderRow = {
     trip_estado: string;
     fecha_viaje?: string | null;
     hora_inicio?: string | null;
+    hora_fin?: string | null;
+    duracion_minutos?: number | null;
+    vehiculo_id?: string | null;
+    vehiculo_nombre?: string | null;
+    driver_id?: string | null;
+    driver_nombre?: string | null;
   } | null;
   trip_order?: {
     id?: string;

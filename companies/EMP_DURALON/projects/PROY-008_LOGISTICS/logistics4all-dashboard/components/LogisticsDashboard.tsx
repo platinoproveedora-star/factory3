@@ -311,6 +311,16 @@ function OrdersTab({
                     <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">Pendiente de viaje</span>
                   )}
                 </div>
+                {order.logistics_assignment && (
+                  <div className="mt-2 grid gap-2 border border-steel/15 bg-steel/5 px-3 py-2 text-xs text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
+                    <span><strong className="text-ink">Viaje:</strong> {order.logistics_assignment.trip_folio} - {order.logistics_assignment.trip_estado}</span>
+                    <span><strong className="text-ink">Fecha:</strong> {order.logistics_assignment.fecha_viaje || "Sin fecha"}</span>
+                    <span><strong className="text-ink">Horario:</strong> {tripScheduleLabel(order.logistics_assignment)}</span>
+                    <span><strong className="text-ink">Unidad:</strong> {order.logistics_assignment.vehiculo_nombre || "Sin vehiculo"}</span>
+                    <span><strong className="text-ink">Chofer:</strong> {order.logistics_assignment.driver_nombre || "Sin chofer"}</span>
+                    <span><strong className="text-ink">Duracion:</strong> {order.logistics_assignment.duracion_minutos || 0} min</span>
+                  </div>
+                )}
                 <div className="mt-2 grid gap-2 text-xs text-slate-600 sm:grid-cols-5">
                   <span>{order.fecha_entrega || "Sin fecha"}</span>
                   <span>{number.format(order.peso_kg || 0)} kg</span>
@@ -423,6 +433,7 @@ function TripPanel({
               <th className="px-3 py-2">Partida 3</th>
               <th className="px-3 py-2">Otras</th>
               <th className="px-3 py-2 text-right">Importe</th>
+              <th className="px-3 py-2 text-right">Cambios</th>
             </tr>
           </thead>
           <tbody>
@@ -458,6 +469,11 @@ function TripPanel({
                 <td className="px-3 py-2">{order.partida_3 || "-"}</td>
                 <td className="px-3 py-2">{order.otras_partidas || "-"}</td>
                 <td className="px-3 py-2 text-right font-semibold">{money.format(order.importe || 0)}</td>
+                <td className="px-3 py-2 text-right">
+                  <button onClick={() => saveOrderDraft(order)} disabled={Boolean(busy)} className="btn-soft min-h-9 px-3">
+                    Guardar
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -592,11 +608,11 @@ function CatalogEditorRow({ catalog, row, action, busy }: { catalog: "vehicle" |
   }
 
   return (
-    <div className="border border-line bg-slate-50 p-2">
-      <div className={`grid gap-2 ${catalog === "vehicle" ? "sm:grid-cols-[1fr_95px_95px_95px_120px_80px_auto]" : "sm:grid-cols-[1fr_150px_120px_auto_auto]"}`}>
-        <input value={nombre} onChange={(event) => setNombre(event.target.value)} className="input h-9" placeholder="Nombre" />
+    <div className="border border-line bg-slate-50 p-3">
+      <div className="grid gap-2">
+        <input value={nombre} onChange={(event) => setNombre(event.target.value)} className="input min-h-10 font-semibold" placeholder="Nombre" />
         {catalog === "vehicle" ? (
-          <>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[120px_120px_120px_150px_90px_auto]">
             <input value={placa} onChange={(event) => setPlaca(event.target.value)} className="input h-9" placeholder="Placa" />
             <input value={tipo} onChange={(event) => setTipo(event.target.value)} className="input h-9" placeholder="Tipo" />
             <input value={capacidad} onChange={(event) => setCapacidad(event.target.value)} type="number" min="0" step="0.01" className="input h-9" placeholder="Kg max" />
@@ -606,9 +622,16 @@ function CatalogEditorRow({ catalog, row, action, busy }: { catalog: "vehicle" |
               <option value="mantenimiento">Mantenimiento</option>
               <option value="inactivo">Inactivo</option>
             </select>
-          </>
+            <label className="flex min-h-9 items-center gap-2 text-sm text-slate-600">
+              <input type="checkbox" checked={activo} onChange={(event) => setActivo(event.target.checked)} />
+              Activo
+            </label>
+            <button onClick={save} disabled={!nombre || Boolean(busy)} className="btn-soft min-h-9 px-3">
+              Guardar
+            </button>
+          </div>
         ) : (
-          <>
+          <div className="grid gap-2 sm:grid-cols-[1fr_130px_90px_auto]">
             <input value={telefono} onChange={(event) => setTelefono(event.target.value)} className="input h-9" placeholder="Telefono" />
             <select value={status} onChange={(event) => setStatus(event.target.value)} className="input h-9">
               <option value="activo">Activo</option>
@@ -618,17 +641,11 @@ function CatalogEditorRow({ catalog, row, action, busy }: { catalog: "vehicle" |
               <input type="checkbox" checked={activo} onChange={(event) => setActivo(event.target.checked)} />
               Activo
             </label>
-          </>
+            <button onClick={save} disabled={!nombre || Boolean(busy)} className="btn-soft min-h-9 px-3">
+              Guardar
+            </button>
+          </div>
         )}
-        {catalog === "vehicle" && (
-          <label className="flex min-h-9 items-center gap-2 text-sm text-slate-600">
-            <input type="checkbox" checked={activo} onChange={(event) => setActivo(event.target.checked)} />
-            Activo
-          </label>
-        )}
-        <button onClick={save} disabled={!nombre || Boolean(busy)} className="btn-soft min-h-9 px-3">
-          Guardar
-        </button>
       </div>
     </div>
   );
@@ -706,4 +723,11 @@ function tripEndTime(trip: Partial<TripRow>) {
 function tripStatus(trip: Partial<TripRow>) {
   if (trip.estado && !["borrador", "programado"].includes(trip.estado)) return trip.estado;
   return trip.fecha_viaje && trip.hora_inicio && trip.duracion_minutos && trip.vehiculo_id && trip.driver_id ? "programado" : "borrador";
+}
+
+function tripScheduleLabel(assignment: NonNullable<OrderRow["logistics_assignment"]>) {
+  const start = assignment.hora_inicio ? String(assignment.hora_inicio).slice(0, 5) : "";
+  const end = assignment.hora_fin ? String(assignment.hora_fin).slice(0, 5) : "";
+  if (start && end) return `${start}-${end}`;
+  return start || "Sin hora";
 }

@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared import ACTIVE_TRIP_STATUS, attach_orders_to_trips, list_catalogs, list_orders, list_trip_orders, list_trips, resolve_context
+from _shared import ACTIVE_TRIP_STATUS, attach_orders_to_trips, list_catalogs, list_orders, list_trip_orders, list_trips, resolve_context, trip_end_time
 
 
 class LogisticsDashboardDataService:
@@ -18,18 +18,29 @@ class LogisticsDashboardDataService:
         orders = list_orders(ctx, limit=limit)
         trips = list_trips(ctx)
         trip_orders = list_trip_orders(ctx)
+        catalogs = list_catalogs(ctx)
+        vehicles_by_id = {str(row.get("id")): row for row in catalogs.get("vehicles") or []}
+        drivers_by_id = {str(row.get("id")): row for row in catalogs.get("drivers") or []}
         trips_by_id = {str(trip.get("id")): trip for trip in trips}
         assignment_by_order = {}
         for link in trip_orders:
             trip = trips_by_id.get(str(link.get("trip_id")))
             if not trip or str(trip.get("estado") or "") not in ACTIVE_TRIP_STATUS:
                 continue
+            vehicle = vehicles_by_id.get(str(trip.get("vehiculo_id") or ""))
+            driver = drivers_by_id.get(str(trip.get("driver_id") or ""))
             assignment_by_order[str(link.get("pedido_id"))] = {
                 "trip_id": trip.get("id"),
                 "trip_folio": trip.get("folio"),
                 "trip_estado": trip.get("estado"),
                 "fecha_viaje": trip.get("fecha_viaje"),
                 "hora_inicio": trip.get("hora_inicio"),
+                "hora_fin": trip_end_time(trip),
+                "duracion_minutos": trip.get("duracion_minutos"),
+                "vehiculo_id": trip.get("vehiculo_id"),
+                "vehiculo_nombre": vehicle.get("nombre") if vehicle else None,
+                "driver_id": trip.get("driver_id"),
+                "driver_nombre": driver.get("nombre") if driver else None,
             }
         available_orders = [{**order, "logistics_assignment": assignment_by_order.get(str(order.get("id")))} for order in orders]
         enriched_trips = attach_orders_to_trips(trips, orders, trip_orders)
@@ -46,6 +57,6 @@ class LogisticsDashboardDataService:
                 "available_orders": available_orders,
                 "trips": enriched_trips,
                 "trip_orders": trip_orders,
-                "catalogs": list_catalogs(ctx),
+                "catalogs": catalogs,
             },
         }
