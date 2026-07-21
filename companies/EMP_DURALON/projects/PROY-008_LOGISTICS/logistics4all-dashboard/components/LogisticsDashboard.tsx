@@ -141,7 +141,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
   async function refresh() {
     if (reviewMode) return;
     setBusy("refresh");
-    const res = await fetch(`/api/logistics?company_id=${encodeURIComponent(companyId)}`);
+    const res = await fetch(`/api/logistics?company_id=${encodeURIComponent(companyId)}`, { credentials: "same-origin" });
     const json = await res.json().catch(() => ({}));
     setBusy("");
     if (!res.ok || !json.ok) {
@@ -159,6 +159,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
     setBusy(name);
     const res = await fetch("/api/logistics/action", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: name, company_id: companyId, context, dry_run: false })
     });
