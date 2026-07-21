@@ -563,7 +563,7 @@ function TripsTab({
   return (
     <div className="grid gap-4">
       {trips.map((trip) => (
-        <TripPanel key={trip.id} trip={trip} catalogs={catalogs} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} />
+        <TripPanel key={trip.id} trip={trip} trips={trips} catalogs={catalogs} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} />
       ))}
       {!trips.length && <Empty label="Sin viajes activos" />}
     </div>
@@ -572,12 +572,14 @@ function TripsTab({
 
 function TripPanel({
   trip,
+  trips,
   catalogs,
   action,
   busy,
   updateOrderLogistics
 }: {
   trip: TripRow;
+  trips: TripRow[];
   catalogs: LogisticsData["catalogs"];
   action: (name: string, context: Record<string, unknown>) => Promise<boolean>;
   busy: string;
@@ -634,7 +636,7 @@ function TripPanel({
         </div>
       </header>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] border-collapse text-sm">
+        <table className="w-full min-w-[1080px] border-collapse text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
               <th className="px-3 py-2">Pedido</th>
@@ -647,6 +649,7 @@ function TripPanel({
               <th className="px-3 py-2">Otras</th>
               <th className="px-3 py-2 text-right">Importe</th>
               <th className="px-3 py-2 text-right">Cambios</th>
+              <th className="px-3 py-2">Mover</th>
             </tr>
           </thead>
           <tbody>
@@ -687,6 +690,9 @@ function TripPanel({
                     Guardar
                   </button>
                 </td>
+                <td className="px-3 py-2">
+                  <MoveOrderCell currentTripId={trip.id} order={order} trips={trips} action={action} busy={busy} />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -700,6 +706,43 @@ function TripPanel({
         </div>
       </footer>
     </article>
+  );
+}
+
+function MoveOrderCell({
+  currentTripId,
+  order,
+  trips,
+  action,
+  busy
+}: {
+  currentTripId: string;
+  order: OrderRow;
+  trips: TripRow[];
+  action: (name: string, context: Record<string, unknown>) => Promise<boolean>;
+  busy: string;
+}) {
+  const [targetTripId, setTargetTripId] = useState("");
+  const targetTrips = trips.filter((trip) => trip.id !== currentTripId && !["completado", "cancelado"].includes(trip.estado));
+
+  async function move() {
+    if (!targetTripId) return;
+    const ok = await action("assign_orders", { trip_id: targetTripId, pedido_ids: [order.id] });
+    if (ok) setTargetTripId("");
+  }
+
+  return (
+    <div className="flex min-w-60 gap-2">
+      <select value={targetTripId} onChange={(event) => setTargetTripId(event.target.value)} className="input h-9 min-w-0" disabled={!targetTrips.length || Boolean(busy)}>
+        <option value="">Otro viaje</option>
+        {targetTrips.map((trip) => (
+          <option key={trip.id} value={trip.id}>{trip.folio}</option>
+        ))}
+      </select>
+      <button onClick={move} disabled={!targetTripId || Boolean(busy)} className="btn-soft min-h-9 px-3">
+        Mover
+      </button>
+    </div>
   );
 }
 
