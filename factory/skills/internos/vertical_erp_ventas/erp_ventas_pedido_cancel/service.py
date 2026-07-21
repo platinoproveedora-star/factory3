@@ -38,12 +38,13 @@ class ErpVentasPedidoCancelService:
 
         note = _blank(context.get("cancel_reason")) or "Cancelacion de pedido"
         now = datetime.now(timezone.utc).isoformat()
+        logistics_ctx = self._logistics_context(context, cfg)
 
         if context.get("dry_run", True):
             return {
                 "ok": True,
                 "message": "dry_run: no se cancelo pedido",
-                "data": {"pedido": {**doc, "status": "cancelado"}},
+                "data": {"pedido": {**doc, "status": "cancelado"}, "logistics_cleanup_planned": bool(logistics_ctx)},
             }
 
         metadata = doc.get("metadata") if isinstance(doc.get("metadata"), dict) else {}
@@ -63,9 +64,13 @@ class ErpVentasPedidoCancelService:
         updated = db.rest_update("sales_documents", update, {"id": doc["id"]})
         if not updated.get("ok"):
             return updated
+        cleanup = self._cleanup_logistics_assignments(logistics_ctx, doc["id"]) if logistics_ctx else {"ok": True, "data": {"removed": []}}
         rows = updated.get("data") or []
         pedido = rows[0] if isinstance(rows, list) and rows else rows
-        return {"ok": True, "data": {"pedido": pedido}}
+        data = {"pedido": pedido, "logistics_cleanup": cleanup.get("data") or {}}
+        if not cleanup.get("ok"):
+            data["logistics_cleanup_error"] = cleanup.get("error")
+        return {"ok": True, "data": data}
 
     def _get_doc(self, db: SupabaseClient, doc_id: str, folio: str) -> dict | None:
         filters = {"id": doc_id} if doc_id else {"folio": folio}
@@ -114,6 +119,35 @@ class ErpVentasPedidoCancelService:
             "project_code": cfg["project_ventas"],
             "module_code": cfg["module_ventas"],
         }
+
+    def _logistics_context(self, context: dict, cfg: dict) -> dict | None:
+        schema = _blank(context.get("logistics_schema") or context.get("schema_logistica"))
+        project_code = _blank(context.get("logistics_project_code") or context.get("project_logistica"))
+        module_code = _blank(context.get("logistics_module_code") or context.get("module_logistica"))
+        if not schema or not project_code or not module_code:
+            return None
+        return {
+            **context,
+            "schema": schema,
+            "company_id": cfg["empresa_id"],
+            "empresa_id": cfg["empresa_id"],
+            "project_code": project_code,
+            "module_code": module_code,
+        }
+
+    def _cleanup_logistics_assignments(self, logistics_ctx: dict, pedido_id: str) -> dict:
+        result = SupabaseClient(logistics_ctx).rest_delete(
+            "logistics_trip_orders",
+            {
+                "empresa_id": logistics_ctx["empresa_id"],
+                "project_code": logistics_ctx["project_code"],
+                "module_code": logistics_ctx["module_code"],
+                "pedido_id": pedido_id,
+            },
+        )
+        if not result.get("ok"):
+            return result
+        return {"ok": True, "data": {"removed": result.get("data") or []}}
 
     def _append_cancel_note(self, previous, note: str, timestamp: str) -> str:
         suffix = f"Cancelado {timestamp}: {note}"

@@ -17,6 +17,9 @@ const ERP_CONTEXT = {
   inventory_project_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_PROJECT_CODE ?? projectContext.inventory_project_code,
   module_inv: process.env.NEXT_PUBLIC_ERP_INVENTORY_MODULE_CODE ?? projectContext.inventory_module_code,
   inventory_module_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_MODULE_CODE ?? projectContext.inventory_module_code,
+  logistics_schema: process.env.NEXT_PUBLIC_ERP_LOGISTICS_SCHEMA ?? projectContext.logistics_schema,
+  logistics_project_code: process.env.NEXT_PUBLIC_ERP_LOGISTICS_PROJECT_CODE ?? projectContext.logistics_project_code,
+  logistics_module_code: process.env.NEXT_PUBLIC_ERP_LOGISTICS_MODULE_CODE ?? projectContext.logistics_module_code,
 };
 
 export type Customer = {
