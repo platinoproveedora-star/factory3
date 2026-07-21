@@ -29,6 +29,7 @@ export type OrderRow = {
   partida_2?: string;
   partida_3?: string;
   otras_partidas?: string;
+  items?: OrderItemRow[];
   logistics_assignment?: {
     trip_id: string;
     trip_folio: string;
@@ -46,6 +47,20 @@ export type OrderRow = {
     id?: string;
     folio?: string;
   };
+};
+
+export type OrderItemRow = {
+  id?: string;
+  folio?: string;
+  product_id?: string | null;
+  inventory_product_id?: string | null;
+  product_folio_snapshot?: string | null;
+  product_name_snapshot?: string | null;
+  description?: string | null;
+  quantity?: number | null;
+  unit?: string | null;
+  line_total?: number | null;
+  weight_kg_total?: number | null;
 };
 
 export type TripRow = {

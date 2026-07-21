@@ -332,10 +332,11 @@ function OrdersTab({
                 <div className="mt-2 grid gap-2 text-xs text-slate-600 sm:grid-cols-5">
                   <span>{order.fecha_entrega || "Sin fecha"}</span>
                   <span>{number.format(order.peso_kg || 0)} kg</span>
-                  <span>{order.partida_1 || "-"}</span>
-                  <span>{order.partida_2 || order.partida_3 || "-"}</span>
+                  <span>{order.items?.length || 0} partidas</span>
+                  <span>{order.city || "Sin ciudad"}</span>
                   <span className="font-semibold text-ink">{money.format(order.importe || 0)}</span>
                 </div>
+                <OrderItemsMiniTable items={order.items || []} />
               </div>
             </div>
           </button>
@@ -369,13 +370,48 @@ function ScheduledOrdersTab({ orders }: { orders: OrderRow[] }) {
           <div className="mt-2 grid gap-2 text-xs text-slate-600 sm:grid-cols-5">
             <span>{order.fecha_entrega || "Sin entrega"}</span>
             <span>{number.format(order.peso_kg || 0)} kg</span>
-            <span>{order.partida_1 || "-"}</span>
-            <span>{order.partida_2 || order.partida_3 || "-"}</span>
+            <span>{order.items?.length || 0} partidas</span>
+            <span>{order.city || "Sin ciudad"}</span>
             <span className="font-semibold text-ink">{money.format(order.importe || 0)}</span>
           </div>
+          <OrderItemsMiniTable items={order.items || []} />
         </div>
       ))}
       {!orders.length && <Empty label="Sin pedidos programados" />}
+    </div>
+  );
+}
+
+function OrderItemsMiniTable({ items }: { items: NonNullable<OrderRow["items"]> }) {
+  if (!items.length) {
+    return <div className="mt-2 border border-line bg-slate-50 px-3 py-2 text-xs text-slate-500">Sin partidas capturadas</div>;
+  }
+  return (
+    <div className="mt-2 overflow-x-auto border border-line bg-white">
+      <table className="w-full min-w-[620px] border-collapse text-[11px]">
+        <thead className="bg-slate-50 text-left uppercase text-slate-500">
+          <tr>
+            <th className="px-2 py-1.5">Producto</th>
+            <th className="px-2 py-1.5">Clave</th>
+            <th className="px-2 py-1.5 text-right">Cant.</th>
+            <th className="px-2 py-1.5">Unidad</th>
+            <th className="px-2 py-1.5 text-right">Peso</th>
+            <th className="px-2 py-1.5 text-right">Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, index) => (
+            <tr key={item.id || item.folio || index} className="border-t border-line">
+              <td className="max-w-64 truncate px-2 py-1.5 font-semibold text-slate-800">{item.product_name_snapshot || item.description || "Producto"}</td>
+              <td className="px-2 py-1.5 font-mono text-slate-500">{item.product_folio_snapshot || "-"}</td>
+              <td className="px-2 py-1.5 text-right text-slate-700">{number.format(item.quantity || 0)}</td>
+              <td className="px-2 py-1.5 text-slate-600">{item.unit || "-"}</td>
+              <td className="px-2 py-1.5 text-right text-slate-700">{number.format(item.weight_kg_total || 0)} kg</td>
+              <td className="px-2 py-1.5 text-right font-semibold text-ink">{money.format(item.line_total || 0)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
