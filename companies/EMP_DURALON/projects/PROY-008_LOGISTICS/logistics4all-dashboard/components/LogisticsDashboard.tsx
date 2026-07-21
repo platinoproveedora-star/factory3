@@ -899,6 +899,7 @@ function CalendarTab({
               <div key={trip.id} className="border-l-4 p-3" style={vehicleColorStyle(vehicleIndex.get(String(trip.vehiculo_id || "")) ?? 0)}>
                 <p className="font-mono font-bold">{trip.hora_inicio?.slice(0, 5) || "--:--"}-{trip.hora_fin || "--:--"} · {trip.folio}</p>
                 <p className="text-sm text-slate-600">{trip.summary.orders_count} pedidos · {number.format(trip.summary.peso_total_kg)} kg · {money.format(trip.summary.importe_total)}</p>
+                <p className="text-xs font-bold text-emerald-800">Total a cobrar: {money.format(tripCollectTotal(trip))}</p>
                 <p className="text-xs font-semibold text-slate-600">{vehicleName(catalogs.vehicles, trip.vehiculo_id) || "Sin vehiculo"}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button onClick={() => remisionarTrip(trip, false)} className="btn-soft px-3 text-xs">Remisionar $</button>
@@ -920,7 +921,7 @@ function CalendarProductMatrix({ trip }: { trip: TripRow }) {
   const products = topTripProducts(trip, 6);
   return (
     <div className="mt-3 overflow-x-auto border border-line bg-white">
-      <table className="w-full min-w-[900px] border-collapse text-[11px]">
+      <table className="w-full min-w-[1120px] border-collapse text-[11px]">
         <thead className="bg-slate-50 text-left uppercase text-slate-500">
           <tr>
             <th className="px-2 py-2">Pedido</th>
@@ -930,6 +931,8 @@ function CalendarProductMatrix({ trip }: { trip: TripRow }) {
             ))}
             <th className="px-2 py-2 text-right">Peso</th>
             <th className="px-2 py-2 text-right">Importe</th>
+            <th className="px-2 py-2 text-right">Cobrar</th>
+            <th className="px-2 py-2">Forma de pago</th>
             <th className="px-2 py-2">Lugar de entrega</th>
           </tr>
         </thead>
@@ -943,6 +946,8 @@ function CalendarProductMatrix({ trip }: { trip: TripRow }) {
               ))}
               <td className="px-2 py-2 text-right text-slate-600">{number.format(order.peso_kg || 0)} kg</td>
               <td className="px-2 py-2 text-right font-semibold text-ink">{money.format(order.importe || 0)}</td>
+              <td className="px-2 py-2 text-right font-semibold text-emerald-800">{money.format(orderCollectAmount(order))}</td>
+              <td className="px-2 py-2 text-slate-700">{order.payment_method || "-"}</td>
               <td className="max-w-72 px-2 py-2 text-slate-700">{order.delivery_address || order.city || "Sin lugar"}</td>
             </tr>
           ))}
@@ -1000,6 +1005,14 @@ function productQty(order: OrderRow, key: string) {
   return quantity ? `${number.format(quantity)} ${unit}` : "-";
 }
 
+function orderCollectAmount(order: OrderRow) {
+  return Number(order.balance_total ?? order.importe ?? 0);
+}
+
+function tripCollectTotal(trip: TripRow) {
+  return trip.orders.reduce((sum, order) => sum + orderCollectAmount(order), 0);
+}
+
 async function openRemisionPdf(companyId: string, folio: string, hidePrices: boolean) {
   const res = await fetch(`/api/logistics/remision-pdf?company_id=${encodeURIComponent(companyId)}&folio=${encodeURIComponent(folio)}&hide_prices=${hidePrices ? "true" : "false"}`, { credentials: "same-origin" });
   const json = await res.json().catch(() => ({}));
@@ -1028,7 +1041,7 @@ function openLogisticsDayPdf(day: string, trips: TripRow[], catalogs: LogisticsD
 
 function printableTripTable(trip: TripRow) {
   const products = topTripProducts(trip, 8);
-  return `<table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Peso</th><th>Importe</th><th>Lugar de entrega</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td><td>${escapeHtml(order.delivery_address || order.city || "Sin lugar")}</td></tr>`).join("")}</tbody></table>${printableProductTotals(trip)}`;
+  return `<p style="font-weight:bold;color:#065f46;margin:6px 0">Total a cobrar: ${money.format(tripCollectTotal(trip))}</p><table><thead><tr><th>Pedido</th><th>Cliente</th>${products.map((product) => `<th>${escapeHtml(product.label)}</th>`).join("")}<th>Peso</th><th>Importe</th><th>Cobrar</th><th>Forma de pago</th><th>Lugar de entrega</th></tr></thead><tbody>${trip.orders.map((order) => `<tr><td>${escapeHtml(order.folio)}</td><td>${escapeHtml(order.customer_name_snapshot || "Sin cliente")}</td>${products.map((product) => `<td>${escapeHtml(productQty(order, product.key))}</td>`).join("")}<td>${number.format(order.peso_kg || 0)} kg</td><td>${money.format(order.importe || 0)}</td><td>${money.format(orderCollectAmount(order))}</td><td>${escapeHtml(order.payment_method || "-")}</td><td>${escapeHtml(order.delivery_address || order.city || "Sin lugar")}</td></tr>`).join("")}</tbody></table>${printableProductTotals(trip)}`;
 }
 
 function printableProductTotals(trip: TripRow) {
