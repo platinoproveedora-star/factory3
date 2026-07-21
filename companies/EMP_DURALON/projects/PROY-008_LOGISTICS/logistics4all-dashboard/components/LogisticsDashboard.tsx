@@ -510,6 +510,17 @@ function CalendarTab({ trips }: { trips: TripRow[] }) {
                 <p className="font-mono font-bold">{trip.hora_inicio?.slice(0, 5) || "--:--"}-{trip.hora_fin || "--:--"} · {trip.folio}</p>
                 <p className="text-sm text-slate-600">{trip.summary.orders_count} pedidos · {number.format(trip.summary.peso_total_kg)} kg · {money.format(trip.summary.importe_total)}</p>
                 <ProductTotals products={trip.summary.key_products} compact />
+                <div className="mt-3 grid gap-2">
+                  {trip.orders.map((order) => (
+                    <div key={order.id} className="grid gap-1 border border-line bg-white px-3 py-2 text-xs sm:grid-cols-[110px_1fr_110px_110px] sm:items-center">
+                      <span className="font-mono font-bold text-ink">{order.folio}</span>
+                      <span className="min-w-0 truncate font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</span>
+                      <span className="text-slate-600">{number.format(order.peso_kg || 0)} kg</span>
+                      <span className="font-semibold text-ink sm:text-right">{money.format(order.importe || 0)}</span>
+                      {order.fecha_entrega && <span className="text-slate-500 sm:col-span-4">Entrega: {order.fecha_entrega}</span>}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
