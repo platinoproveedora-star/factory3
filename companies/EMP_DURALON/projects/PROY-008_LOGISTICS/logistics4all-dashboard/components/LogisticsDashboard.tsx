@@ -281,6 +281,14 @@ function OrdersTab({
     setSelectedOrders(selectedOrders.includes(id) ? selectedOrders.filter((item) => item !== id) : [...selectedOrders, id]);
   }
   const activeTrips = trips.filter((trip) => !["completado", "cancelado"].includes(trip.estado));
+  const cityGroups = useMemo(() => {
+    const grouped = new Map<string, OrderRow[]>();
+    for (const order of orders) {
+      const city = String(order.city || "Sin ciudad").trim() || "Sin ciudad";
+      grouped.set(city, [...(grouped.get(city) || []), order]);
+    }
+    return Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [orders]);
   return (
     <div>
       <div className="sticky top-[116px] z-20 grid gap-3 border border-line bg-white p-3 shadow-sm sm:top-[65px] lg:grid-cols-[1fr_auto_auto] lg:items-center">
@@ -301,8 +309,57 @@ function OrdersTab({
           Nuevo viaje
         </button>
       </div>
-      <div className="mt-3 grid gap-3">
-        {orders.map((order) => (
+      <div className="mt-3 grid gap-4">
+        {cityGroups.map(([city, rows]) => {
+          const totalPeso = rows.reduce((sum, order) => sum + Number(order.peso_kg || 0), 0);
+          const totalImporte = rows.reduce((sum, order) => sum + Number(order.importe || 0), 0);
+          return (
+            <section key={city} className="border border-line bg-white shadow-sm">
+              <header className="flex flex-col gap-1 border-b border-line bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="text-sm font-bold text-ink">{city}</h2>
+                <p className="text-xs font-semibold text-slate-600">{rows.length} pedidos · {number.format(totalPeso)} kg · {money.format(totalImporte)}</p>
+              </header>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1120px] border-collapse text-xs">
+                  <thead className="bg-white text-left uppercase text-slate-500">
+                    <tr>
+                      <th className="px-2 py-2">Sel</th>
+                      <th className="px-2 py-2">Pedido</th>
+                      <th className="px-2 py-2">Cliente</th>
+                      <th className="px-2 py-2">Entrega</th>
+                      <th className="px-2 py-2 text-right">Peso</th>
+                      <th className="px-2 py-2 text-right">Importe</th>
+                      <th className="px-2 py-2">Partidas completas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((order) => {
+                      const selected = selectedOrders.includes(order.id);
+                      return (
+                        <tr key={order.id} onClick={() => toggle(order.id)} className={`cursor-pointer border-t border-line ${selected ? "bg-steel/10" : "hover:bg-slate-50"}`}>
+                          <td className="px-2 py-2">
+                            <span className={`flex h-6 w-6 items-center justify-center rounded border ${selected ? "border-steel bg-steel text-white" : "border-line bg-white"}`}>
+                              {selected && <Check size={15} />}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2 font-mono font-bold text-ink">{order.folio}</td>
+                          <td className="max-w-60 truncate px-2 py-2 font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</td>
+                          <td className="px-2 py-2 text-slate-600">{order.fecha_entrega || "-"}</td>
+                          <td className="px-2 py-2 text-right text-slate-700">{number.format(order.peso_kg || 0)} kg</td>
+                          <td className="px-2 py-2 text-right font-semibold text-ink">{money.format(order.importe || 0)}</td>
+                          <td className="px-2 py-2">
+                            <OrderItemsInline items={order.items || []} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })}
+        {false && orders.map((order) => (
           <button key={order.id} onClick={() => toggle(order.id)} className={`border bg-white p-3 text-left shadow-sm ${selectedOrders.includes(order.id) ? "border-steel ring-2 ring-steel/20" : "border-line"}`}>
             <div className="flex items-start gap-3">
               <span className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded border ${selectedOrders.includes(order.id) ? "border-steel bg-steel text-white" : "border-line"}`}>
@@ -378,6 +435,22 @@ function ScheduledOrdersTab({ orders }: { orders: OrderRow[] }) {
         </div>
       ))}
       {!orders.length && <Empty label="Sin pedidos programados" />}
+    </div>
+  );
+}
+
+function OrderItemsInline({ items }: { items: NonNullable<OrderRow["items"]> }) {
+  if (!items.length) return <span className="text-slate-400">Sin partidas</span>;
+  return (
+    <div className="grid gap-1">
+      {items.map((item, index) => (
+        <div key={item.id || item.folio || index} className="grid grid-cols-[minmax(180px,1fr)_70px_70px_90px] gap-2 border-b border-slate-100 pb-1 last:border-0 last:pb-0">
+          <span className="truncate font-semibold text-slate-800">{item.product_name_snapshot || item.description || "Producto"}</span>
+          <span className="text-right text-slate-600">{number.format(item.quantity || 0)} {item.unit || ""}</span>
+          <span className="text-right text-slate-600">{number.format(item.weight_kg_total || 0)} kg</span>
+          <span className="text-right font-semibold text-ink">{money.format(item.line_total || 0)}</span>
+        </div>
+      ))}
     </div>
   );
 }
