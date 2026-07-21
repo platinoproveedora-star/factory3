@@ -2,6 +2,8 @@
   "name": "vertical_erp_inventory/erp_inventory_lot_options",
   "vertical": "vertical_erp_inventory",
   "version": "0.1.0",
+  "kind": "data",
   "description": "Devuelve lotes disponibles por producto con saldo, costo de lote, costo promedio y ultimo costo para ventas.",
-  "entrypoint": "skill.py"
+  "entrypoint": "skill.py",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
 }

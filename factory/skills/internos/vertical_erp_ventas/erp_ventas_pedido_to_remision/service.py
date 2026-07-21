@@ -37,6 +37,7 @@ class ErpVentasPedidoToRemisionService:
                     "description": item.get("description") or item.get("product_name_snapshot"),
                     "quantity": item.get("quantity"),
                     "unit": item.get("unit"),
+                    "lot_code": item.get("lot_code"),
                     "unit_price": item.get("unit_price_ex_vat") if item.get("unit_price_ex_vat") is not None else item.get("unit_price"),
                     "tax_rate": item.get("vat_rate") if item.get("vat_rate") is not None else item.get("tax_rate"),
                     "metadata": {

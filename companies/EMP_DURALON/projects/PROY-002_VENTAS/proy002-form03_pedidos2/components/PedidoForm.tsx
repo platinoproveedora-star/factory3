@@ -7,6 +7,7 @@ import {
   editableStatus,
   emptyItem,
   getCustomers,
+  getLotOptions,
   getPedidoDetail,
   getPedidos,
   getProducts,
@@ -16,7 +17,7 @@ import {
   today,
   updatePedido,
 } from '@/lib/api';
-import type { Customer, FormItem, Pedido, PedidoItem, Product } from '@/lib/api';
+import type { Customer, FormItem, LotOption, Pedido, PedidoItem, Product } from '@/lib/api';
 import projectContext from '@/project-context.json';
 
 const IVA = 0.16;
@@ -81,6 +82,7 @@ function itemFromPedido(row: PedidoItem): FormItem {
     quantity: Number(row.quantity || 0),
     current_stock: null,
     unit: row.unit || 'pieza',
+    lot_code: row.lot_code || null,
     unit_price_ex_vat: round2(Number(row.unit_price_ex_vat ?? row.unit_price ?? 0)),
     vat_rate: Number(row.vat_rate ?? row.tax_rate ?? IVA),
     weight_kg_per_unit: Number(row.weight_kg_per_unit || 0),
@@ -248,6 +250,7 @@ export default function PedidoForm() {
       description: product.product_name,
       current_stock: Number(product.current_stock ?? product.quantity ?? 0),
       unit: product.unit || 'pieza',
+      lot_code: null,
       weight_kg_per_unit: weight,
       weight_source: weight > 0 ? 'catalog' : 'missing',
     });
@@ -282,6 +285,7 @@ export default function PedidoForm() {
         description: item.description,
         quantity: round4(item.quantity),
         unit: item.unit,
+        lot_code: item.lot_code || undefined,
         unit_price_ex_vat: round2(item.unit_price_ex_vat),
         vat_rate: round4(item.vat_rate),
       })),
@@ -638,6 +642,8 @@ function ProductCard({
   const [priceExText, setPriceExText] = useState(String(item.unit_price_ex_vat || ''));
   const [priceIncText, setPriceIncText] = useState(String(round2(item.unit_price_ex_vat * (1 + item.vat_rate)) || ''));
   const [open, setOpen] = useState(false);
+  const [lotOptions, setLotOptions] = useState<LotOption[]>([]);
+  const [lotLoading, setLotLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -660,6 +666,33 @@ function ProductCard({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  useEffect(() => {
+    if (!item.product_id) {
+      setLotOptions([]);
+      return;
+    }
+    let active = true;
+    setLotLoading(true);
+    getLotOptions(item.product_id)
+      .then((data) => {
+        if (!active) return;
+        setLotOptions(data.lots || []);
+        if (!item.lot_code && data.default_lot_code) {
+          onUpdate({ lot_code: data.default_lot_code });
+        }
+      })
+      .catch(() => {
+        if (active) setLotOptions([]);
+      })
+      .finally(() => {
+        if (active) setLotLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.product_id]);
 
   const suggestions = useMemo(() => {
     const term = clean(query);
@@ -704,7 +737,7 @@ function ProductCard({
           disabled={disabled}
           onChange={(event) => {
             setQuery(event.target.value);
-            onUpdate({ description: event.target.value, product_id: null, weight_kg_per_unit: 0, weight_source: 'missing' });
+            onUpdate({ description: event.target.value, product_id: null, lot_code: null, weight_kg_per_unit: 0, weight_source: 'missing' });
             setOpen(true);
           }}
           onFocus={() => !disabled && setOpen(true)}
@@ -787,6 +820,28 @@ function ProductCard({
       </div>
       {item.product_id && item.current_stock !== undefined && item.current_stock !== null && (
         <p className="mt-2 text-xs font-semibold text-slate-600">Existencia: {round4(Number(item.current_stock || 0))} {item.unit}</p>
+      )}
+      {item.product_id && (
+        <div className="mt-3">
+          <Field label="Lote">
+            <select
+              disabled={disabled || lotLoading}
+              value={item.lot_code ?? ''}
+              onChange={(event) => onUpdate({ lot_code: event.target.value || null })}
+              className="input bg-white disabled:bg-slate-100"
+            >
+              <option value="">{lotLoading ? 'Cargando lotes...' : 'Sin lote especifico'}</option>
+              {lotOptions.map((lot) => (
+                <option key={lot.lot_code} value={lot.lot_code}>
+                  {lot.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          {!lotLoading && !lotOptions.length && (
+            <p className="mt-1 text-xs text-slate-500">Sin lotes con existencia registrada para este producto.</p>
+          )}
+        </div>
       )}
       <div className="mt-3 grid grid-cols-3 gap-2 rounded bg-slate-50 p-2 text-xs">
         <div>

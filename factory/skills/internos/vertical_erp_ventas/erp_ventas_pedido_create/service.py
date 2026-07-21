@@ -153,6 +153,7 @@ class ErpVentasPedidoCreateService:
                 "description": item["description"],
                 "quantity": item["quantity"],
                 "unit": item["unit"],
+                "lot_code": item.get("lot_code"),
                 "unit_price": item["unit_price_ex_vat"],
                 "unit_price_ex_vat": item["unit_price_ex_vat"],
                 "vat_rate": item["vat_rate"],
@@ -173,6 +174,7 @@ class ErpVentasPedidoCreateService:
                     "line_index": index,
                     "price_mode": item["price_mode"],
                     "weight_unit": item.get("weight_unit"),
+                    "lot_code": item.get("lot_code"),
                 },
             }
             item_result = SupabaseClient(base_context).rest_insert("sales_document_items", item_row)
@@ -242,6 +244,7 @@ class ErpVentasPedidoCreateService:
                     "product_folio": product.get("folio"),
                     "product_name": product.get("product_name"),
                     "description": product.get("product_name") or desc,
+                    "lot_code": str(raw.get("lot_code") or "").strip() or None,
                     "quantity": qty,
                     "unit": str(raw.get("unit") or product.get("unit") or "pieza"),
                     "unit_price_ex_vat": round(unit_ex, 4),

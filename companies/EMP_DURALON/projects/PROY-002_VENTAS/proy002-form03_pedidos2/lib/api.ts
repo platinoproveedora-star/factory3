@@ -78,6 +78,7 @@ export type PedidoItem = {
   description: string;
   quantity: number;
   unit: string;
+  lot_code?: string | null;
   unit_price?: number | null;
   unit_price_ex_vat?: number | null;
   vat_rate?: number | null;
@@ -94,10 +95,20 @@ export type FormItem = {
   quantity: number;
   current_stock?: number | null;
   unit: string;
+  lot_code: string | null;
   unit_price_ex_vat: number;
   vat_rate: number;
   weight_kg_per_unit: number;
   weight_source: 'catalog' | 'missing';
+};
+
+export type LotOption = {
+  lot_code: string;
+  quantity: number;
+  lot_cost: number;
+  avg_cost: number;
+  last_movement_date?: string | null;
+  label: string;
 };
 
 export type RemisionResult = {
@@ -154,6 +165,7 @@ export function emptyItem(): FormItem {
     description: '',
     quantity: 1,
     unit: 'pieza',
+    lot_code: null,
     unit_price_ex_vat: 0,
     vat_rate: 0.16,
     weight_kg_per_unit: 0,
@@ -173,6 +185,10 @@ export async function getCustomers(): Promise<Customer[]> {
 export async function getProducts(): Promise<Product[]> {
   const data = await get<{ products: Product[] }>('vertical_erp_ventas/erp_ventas_product_list');
   return data.products ?? [];
+}
+
+export async function getLotOptions(productId: string): Promise<{ lots: LotOption[]; requires_lot: boolean; default_lot_code: string | null }> {
+  return get('vertical_erp_inventory/erp_inventory_lot_options', { product_id: productId });
 }
 
 export async function getPedidos(limit = 50): Promise<Pedido[]> {
@@ -241,6 +257,7 @@ export type PedidoPayload = {
     description: string;
     quantity: number;
     unit: string;
+    lot_code?: string | null;
     unit_price_ex_vat: number;
     vat_rate: number;
   }>;

@@ -110,6 +110,7 @@ class ErpVentasPedidoUpdateService:
                 "description": item["description"],
                 "quantity": item["quantity"],
                 "unit": item["unit"],
+                "lot_code": item.get("lot_code"),
                 "unit_price": item["unit_price_ex_vat"],
                 "unit_price_ex_vat": item["unit_price_ex_vat"],
                 "vat_rate": item["vat_rate"],
@@ -130,6 +131,7 @@ class ErpVentasPedidoUpdateService:
                     "line_index": index,
                     "price_mode": item["price_mode"],
                     "weight_unit": item.get("weight_unit"),
+                    "lot_code": item.get("lot_code"),
                 },
             }
             item_result = db.rest_insert("sales_document_items", item_row)

@@ -38,7 +38,7 @@ class ErpVentasPedidoDetailService:
             filters={"document_id": doc["id"]},
             select=(
                 "id,folio,document_id,product_id,inventory_product_id,product_folio_snapshot,"
-                "product_name_snapshot,description,quantity,unit,unit_price,unit_price_ex_vat,"
+                "product_name_snapshot,description,quantity,unit,lot_code,unit_price,unit_price_ex_vat,"
                 "vat_rate,vat_amount,unit_price_inc_vat,line_subtotal,tax_rate,tax_amount,"
                 "line_total,weight_kg_per_unit,weight_kg_total,weight_source,metadata,created_at"
             ),

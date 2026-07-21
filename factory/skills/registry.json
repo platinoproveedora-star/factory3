@@ -4101,6 +4101,7 @@
     "tipo": "interno",
     "nombre": "vertical_erp_inventory/erp_inventory_lot_options",
     "vertical": "vertical_erp_inventory",
+    "kind": "data",
     "descripcion": "Devuelve lotes disponibles por producto con saldo, costo de lote, costo promedio y ultimo costo para ventas.",
     "path": "skills/internos/vertical_erp_inventory/erp_inventory_lot_options",
     "entrypoint": "skill.py",
