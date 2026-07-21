@@ -52,6 +52,19 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
     if (name === "assign_orders") {
       const ids = new Set((context.pedido_ids as string[]) || []);
       const tripId = String(context.trip_id || "");
+      if (context.action === "remove") {
+        setData({
+          ...data,
+          available_orders: data.available_orders.map((order) => (ids.has(order.id) ? { ...order, logistics_assignment: undefined } : order)),
+          trips: data.trips.map((trip) => {
+            if (trip.id !== tripId) return trip;
+            const orders = trip.orders.filter((order) => !ids.has(order.id));
+            return { ...trip, orders, summary: summarizeOrders(orders) };
+          })
+        });
+        setError("");
+        return true;
+      }
       const target = data.trips.find((trip) => trip.id === tripId);
       const selected = data.available_orders.filter((order) => ids.has(order.id));
       if (!target || !selected.length) {
@@ -766,8 +779,12 @@ function MoveOrderCell({
     if (ok) setTargetTripId("");
   }
 
+  async function removeTrip() {
+    await action("assign_orders", { action: "remove", trip_id: currentTripId, pedido_ids: [order.id] });
+  }
+
   return (
-    <div className="flex min-w-60 gap-2">
+    <div className="flex min-w-[360px] gap-2">
       <select value={targetTripId} onChange={(event) => setTargetTripId(event.target.value)} className="input h-9 min-w-0" disabled={!targetTrips.length || Boolean(busy)}>
         <option value="">Otro viaje</option>
         {targetTrips.map((trip) => (
@@ -776,6 +793,9 @@ function MoveOrderCell({
       </select>
       <button onClick={move} disabled={!targetTripId || Boolean(busy)} className="btn-soft min-h-9 px-3">
         Mover
+      </button>
+      <button onClick={removeTrip} disabled={Boolean(busy)} className="btn-soft min-h-9 px-3">
+        Sin viaje
       </button>
     </div>
   );
