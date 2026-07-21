@@ -23,7 +23,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
     if (name === "create_trip") {
       const ids = new Set((context.pedido_ids as string[]) || []);
       const selected = data.available_orders.filter((order) => ids.has(order.id));
-      if (!selected.length) {
+      if (!selected.length && !context.allow_empty) {
         setError("Selecciona pedidos para crear viaje.");
         return false;
       }
@@ -183,6 +183,15 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
     }
   }
 
+  async function createEmptyTrip() {
+    const ok = await action("create_trip", { pedido_ids: [], allow_empty: true });
+    if (ok) {
+      setSelectedOrders([]);
+      setTargetTripId("");
+      setTab("trips");
+    }
+  }
+
   async function assignToExistingTrip() {
     if (!selectedOrders.length || !targetTripId) return;
     const ok = await action("assign_orders", { trip_id: targetTripId, pedido_ids: selectedOrders });
@@ -231,6 +240,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
             selectedOrders={selectedOrders}
             setSelectedOrders={setSelectedOrders}
             createTrip={createTrip}
+            createEmptyTrip={createEmptyTrip}
             assignToExistingTrip={assignToExistingTrip}
             trips={activeTrips}
             targetTripId={targetTripId}
@@ -239,7 +249,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
           />
         )}
         {tab === "scheduled_orders" && <ScheduledOrdersTab orders={scheduledOrders} trips={activeTrips} action={action} busy={busy} />}
-        {tab === "trips" && <TripsTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} />}
+        {tab === "trips" && <TripsTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} createEmptyTrip={createEmptyTrip} />}
         {tab === "calendar" && <CalendarTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} companyId={companyId} refresh={refresh} setError={setError} />}
         {tab === "completed_trips" && <CompletedTripsTab trips={completedTrips} action={action} busy={busy} />}
         {tab === "config" && <ConfigTab catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} />}
@@ -262,6 +272,7 @@ function OrdersTab({
   selectedOrders,
   setSelectedOrders,
   createTrip,
+  createEmptyTrip,
   assignToExistingTrip,
   trips,
   targetTripId,
@@ -272,6 +283,7 @@ function OrdersTab({
   selectedOrders: string[];
   setSelectedOrders: (rows: string[]) => void;
   createTrip: () => void;
+  createEmptyTrip: () => void;
   assignToExistingTrip: () => void;
   trips: TripRow[];
   targetTripId: string;
@@ -292,7 +304,7 @@ function OrdersTab({
   }, [orders]);
   return (
     <div>
-      <div className="sticky top-[116px] z-20 grid gap-3 border border-line bg-white p-3 shadow-sm sm:top-[65px] lg:grid-cols-[1fr_auto_auto] lg:items-center">
+      <div className="sticky top-[116px] z-20 grid gap-3 border border-line bg-white p-3 shadow-sm sm:top-[65px] lg:grid-cols-[1fr_auto_auto_auto] lg:items-center">
         <p className="text-sm font-semibold text-ink">{selectedOrders.length} seleccionados</p>
         <div className="flex min-w-0 gap-2">
           <select value={targetTripId} onChange={(event) => setTargetTripId(event.target.value)} className="input min-w-0" disabled={!activeTrips.length}>
@@ -308,6 +320,10 @@ function OrdersTab({
         <button onClick={createTrip} className="btn-primary" disabled={!selectedOrders.length || Boolean(busy)}>
           <Plus size={16} />
           Nuevo viaje
+        </button>
+        <button onClick={createEmptyTrip} className="btn-soft" disabled={Boolean(busy)}>
+          <Plus size={16} />
+          Viaje vacio
         </button>
       </div>
       <div className="mt-3 grid gap-4">
@@ -551,7 +567,8 @@ function TripsTab({
   action,
   busy,
   reviewMode,
-  updateOrderLogistics
+  updateOrderLogistics,
+  createEmptyTrip
 }: {
   trips: TripRow[];
   catalogs: LogisticsData["catalogs"];
@@ -559,9 +576,16 @@ function TripsTab({
   busy: string;
   reviewMode?: boolean;
   updateOrderLogistics: (tripId: string, order: OrderRow, patch: Partial<OrderRow>) => Promise<void>;
+  createEmptyTrip: () => void;
 }) {
   return (
     <div className="grid gap-4">
+      <div className="flex justify-end">
+        <button onClick={createEmptyTrip} disabled={Boolean(busy)} className="btn-soft">
+          <Plus size={16} />
+          Nuevo viaje vacio
+        </button>
+      </div>
       {trips.map((trip) => (
         <TripPanel key={trip.id} trip={trip} trips={trips} catalogs={catalogs} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} />
       ))}
@@ -695,6 +719,13 @@ function TripPanel({
                 </td>
               </tr>
             ))}
+            {!trip.orders.length && (
+              <tr className="border-t border-line">
+                <td colSpan={11} className="px-3 py-5 text-center text-sm text-slate-500">
+                  Viaje vacio. Puedes mover pedidos aqui desde Pedidos programados o desde otro viaje.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

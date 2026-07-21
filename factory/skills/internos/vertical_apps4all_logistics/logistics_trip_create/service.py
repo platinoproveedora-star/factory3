@@ -32,22 +32,27 @@ class LogisticsTripCreateService:
             "metadata": {"created_by": context.get("user_id") or context.get("created_by_user_id")},
             "created_by_user_id": context.get("user_id") or context.get("created_by_user_id"),
         }
-        if is_dry_run(context):
-            return {"ok": True, "message": "dry_run: no se creo viaje", "data": {"trip": row, "pedido_ids": context.get("pedido_ids") or []}}
-        created = db(ctx).rest_insert("logistics_trips", row)
-        if not created.get("ok"):
-            return created
-        trip = (created.get("data") or [{}])[0]
         pedido_ids = list(dict.fromkeys(str(item) for item in (context.get("pedido_ids") or []) if str(item).strip()))
+        allow_empty = bool(context.get("allow_empty"))
+        if not pedido_ids and not allow_empty:
+            return {"ok": False, "error": "pedido_ids requerido para crear viaje o allow_empty=true"}
         available_by_id = {str(order.get("id")): order for order in list_orders(ctx, limit=1000)}
         invalid = [pedido_id for pedido_id in pedido_ids if pedido_id not in available_by_id]
         if invalid:
             return {"ok": False, "error": "pedido no disponible para viaje", "data": {"pedido_ids": invalid}}
+        if is_dry_run(context):
+            return {"ok": True, "message": "dry_run: no se creo viaje", "data": {"trip": row, "pedido_ids": pedido_ids}}
+        created = db(ctx).rest_insert("logistics_trips", row)
+        if not created.get("ok"):
+            return created
+        trip = (created.get("data") or [{}])[0]
         self._remove_existing_active_assignments(ctx, pedido_ids)
-        folios_result = reserve_folios(ctx, "logistics_trip_orders", "VIAP", len(pedido_ids))
-        if not folios_result.get("ok"):
-            return folios_result
-        folios = folios_result["data"]["folios"]
+        folios = []
+        if pedido_ids:
+            folios_result = reserve_folios(ctx, "logistics_trip_orders", "VIAP", len(pedido_ids))
+            if not folios_result.get("ok"):
+                return folios_result
+            folios = folios_result["data"]["folios"]
         links = []
         for index, pedido_id in enumerate(pedido_ids, start=1):
             order = available_by_id[pedido_id]
