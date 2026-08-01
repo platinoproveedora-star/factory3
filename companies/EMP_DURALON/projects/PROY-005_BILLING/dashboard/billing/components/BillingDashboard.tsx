@@ -741,6 +741,91 @@ export default function BillingDashboard() {
     return acc;
   }, {});
 
+  const appsByPayment = paymentApplications.reduce<Record<string, PaymentApplication[]>>((acc, app) => {
+    if (!app.payment_id) return acc;
+    if (!acc[app.payment_id]) acc[app.payment_id] = [];
+    acc[app.payment_id].push(app);
+    return acc;
+  }, {});
+
+  const accountById = accounts.reduce<Record<string, MoneyAccount>>((acc, account) => {
+    acc[account.id] = account;
+    return acc;
+  }, {});
+
+  const paymentBankAccountId = (payment: Payment) => {
+    const metadataAccount = typeof payment.metadata?.destination_bank_account_id === 'string'
+      ? payment.metadata.destination_bank_account_id
+      : '';
+    return metadataAccount || payment.destination_money_account_id || '';
+  };
+
+  const paymentBankAccountName = (payment: Payment) => {
+    const accountId = paymentBankAccountId(payment);
+    const account = accountId ? accountById[accountId] : null;
+    return account
+      ? [account.account_name, account.bank_name].filter(Boolean).join(' - ')
+      : payment.destination_account_name || payment.destination_account_folio || payment.bank_name || 'Sin cuenta registrada';
+  };
+
+  const EditPaymentInfo = ({ payment }: { payment: Payment }) => {
+    const paymentApps = appsByPayment[payment.id] ?? [];
+    const activeApps = paymentApps.filter((app) => app.status === 'aplicado');
+    const appliedTotal = activeApps.reduce((sum, app) => sum + (Number(app.amount_applied) || 0), 0);
+    return (
+      <div className="mb-5 space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <p className="text-xs font-medium uppercase text-gray-500">Cliente</p>
+            <p className="text-sm font-semibold text-gray-900">{payment.customer_name || '-'}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-gray-500">Cuenta banco</p>
+            <p className="text-sm font-semibold text-gray-900">{paymentBankAccountName(payment)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-gray-500">Metodo / fecha</p>
+            <p className="text-sm text-gray-800">{METODO_LABEL[payment.payment_method] ?? payment.payment_method} - {fmtDate(payment.payment_date)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-gray-500">Estatus</p>
+            <div className="mt-1 flex flex-wrap gap-1">
+              <StatusBadge status={payment.status} />
+              <StatusBadge status={payment.confirmation_status ?? 'confirmado'} />
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-gray-500">Rastreo</p>
+            <p className="text-sm text-gray-800">{payment.tracking_key || payment.bank_reference || '-'}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-gray-500">Aplicado / disponible</p>
+            <p className="text-sm text-gray-800">{fmt(appliedTotal)} / {fmt(payment.unapplied_amount)}</p>
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase text-gray-500">Remisiones aplicadas</p>
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+            {paymentApps.length === 0 ? (
+              <p className="px-3 py-3 text-sm text-gray-400">Este pago no tiene aplicaciones registradas</p>
+            ) : (
+              paymentApps.map((app) => (
+                <div key={app.id} className="grid grid-cols-[1fr_110px_90px] items-center gap-2 border-b border-gray-100 px-3 py-2 text-sm last:border-b-0">
+                  <div className="min-w-0">
+                    <p className="truncate font-mono text-blue-700">{app.sales_folio || app.sales_document_id || '-'}</p>
+                    <p className="text-xs text-gray-400">{app.folio}</p>
+                  </div>
+                  <p className="text-right font-semibold text-gray-900">{fmt(app.amount_applied)}</p>
+                  <div className="text-right"><StatusBadge status={app.status} /></div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Nombres de clientes de remisiones para autocompletado
   const customerNames = Array.from(new Set(remisiones.map((r) => r.customer_name_snapshot).filter(Boolean) as string[])).sort();
 
@@ -1823,6 +1908,7 @@ export default function BillingDashboard() {
       {/* Editar Pago */}
       {modal?.kind === 'edit_pago' && (
         <Modal title={`Modificar pago - ${modal.payment.folio}`} onClose={() => setModal(null)}>
+          <EditPaymentInfo payment={modal.payment} />
           <Field label="Importe">
             <input type="number" className={inputCls} value={form.amount ?? ''} onChange={(e) => setF('amount', e.target.value)} />
           </Field>

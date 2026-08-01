@@ -27,7 +27,7 @@ class ErpBillingDashboardDataService:
         applications_result = db.rest_select(
             "billing_payment_applications",
             filters={"empresa_id": ctx["company_id"]},
-            select="id,folio,payment_id,payment_folio,sales_folio,amount_applied,status,metadata,created_at",
+            select="id,folio,payment_id,payment_folio,sales_document_id,sales_folio,amount_applied,status,metadata,created_at",
             order="created_at.desc",
             limit=limit,
         )

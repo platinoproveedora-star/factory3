@@ -66,6 +66,7 @@ export type Payment = {
   destination_account_name?: string | null;
   destination_account_folio?: string | null;
   destination_account_type?: string | null;
+  bank_name?: string | null;
   status: string;
   confirmation_status?: string | null;
   bank_reference?: string | null;
@@ -96,9 +97,11 @@ export type PaymentApplication = {
   folio: string;
   payment_id: string;
   payment_folio?: string | null;
+  sales_document_id?: string | null;
   sales_folio?: string | null;
   amount_applied: number;
   status: string;
+  metadata?: Record<string, unknown> | null;
   created_at?: string;
 };
 
