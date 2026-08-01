@@ -21,11 +21,16 @@ class ErpBillingPaymentApplyService:
         payment = self._payment(ctx, context)
         if not payment:
             return {"ok": False, "error": "payment_id/payment_folio requerido o no encontrado"}
+        if str(payment.get("status") or "").strip().lower() == "cancelado":
+            return {"ok": False, "error": "no se puede aplicar un pago cancelado"}
         document = self._document(sales_ctx, context)
         if not document:
             return {"ok": False, "error": "sales_document_id/sales_folio requerido o no encontrado"}
         if str(document.get("document_type") or "").strip().lower() != "remision":
             return {"ok": False, "error": "solo se pueden aplicar pagos a remisiones; los pedidos no son CXC"}
+        customer_check = self._same_customer(payment, document)
+        if not customer_check.get("ok"):
+            return customer_check
 
         unapplied = money(payment.get("unapplied_amount") if payment.get("unapplied_amount") is not None else payment.get("amount"))
         current_balance = money(document.get("balance_total") if document.get("balance_total") is not None else document.get("total"))
@@ -146,4 +151,17 @@ class ErpBillingPaymentApplyService:
         if not doc_id and not folio:
             return None
         filters = {"id": doc_id} if doc_id else {"folio": folio}
-        return fetch_one(SupabaseClient(sales_ctx), "sales_documents", filters, "id,folio,document_type,total,paid_total,balance_total,status")
+        return fetch_one(SupabaseClient(sales_ctx), "sales_documents", filters, "id,folio,document_type,customer_id,customer_name_snapshot,total,paid_total,balance_total,status")
+
+    def _same_customer(self, payment: dict, document: dict) -> dict:
+        payment_customer_id = blank(payment.get("customer_id"))
+        document_customer_id = blank(document.get("customer_id"))
+        if payment_customer_id and document_customer_id:
+            if payment_customer_id != document_customer_id:
+                return {"ok": False, "error": "el pago solo se puede aplicar a remisiones del mismo cliente"}
+            return {"ok": True}
+        payment_customer = blank(payment.get("customer_name"))
+        document_customer = blank(document.get("customer_name_snapshot"))
+        if payment_customer and document_customer and payment_customer.strip().lower() != document_customer.strip().lower():
+            return {"ok": False, "error": "el pago solo se puede aplicar a remisiones del mismo cliente"}
+        return {"ok": True}

@@ -5,6 +5,7 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Banknote,
+  Ban,
   Calculator,
   CheckCircle,
   ChevronDown,
@@ -76,6 +77,8 @@ function StatusBadge({ status }: { status?: string | null }) {
     pagada: 'bg-green-100 text-green-800',
     confirmado: 'bg-green-100 text-green-800',
     disponible: 'bg-blue-100 text-blue-800',
+    liberado: 'bg-blue-100 text-blue-800',
+    sin_aplicar: 'bg-blue-100 text-blue-800',
     por_confirmar: 'bg-yellow-100 text-yellow-800',
     pendiente: 'bg-yellow-100 text-yellow-800',
     parcial: 'bg-orange-100 text-orange-800',
@@ -243,6 +246,9 @@ export default function BillingDashboard() {
     | { kind: 'nuevo_pago' }
     | { kind: 'apply_pago'; payment: Payment }
     | { kind: 'confirm_pago'; payment: Payment }
+    | { kind: 'edit_pago'; payment: Payment }
+    | { kind: 'cancel_pago'; payment: Payment }
+    | { kind: 'cancel_remision'; remision: Remision }
     | { kind: 'nuevo_anticipo' }
     | { kind: 'apply_anticipo'; anticipo: Anticipo }
     | { kind: 'nueva_dev' }
@@ -311,6 +317,23 @@ export default function BillingDashboard() {
     setForm({});
     setFormErr('');
     setModal(m);
+  };
+
+  const openEditPago = (payment: Payment) => {
+    const metadataAccount = typeof payment.metadata?.destination_bank_account_id === 'string'
+      ? payment.metadata.destination_bank_account_id
+      : '';
+    setForm({
+      amount: String(payment.amount ?? ''),
+      method: payment.payment_method ?? '',
+      payment_date: payment.payment_date ?? todayISO(),
+      account_id: metadataAccount || payment.destination_money_account_id || '',
+      tracking_key: payment.tracking_key ?? '',
+      bank_reference: payment.bank_reference ?? '',
+      notes: payment.notes ?? '',
+    });
+    setFormErr('');
+    setModal({ kind: 'edit_pago', payment });
   };
 
   async function submitPago() {
@@ -408,6 +431,68 @@ export default function BillingDashboard() {
       await api.confirmPayment({ payment_id: modal.payment.id, bank_reference: form.bank_reference || undefined });
       setModal(null);
       reload();
+    } catch (e: any) {
+      setFormErr(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitEditPago() {
+    if (modal?.kind !== 'edit_pago') return;
+    const amount = parseFloat(form.amount || '0');
+    if (!amount || !form.method) return setFormErr('Importe y metodo requeridos');
+    setSaving(true);
+    try {
+      await api.managePayment({
+        action: 'update',
+        payment_id: modal.payment.id,
+        amount,
+        payment_method: form.method,
+        payment_date: form.payment_date || undefined,
+        destination_bank_account_id: form.account_id || undefined,
+        tracking_key: form.tracking_key || undefined,
+        bank_reference: form.bank_reference || undefined,
+        notes: form.notes || undefined,
+      });
+      setModal(null);
+      const d = await api.getDashboardData(200);
+      setPayments(d.payments ?? []);
+      setPaymentApplications(d.payment_applications ?? []);
+    } catch (e: any) {
+      setFormErr(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitCancelPago() {
+    if (modal?.kind !== 'cancel_pago') return;
+    setSaving(true);
+    try {
+      await api.managePayment({ action: 'cancel', payment_id: modal.payment.id, cancel_reason: form.reason || undefined });
+      setModal(null);
+      const d = await api.getDashboardData(200);
+      setPayments(d.payments ?? []);
+      setPaymentApplications(d.payment_applications ?? []);
+      setRemisiones(await api.getRemisiones({ limit: 200 }));
+    } catch (e: any) {
+      setFormErr(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function submitCancelRemision() {
+    if (modal?.kind !== 'cancel_remision') return;
+    setSaving(true);
+    try {
+      await api.cancelRemision({ id: modal.remision.id, cancel_reason: form.reason || undefined });
+      setModal(null);
+      setRemisiones(await api.getRemisiones({ limit: 200 }));
+      const d = await api.getDashboardData(200);
+      setPayments(d.payments ?? []);
+      setPaymentApplications(d.payment_applications ?? []);
     } catch (e: any) {
       setFormErr(e.message);
     } finally {
@@ -649,7 +734,7 @@ export default function BillingDashboard() {
     : null;
 
   const appsMap = paymentApplications.reduce<Record<string, string[]>>((acc, a) => {
-    if (a.payment_id && a.sales_folio) {
+    if (a.payment_id && a.sales_folio && a.status === 'aplicado') {
       if (!acc[a.payment_id]) acc[a.payment_id] = [];
       acc[a.payment_id].push(a.sales_folio);
     }
@@ -660,11 +745,12 @@ export default function BillingDashboard() {
   const customerNames = Array.from(new Set(remisiones.map((r) => r.customer_name_snapshot).filter(Boolean) as string[])).sort();
 
   // ─── Remision picker for apply modals ────────────────────────────────────────
-  const RemisionSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+  const RemisionSelect = ({ value, onChange, customerName }: { value: string; onChange: (v: string) => void; customerName?: string | null }) => (
     <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="">Seleccionar remisión...</option>
       {remisiones
         .filter((r) => r.status !== 'cancelada' && r.status !== 'pagada' && (r.balance_total ?? r.total) > 0)
+        .filter((r) => !customerName || r.customer_name_snapshot === customerName)
         .map((r) => (
           <option key={r.id} value={r.id}>
             {r.folio} — {r.customer_name_snapshot} — Saldo: {fmt(r.balance_total ?? r.total)}
@@ -774,6 +860,11 @@ export default function BillingDashboard() {
                             Cobrar
                           </button>
                         )}
+                        {r.status !== 'cancelada' && (
+                          <button onClick={() => openModal({ kind: 'cancel_remision', remision: r })} title="Cancelar remision" className="text-red-400 hover:text-red-600">
+                            <Ban size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -820,25 +911,40 @@ export default function BillingDashboard() {
                   <tr><td colSpan={9} className="text-center py-10 text-gray-400">Sin registros</td></tr>
                 )}
                 {filteredPay.map((p) => (
-                  <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-blue-700">{p.folio}</td>
+                  <tr key={p.id} className={`border-t border-gray-100 hover:bg-gray-50 ${p.status === 'cancelado' ? 'bg-red-50/40 opacity-75' : ''}`}>
+                    <td className={`px-4 py-3 font-mono text-blue-700 ${p.status === 'cancelado' ? 'line-through text-red-700' : ''}`}>{p.folio}</td>
                     <td className="px-4 py-3 text-gray-600">{fmtDate(p.payment_date)}</td>
                     <td className="px-4 py-3">{p.customer_name}</td>
                     <td className="px-4 py-3">{METODO_LABEL[p.payment_method] ?? p.payment_method}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmt(p.amount)}</td>
                     <td className="px-4 py-3 text-right text-orange-600">{fmt(p.unapplied_amount)}</td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-500">{(appsMap[p.id] ?? []).join(', ') || '—'}</td>
-                    <td className="px-4 py-3 text-center"><StatusBadge status={p.confirmation_status ?? 'confirmado'} /></td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <StatusBadge status={p.confirmation_status ?? 'confirmado'} />
+                        <StatusBadge status={p.status} />
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-end">
-                        {p.confirmation_status === 'por_confirmar' && (
+                        {p.status !== 'cancelado' && (
+                          <button onClick={() => openEditPago(p)} title="Modificar pago" className="text-gray-400 hover:text-blue-600">
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                        {p.confirmation_status === 'por_confirmar' && p.status !== 'cancelado' && (
                           <button onClick={() => openModal({ kind: 'confirm_pago', payment: p })} className="text-xs bg-green-600 text-white rounded px-2 py-1 hover:bg-green-700">
                             Confirmar
                           </button>
                         )}
-                        {(p.unapplied_amount ?? 0) > 0 && (
-                          <button onClick={() => openModal({ kind: 'apply_pago', payment: p })} className="text-xs border border-blue-600 text-blue-600 rounded px-2 py-1 hover:bg-blue-50">
-                            Aplicar
+                        {(p.unapplied_amount ?? 0) > 0 && p.status !== 'cancelado' && (
+                          <button onClick={() => openModal({ kind: 'apply_pago', payment: p })} title="Aplicar pago" className="text-blue-600 hover:text-blue-800">
+                            <CircleDollarSign size={15} />
+                          </button>
+                        )}
+                        {p.status !== 'cancelado' && (
+                          <button onClick={() => openModal({ kind: 'cancel_pago', payment: p })} title="Cancelar pago" className="text-red-400 hover:text-red-600">
+                            <XCircle size={15} />
                           </button>
                         )}
                       </div>
@@ -1569,6 +1675,23 @@ export default function BillingDashboard() {
         </Modal>
       )}
 
+      {/* Cancelar Remision */}
+      {modal?.kind === 'cancel_remision' && (
+        <Modal title={`Cancelar remision - ${modal.remision.folio}`} onClose={() => setModal(null)}>
+          <p className="text-sm text-gray-600 mb-4">
+            Se cancelara la remision, se revertira inventario y cualquier pago aplicado quedara liberado para reaplicarlo al mismo cliente.
+          </p>
+          <Field label="Motivo">
+            <input className={inputCls} value={form.reason ?? ''} onChange={(e) => setF('reason', e.target.value)} />
+          </Field>
+          {formErr && <p className="text-red-600 text-sm mb-3">{formErr}</p>}
+          <div className="flex gap-2 justify-end">
+            <button className={btnSecondary} onClick={() => setModal(null)}>No cancelar</button>
+            <button className={`${btnPrimary} bg-red-600 hover:bg-red-700`} disabled={saving} onClick={submitCancelRemision}>{saving ? 'Cancelando...' : 'Cancelar remision'}</button>
+          </div>
+        </Modal>
+      )}
+
       {/* Registrar Pago */}
       {modal?.kind === 'pago' && (
         <Modal title={`Registrar pago — ${modal.remision.folio}`} onClose={() => setModal(null)}>
@@ -1697,12 +1820,64 @@ export default function BillingDashboard() {
         </Modal>
       )}
 
+      {/* Editar Pago */}
+      {modal?.kind === 'edit_pago' && (
+        <Modal title={`Modificar pago - ${modal.payment.folio}`} onClose={() => setModal(null)}>
+          <Field label="Importe">
+            <input type="number" className={inputCls} value={form.amount ?? ''} onChange={(e) => setF('amount', e.target.value)} />
+          </Field>
+          <Field label="Fecha">
+            <input type="date" className={inputCls} value={form.payment_date ?? todayISO()} onChange={(e) => setF('payment_date', e.target.value)} />
+          </Field>
+          <Field label="Metodo de pago">
+            <select className={inputCls} value={form.method ?? ''} onChange={(e) => setF('method', e.target.value)}>
+              <option value="">Seleccionar...</option>
+              {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{METODO_LABEL[m]}</option>)}
+            </select>
+          </Field>
+          <Field label="Cuenta destino">
+            <select className={inputCls} value={form.account_id ?? ''} onChange={(e) => setF('account_id', e.target.value)}>
+              <option value="">Sin especificar</option>
+              {accounts.map((a) => <option key={a.id} value={a.id}>{a.account_name}</option>)}
+            </select>
+          </Field>
+          <Field label="Referencia / rastreo">
+            <input className={inputCls} value={form.tracking_key ?? ''} onChange={(e) => setF('tracking_key', e.target.value)} />
+          </Field>
+          <Field label="Notas">
+            <input className={inputCls} value={form.notes ?? ''} onChange={(e) => setF('notes', e.target.value)} />
+          </Field>
+          {formErr && <p className="text-red-600 text-sm mb-3">{formErr}</p>}
+          <div className="flex gap-2 justify-end">
+            <button className={btnSecondary} onClick={() => setModal(null)}>Cancelar</button>
+            <button className={btnPrimary} disabled={saving} onClick={submitEditPago}>{saving ? 'Guardando...' : 'Guardar cambios'}</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Cancelar Pago */}
+      {modal?.kind === 'cancel_pago' && (
+        <Modal title={`Cancelar pago - ${modal.payment.folio}`} onClose={() => setModal(null)}>
+          <p className="text-sm text-gray-600 mb-4">
+            El pago quedara como cancelado y sus aplicaciones activas regresaran saldo a las remisiones.
+          </p>
+          <Field label="Motivo">
+            <input className={inputCls} value={form.reason ?? ''} onChange={(e) => setF('reason', e.target.value)} />
+          </Field>
+          {formErr && <p className="text-red-600 text-sm mb-3">{formErr}</p>}
+          <div className="flex gap-2 justify-end">
+            <button className={btnSecondary} onClick={() => setModal(null)}>No cancelar</button>
+            <button className={`${btnPrimary} bg-red-600 hover:bg-red-700`} disabled={saving} onClick={submitCancelPago}>{saving ? 'Cancelando...' : 'Cancelar pago'}</button>
+          </div>
+        </Modal>
+      )}
+
       {/* Aplicar Pago */}
       {modal?.kind === 'apply_pago' && (
         <Modal title={`Aplicar pago — ${modal.payment.folio}`} onClose={() => setModal(null)}>
           <p className="text-sm text-gray-600 mb-4">Disponible para aplicar: <strong>{fmt(modal.payment.unapplied_amount)}</strong></p>
           <Field label="Remisión">
-            <RemisionSelect value={form.sales_document_id ?? ''} onChange={(v) => setF('sales_document_id', v)} />
+            <RemisionSelect value={form.sales_document_id ?? ''} onChange={(v) => setF('sales_document_id', v)} customerName={modal.payment.customer_name} />
           </Field>
           <Field label="Importe a aplicar">
             <input type="number" className={inputCls} value={form.amount ?? ''} onChange={(e) => setF('amount', e.target.value)} />

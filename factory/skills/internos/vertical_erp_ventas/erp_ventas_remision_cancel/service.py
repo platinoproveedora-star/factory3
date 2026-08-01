@@ -72,6 +72,7 @@ class ErpVentasRemisionCancelService:
                     return {"ok": False, "error": f"error revirtiendo item {item.get('folio') or item.get('id')}: {movement.get('error')}"}
                 reversals.append(movement.get("data", {}).get("movement"))
         self._mark_original_outputs_canceled(inv_db, doc, note, now)
+        released_payments = self._release_billing_applications(context, cfg, doc, note, now)
 
         update = {
             "status": "cancelada",
@@ -85,7 +86,7 @@ class ErpVentasRemisionCancelService:
         data = updated.get("data") or []
         remision = data[0] if isinstance(data, list) and data else data
         released_pedido = self._release_parent_pedido(sales_db, doc, note, now)
-        return {"ok": True, "data": {"remision": remision, "reversals": reversals, "pedido_liberado": released_pedido}}
+        return {"ok": True, "data": {"remision": remision, "reversals": reversals, "pedido_liberado": released_pedido, "pagos_liberados": released_payments}}
 
     def _save_reversal(self, context: dict, cfg: dict, doc: dict, item: dict, product_id: str, quantity: float, note: str) -> dict:
         service_path = _SKILLS_ROOT / "vertical_erp_inventory" / "erp_inventory_kardex_save" / "service.py"
@@ -178,6 +179,82 @@ class ErpVentasRemisionCancelService:
             return None
         updated = update.get("data") or []
         return updated[0] if isinstance(updated, list) and updated else updated
+
+    def _release_billing_applications(self, context: dict, cfg: dict, doc: dict, note: str, timestamp: str) -> list[dict]:
+        billing_schema = str(context.get("billing_schema") or context.get("schema_billing") or "").strip()
+        billing_project = str(context.get("billing_project_code") or "").strip()
+        billing_module = str(context.get("billing_module_code") or "billing").strip()
+        if not billing_schema:
+            return []
+        billing_ctx = {
+            **context,
+            "schema": billing_schema,
+            "billing_schema": billing_schema,
+            "company_id": cfg["company_id"],
+            "empresa_id": cfg["company_id"],
+            "project_code": billing_project or cfg["project_ventas"],
+            "module_code": billing_module,
+            "sales_schema": cfg["schema_ventas"],
+            "schema_ventas": cfg["schema_ventas"],
+        }
+        billing_db = SupabaseClient(billing_ctx)
+        apps_res = billing_db.rest_select(
+            "billing_payment_applications",
+            filters={"sales_document_id": doc["id"]},
+            select="id,folio,payment_id,payment_folio,amount_applied,status,metadata",
+            limit=500,
+        )
+        if not apps_res.get("ok"):
+            return []
+        released = []
+        for app in apps_res.get("data") or []:
+            if str(app.get("status") or "") != "aplicado":
+                continue
+            amount = float(app.get("amount_applied") or 0)
+            payment = self._billing_payment(billing_db, app.get("payment_id"))
+            if not payment:
+                continue
+            new_unapplied = round(float(payment.get("unapplied_amount") or 0) + amount, 2)
+            payment_amount = round(float(payment.get("amount") or 0), 2)
+            new_status = "liberado" if new_unapplied >= payment_amount else "parcial"
+            app_metadata = app.get("metadata") if isinstance(app.get("metadata"), dict) else {}
+            billing_db.rest_update(
+                "billing_payment_applications",
+                {
+                    "status": "liberado",
+                    "updated_at": timestamp,
+                    "metadata": {
+                        **app_metadata,
+                        "released_by_cancelled_remision_id": doc.get("id"),
+                        "released_by_cancelled_remision_folio": doc.get("folio"),
+                        "release_reason": note,
+                    },
+                },
+                {"id": app.get("id")},
+            )
+            billing_db.rest_update(
+                "billing_payments",
+                {"unapplied_amount": new_unapplied, "status": new_status, "updated_at": timestamp},
+                {"id": payment.get("id")},
+            )
+            released.append(
+                {
+                    "payment_id": payment.get("id"),
+                    "payment_folio": payment.get("folio"),
+                    "application_folio": app.get("folio"),
+                    "amount_released": round(amount, 2),
+                    "payment_status": new_status,
+                    "unapplied_amount": new_unapplied,
+                }
+            )
+        return released
+
+    def _billing_payment(self, billing_db: SupabaseClient, payment_id: str | None) -> dict | None:
+        if not payment_id:
+            return None
+        result = billing_db.rest_select("billing_payments", filters={"id": payment_id}, select="id,folio,amount,unapplied_amount,status", limit=1)
+        rows = result.get("data") or []
+        return rows[0] if result.get("ok") and rows else None
 
     def _already_reversed(self, rows: list[dict], doc_id: str, folio: str) -> bool:
         for row in rows:

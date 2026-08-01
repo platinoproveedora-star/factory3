@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_billing/erp_billing_payment_manage",
+  "vertical": "vertical_erp_billing",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Modifica o cancela pagos Billing. Al cancelar revierte aplicaciones activas y recalcula saldos de remisiones.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

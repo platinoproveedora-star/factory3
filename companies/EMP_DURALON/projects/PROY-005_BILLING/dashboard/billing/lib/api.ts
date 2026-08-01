@@ -12,6 +12,10 @@ const ERP_CONTEXT = {
   billing_schema: process.env.NEXT_PUBLIC_ERP_BILLING_SCHEMA ?? projectContext.schema,
   sales_schema: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? projectContext.sales_schema,
   schema_ventas: process.env.NEXT_PUBLIC_ERP_SALES_SCHEMA ?? projectContext.sales_schema,
+  inventory_schema: process.env.NEXT_PUBLIC_ERP_INVENTORY_SCHEMA ?? projectContext.inventory_schema,
+  schema_inventario: process.env.NEXT_PUBLIC_ERP_INVENTORY_SCHEMA ?? projectContext.inventory_schema,
+  inventory_project_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_PROJECT_CODE ?? projectContext.inventory_project_code,
+  inventory_module_code: process.env.NEXT_PUBLIC_ERP_INVENTORY_MODULE_CODE ?? projectContext.inventory_module_code,
   banks_schema: process.env.NEXT_PUBLIC_ERP_BANKS_SCHEMA ?? projectContext.banks_schema,
   banks_project_code: process.env.NEXT_PUBLIC_ERP_BANKS_PROJECT_CODE ?? projectContext.banks_project_code,
   banks_module_code: projectContext.banks_module_code,
@@ -67,6 +71,7 @@ export type Payment = {
   bank_reference?: string | null;
   tracking_key?: string | null;
   notes?: string | null;
+  metadata?: Record<string, unknown> | null;
   receipt_file_url?: string | null;
   receipt_file_path?: string | null;
   receipt_file_bucket?: string | null;
@@ -359,6 +364,27 @@ export async function getRemisionHtml(folio: string): Promise<string> {
   return data.html;
 }
 
+export async function cancelRemision(payload: { id?: string; folio?: string; cancel_reason?: string }) {
+  return request('vertical_erp_ventas/erp_ventas_remision_cancel', {
+    ...payload,
+    schema: ERP_CONTEXT.sales_schema,
+    schema_ventas: ERP_CONTEXT.sales_schema,
+    sales_schema: ERP_CONTEXT.sales_schema,
+    project_code: projectContext.sales_project_code,
+    sales_project_code: projectContext.sales_project_code,
+    module_code: projectContext.sales_module_code,
+    sales_module_code: projectContext.sales_module_code,
+    inventory_schema: ERP_CONTEXT.inventory_schema,
+    schema_inventario: ERP_CONTEXT.inventory_schema,
+    inventory_project_code: ERP_CONTEXT.inventory_project_code,
+    inventory_module_code: ERP_CONTEXT.inventory_module_code,
+    billing_schema: ERP_CONTEXT.billing_schema,
+    billing_project_code: ERP_CONTEXT.project_code,
+    billing_module_code: ERP_CONTEXT.module_code,
+    dry_run: false,
+  });
+}
+
 // ─── Pagos ────────────────────────────────────────────────────────────────────
 
 export async function getDashboardData(limit = 100): Promise<DashboardData> {
@@ -427,6 +453,28 @@ export async function confirmPayment(payload: {
   bank_reference?: string;
 }) {
   return request('vertical_erp_billing/erp_billing_payment_confirm', { ...payload, dry_run: false });
+}
+
+export async function managePayment(payload: {
+  action: 'update' | 'cancel';
+  payment_id?: string;
+  payment_folio?: string;
+  amount?: number;
+  payment_method?: string;
+  payment_date?: string;
+  destination_money_account_id?: string;
+  destination_bank_account_id?: string;
+  tracking_key?: string;
+  reference?: string;
+  bank_reference?: string;
+  notes?: string;
+  reason?: string;
+  cancel_reason?: string;
+}) {
+  return request('vertical_erp_billing/erp_billing_payment_manage', {
+    ...payload,
+    dry_run: false,
+  });
 }
 
 // ─── Anticipos ───────────────────────────────────────────────────────────────
