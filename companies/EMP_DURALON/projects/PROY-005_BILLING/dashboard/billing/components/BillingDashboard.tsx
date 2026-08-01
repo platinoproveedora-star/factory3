@@ -323,6 +323,16 @@ export default function BillingDashboard() {
     const metadataAccount = typeof payment.metadata?.destination_bank_account_id === 'string'
       ? payment.metadata.destination_bank_account_id
       : '';
+    const paymentApps = paymentApplications.filter((app) => app.payment_id === payment.id && app.status === 'aplicado');
+    const applicationFields = Object.fromEntries(
+      paymentApps.flatMap((app) => {
+        const remisionId = app.sales_document_id || remisiones.find((r) => r.folio === app.sales_folio)?.id || '';
+        return [
+          [`app_doc_${app.id}`, remisionId],
+          [`app_amount_${app.id}`, String(app.amount_applied ?? '')],
+        ];
+      })
+    );
     setForm({
       amount: String(payment.amount ?? ''),
       method: payment.payment_method ?? '',
@@ -331,6 +341,7 @@ export default function BillingDashboard() {
       tracking_key: payment.tracking_key ?? '',
       bank_reference: payment.bank_reference ?? '',
       notes: payment.notes ?? '',
+      ...applicationFields,
     });
     setFormErr('');
     setModal({ kind: 'edit_pago', payment });
@@ -442,6 +453,15 @@ export default function BillingDashboard() {
     if (modal?.kind !== 'edit_pago') return;
     const amount = parseFloat(form.amount || '0');
     if (!amount || !form.method) return setFormErr('Importe y metodo requeridos');
+    const activeApps = (appsByPayment[modal.payment.id] ?? []).filter((app) => app.status === 'aplicado');
+    const applications = activeApps.map((app) => ({
+      application_id: app.id,
+      sales_document_id: form[`app_doc_${app.id}`] || app.sales_document_id || remisiones.find((r) => r.folio === app.sales_folio)?.id || '',
+      amount_applied: parseFloat(form[`app_amount_${app.id}`] || '0'),
+    }));
+    if (applications.some((app) => !app.sales_document_id || !app.amount_applied)) return setFormErr('Remision e importe aplicado requeridos');
+    const totalApplied = applications.reduce((sum, app) => sum + app.amount_applied, 0);
+    if (totalApplied > amount) return setFormErr('El total aplicado excede el importe del pago');
     setSaving(true);
     try {
       await api.managePayment({
@@ -454,11 +474,13 @@ export default function BillingDashboard() {
         tracking_key: form.tracking_key || undefined,
         bank_reference: form.bank_reference || undefined,
         notes: form.notes || undefined,
+        applications: applications.length ? applications : undefined,
       });
       setModal(null);
       const d = await api.getDashboardData(200);
       setPayments(d.payments ?? []);
       setPaymentApplications(d.payment_applications ?? []);
+      setRemisiones(await api.getRemisiones({ limit: 200 }));
     } catch (e: any) {
       setFormErr(e.message);
     } finally {
@@ -1909,6 +1931,41 @@ export default function BillingDashboard() {
       {modal?.kind === 'edit_pago' && (
         <Modal title={`Modificar pago - ${modal.payment.folio}`} onClose={() => setModal(null)}>
           <EditPaymentInfo payment={modal.payment} />
+          {((appsByPayment[modal.payment.id] ?? []).filter((app) => app.status === 'aplicado')).length > 0 && (
+            <div className="mb-5">
+              <p className="mb-2 text-sm font-medium text-gray-700">Aplicaciones del pago</p>
+              <div className="space-y-2 rounded-lg border border-gray-200 p-3">
+                {(appsByPayment[modal.payment.id] ?? []).filter((app) => app.status === 'aplicado').map((app) => {
+                  const currentDocId = app.sales_document_id || remisiones.find((r) => r.folio === app.sales_folio)?.id || '';
+                  const customerName = modal.payment.customer_name || '';
+                  const options = remisiones.filter((r) => (
+                    r.id === currentDocId ||
+                    (r.status !== 'cancelada' && r.customer_name_snapshot === customerName && (r.balance_total ?? r.total) > 0)
+                  ));
+                  return (
+                    <div key={app.id} className="grid gap-2 sm:grid-cols-[1fr_120px]">
+                      <select className={inputCls} value={form[`app_doc_${app.id}`] ?? currentDocId} onChange={(e) => setF(`app_doc_${app.id}`, e.target.value)}>
+                        <option value="">Seleccionar remision...</option>
+                        {options.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.folio} - {r.customer_name_snapshot} - Saldo {fmt(r.balance_total ?? r.total)}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        className={inputCls}
+                        value={form[`app_amount_${app.id}`] ?? String(app.amount_applied ?? '')}
+                        onChange={(e) => setF(`app_amount_${app.id}`, e.target.value)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <Field label="Importe">
             <input type="number" className={inputCls} value={form.amount ?? ''} onChange={(e) => setF('amount', e.target.value)} />
           </Field>

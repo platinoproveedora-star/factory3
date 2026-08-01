@@ -33,8 +33,13 @@ class ErpBillingPaymentManageService:
 
     def _update(self, ctx: dict, context: dict, payment: dict) -> dict:
         apps = self._active_applications(ctx, payment["id"])
-        applied_total = money(sum(money(app.get("amount_applied")) for app in apps))
+        app_plan_result = self._application_update_plan(ctx, context, payment, apps)
+        if not app_plan_result.get("ok"):
+            return app_plan_result
+        app_plan = app_plan_result["data"]
+        applied_total = app_plan["planned_applied_total"]
         update = {}
+        amount = money(payment.get("amount"))
         if context.get("amount") is not None:
             amount = money(context.get("amount"))
             if amount <= 0:
@@ -63,14 +68,168 @@ class ErpBillingPaymentManageService:
         update["updated_at"] = utc_now()
 
         if context.get("dry_run", True):
-            return {"ok": True, "message": "dry_run: no se modifico pago", "data": {"payment": {**payment, **update}, "applied_total": applied_total}}
+            return {
+                "ok": True,
+                "message": "dry_run: no se modifico pago",
+                "data": {
+                    "payment": {**payment, **update},
+                    "applied_total": applied_total,
+                    "application_updates": app_plan["updates"],
+                },
+            }
+
+        sales_ctx = app_plan.get("sales_ctx")
+        if sales_ctx:
+            app_result = self._apply_application_updates(ctx, sales_ctx, payment, app_plan["updates"])
+            if not app_result.get("ok"):
+                return app_result
 
         result = SupabaseClient(ctx).rest_update("billing_payments", update, {"id": payment["id"]})
         if not result.get("ok"):
             return result
-        insert_event(ctx, "payment_updated", {"payment_id": payment["id"], "folio": payment.get("folio"), "changes": sorted(update.keys())}, False)
+        insert_event(
+            ctx,
+            "payment_updated",
+            {
+                "payment_id": payment["id"],
+                "folio": payment.get("folio"),
+                "changes": sorted(update.keys()),
+                "application_updates": len(app_plan["updates"]),
+            },
+            False,
+        )
         rows = result.get("data") or []
         return {"ok": True, "data": {"payment": rows[0] if isinstance(rows, list) and rows else rows}}
+
+    def _application_update_plan(self, ctx: dict, context: dict, payment: dict, apps: list[dict]) -> dict:
+        raw_updates = context.get("applications") or []
+        if not raw_updates:
+            return {
+                "ok": True,
+                "data": {
+                    "planned_applied_total": money(sum(money(app.get("amount_applied")) for app in apps)),
+                    "updates": [],
+                    "sales_ctx": None,
+                },
+            }
+        if not isinstance(raw_updates, list):
+            return {"ok": False, "error": "applications debe ser lista"}
+        sales_ctx_result = sales_context(ctx)
+        if not sales_ctx_result.get("ok"):
+            return sales_ctx_result
+        sales_ctx = sales_ctx_result["data"]
+        sales_db = SupabaseClient(sales_ctx)
+        apps_by_id = {str(app.get("id")): app for app in apps}
+        planned_by_app = {str(app.get("id")): money(app.get("amount_applied")) for app in apps}
+        planned_updates = []
+        for row in raw_updates:
+            if not isinstance(row, dict):
+                return {"ok": False, "error": "cada aplicacion debe ser objeto"}
+            app_id = blank(row.get("application_id") or row.get("id"))
+            if not app_id or app_id not in apps_by_id:
+                return {"ok": False, "error": "application_id no encontrado o no activo"}
+            app = apps_by_id[app_id]
+            new_amount = money(row.get("amount_applied"))
+            if new_amount <= 0:
+                return {"ok": False, "error": "amount_applied debe ser mayor a 0"}
+            new_doc_id = blank(row.get("sales_document_id")) or blank(app.get("sales_document_id"))
+            document = self._sales_document(sales_db, new_doc_id)
+            if not document:
+                return {"ok": False, "error": "remision destino no encontrada"}
+            if str(document.get("document_type") or "").strip().lower() != "remision":
+                return {"ok": False, "error": "solo se pueden aplicar pagos a remisiones"}
+            if str(document.get("status") or "").strip().lower() == "cancelada":
+                return {"ok": False, "error": "no se puede aplicar a remision cancelada"}
+            same_customer = self._same_customer(payment, document)
+            if not same_customer.get("ok"):
+                return same_customer
+            old_doc_id = blank(app.get("sales_document_id"))
+            current_balance = money(document.get("balance_total") if document.get("balance_total") is not None else document.get("total"))
+            if old_doc_id == new_doc_id:
+                current_balance = money(current_balance + money(app.get("amount_applied")))
+            if new_amount > current_balance:
+                return {"ok": False, "error": f"amount_applied excede saldo de {document.get('folio')}"}
+            planned_by_app[app_id] = new_amount
+            planned_updates.append({"app": app, "document": document, "new_amount": new_amount})
+        planned_total = money(sum(planned_by_app.values()))
+        payment_amount = money(context.get("amount") if context.get("amount") is not None else payment.get("amount"))
+        if planned_total > payment_amount:
+            return {"ok": False, "error": "el total aplicado excede el importe del pago"}
+        return {
+            "ok": True,
+            "data": {
+                "planned_applied_total": planned_total,
+                "updates": planned_updates,
+                "sales_ctx": sales_ctx,
+            },
+        }
+
+    def _apply_application_updates(self, ctx: dict, sales_ctx: dict, payment: dict, updates: list[dict]) -> dict:
+        billing_db = SupabaseClient(ctx)
+        sales_db = SupabaseClient(sales_ctx)
+        now = utc_now()
+        for item in updates:
+            app = item["app"]
+            old_doc = self._sales_document(sales_db, blank(app.get("sales_document_id")))
+            new_doc = item["document"]
+            old_amount = money(app.get("amount_applied"))
+            new_amount = money(item["new_amount"])
+            if old_doc and old_doc.get("id") != new_doc.get("id"):
+                old_update = self._document_amount_update(old_doc, -old_amount)
+                result = sales_db.rest_update("sales_documents", {**old_update, "updated_at": now}, {"id": old_doc["id"]})
+                if not result.get("ok"):
+                    return result
+                new_update = self._document_amount_update(new_doc, new_amount)
+            else:
+                new_update = self._document_amount_update(new_doc, new_amount - old_amount)
+            doc_result = sales_db.rest_update("sales_documents", {**new_update, "updated_at": now}, {"id": new_doc["id"]})
+            if not doc_result.get("ok"):
+                return doc_result
+            app_metadata = app.get("metadata") if isinstance(app.get("metadata"), dict) else {}
+            app_result = billing_db.rest_update(
+                "billing_payment_applications",
+                {
+                    "sales_document_id": new_doc.get("id"),
+                    "sales_folio": new_doc.get("folio"),
+                    "amount_applied": new_amount,
+                    "updated_at": now,
+                    "metadata": {**app_metadata, "updated_by_payment_manage": True},
+                },
+                {"id": app.get("id")},
+            )
+            if not app_result.get("ok"):
+                return app_result
+        return {"ok": True}
+
+    def _document_amount_update(self, document: dict, delta: float) -> dict:
+        new_paid = max(money(document.get("paid_total")) + money(delta), 0)
+        total = money(document.get("total"))
+        new_balance = max(total - new_paid, 0)
+        status = "pagada" if new_balance <= 0 else "parcial" if new_paid > 0 else "pendiente"
+        return {"paid_total": new_paid, "balance_total": new_balance, "status": status}
+
+    def _sales_document(self, sales_db: SupabaseClient, document_id: str | None) -> dict | None:
+        if not document_id:
+            return None
+        return fetch_one(
+            sales_db,
+            "sales_documents",
+            {"id": document_id},
+            "id,folio,document_type,customer_id,customer_name_snapshot,total,paid_total,balance_total,status",
+        )
+
+    def _same_customer(self, payment: dict, document: dict) -> dict:
+        payment_customer_id = blank(payment.get("customer_id"))
+        document_customer_id = blank(document.get("customer_id"))
+        if payment_customer_id and document_customer_id:
+            if payment_customer_id != document_customer_id:
+                return {"ok": False, "error": "el pago solo se puede aplicar a remisiones del mismo cliente"}
+            return {"ok": True}
+        payment_customer = blank(payment.get("customer_name"))
+        document_customer = blank(document.get("customer_name_snapshot"))
+        if payment_customer and document_customer and payment_customer.strip().lower() != document_customer.strip().lower():
+            return {"ok": False, "error": "el pago solo se puede aplicar a remisiones del mismo cliente"}
+        return {"ok": True}
 
     def _cancel(self, ctx: dict, context: dict, payment: dict) -> dict:
         sales_ctx_result = sales_context(ctx)

@@ -473,6 +473,7 @@ export async function managePayment(payload: {
   notes?: string;
   reason?: string;
   cancel_reason?: string;
+  applications?: Array<{ application_id: string; sales_document_id: string; amount_applied: number }>;
 }) {
   return request('vertical_erp_billing/erp_billing_payment_manage', {
     ...payload,
