@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_compras/erp_compras_purchase_payment_apply",
+  "vertical": "vertical_erp_compras",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Aplica un pago simple a una compra ERP, repartiendo el importe entre renglones del kardex y actualizando saldo/status.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

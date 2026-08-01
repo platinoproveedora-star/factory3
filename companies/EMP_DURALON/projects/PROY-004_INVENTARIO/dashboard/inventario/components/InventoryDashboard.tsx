@@ -926,6 +926,7 @@ function PurchaseTab({
   const [selectedPurchase, setSelectedPurchase] = useState<PurchaseSummary | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
   const [canceling, setCanceling] = useState(false);
+  const [payingFolio, setPayingFolio] = useState<string | null>(null);
 
   const existingLots = useMemo(() => uniqueOptions(lotStock.map((row) => row.lot_code)), [lotStock]);
   const supplierNames = useMemo(() => uniqueOptions(purchases.map((p) => p.supplier_name_snapshot || '')), [purchases]);
@@ -1040,6 +1041,39 @@ function PurchaseTab({
       window.alert(err.message || 'Error al cancelar compra');
     } finally {
       setCanceling(false);
+    }
+  }
+
+  async function applyPurchasePayment(purchase: PurchaseSummary) {
+    const balanceAmount = Number(purchase.balance_amount || 0);
+    if (balanceAmount <= 0) {
+      window.alert('La compra ya esta pagada');
+      return;
+    }
+    const rawAmount = window.prompt(`Monto a aplicar a ${purchase.source_folio}`, String(balanceAmount.toFixed(2)));
+    if (rawAmount === null) return;
+    const paymentAmount = Number(rawAmount);
+    if (!Number.isFinite(paymentAmount) || paymentAmount <= 0) {
+      window.alert('Monto invalido');
+      return;
+    }
+    setPayingFolio(purchase.source_folio);
+    try {
+      const res = await fetch('/api/purchases/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_folio: purchase.source_folio, payment_amount: paymentAmount }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.ok === false) throw new Error(json.error || 'No se pudo aplicar pago');
+      if (selectedPurchase?.source_folio === purchase.source_folio) setSelectedPurchase(null);
+      await refresh();
+      await loadPurchases();
+      setNotice(`Pago aplicado: ${purchase.source_folio}`);
+    } catch (err: any) {
+      window.alert(err.message || 'Error al aplicar pago');
+    } finally {
+      setPayingFolio(null);
     }
   }
 
@@ -1186,6 +1220,8 @@ function PurchaseTab({
           onSelect={(p) => setSelectedPurchase((prev) => prev?.source_folio === p.source_folio ? null : p)}
           cancelConfirm={cancelConfirm}
           canceling={canceling}
+          payingFolio={payingFolio}
+          onApplyPayment={applyPurchasePayment}
           onCancelRequest={(folio) => setCancelConfirm(folio)}
           onCancelConfirm={cancelPurchase}
           onCancelAbort={() => setCancelConfirm(null)}
@@ -1228,6 +1264,8 @@ function PurchaseTable({
   onSelect,
   cancelConfirm,
   canceling,
+  payingFolio,
+  onApplyPayment,
   onCancelRequest,
   onCancelConfirm,
   onCancelAbort,
@@ -1237,6 +1275,8 @@ function PurchaseTable({
   onSelect: (p: PurchaseSummary) => void;
   cancelConfirm: string | null;
   canceling: boolean;
+  payingFolio: string | null;
+  onApplyPayment: (purchase: PurchaseSummary) => void;
   onCancelRequest: (folio: string) => void;
   onCancelConfirm: (folio: string) => void;
   onCancelAbort: () => void;
@@ -1266,6 +1306,8 @@ function PurchaseTable({
             const isSelected = selectedFolio === purchase.source_folio;
             const isCanceled = purchase.canceled === true;
             const isConfirming = cancelConfirm === purchase.source_folio;
+            const hasBalance = Number(purchase.balance_amount || 0) > 0;
+            const isPaying = payingFolio === purchase.source_folio;
             return (
               <tr
                 key={purchase.source_folio}
@@ -1294,6 +1336,17 @@ function PurchaseTable({
                     >
                       <Printer size={13} />
                     </button>
+                    {!isCanceled && hasBalance && (
+                      <button
+                        type="button"
+                        disabled={isPaying}
+                        onClick={() => onApplyPayment(purchase)}
+                        title="Aplicar pago"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                      >
+                        <CircleDollarSign size={13} />
+                      </button>
+                    )}
                     {!isCanceled && (
                       isConfirming ? (
                         <span className="inline-flex items-center gap-1">

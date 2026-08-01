@@ -32,6 +32,7 @@ const localSkillPaths: Record<string, string> = {
   'vertical_erp_compras/erp_compras_purchase_list': 'factory/skills/internos/vertical_erp_compras/erp_compras_purchase_list',
   'vertical_erp_compras/erp_compras_purchase_cancel': 'factory/skills/internos/vertical_erp_compras/erp_compras_purchase_cancel',
   'vertical_erp_compras/erp_compras_purchase_pdf': 'factory/skills/internos/vertical_erp_compras/erp_compras_purchase_pdf',
+  'vertical_erp_compras/erp_compras_purchase_payment_apply': 'factory/skills/internos/vertical_erp_compras/erp_compras_purchase_payment_apply',
 };
 
 export async function runFactorySkill<T>(skill: string, context: Record<string, any>): Promise<T> {

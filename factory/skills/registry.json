@@ -4262,6 +4262,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_compras/erp_compras_purchase_payment_apply": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_compras/erp_compras_purchase_payment_apply",
+    "vertical": "vertical_erp_compras",
+    "descripcion": "Aplica un pago simple a una compra ERP y actualiza saldo/status por renglones.",
+    "path": "skills/internos/vertical_erp_compras/erp_compras_purchase_payment_apply",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_inventory/erp_inventory_kardex_save": {
     "tipo": "interno",
     "nombre": "vertical_erp_inventory/erp_inventory_kardex_save",
