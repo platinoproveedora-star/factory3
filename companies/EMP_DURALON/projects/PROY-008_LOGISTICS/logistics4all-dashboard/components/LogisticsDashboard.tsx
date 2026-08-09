@@ -1188,14 +1188,15 @@ function buildInventoryAllocation(trips: TripRow[], inventoryStock: InventorySto
         const required = Number(item.quantity || 0);
         if (!required) continue;
         const available = Number(stock.get(key) || 0);
+        const availableForOrder = Math.max(available, 0);
         const productInfo = labels.get(key) || { name: productLabel(item), unit: String(item.unit || "") };
-        if (available < required) {
+        if (availableForOrder < required) {
           rows.push({
             product_key: key,
             product_name: productInfo.name || productLabel(item),
             required,
-            available_before: available,
-            shortage: Math.round((required - available) * 10000) / 10000,
+            available_before: availableForOrder,
+            shortage: Math.round((required - availableForOrder) * 10000) / 10000,
             unit: String(item.unit || productInfo.unit || "")
           });
         }
