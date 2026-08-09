@@ -10,21 +10,33 @@ erp_project_context_resolve, igual que erp_ventas_pedido_create.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from factory.engine import SupabaseClient
 
 _MAX_LIST = 8
+_MAX_HISTORY = 12
+_PROGRESS_STEPS = {
+    "client", "client_confirm_new", "client_pick",
+    "product", "product_pick", "quantity", "price", "confirm",
+}
 
 _AYUDA = (
     "*Pedidos por WhatsApp*\n\n"
-    "Escribe *pedido* para iniciar uno nuevo.\n"
-    "Durante la captura:\n"
-    "• Nombre del cliente o producto para buscar\n"
-    "• */claves* para ver productos clave numerados\n"
-    "• *fin* para cerrar la lista de productos\n"
-    "• *cancelar* para abortar en cualquier momento"
+    "Escribe *pedido* para iniciar uno nuevo.\n\n"
+    "*Durante la captura:*\n"
+    "• Nombre del cliente o producto, para buscar\n"
+    "• */claves* — ver productos clave numerados\n"
+    "• Un numero (ej: 3) — selecciona ese producto clave directo\n"
+    "• *fin* — cerrar la lista de productos\n"
+    "• *cambiar N* — borra la partida N para volver a capturarla\n"
+    "• */ver* — ver lo capturado hasta ahora\n"
+    "• */r* — regresar a la pregunta anterior\n"
+    "• *cancelar* — abortar en cualquier momento"
 )
+
+_EDIT_RE = re.compile(r"^(?:cambiar|editar)\s+(\d+)$")
 
 
 def _runner():
@@ -60,28 +72,23 @@ class ErpVentasWabizPedidoHandlerService:
 
         if msg_type != "text":
             reply, new_state = "Por ahora solo puedo leer texto para pedidos.", state
-        elif text_lower in ("cancelar", "/cancelar") and step != "idle":
+        elif text_lower in ("cancelar", "/cancelar", "cancel", "/cancel") and step != "idle":
             reply, new_state = "Pedido cancelado.", {}
         elif text_lower in ("ayuda", "/ayuda"):
-            reply, new_state = _AYUDA, state
+            reply, new_state = self._ayuda(cfg), state
+        elif text_lower in ("/ver", "ver"):
+            reply, new_state = (self._build_progress(state) if step in _PROGRESS_STEPS
+                                 else "No hay ningun pedido en progreso. Escribe *pedido* para iniciar uno."), state
+        elif text_lower == "/r":
+            reply, new_state = self._handle_back(state) if step in _PROGRESS_STEPS else (
+                "No hay ningun pedido en progreso. Escribe *pedido* para iniciar uno.", state
+            )
         elif step == "idle":
             reply, new_state = self._handle_idle(text_lower)
-        elif step == "client":
-            reply, new_state = self._handle_client(body, cfg, state)
-        elif step == "client_confirm_new":
-            reply, new_state = self._handle_client_confirm_new(text_lower, state, cfg, dry_run)
-        elif step == "client_pick":
-            reply, new_state = self._handle_client_pick(body, state)
-        elif step == "product":
-            reply, new_state = self._handle_product(body, cfg, state)
-        elif step == "product_pick":
-            reply, new_state = self._handle_product_pick(body, state)
-        elif step == "quantity":
-            reply, new_state = self._handle_quantity(body, state)
-        elif step == "price":
-            reply, new_state = self._handle_price(body, state)
-        elif step == "confirm":
-            reply, new_state = self._handle_confirm(text_lower, state, cfg, dry_run)
+        elif step in _PROGRESS_STEPS:
+            history = self._with_history(state)
+            reply, new_state = self._dispatch(step, body, text_lower, cfg, state, dry_run)
+            new_state = {**new_state, "_history": history} if new_state else new_state
         else:
             reply, new_state = "Escribe *pedido* para iniciar uno nuevo.", {}
 
@@ -89,6 +96,25 @@ class ErpVentasWabizPedidoHandlerService:
             self._save_state(chat_id, new_state)
 
         return {"ok": True, "data": {"reply": reply}}
+
+    def _dispatch(self, step: str, body: str, text_lower: str, cfg: dict, state: dict, dry_run: bool) -> tuple[str, dict]:
+        if step == "client":
+            return self._handle_client(body, cfg, state)
+        if step == "client_confirm_new":
+            return self._handle_client_confirm_new(text_lower, state, cfg, dry_run)
+        if step == "client_pick":
+            return self._handle_client_pick(body, state)
+        if step == "product":
+            return self._handle_product(body, text_lower, cfg, state)
+        if step == "product_pick":
+            return self._handle_product_pick(body, state)
+        if step == "quantity":
+            return self._handle_quantity(body, state)
+        if step == "price":
+            return self._handle_price(body, state)
+        if step == "confirm":
+            return self._handle_confirm(text_lower, state, cfg, dry_run)
+        return "Escribe *pedido* para iniciar uno nuevo.", {}
 
     # ── PASOS ─────────────────────────────────────────────────────────────────
 
@@ -105,7 +131,7 @@ class ErpVentasWabizPedidoHandlerService:
         if len(matches) == 1:
             c = matches[0]
             new_state = {**state, "step": "product", "customer_id": c["id"], "customer_name": c["party_name"]}
-            return f"Cliente: {c['party_name']} ✓\n\n¿Producto? Escribe nombre o /claves para ver productos clave.", new_state
+            return f"Cliente: {c['party_name']} ✓\n\n{self._product_prompt()}", new_state
         if len(matches) > 1:
             listed = matches[:_MAX_LIST]
             lines = [f"{i}. {c['party_name']}" for i, c in enumerate(listed, start=1)]
@@ -129,7 +155,7 @@ class ErpVentasWabizPedidoHandlerService:
             if not customer_id:
                 return "⚠️ No pude crear el cliente. Intenta de nuevo.", {}
             new_state = {**state, "step": "product", "customer_id": customer_id, "customer_name": name}
-            return f"Cliente nuevo: {name} ✓\n\n¿Producto? Escribe nombre o /claves para ver productos clave.", new_state
+            return f"Cliente nuevo: {name} ✓\n\n{self._product_prompt()}", new_state
         if text_lower in ("no", "n"):
             new_state = {**state, "step": "client"}
             return "Ok, escribe otro nombre de cliente.", new_state
@@ -143,31 +169,44 @@ class ErpVentasWabizPedidoHandlerService:
         c = candidates[idx - 1]
         new_state = {k: v for k, v in state.items() if k != "client_candidates"}
         new_state = {**new_state, "step": "product", "customer_id": c["id"], "customer_name": c["party_name"]}
-        return f"Cliente: {c['party_name']} ✓\n\n¿Producto? Escribe nombre o /claves para ver productos clave.", new_state
+        return f"Cliente: {c['party_name']} ✓\n\n{self._product_prompt()}", new_state
 
-    def _handle_product(self, body: str, cfg: dict, state: dict) -> tuple[str, dict]:
+    def _handle_product(self, body: str, text_lower: str, cfg: dict, state: dict) -> tuple[str, dict]:
         text = body.strip()
-        text_lower = text.lower().lstrip("/")
-        if text_lower == "fin":
+        text_bare = text_lower.lstrip("/")
+
+        edit_match = _EDIT_RE.match(text_lower)
+        if edit_match:
+            return self._edit_item(int(edit_match.group(1)), state, back_step="product")
+
+        if text_bare == "fin":
             items = state.get("items") or []
             if not items:
                 return "Todavia no agregas ningun producto.", state
             return self._build_summary(items, state), {**state, "step": "confirm"}
-        if text_lower == "claves":
+
+        if text_bare == "claves":
             products = self._search_key_products(cfg)
             if not products:
                 return "No hay productos clave configurados. Escribe el nombre del producto.", state
-            lines = [f"{i}. {p['product_name']}" for i, p in enumerate(products, start=1)]
-            new_state = {
-                **state,
-                "step": "product_pick",
-                "product_candidates": [
-                    {"id": p["id"], "product_name": p["product_name"], "unit": p.get("unit")} for p in products
-                ],
-            }
-            return "Productos clave:\n" + "\n".join(lines) + "\n\nEscribe el numero.", new_state
+            return self._key_products_list(products), state
+
+        if text.isdigit():
+            products = self._search_key_products(cfg)
+            idx = int(text)
+            if 1 <= idx <= len(products):
+                p = products[idx - 1]
+                new_state = {
+                    **state,
+                    "step": "quantity",
+                    "pending_product": {"id": p["id"], "product_name": p["product_name"], "unit": p.get("unit")},
+                }
+                return f"Producto: {p['product_name']} ✓ ¿Cantidad?", new_state
+            return f"No hay producto clave con el numero {idx}. Escribe */claves* para ver la lista.", state
+
         if not text:
-            return "Escribe el nombre del producto o /claves.", state
+            return self._product_prompt(), state
+
         matches = self._search_products(cfg, text)
         if len(matches) == 1:
             p = matches[0]
@@ -227,15 +266,18 @@ class ErpVentasWabizPedidoHandlerService:
         line_total = round(qty * price, 2)
         reply = (
             f"✅ {self._fmt_num(qty)} x {product.get('product_name')} @ ${price:,.2f} = ${line_total:,.2f}\n\n"
-            '¿Otro producto? Escribe nombre/# o "fin" para terminar.'
+            '¿Otro producto? Escribe nombre/#/clave o "fin" para terminar.'
         )
         return reply, new_state
 
     def _handle_confirm(self, text_lower: str, state: dict, cfg: dict, dry_run: bool) -> tuple[str, dict]:
+        edit_match = _EDIT_RE.match(text_lower)
+        if edit_match:
+            return self._edit_item(int(edit_match.group(1)), state, back_step="product")
         if text_lower in ("cancelar", "no", "n"):
             return "Pedido cancelado.", {}
         if text_lower not in ("confirmar", "si", "sí", "yes"):
-            return 'Escribe *confirmar* para guardar o *cancelar*.', state
+            return 'Escribe *confirmar* para guardar, *cambiar N* para corregir una partida, o *cancelar*.', state
         items = state.get("items") or []
         payload_items = [
             {
@@ -259,7 +301,31 @@ class ErpVentasWabizPedidoHandlerService:
             total_fmt = str(total)
         return f"✅ Pedido *{folio}* guardado — Total ${total_fmt}", {}
 
-    # ── RESUMEN ───────────────────────────────────────────────────────────────
+    def _edit_item(self, idx: int, state: dict, back_step: str) -> tuple[str, dict]:
+        items = list(state.get("items") or [])
+        if idx < 1 or idx > len(items):
+            return f"No existe la partida {idx}. Escribe */ver* para ver las partidas actuales.", state
+        removed = items.pop(idx - 1)
+        new_state = {**state, "items": items, "step": back_step}
+        return (
+            f"Partida {idx} eliminada ({self._fmt_num(removed['quantity'])} x {removed['product_name']}).\n\n"
+            f"{self._product_prompt()}"
+        ), new_state
+
+    # ── TEXTOS ────────────────────────────────────────────────────────────────
+
+    def _product_prompt(self) -> str:
+        return "¿Producto? Escribe nombre, numero de clave o /claves para ver la lista."
+
+    def _key_products_list(self, products: list[dict]) -> str:
+        lines = [f"{i}. {p['product_name']}" for i, p in enumerate(products, start=1)]
+        return "Productos clave:\n" + "\n".join(lines) + "\n\nEscribe el numero."
+
+    def _ayuda(self, cfg: dict) -> str:
+        products = self._search_key_products(cfg)
+        if not products:
+            return _AYUDA
+        return _AYUDA + "\n\n" + self._key_products_list(products)
 
     def _build_summary(self, items: list[dict], state: dict) -> str:
         lines = []
@@ -273,8 +339,79 @@ class ErpVentasWabizPedidoHandlerService:
             f"\U0001f4cb Resumen — {customer_name}\n"
             + "\n".join(lines)
             + f"\n\nTotal (IVA incluido): ${total_inc:,.2f}\n\n"
-            'Escribe *confirmar* para guardar o *cancelar*.'
+            'Escribe *confirmar* para guardar, *cambiar N* para corregir una partida, o *cancelar*.'
         )
+
+    def _build_progress(self, state: dict) -> str:
+        items = state.get("items") or []
+        customer_name = state.get("customer_name")
+        lines = [f"Cliente: {customer_name}" if customer_name else "Cliente: (sin definir todavia)"]
+        if items:
+            lines.append("\nProductos capturados:")
+            total = 0.0
+            for i, it in enumerate(items, start=1):
+                line_total = round(float(it["quantity"]) * float(it["unit_price_inc_vat"]), 2)
+                total += line_total
+                lines.append(f"{i}. {self._fmt_num(it['quantity'])} x {it['product_name']} = ${line_total:,.2f}")
+            lines.append(f"\nTotal hasta ahora: ${total:,.2f}")
+        else:
+            lines.append("\nAun no hay productos capturados.")
+        step = state.get("step")
+        if step == "quantity":
+            p = state.get("pending_product") or {}
+            lines.append(f"\nFalta: cantidad de {p.get('product_name')}.")
+        elif step == "price":
+            p = state.get("pending_product") or {}
+            qty = state.get("pending_qty")
+            lines.append(f"\nFalta: precio de {self._fmt_num(qty)} x {p.get('product_name')}.")
+        elif step in ("client", "client_confirm_new", "client_pick"):
+            lines.append("\nFalta: definir el cliente.")
+        elif step == "confirm":
+            lines.append("\nListo para *confirmar*.")
+        return "\n".join(lines)
+
+    def _reprompt(self, state: dict) -> str:
+        step = state.get("step")
+        if step == "client":
+            return "¿Cliente? Escribe el nombre."
+        if step == "client_confirm_new":
+            name = state.get("client_candidate_name", "")
+            return f'No encontre clientes con "{name}". ¿Creo cliente nuevo "{name}"? (si/no)'
+        if step == "client_pick":
+            candidates = state.get("client_candidates") or []
+            lines = [f"{i}. {c['party_name']}" for i, c in enumerate(candidates, start=1)]
+            return "Encontre varios clientes:\n" + "\n".join(lines) + "\n\nEscribe el numero."
+        if step == "product":
+            return self._product_prompt()
+        if step == "product_pick":
+            candidates = state.get("product_candidates") or []
+            lines = [f"{i}. {c['product_name']}" for i, c in enumerate(candidates, start=1)]
+            return "Escribe el numero:\n" + "\n".join(lines)
+        if step == "quantity":
+            p = state.get("pending_product") or {}
+            return f"Producto: {p.get('product_name')} ✓ ¿Cantidad?"
+        if step == "price":
+            p = state.get("pending_product") or {}
+            qty = state.get("pending_qty")
+            return f"Cantidad: {self._fmt_num(qty)} ✓ ¿Precio unitario (con IVA)?"
+        if step == "confirm":
+            return self._build_summary(state.get("items") or [], state)
+        return "Escribe *pedido* para iniciar uno nuevo."
+
+    def _handle_back(self, state: dict) -> tuple[str, dict]:
+        history = list(state.get("_history") or [])
+        if not history:
+            return "No hay nada a que regresar.", state
+        previous = history.pop()
+        previous = {**previous, "_history": history}
+        return self._reprompt(previous), previous
+
+    # ── HISTORIAL ─────────────────────────────────────────────────────────────
+
+    def _with_history(self, state: dict) -> list[dict]:
+        history = list(state.get("_history") or [])
+        history.append({k: v for k, v in state.items() if k != "_history"})
+        return history[-_MAX_HISTORY:]
 
     # ── BUSQUEDAS ─────────────────────────────────────────────────────────────
 
