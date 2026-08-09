@@ -243,7 +243,12 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
   const activeTrips = trips.filter((trip) => !closedTripStatuses.has(trip.estado));
   const completedTrips = trips.filter((trip) => trip.estado === "completado");
   const pendingOrders = orders.filter((order) => !order.logistics_assignment && isOperationalUnassignedOrder(order));
-  const pendingPurchaseOrders = purchaseOrders.filter((order) => !order.logistics_assignment && !["convertido", "cancelado"].includes(String(order.status || "")));
+  const pendingPurchaseOrders = purchaseOrders.filter((order) => {
+    const status = String(order.status || "");
+    const tripStatus = String(order.logistics_assignment?.trip_estado || "");
+    if (status === "cancelado") return false;
+    return !(status === "convertido" && closedTripStatuses.has(tripStatus));
+  });
   const scheduledOrders = [...orders, ...purchaseOrders].filter((order) => {
     const assignment = order.logistics_assignment;
     return assignment && !closedTripStatuses.has(String(assignment.trip_estado || ""));
@@ -633,39 +638,152 @@ function PurchaseOrdersTab({
               <th className="px-2 py-2">Pedido compra</th>
               <th className="px-2 py-2">Proveedor</th>
               <th className="px-2 py-2">Recoleccion</th>
-              <th className="px-2 py-2">Partidas</th>
-              <th className="px-2 py-2 text-right">Peso</th>
+              <th className="px-2 py-2">Producto</th>
+              <th className="px-2 py-2 text-right">Cantidad</th>
+              <th className="px-2 py-2">Unidad</th>
+              <th className="px-2 py-2 text-right">Precio</th>
               <th className="px-2 py-2 text-right">Importe</th>
+              <th className="px-2 py-2">Guardar</th>
               <th className="px-2 py-2">Compra</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => {
-              const selected = selectedOrders.includes(order.id);
-              return (
-                <tr key={order.id} onClick={() => toggle(order.id)} className={`cursor-pointer border-t border-line ${selected ? "bg-steel/10" : "hover:bg-slate-50"}`}>
-                  <td className="px-2 py-2">
-                    <span className={`flex h-6 w-6 items-center justify-center rounded border ${selected ? "border-steel bg-steel text-white" : "border-line bg-white"}`}>
-                      {selected && <Check size={15} />}
-                    </span>
-                  </td>
-                  <td className="px-2 py-2 font-mono font-bold text-ink">{order.folio}</td>
-                  <td className="px-2 py-2 font-semibold text-slate-800">{order.customer_name_snapshot || "Sin proveedor"}</td>
-                  <td className="px-2 py-2 text-slate-600">{order.fecha_entrega || "-"}</td>
-                  <td className="px-2 py-2"><OrderItemsInline items={order.items || []} /></td>
-                  <td className="px-2 py-2 text-right">{number.format(order.peso_kg || 0)} kg</td>
-                  <td className="px-2 py-2 text-right font-semibold">{money.format(order.importe || 0)}</td>
-                  <td className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
-                    <PurchaseConvertCell order={order} action={action} busy={busy} />
-                  </td>
-                </tr>
-              );
-            })}
+            {orders.map((order) => (
+              <PurchaseOrderEditRow
+                key={order.id}
+                order={order}
+                selected={selectedOrders.includes(order.id)}
+                toggle={toggle}
+                suppliers={suppliers}
+                products={products}
+                action={action}
+                busy={busy}
+              />
+            ))}
           </tbody>
         </table>
       </div>
       {!orders.length && <Empty label="Sin pedidos de compra pendientes" />}
     </div>
+  );
+}
+
+function PurchaseOrderEditRow({
+  order,
+  selected,
+  toggle,
+  suppliers,
+  products,
+  action,
+  busy
+}: {
+  order: OrderRow;
+  selected: boolean;
+  toggle: (id: string) => void;
+  suppliers: NonNullable<LogisticsData["catalogs"]["suppliers"]>;
+  products: NonNullable<LogisticsData["catalogs"]["purchase_products"]>;
+  action: (name: string, context: Record<string, unknown>) => Promise<boolean>;
+  busy: string;
+}) {
+  const firstItem = (order.items || [])[0] || {};
+  const locked = String(order.status || "") === "convertido" || Boolean(order.purchase_folio);
+  const [supplierId, setSupplierId] = useState(order.supplier_id || "");
+  const [supplierName, setSupplierName] = useState(order.supplier_name || (order.supplier_id ? "" : order.customer_name_snapshot || ""));
+  const [pickupDate, setPickupDate] = useState(order.fecha_entrega || "");
+  const [pickupAddress, setPickupAddress] = useState(order.pickup_address || order.delivery_address || "");
+  const [productId, setProductId] = useState(String(firstItem.product_id || ""));
+  const [quantity, setQuantity] = useState(String(firstItem.quantity ?? ""));
+  const [unit, setUnit] = useState(String(firstItem.unit || ""));
+  const [unitCost, setUnitCost] = useState(String(firstItem.unit_cost ?? ""));
+  const [taxRate, setTaxRate] = useState(String(firstItem.tax_rate ?? 0));
+
+  async function save() {
+    if (locked || !productId || !Number(quantity)) return;
+    const product = products.find((row) => row.id === productId);
+    await action("purchase_order_manage", {
+      action: "update",
+      purchase_order_id: order.id,
+      supplier_id: supplierId || null,
+      supplier_name: supplierId ? undefined : supplierName || null,
+      pickup_address: pickupAddress || null,
+      fecha_recoleccion: pickupDate || null,
+      items: [
+        {
+          product_id: productId,
+          product_name_snapshot: product?.product_name || firstItem.product_name_snapshot,
+          quantity: Number(quantity),
+          unit: unit || product?.unit || "",
+          unit_cost: unitCost.trim() === "" ? 0 : Number(unitCost),
+          tax_rate: Number(taxRate || 0)
+        }
+      ]
+    });
+  }
+
+  return (
+    <tr onClick={() => !locked && toggle(order.id)} className={`border-t border-line ${locked ? "bg-emerald-50/50" : selected ? "bg-steel/10" : "hover:bg-slate-50"}`}>
+      <td className="px-2 py-2">
+        <span className={`flex h-6 w-6 items-center justify-center rounded border ${selected ? "border-steel bg-steel text-white" : "border-line bg-white"} ${locked ? "opacity-40" : ""}`}>
+          {selected && <Check size={15} />}
+        </span>
+      </td>
+      <td className="px-2 py-2">
+        <div className="grid gap-1">
+          <span className="font-mono font-bold text-ink">{order.folio}</span>
+          {order.logistics_assignment && <span className="text-[10px] font-bold uppercase text-steel">{order.logistics_assignment.trip_folio} · {order.logistics_assignment.trip_estado}</span>}
+          {locked && <span className="text-[10px] font-bold uppercase text-emerald-700">Compra generada</span>}
+        </div>
+      </td>
+      <td className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
+        <select value={supplierId} onChange={(event) => setSupplierId(event.target.value)} disabled={locked || Boolean(busy)} className="input h-9 min-w-40">
+          <option value="">Proveedor libre</option>
+          {suppliers.map((supplier) => (
+            <option key={supplier.id} value={supplier.id}>{supplier.party_name}</option>
+          ))}
+        </select>
+        {!supplierId && <input value={supplierName} onChange={(event) => setSupplierName(event.target.value)} disabled={locked || Boolean(busy)} className="input mt-1 h-9 min-w-40" placeholder="Proveedor" />}
+      </td>
+      <td className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
+        <input value={pickupDate} onChange={(event) => setPickupDate(event.target.value)} disabled={locked || Boolean(busy)} type="date" className="input h-9 min-w-36" />
+        <input value={pickupAddress} onChange={(event) => setPickupAddress(event.target.value)} disabled={locked || Boolean(busy)} className="input mt-1 h-9 min-w-44" placeholder="Lugar" />
+      </td>
+      <td className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
+        <select value={productId} onChange={(event) => {
+          const value = event.target.value;
+          setProductId(value);
+          const product = products.find((row) => row.id === value);
+          if (product?.unit) setUnit(product.unit);
+        }} disabled={locked || Boolean(busy)} className="input h-9 min-w-56">
+          <option value="">Producto</option>
+          {products.map((product) => (
+            <option key={product.id} value={product.id}>{product.product_name}</option>
+          ))}
+        </select>
+      </td>
+      <td className="px-2 py-2 text-right" onClick={(event) => event.stopPropagation()}>
+        <input value={quantity} onChange={(event) => setQuantity(event.target.value)} disabled={locked || Boolean(busy)} type="number" min="0" step="0.01" className="input h-9 w-28 text-right" />
+      </td>
+      <td className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
+        <input value={unit} onChange={(event) => setUnit(event.target.value)} disabled={locked || Boolean(busy)} className="input h-9 w-24" />
+      </td>
+      <td className="px-2 py-2 text-right" onClick={(event) => event.stopPropagation()}>
+        <input value={unitCost} onChange={(event) => setUnitCost(event.target.value)} disabled={locked || Boolean(busy)} type="number" min="0" step="0.01" className="input h-9 w-28 text-right" />
+        <select value={taxRate} onChange={(event) => setTaxRate(event.target.value)} disabled={locked || Boolean(busy)} className="input mt-1 h-8 w-28">
+          <option value="0">IVA 0%</option>
+          <option value="0.08">IVA 8%</option>
+          <option value="0.16">IVA 16%</option>
+        </select>
+      </td>
+      <td className="px-2 py-2 text-right font-semibold">{money.format(Number(quantity || 0) * Number(unitCost || 0))}</td>
+      <td className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
+        <button onClick={save} disabled={locked || !productId || !Number(quantity) || Boolean(busy)} className="btn-soft min-h-9 px-3">
+          Guardar
+        </button>
+      </td>
+      <td className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
+        <PurchaseConvertCell order={{ ...order, supplier_id: supplierId || order.supplier_id, items: [{ ...firstItem, product_id: productId, quantity: Number(quantity || 0), unit_cost: Number(unitCost || 0) }] }} action={action} busy={busy} />
+      </td>
+    </tr>
   );
 }
 

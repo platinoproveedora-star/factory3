@@ -68,6 +68,10 @@ class LogisticsPurchaseOrderManageService:
         for key in ["supplier_id", "supplier_name", "pickup_address", "fecha_recoleccion", "notes", "status"]:
             if key in context:
                 update[key] = context.get(key) or None
+        if "supplier_id" in context or "supplier_name" in context:
+            supplier = self._supplier(ctx, context.get("supplier_id"), context.get("supplier_name"))
+            update["supplier_id"] = supplier.get("id")
+            update["supplier_name"] = supplier.get("name")
         if "items" in context:
             items_result = self._items(ctx, context.get("items"))
             if not items_result.get("ok"):

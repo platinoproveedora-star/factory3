@@ -406,7 +406,7 @@ def list_orders(ctx: dict, limit: int = 500) -> list[dict]:
 def list_purchase_orders(ctx: dict, limit: int = 500) -> list[dict]:
     result = db(ctx).rest_select(
         "logistics_purchase_orders",
-        filters=table_filters(ctx, {"status": "in.(borrador,pendiente,asignado,recibido)"}),
+        filters=table_filters(ctx, {"status": "in.(borrador,pendiente,asignado,recibido,convertido)"}),
         select="*",
         order="fecha_recoleccion.asc,created_at.desc",
         limit=limit,
@@ -452,6 +452,10 @@ def format_purchase_order(row: dict) -> dict:
         "delivery_address": row.get("pickup_address"),
         "city": "Compra",
         "status": row.get("status"),
+        "supplier_id": row.get("supplier_id"),
+        "supplier_name": row.get("supplier_name"),
+        "pickup_address": row.get("pickup_address"),
+        "purchase_folio": row.get("purchase_folio"),
         "peso_kg": float(row.get("total_weight_kg") or 0),
         "importe": float(row.get("total") or 0),
         "partida_1": parts[0] if len(parts) > 0 else "",
@@ -635,7 +639,7 @@ def attach_orders_to_trips(trips: list[dict], orders: list[dict], trip_orders: l
             )
     enriched = []
     for trip in trips:
-        rows = by_trip.get(str(trip.get("id")), [])
+        rows = sorted(by_trip.get(str(trip.get("id")), []), key=lambda order: (1 if order.get("source_type") == "compra" else 0, str((order.get("trip_order") or {}).get("orden_carga") or ""), str(order.get("folio") or "")))
         enriched.append({**trip, "hora_fin": trip_end_time(trip), "orders": rows, "summary": summarize_trip(rows)})
     return enriched
 
