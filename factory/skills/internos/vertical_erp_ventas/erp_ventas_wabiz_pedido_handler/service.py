@@ -11,6 +11,7 @@ erp_project_context_resolve, igual que erp_ventas_pedido_create.
 from __future__ import annotations
 
 import re
+from datetime import date, timedelta
 from pathlib import Path
 
 from factory.engine import SupabaseClient
@@ -19,6 +20,7 @@ _MAX_LIST = 8
 _MAX_HISTORY = 12
 _PROGRESS_STEPS = {
     "client", "client_confirm_new", "client_pick",
+    "fecha", "fecha_manual",
     "product", "product_pick", "quantity", "price", "confirm",
 }
 
@@ -37,6 +39,9 @@ _AYUDA = (
 )
 
 _EDIT_RE = re.compile(r"^(?:cambiar|editar)\s+(\d+)$")
+_FECHA_RE = re.compile(r"^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$")
+_WEEKDAY_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+_MONTH_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
 
 
 def _runner():
@@ -57,6 +62,9 @@ class ErpVentasWabizPedidoHandlerService:
             return {"ok": True, "data": {"reply": "Tu numero no esta asociado a ninguna empresa. Contacta al administrador."}}
 
         msg_type = context.get("type", "text")
+        if msg_type == "interactive":
+            # respuesta de boton: el id llega en "body" (ver wabiz_webhook_parse), se enruta como texto
+            msg_type = "text"
         body = str(context.get("body") or "").strip()
         dry_run = context.get("dry_run", True)
 
@@ -95,6 +103,8 @@ class ErpVentasWabizPedidoHandlerService:
         if not dry_run:
             self._save_state(chat_id, new_state)
 
+        if isinstance(reply, dict):
+            return {"ok": True, "data": {"interactive": reply}}
         return {"ok": True, "data": {"reply": reply}}
 
     def _dispatch(self, step: str, body: str, text_lower: str, cfg: dict, state: dict, dry_run: bool) -> tuple[str, dict]:
@@ -104,6 +114,10 @@ class ErpVentasWabizPedidoHandlerService:
             return self._handle_client_confirm_new(text_lower, state, cfg, dry_run)
         if step == "client_pick":
             return self._handle_client_pick(body, state)
+        if step == "fecha":
+            return self._handle_fecha(body, text_lower, state)
+        if step == "fecha_manual":
+            return self._handle_fecha_manual(body, state)
         if step == "product":
             return self._handle_product(body, text_lower, cfg, state)
         if step == "product_pick":
@@ -130,8 +144,8 @@ class ErpVentasWabizPedidoHandlerService:
         matches = self._search_customers(cfg, text)
         if len(matches) == 1:
             c = matches[0]
-            new_state = {**state, "step": "product", "customer_id": c["id"], "customer_name": c["party_name"]}
-            return f"Cliente: {c['party_name']} ✓\n\n{self._product_prompt()}", new_state
+            base = {**state, "customer_id": c["id"], "customer_name": c["party_name"]}
+            return self._start_fecha_step(base, prefix=f"Cliente: {c['party_name']} ✓")
         if len(matches) > 1:
             listed = matches[:_MAX_LIST]
             lines = [f"{i}. {c['party_name']}" for i, c in enumerate(listed, start=1)]
@@ -154,8 +168,8 @@ class ErpVentasWabizPedidoHandlerService:
             customer_id = customer.get("id") or ("cliente-dryrun" if dry_run else None)
             if not customer_id:
                 return "⚠️ No pude crear el cliente. Intenta de nuevo.", {}
-            new_state = {**state, "step": "product", "customer_id": customer_id, "customer_name": name}
-            return f"Cliente nuevo: {name} ✓\n\n{self._product_prompt()}", new_state
+            base = {**state, "customer_id": customer_id, "customer_name": name}
+            return self._start_fecha_step(base, prefix=f"Cliente nuevo: {name} ✓")
         if text_lower in ("no", "n"):
             new_state = {**state, "step": "client"}
             return "Ok, escribe otro nombre de cliente.", new_state
@@ -167,9 +181,33 @@ class ErpVentasWabizPedidoHandlerService:
         if idx is None or idx < 1 or idx > len(candidates):
             return f"Escribe un numero del 1 al {len(candidates)}.", state
         c = candidates[idx - 1]
-        new_state = {k: v for k, v in state.items() if k != "client_candidates"}
-        new_state = {**new_state, "step": "product", "customer_id": c["id"], "customer_name": c["party_name"]}
-        return f"Cliente: {c['party_name']} ✓\n\n{self._product_prompt()}", new_state
+        base = {k: v for k, v in state.items() if k != "client_candidates"}
+        base = {**base, "customer_id": c["id"], "customer_name": c["party_name"]}
+        return self._start_fecha_step(base, prefix=f"Cliente: {c['party_name']} ✓")
+
+    def _handle_fecha(self, body: str, text_lower: str, state: dict) -> tuple[str, dict]:
+        if text_lower == "fecha_1":
+            return self._fecha_selected(state, state.get("fecha_opcion_1"))
+        if text_lower == "fecha_2":
+            return self._fecha_selected(state, state.get("fecha_opcion_2"))
+        if text_lower in ("fecha_3", "otra fecha", "otra"):
+            new_state = {**state, "step": "fecha_manual"}
+            return "Escribe la fecha de entrega (dd/mm/aa).", new_state
+        parsed = self._parse_fecha_text(body)
+        if parsed:
+            return self._fecha_selected(state, parsed)
+        return "Elige una opcion de fecha, o escribe la fecha (dd/mm/aa).", state
+
+    def _handle_fecha_manual(self, body: str, state: dict) -> tuple[str, dict]:
+        parsed = self._parse_fecha_text(body)
+        if not parsed:
+            return "Fecha invalida. Escribe dd/mm/aa (ej: 15/08/26).", state
+        return self._fecha_selected(state, parsed)
+
+    def _fecha_selected(self, state: dict, iso_date: str) -> tuple[str, dict]:
+        new_state = {k: v for k, v in state.items() if k not in ("fecha_opcion_1", "fecha_opcion_2")}
+        new_state = {**new_state, "step": "product", "due_date": iso_date}
+        return f"Entrega: {self._fmt_date_label(date.fromisoformat(iso_date))} ✓\n\n{self._product_prompt()}", new_state
 
     def _handle_product(self, body: str, text_lower: str, cfg: dict, state: dict) -> tuple[str, dict]:
         text = body.strip()
@@ -289,7 +327,9 @@ class ErpVentasWabizPedidoHandlerService:
             }
             for it in items
         ]
-        res = self._create_pedido(cfg, state.get("customer_id"), state.get("customer_name"), payload_items, dry_run)
+        res = self._create_pedido(
+            cfg, state.get("customer_id"), state.get("customer_name"), payload_items, state.get("due_date"), dry_run
+        )
         if not res.get("ok"):
             return f"⚠️ No pude guardar el pedido: {res.get('error')}", state
         pedido = (res.get("data") or {}).get("pedido") or {}
@@ -311,6 +351,58 @@ class ErpVentasWabizPedidoHandlerService:
             f"Partida {idx} eliminada ({self._fmt_num(removed['quantity'])} x {removed['product_name']}).\n\n"
             f"{self._product_prompt()}"
         ), new_state
+
+    # ── FECHA DE ENTREGA ─────────────────────────────────────────────────────
+
+    def _next_business_dates(self, n: int) -> list[date]:
+        """Siguientes n fechas saltando domingo (dia laborable = todo menos domingo)."""
+        dates: list[date] = []
+        d = date.today() + timedelta(days=1)
+        while len(dates) < n:
+            if d.weekday() != 6:  # 6 = domingo
+                dates.append(d)
+            d += timedelta(days=1)
+        return dates
+
+    def _fmt_date_label(self, d: date) -> str:
+        return f"{_WEEKDAY_ES[d.weekday()]} {d.day} {_MONTH_ES[d.month - 1]}"
+
+    def _parse_fecha_text(self, text: str) -> str | None:
+        match = _FECHA_RE.match(text.strip())
+        if not match:
+            return None
+        d_str, mo_str, y_str = match.groups()
+        try:
+            year = int(y_str)
+            if year < 100:
+                year += 2000
+            return date(year, int(mo_str), int(d_str)).isoformat()
+        except (TypeError, ValueError):
+            return None
+
+    def _fecha_buttons(self, d1: date, d2: date) -> dict:
+        return {
+            "body": "¿Fecha prometida de entrega?",
+            "interactive_type": "button",
+            "buttons": [
+                {"id": "fecha_1", "title": self._fmt_date_label(d1)},
+                {"id": "fecha_2", "title": self._fmt_date_label(d2)},
+                {"id": "fecha_3", "title": "Otra fecha"},
+            ],
+        }
+
+    def _start_fecha_step(self, state: dict, prefix: str = "") -> tuple[dict, dict]:
+        d1, d2 = self._next_business_dates(2)
+        new_state = {
+            **state,
+            "step": "fecha",
+            "fecha_opcion_1": d1.isoformat(),
+            "fecha_opcion_2": d2.isoformat(),
+        }
+        interactive = self._fecha_buttons(d1, d2)
+        if prefix:
+            interactive = {**interactive, "body": f"{prefix}\n\n{interactive['body']}"}
+        return interactive, new_state
 
     # ── TEXTOS ────────────────────────────────────────────────────────────────
 
@@ -335,17 +427,29 @@ class ErpVentasWabizPedidoHandlerService:
             total_inc += line_total
             lines.append(f"{i}. {self._fmt_num(it['quantity'])} x {it['product_name']} = ${line_total:,.2f}")
         customer_name = state.get("customer_name", "")
+        entrega = self._fmt_due_date(state.get("due_date"))
         return (
             f"\U0001f4cb Resumen — {customer_name}\n"
+            f"Entrega: {entrega}\n"
             + "\n".join(lines)
             + f"\n\nTotal (IVA incluido): ${total_inc:,.2f}\n\n"
             'Escribe *confirmar* para guardar, *cambiar N* para corregir una partida, o *cancelar*.'
         )
 
+    def _fmt_due_date(self, iso_date: str | None) -> str:
+        if not iso_date:
+            return "(sin definir)"
+        try:
+            return self._fmt_date_label(date.fromisoformat(iso_date))
+        except (TypeError, ValueError):
+            return iso_date
+
     def _build_progress(self, state: dict) -> str:
         items = state.get("items") or []
         customer_name = state.get("customer_name")
         lines = [f"Cliente: {customer_name}" if customer_name else "Cliente: (sin definir todavia)"]
+        if state.get("due_date"):
+            lines.append(f"Entrega: {self._fmt_due_date(state.get('due_date'))}")
         if items:
             lines.append("\nProductos capturados:")
             total = 0.0
@@ -370,7 +474,7 @@ class ErpVentasWabizPedidoHandlerService:
             lines.append("\nListo para *confirmar*.")
         return "\n".join(lines)
 
-    def _reprompt(self, state: dict) -> str:
+    def _reprompt(self, state: dict) -> str | dict:
         step = state.get("step")
         if step == "client":
             return "¿Cliente? Escribe el nombre."
@@ -381,6 +485,15 @@ class ErpVentasWabizPedidoHandlerService:
             candidates = state.get("client_candidates") or []
             lines = [f"{i}. {c['party_name']}" for i, c in enumerate(candidates, start=1)]
             return "Encontre varios clientes:\n" + "\n".join(lines) + "\n\nEscribe el numero."
+        if step == "fecha":
+            try:
+                d1 = date.fromisoformat(state.get("fecha_opcion_1"))
+                d2 = date.fromisoformat(state.get("fecha_opcion_2"))
+                return self._fecha_buttons(d1, d2)
+            except (TypeError, ValueError):
+                return "¿Fecha prometida de entrega? Escribe dd/mm/aa."
+        if step == "fecha_manual":
+            return "Escribe la fecha de entrega (dd/mm/aa)."
         if step == "product":
             return self._product_prompt()
         if step == "product_pick":
@@ -486,7 +599,9 @@ class ErpVentasWabizPedidoHandlerService:
         payload = {**self._inventory_context(cfg), "customer_name": customer_name, "dry_run": dry_run}
         return _runner().run("vertical_erp_ventas/erp_ventas_customer_get_or_create", payload)
 
-    def _create_pedido(self, cfg: dict, customer_id: str, customer_name: str, items: list[dict], dry_run: bool) -> dict:
+    def _create_pedido(
+        self, cfg: dict, customer_id: str, customer_name: str, items: list[dict], due_date: str | None, dry_run: bool
+    ) -> dict:
         payload = {
             "company_id": cfg["empresa_id"],
             "empresa_id": cfg["empresa_id"],
@@ -494,6 +609,7 @@ class ErpVentasWabizPedidoHandlerService:
             "customer_id": customer_id,
             "customer_name": customer_name,
             "items": items,
+            "due_date": due_date,
             "dry_run": dry_run,
         }
         return _runner().run("vertical_erp_ventas/erp_ventas_pedido_create", payload)
