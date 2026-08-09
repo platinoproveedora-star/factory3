@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import re
 import urllib.parse
 import urllib.request
 
@@ -12,11 +13,18 @@ _MAX_ROWS = 10
 _TITLE_MAX = 20
 
 
+def _normalize_to(to: str) -> str:
+    """Ver wabiz_send_text._normalize_to: WhatsApp reporta numeros moviles
+    mexicanos entrantes con un '1' extra que la Graph API rechaza al enviar."""
+    match = re.match(r"^521(\d{10})$", to)
+    return f"52{match.group(1)}" if match else to
+
+
 class WabizSendInteractiveService:
 
     def ejecutar(self, context: dict) -> dict:
         empresa_id = context.get("empresa_id")
-        to = str(context.get("to") or "").strip()
+        to = _normalize_to(str(context.get("to") or "").strip())
         body = str(context.get("body") or "").strip()
         interactive_type = str(context.get("interactive_type") or "").strip().lower()
 

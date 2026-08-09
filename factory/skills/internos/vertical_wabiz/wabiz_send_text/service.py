@@ -3,17 +3,27 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import re
 import urllib.parse
 import urllib.request
 
 _UA = "FactoryFactory/0.1 (+https://github.com/)"
 
 
+def _normalize_to(to: str) -> str:
+    """WhatsApp reporta numeros moviles mexicanos entrantes con un '1' extra
+    despues del codigo de pais (521XXXXXXXXXX), pero la Graph API rechaza el
+    envio (#131030) si se le manda ese mismo formato de vuelta. Hay que
+    enviar sin el '1' (52XXXXXXXXXX)."""
+    match = re.match(r"^521(\d{10})$", to)
+    return f"52{match.group(1)}" if match else to
+
+
 class WabizSendTextService:
 
     def ejecutar(self, context: dict) -> dict:
         empresa_id = context.get("empresa_id")
-        to         = context.get("to", "").strip()
+        to         = _normalize_to(context.get("to", "").strip())
         body       = context.get("body", "").strip()
 
         if not to:
