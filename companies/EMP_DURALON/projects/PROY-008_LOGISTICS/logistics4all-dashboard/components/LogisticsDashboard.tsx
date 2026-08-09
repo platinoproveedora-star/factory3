@@ -1264,11 +1264,11 @@ function productQty(order: OrderRow, key: string) {
 }
 
 function orderCollectAmount(order: OrderRow) {
-  return Number(order.balance_total ?? order.importe ?? 0);
+  return Number(order.billing_balance ?? order.balance_total ?? order.importe ?? 0);
 }
 
 function orderBalance(order: OrderRow) {
-  return Math.max(0, Number(order.balance_total ?? 0));
+  return Math.max(0, Number(order.billing_balance ?? order.balance_total ?? 0));
 }
 
 function tripCollectTotal(trip: TripRow) {

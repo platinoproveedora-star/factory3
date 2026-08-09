@@ -35,6 +35,7 @@ def resolve_context(context: dict) -> dict:
     company_id = str(data.get("company_id") or data.get("empresa_id") or "").strip()
     sales_schema = str(context.get("sales_schema") or context.get("schema_ventas") or data.get("sales_schema") or "").strip()
     inventory_schema = str(context.get("inventory_schema") or context.get("schema_inventario") or data.get("inventory_schema") or data.get("schema_inventario") or "").strip()
+    billing_schema = str(context.get("billing_schema") or context.get("schema_billing") or data.get("billing_schema") or data.get("schema_billing") or "").strip()
     if not sales_schema:
         return {"ok": False, "error": "sales_schema/schema_ventas requerido"}
     access = validate_access(context, company_id)
@@ -52,6 +53,8 @@ def resolve_context(context: dict) -> dict:
             "sales_schema": sales_schema,
             "inventory_schema": inventory_schema,
             "schema_inventario": inventory_schema,
+            "billing_schema": billing_schema,
+            "schema_billing": billing_schema,
             "project_code": data.get("project_code"),
             "module_code": data.get("module_code") or "logistics",
             "duration_minutes_default": int(trip_defaults.get("duration_minutes") or 120),
@@ -85,6 +88,13 @@ def inventory_db(ctx: dict) -> SupabaseClient | None:
     if not inventory_schema:
         return None
     return SupabaseClient({**ctx, "schema": inventory_schema})
+
+
+def billing_db(ctx: dict) -> SupabaseClient | None:
+    billing_schema = str(ctx.get("billing_schema") or ctx.get("schema_billing") or "").strip()
+    if not billing_schema:
+        return None
+    return SupabaseClient({**ctx, "schema": billing_schema})
 
 
 def is_dry_run(context: dict) -> bool:
@@ -316,7 +326,7 @@ def list_orders(ctx: dict, limit: int = 500) -> list[dict]:
     docs = sales_db(ctx).rest_select(
         "sales_documents",
         filters={"empresa_id": f"eq.{ctx['company_id']}", "document_type": "eq.pedido", "status": "in.(pedido,liberado,remisionado)"},
-        select="id,folio,external_folio,customer_id,customer_name_snapshot,status,document_date,due_date,delivery_address,payment_method,city,city_quadrant,total_weight_kg,subtotal,tax_total,total,balance_total,notes,metadata,created_at",
+        select="id,folio,external_folio,customer_id,customer_name_snapshot,status,document_date,due_date,delivery_address,payment_method,city,city_quadrant,total_weight_kg,subtotal,tax_total,total,paid_total,balance_total,notes,metadata,created_at",
         order="due_date.asc,created_at.desc",
         limit=limit,
     )
@@ -337,7 +347,123 @@ def list_orders(ctx: dict, limit: int = 500) -> list[dict]:
     if items.get("ok"):
         for item in items.get("data") or []:
             by_doc.setdefault(str(item.get("document_id") or ""), []).append(item)
-    return [format_order(row, by_doc.get(str(row.get("id") or ""), [])) for row in rows]
+    formatted = [format_order(row, by_doc.get(str(row.get("id") or ""), [])) for row in rows]
+    return attach_billing_status(ctx, formatted)
+
+
+def attach_billing_status(ctx: dict, orders: list[dict]) -> list[dict]:
+    targets = []
+    for order in orders:
+        folio = str(order.get("folio") or "").strip()
+        remision_folio = str(order.get("remision_folio") or "").strip()
+        if remision_folio:
+            targets.append(remision_folio)
+        elif folio:
+            targets.append(folio)
+    target_folios = sorted({folio for folio in targets if folio})
+    remision_docs = _sales_docs_by_folio(ctx, target_folios)
+    billing = _billing_rows_by_folio(ctx, target_folios)
+
+    enriched = []
+    for order in orders:
+        has_remision = bool(str(order.get("remision_folio") or "").strip())
+        target_folio = str(order.get("remision_folio") or order.get("folio") or "").strip()
+        target_doc = remision_docs.get(target_folio)
+        collection = billing["collections"].get(target_folio)
+        applied_total = billing["applications"].get(target_folio, 0.0)
+
+        total = _money((target_doc or {}).get("total") if target_doc else order.get("total") or order.get("importe"))
+        paid = _money((target_doc or {}).get("paid_total") if target_doc else order.get("paid_total"))
+        balance = _money((target_doc or {}).get("balance_total") if target_doc else order.get("balance_total"))
+        source = "pedido_document"
+        document_status = str((target_doc or {}).get("status") or order.get("status") or "").strip()
+
+        if target_doc and has_remision:
+            source = "remision_document"
+        if collection and collection.get("balance_amount") is not None:
+            balance = _money(collection.get("balance_amount"))
+            paid = _money(collection.get("collected_amount"))
+            total = _money(collection.get("expected_amount")) or total
+            document_status = str(collection.get("status") or document_status).strip()
+            source = "billing_collection_folio"
+        elif applied_total > paid:
+            paid = applied_total
+            balance = max(total - paid, 0.0)
+            source = "billing_payment_applications"
+
+        billing_status = _billing_status(document_status, total, paid, balance)
+        enriched.append(
+            {
+                **order,
+                "billing_folio": target_folio or None,
+                "billing_status": billing_status,
+                "billing_paid_total": round(paid, 2),
+                "billing_balance": round(balance, 2),
+                "billing_source": source,
+                "remision_status": target_doc.get("status") if target_doc and has_remision else None,
+                "remision_paid_total": _money(target_doc.get("paid_total")) if target_doc and has_remision else None,
+                "remision_balance_total": _money(target_doc.get("balance_total")) if target_doc and has_remision else None,
+            }
+        )
+    return enriched
+
+
+def _sales_docs_by_folio(ctx: dict, folios: list[str]) -> dict[str, dict]:
+    if not folios:
+        return {}
+    result = sales_db(ctx).rest_select(
+        "sales_documents",
+        filters={"empresa_id": f"eq.{ctx['company_id']}", "folio": f"in.({','.join(folios)})"},
+        select="id,folio,document_type,status,total,paid_total,balance_total",
+        limit=max(len(folios), 1),
+    )
+    if not result.get("ok"):
+        return {}
+    return {str(row.get("folio") or ""): row for row in result.get("data") or [] if str(row.get("folio") or "")}
+
+
+def _billing_rows_by_folio(ctx: dict, folios: list[str]) -> dict[str, dict]:
+    client = billing_db(ctx)
+    applications: dict[str, float] = {}
+    collections: dict[str, dict] = {}
+    if client is None or not folios:
+        return {"applications": applications, "collections": collections}
+    in_filter = f"in.({','.join(folios)})"
+    apps = client.rest_select(
+        "billing_payment_applications",
+        filters={"sales_folio": in_filter},
+        select="sales_folio,amount_applied,status",
+        limit=5000,
+    )
+    if apps.get("ok"):
+        for row in apps.get("data") or []:
+            status = str(row.get("status") or "").strip().lower()
+            if status in {"cancelado", "cancelled", "anulado"}:
+                continue
+            folio = str(row.get("sales_folio") or "").strip()
+            applications[folio] = applications.get(folio, 0.0) + _money(row.get("amount_applied"))
+    folios_res = client.rest_select(
+        "billing_collection_folios",
+        filters={"sales_folio": in_filter},
+        select="sales_folio,expected_amount,collected_amount,balance_amount,status,updated_at,created_at",
+        order="updated_at.desc,created_at.desc",
+        limit=5000,
+    )
+    if folios_res.get("ok"):
+        for row in folios_res.get("data") or []:
+            folio = str(row.get("sales_folio") or "").strip()
+            if folio and folio not in collections:
+                collections[folio] = row
+    return {"applications": applications, "collections": collections}
+
+
+def _billing_status(document_status: str, total: float, paid: float, balance: float) -> str:
+    normalized = document_status.strip().lower()
+    if normalized in {"pagada", "pagado"} or balance <= 0 and (paid > 0 or total <= 0):
+        return "pagado"
+    if normalized in {"parcial"} or paid > 0:
+        return "parcial"
+    return "pendiente"
 
 
 def format_order(row: dict, items: list[dict]) -> dict:
@@ -370,6 +496,13 @@ def num(value: Any) -> str:
     except (TypeError, ValueError):
         return "0"
     return str(int(number)) if number.is_integer() else f"{number:.2f}".rstrip("0").rstrip(".")
+
+
+def _money(value: Any) -> float:
+    try:
+        return round(float(value or 0), 2)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def attach_orders_to_trips(trips: list[dict], orders: list[dict], trip_orders: list[dict]) -> list[dict]:

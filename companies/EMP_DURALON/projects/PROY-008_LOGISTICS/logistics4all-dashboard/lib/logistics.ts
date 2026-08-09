@@ -26,10 +26,19 @@ export type OrderRow = {
   city?: string | null;
   city_quadrant?: string | null;
   payment_method?: string | null;
+  paid_total?: number | null;
   balance_total?: number | null;
   status?: string | null;
   remision_folio?: string | null;
   remision_id?: string | null;
+  remision_status?: string | null;
+  remision_paid_total?: number | null;
+  remision_balance_total?: number | null;
+  billing_folio?: string | null;
+  billing_status?: string | null;
+  billing_paid_total?: number | null;
+  billing_balance?: number | null;
+  billing_source?: string | null;
   peso_kg?: number;
   importe?: number;
   partida_1?: string;
@@ -145,6 +154,8 @@ export function logisticsContext(user: SessionUser, grants: AccessGrant[], compa
     schema_ventas: process.env.LOGISTICS_SALES_SCHEMA,
     inventory_schema: process.env.LOGISTICS_INVENTORY_SCHEMA,
     schema_inventario: process.env.LOGISTICS_INVENTORY_SCHEMA,
+    billing_schema: process.env.LOGISTICS_BILLING_SCHEMA,
+    schema_billing: process.env.LOGISTICS_BILLING_SCHEMA,
     inventory_project_code: process.env.LOGISTICS_INVENTORY_PROJECT_CODE,
     project_inv: process.env.LOGISTICS_INVENTORY_PROJECT_CODE,
     inventory_module_code: process.env.LOGISTICS_INVENTORY_MODULE_CODE,

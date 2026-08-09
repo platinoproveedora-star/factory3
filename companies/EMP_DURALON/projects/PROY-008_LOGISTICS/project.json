@@ -21,6 +21,12 @@
   "sales_schema": "uc101_proy002",
   "sales_project_code": "PROY-002",
   "sales_module_code": "ventas",
+  "inventory_schema": "uc101_proy004",
+  "inventory_project_code": "PROY-004",
+  "inventory_module_code": "inventario",
+  "billing_schema": "uc101_proy005",
+  "billing_project_code": "PROY-005",
+  "billing_module_code": "billing",
   "source_orders_contract": {
     "schema": "uc101_proy002",
     "documents_table": "sales_documents",
@@ -66,6 +72,8 @@
   ],
   "dashboard_folder": "companies/EMP_DURALON/projects/PROY-008_LOGISTICS/logistics4all-dashboard",
   "dashboard_vercel_project": "logistics4all",
+  "dashboard_public_url": "https://logistics4all.vercel.app",
+  "apps4all_portal_url": "https://apps4all-zeta.vercel.app",
   "platform": "vercel",
   "requires_env": [
     "FACTORY_API_URL",
@@ -82,7 +90,8 @@
   ],
   "depends_on": [
     "PROY-002",
-    "PROY-004"
+    "PROY-004",
+    "PROY-005"
   ],
   "deliverables": [
     "Skills Factory3 reusable vertical_apps4all_logistics",
