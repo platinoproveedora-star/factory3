@@ -371,6 +371,8 @@ function OrdersTab({
                   <tbody>
                     {rows.map((order) => {
                       const selected = selectedOrders.includes(order.id);
+                      const remision = remisionFolio(order);
+                      const balance = orderBalance(order);
                       return (
                         <tr key={order.id} onClick={() => toggle(order.id)} className={`cursor-pointer border-t border-line ${selected ? "bg-steel/10" : "hover:bg-slate-50"}`}>
                           <td className="px-2 py-2">
@@ -381,7 +383,12 @@ function OrdersTab({
                           <td className="px-2 py-2">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="font-mono font-bold text-ink">{order.folio}</span>
-                              {order.status === "remisionado" && <span className="rounded bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase text-emerald-700">Remisionado</span>}
+                              {order.status === "remisionado" && <span className="rounded bg-steel/10 px-2 py-1 text-[10px] font-bold uppercase text-steel">{remision || "Sin remision"}</span>}
+                              {order.status === "remisionado" && (
+                                <span className={`rounded px-2 py-1 text-[10px] font-bold uppercase ${balance > 0 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+                                  {balance > 0 ? `Por cobrar ${money.format(balance)}` : "Pagado"}
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="max-w-60 truncate px-2 py-2 font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</td>
@@ -1214,6 +1221,7 @@ function compareTripsForAllocation(a: TripRow, b: TripRow) {
 
 function isOperationalUnassignedOrder(order: OrderRow) {
   if (order.status !== "remisionado") return true;
+  if (orderBalance(order) > 0) return true;
   const date = parseDateKey(order.fecha_entrega);
   if (!date) return true;
   const cutoff = addDays(startOfDay(new Date()), -7);
@@ -1257,6 +1265,10 @@ function productQty(order: OrderRow, key: string) {
 
 function orderCollectAmount(order: OrderRow) {
   return Number(order.balance_total ?? order.importe ?? 0);
+}
+
+function orderBalance(order: OrderRow) {
+  return Math.max(0, Number(order.balance_total ?? 0));
 }
 
 function tripCollectTotal(trip: TripRow) {
