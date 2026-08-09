@@ -1,21 +1,21 @@
 import type { LogisticsData } from "@/lib/logistics";
 
 const itemsA = [
-  { id: "i1", document_id: "p1", product_name_snapshot: "Varilla 3/8", description: "Varilla 3/8", quantity: 120, unit: "pzas", line_total: 26400, weight_kg_total: 1120 },
-  { id: "i2", document_id: "p1", product_name_snapshot: "Cal", description: "Cal", quantity: 40, unit: "bultos", line_total: 5200, weight_kg_total: 1000 },
-  { id: "i3", document_id: "p1", product_name_snapshot: "Cemento", description: "Cemento", quantity: 20, unit: "bultos", line_total: 3600, weight_kg_total: 1000 },
-  { id: "i4", document_id: "p1", product_name_snapshot: "Alambre", description: "Alambre", quantity: 8, unit: "rollos", line_total: 1800, weight_kg_total: 96 }
+  { id: "i1", document_id: "p1", inventory_product_id: "var38", product_name_snapshot: "Varilla 3/8", description: "Varilla 3/8", quantity: 120, unit: "pzas", line_total: 26400, weight_kg_total: 1120 },
+  { id: "i2", document_id: "p1", inventory_product_id: "cal", product_name_snapshot: "Cal", description: "Cal", quantity: 40, unit: "bultos", line_total: 5200, weight_kg_total: 1000 },
+  { id: "i3", document_id: "p1", inventory_product_id: "cemento", product_name_snapshot: "Cemento", description: "Cemento", quantity: 20, unit: "bultos", line_total: 3600, weight_kg_total: 1000 },
+  { id: "i4", document_id: "p1", inventory_product_id: "alambre", product_name_snapshot: "Alambre", description: "Alambre", quantity: 8, unit: "rollos", line_total: 1800, weight_kg_total: 96 }
 ];
 
 const itemsB = [
-  { id: "i5", document_id: "p2", product_name_snapshot: "Varilla 1/2", description: "Varilla 1/2", quantity: 80, unit: "pzas", line_total: 24800, weight_kg_total: 1200 },
-  { id: "i6", document_id: "p2", product_name_snapshot: "Bron", description: "Bron", quantity: 12, unit: "pzas", line_total: 9600, weight_kg_total: 360 },
-  { id: "i7", document_id: "p2", product_name_snapshot: "Cal", description: "Cal", quantity: 25, unit: "bultos", line_total: 3250, weight_kg_total: 625 }
+  { id: "i5", document_id: "p2", inventory_product_id: "var12", product_name_snapshot: "Varilla 1/2", description: "Varilla 1/2", quantity: 80, unit: "pzas", line_total: 24800, weight_kg_total: 1200 },
+  { id: "i6", document_id: "p2", inventory_product_id: "bron", product_name_snapshot: "Bron", description: "Bron", quantity: 12, unit: "pzas", line_total: 9600, weight_kg_total: 360 },
+  { id: "i7", document_id: "p2", inventory_product_id: "cal", product_name_snapshot: "Cal", description: "Cal", quantity: 25, unit: "bultos", line_total: 3250, weight_kg_total: 625 }
 ];
 
 const itemsC = [
-  { id: "i8", document_id: "p3", product_name_snapshot: "Cal", description: "Cal", quantity: 55, unit: "bultos", line_total: 7150, weight_kg_total: 1375 },
-  { id: "i9", document_id: "p3", product_name_snapshot: "Malla", description: "Malla", quantity: 16, unit: "rollos", line_total: 6400, weight_kg_total: 240 }
+  { id: "i8", document_id: "p3", inventory_product_id: "cal", product_name_snapshot: "Cal", description: "Cal", quantity: 55, unit: "bultos", line_total: 7150, weight_kg_total: 1375 },
+  { id: "i9", document_id: "p3", inventory_product_id: "malla", product_name_snapshot: "Malla", description: "Malla", quantity: 16, unit: "rollos", line_total: 6400, weight_kg_total: 240 }
 ];
 
 const orderA: any = {
@@ -67,7 +67,7 @@ const orderC: any = {
 };
 
 export const reviewData: LogisticsData = {
-  company_id: "EMP_REVIEW",
+  company_id: "review-company",
   key_products: [
     { key: "varilla_3_8", label: "Varilla 3/8" },
     { key: "varilla_1_2", label: "Varilla 1/2" },
@@ -92,6 +92,15 @@ export const reviewData: LogisticsData = {
     ]
   },
   available_orders: [orderC],
+  inventory_stock: [
+    { product_id: "var38", product_name: "Varilla 3/8", unit: "pzas", quantity: 130 },
+    { product_id: "var12", product_name: "Varilla 1/2", unit: "pzas", quantity: 90 },
+    { product_id: "cal", product_name: "Cal", unit: "bultos", quantity: 50 },
+    { product_id: "bron", product_name: "Bron", unit: "pzas", quantity: 20 },
+    { product_id: "cemento", product_name: "Cemento", unit: "bultos", quantity: 30 },
+    { product_id: "alambre", product_name: "Alambre", unit: "rollos", quantity: 10 },
+    { product_id: "malla", product_name: "Malla", unit: "rollos", quantity: 8 }
+  ],
   trips: [
     {
       id: "t1",

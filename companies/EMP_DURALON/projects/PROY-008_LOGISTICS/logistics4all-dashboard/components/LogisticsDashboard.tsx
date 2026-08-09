@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { Archive, CalendarDays, Check, Clock, PackagePlus, Plus, RefreshCw, Save, Settings, Truck } from "lucide-react";
-import type { CatalogRow, LogisticsData, OrderRow, ProductTotal, TripRow } from "@/lib/logistics";
+import { Archive, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, PackagePlus, Plus, RefreshCw, Save, Settings, Truck } from "lucide-react";
+import type { CatalogRow, InventoryStockRow, LogisticsData, OrderRow, ProductTotal, TripRow } from "@/lib/logistics";
 
-type Tab = "orders" | "scheduled_orders" | "trips" | "calendar" | "completed_trips" | "config";
+type Tab = "orders" | "scheduled_orders" | "trips" | "week_calendar" | "calendar" | "completed_trips" | "config";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 2 });
@@ -241,10 +241,11 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
 
       {error && <div className="mt-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <nav className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <nav className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-7">
         <TabButton active={tab === "orders"} onClick={() => setTab("orders")} icon={<PackagePlus size={17} />} label="Pedidos" />
         <TabButton active={tab === "scheduled_orders"} onClick={() => setTab("scheduled_orders")} icon={<Clock size={17} />} label="Programados" />
         <TabButton active={tab === "trips"} onClick={() => setTab("trips")} icon={<Truck size={17} />} label="Viajes" />
+        <TabButton active={tab === "week_calendar"} onClick={() => setTab("week_calendar")} icon={<CalendarDays size={17} />} label="Semana" />
         <TabButton active={tab === "calendar"} onClick={() => setTab("calendar")} icon={<CalendarDays size={17} />} label="Calendario" />
         <TabButton active={tab === "completed_trips"} onClick={() => setTab("completed_trips")} icon={<Archive size={17} />} label="Terminados" />
         <TabButton active={tab === "config"} onClick={() => setTab("config")} icon={<Settings size={17} />} label="Config" />
@@ -267,6 +268,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
         )}
         {tab === "scheduled_orders" && <ScheduledOrdersTab orders={scheduledOrders} trips={activeTrips} action={action} busy={busy} />}
         {tab === "trips" && <TripsTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} createEmptyTrip={createEmptyTrip} companyId={companyId} />}
+        {tab === "week_calendar" && <WeekCalendarTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} inventoryStock={data?.inventory_stock || []} />}
         {tab === "calendar" && <CalendarTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} companyId={companyId} refresh={refresh} setError={setError} />}
         {tab === "completed_trips" && <CompletedTripsTab trips={completedTrips} action={action} busy={busy} />}
         {tab === "config" && <ConfigTab catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} />}
@@ -858,6 +860,113 @@ function CompletedTripsTab({ trips, action, busy }: { trips: TripRow[]; action: 
   );
 }
 
+function WeekCalendarTab({ trips, catalogs, inventoryStock }: { trips: TripRow[]; catalogs: LogisticsData["catalogs"]; inventoryStock: InventoryStockRow[] }) {
+  const [weekStart, setWeekStart] = useState(() => startOfWorkWeek(new Date()));
+  const days = useMemo(() => workWeekDays(weekStart), [weekStart]);
+  const allocation = useMemo(() => buildInventoryAllocation(trips, inventoryStock), [trips, inventoryStock]);
+  const tripsByDay = useMemo(() => {
+    const grouped = new Map<string, TripRow[]>();
+    for (const trip of trips) {
+      if (!trip.fecha_viaje) continue;
+      const key = String(trip.fecha_viaje);
+      grouped.set(key, [...(grouped.get(key) || []), trip]);
+    }
+    for (const [key, rows] of grouped.entries()) {
+      grouped.set(key, rows.sort(compareTripsBySchedule));
+    }
+    return grouped;
+  }, [trips]);
+  const vehicleIndex = useMemo(() => new Map(catalogs.vehicles.map((row, index) => [row.id, index])), [catalogs.vehicles]);
+  const weekTrips = days.flatMap((day) => tripsByDay.get(formatDateKey(day)) || []);
+  const weekShortages = weekTrips.reduce((sum, trip) => sum + (allocation.tripIssues.get(trip.id)?.length || 0), 0);
+
+  function moveWeek(offset: number) {
+    setWeekStart(addDays(weekStart, offset * 7));
+  }
+
+  return (
+    <div className="grid gap-3">
+      <section className="border border-line bg-white px-3 py-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-ink">Semana de viajes</h2>
+            <p className="text-sm text-slate-600">{formatWeekRange(days)} · {weekTrips.length} viajes programados · {weekShortages} faltantes de inventario</p>
+          </div>
+          <div className="grid grid-cols-[44px_1fr_44px] gap-2 sm:flex sm:items-center">
+            <button onClick={() => moveWeek(-1)} className="btn-soft h-11 w-11 px-0" title="Semana anterior" aria-label="Semana anterior">
+              <ChevronLeft size={18} />
+            </button>
+            <button onClick={() => setWeekStart(startOfWorkWeek(new Date()))} className="btn-soft whitespace-nowrap">
+              Hoy
+            </button>
+            <button onClick={() => moveWeek(1)} className="btn-soft h-11 w-11 px-0" title="Semana siguiente" aria-label="Semana siguiente">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-x-auto border border-line bg-white">
+        <div className="grid min-w-[1120px] grid-cols-6 divide-x divide-line">
+          {days.map((day) => {
+            const key = formatDateKey(day);
+            const rows = tripsByDay.get(key) || [];
+            return (
+              <div key={key} className="min-h-[640px] bg-slate-50/60">
+                <header className={`sticky top-0 z-10 border-b border-line bg-white px-3 py-2 ${isSameLocalDate(day, new Date()) ? "shadow-[inset_0_-3px_0_#7aa6b8]" : ""}`}>
+                  <p className="text-xs font-bold uppercase text-slate-500">{workDayLabel(day)}</p>
+                  <p className="text-2xl font-semibold text-ink">{day.getDate()}</p>
+                </header>
+                <div className="grid gap-2 p-2">
+                  {rows.map((trip) => {
+                    const colorIndex = vehicleIndex.get(String(trip.vehiculo_id || "")) ?? stableColorIndex(trip.folio);
+                    const tripHasShortage = Boolean(allocation.tripIssues.get(trip.id)?.length);
+                    return (
+                      <article key={trip.id} className={`border-l-4 p-2 shadow-sm ${tripHasShortage ? "ring-2 ring-red-300" : ""}`} style={tripHasShortage ? shortageTripColorStyle(colorIndex) : vehicleColorStyle(colorIndex)}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-mono text-sm font-bold text-ink">{trip.hora_inicio?.slice(0, 5) || "--:--"}-{trip.hora_fin || "--:--"}</p>
+                            <p className="truncate font-mono text-xs font-bold text-slate-700">{trip.folio}</p>
+                          </div>
+                          <span className="shrink-0 rounded bg-white/80 px-2 py-1 text-[10px] font-bold uppercase text-slate-600">{trip.estado}</span>
+                        </div>
+                        <p className="mt-1 truncate text-xs font-semibold text-slate-700">{vehicleName(catalogs.vehicles, trip.vehiculo_id) || "Sin vehiculo"}</p>
+                        <p className="truncate text-xs text-slate-600">{driverName(catalogs.drivers, trip.driver_id) || "Sin chofer"}</p>
+                        <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] font-semibold text-slate-700">
+                          <span>{trip.summary.orders_count} pedidos</span>
+                          <span className="text-right">{number.format(trip.summary.peso_total_kg)} kg</span>
+                          <span className="col-span-2 text-emerald-800">{money.format(tripCollectTotal(trip))} cobrar</span>
+                        </div>
+                        <div className="mt-2 space-y-1">
+                          {trip.orders.slice(0, 3).map((order) => {
+                            const issues = allocation.orderIssues.get(order.id) || [];
+                            return (
+                              <div key={order.id} className={`rounded border px-2 py-1 ${issues.length ? "border-red-300 bg-red-50 text-red-800" : "border-transparent text-slate-600"}`}>
+                                <p className="truncate text-[11px]">{order.folio} · {order.customer_name_snapshot || "Sin cliente"}</p>
+                                {issues.map((issue) => (
+                                  <p key={issue.product_key} className="truncate text-[10px] font-bold">
+                                    Falta {number.format(issue.shortage)} {issue.unit || ""} {issue.product_name}
+                                  </p>
+                                ))}
+                              </div>
+                            );
+                          })}
+                          {trip.orders.length > 3 && <p className="text-[11px] font-semibold text-slate-500">+{trip.orders.length - 3} pedidos</p>}
+                        </div>
+                      </article>
+                    );
+                  })}
+                  {!rows.length && <div className="border border-dashed border-line bg-white px-3 py-6 text-center text-xs text-slate-500">Sin viajes</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function CalendarTab({
   trips,
   catalogs,
@@ -1019,12 +1128,83 @@ function vehicleColorStyle(index: number): CSSProperties {
   return colors[index % colors.length];
 }
 
+function shortageTripColorStyle(index: number): CSSProperties {
+  return {
+    ...vehicleColorStyle(index),
+    borderColor: "#dc2626",
+    backgroundColor: "#fff1f2"
+  };
+}
+
 function productKey(item: NonNullable<OrderRow["items"]>[number]) {
   return String(item.inventory_product_id || item.product_id || item.product_name_snapshot || item.description || "producto");
 }
 
 function productLabel(item: NonNullable<OrderRow["items"]>[number]) {
   return String(item.product_name_snapshot || item.description || "Producto");
+}
+
+type InventoryIssue = {
+  product_key: string;
+  product_name: string;
+  required: number;
+  available_before: number;
+  shortage: number;
+  unit: string;
+};
+
+function buildInventoryAllocation(trips: TripRow[], inventoryStock: InventoryStockRow[]) {
+  const stock = new Map<string, number>();
+  const labels = new Map<string, { name: string; unit: string }>();
+  for (const row of inventoryStock) {
+    const keys = [row.product_id, row.product_key, row.sku, row.product_name].map((value) => String(value || "").trim()).filter(Boolean);
+    for (const key of keys) {
+      stock.set(key, Number(row.quantity || 0));
+      labels.set(key, { name: String(row.product_name || key), unit: String(row.unit || "") });
+    }
+  }
+  const orderIssues = new Map<string, InventoryIssue[]>();
+  const tripIssues = new Map<string, InventoryIssue[]>();
+  const scheduledTrips = [...trips].filter((trip) => trip.fecha_viaje).sort(compareTripsForAllocation);
+  for (const trip of scheduledTrips) {
+    const tripRows: InventoryIssue[] = [];
+    for (const order of trip.orders) {
+      const rows: InventoryIssue[] = [];
+      for (const item of order.items || []) {
+        const key = productKey(item);
+        if (!stock.has(key)) continue;
+        const required = Number(item.quantity || 0);
+        if (!required) continue;
+        const available = Number(stock.get(key) || 0);
+        const productInfo = labels.get(key) || { name: productLabel(item), unit: String(item.unit || "") };
+        if (available < required) {
+          rows.push({
+            product_key: key,
+            product_name: productInfo.name || productLabel(item),
+            required,
+            available_before: available,
+            shortage: Math.round((required - available) * 10000) / 10000,
+            unit: String(item.unit || productInfo.unit || "")
+          });
+        }
+        stock.set(key, available - required);
+      }
+      if (rows.length) {
+        orderIssues.set(order.id, rows);
+        tripRows.push(...rows);
+      }
+    }
+    if (tripRows.length) {
+      tripIssues.set(trip.id, tripRows);
+    }
+  }
+  return { orderIssues, tripIssues };
+}
+
+function compareTripsForAllocation(a: TripRow, b: TripRow) {
+  const dateA = String(a.fecha_viaje || "9999-99-99");
+  const dateB = String(b.fecha_viaje || "9999-99-99");
+  return dateA.localeCompare(dateB) || compareTripsBySchedule(a, b);
 }
 
 function topTripProducts(trip: TripRow, limit: number) {
@@ -1068,7 +1248,7 @@ async function openRemisionPdf(companyId: string, folio: string, hidePrices: boo
 
 function openLogisticsDayPdf(day: string, trips: TripRow[], catalogs: LogisticsData["catalogs"]) {
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>Logistica ${escapeHtml(day)}</title><style>
-    @page{size:letter landscape;margin:8mm}
+    @page{size:letter portrait;margin:8mm}
     body{font-family:Arial,sans-serif;color:#172033;margin:0;font-size:9px}
     h1{font-size:16px;margin:0 0 6px}
     h2{font-size:12px;margin:0 0 3px}
@@ -1337,6 +1517,64 @@ function nextTripFolio(trips: TripRow[]) {
     return match ? Math.max(value, Number(match[1])) : value;
   }, 0);
   return `VIA-${String(max + 1).padStart(5, "0")}`;
+}
+
+function startOfWorkWeek(date: Date) {
+  const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = copy.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  copy.setDate(copy.getDate() + mondayOffset);
+  return copy;
+}
+
+function workWeekDays(start: Date) {
+  return Array.from({ length: 6 }, (_, index) => addDays(start, index));
+}
+
+function addDays(date: Date, days: number) {
+  const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function formatDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function workDayLabel(date: Date) {
+  const labels = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+  return labels[date.getDay()];
+}
+
+function formatWeekRange(days: Date[]) {
+  const first = days[0];
+  const last = days[days.length - 1];
+  if (!first || !last) return "";
+  const month = new Intl.DateTimeFormat("es-MX", { month: "short" });
+  const firstMonth = month.format(first);
+  const lastMonth = month.format(last);
+  if (firstMonth === lastMonth && first.getFullYear() === last.getFullYear()) {
+    return `${first.getDate()}-${last.getDate()} ${firstMonth} ${first.getFullYear()}`;
+  }
+  return `${first.getDate()} ${firstMonth} - ${last.getDate()} ${lastMonth} ${last.getFullYear()}`;
+}
+
+function isSameLocalDate(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function compareTripsBySchedule(a: TripRow, b: TripRow) {
+  const timeA = String(a.hora_inicio || "99:99");
+  const timeB = String(b.hora_inicio || "99:99");
+  return timeA.localeCompare(timeB) || a.folio.localeCompare(b.folio);
+}
+
+function stableColorIndex(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash + value.charCodeAt(index) * (index + 1)) % 997;
+  }
+  return hash;
 }
 
 function tripEndTime(trip: Partial<TripRow>) {

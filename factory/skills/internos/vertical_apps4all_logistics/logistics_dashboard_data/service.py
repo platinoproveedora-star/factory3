@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared import attach_orders_to_trips, list_catalogs, list_orders, list_trip_orders, list_trips, resolve_context, trip_end_time
+from _shared import attach_orders_to_trips, list_catalogs, list_current_stock, list_orders, list_trip_orders, list_trips, resolve_context, trip_end_time
 
 
 class LogisticsDashboardDataService:
@@ -19,6 +19,7 @@ class LogisticsDashboardDataService:
         trips = list_trips(ctx)
         trip_orders = list_trip_orders(ctx)
         catalogs = list_catalogs(ctx)
+        inventory_stock = list_current_stock(ctx)
         vehicles_by_id = {str(row.get("id")): row for row in catalogs.get("vehicles") or []}
         drivers_by_id = {str(row.get("id")): row for row in catalogs.get("drivers") or []}
         trips_by_id = {str(trip.get("id")): trip for trip in trips}
@@ -57,6 +58,7 @@ class LogisticsDashboardDataService:
                 "available_orders": available_orders,
                 "trips": enriched_trips,
                 "trip_orders": trip_orders,
+                "inventory_stock": inventory_stock,
                 "catalogs": catalogs,
             },
         }

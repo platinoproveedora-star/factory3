@@ -34,6 +34,7 @@ def resolve_context(context: dict) -> dict:
     data = result.get("data") or {}
     company_id = str(data.get("company_id") or data.get("empresa_id") or "").strip()
     sales_schema = str(context.get("sales_schema") or context.get("schema_ventas") or data.get("sales_schema") or "").strip()
+    inventory_schema = str(context.get("inventory_schema") or context.get("schema_inventario") or data.get("inventory_schema") or data.get("schema_inventario") or "").strip()
     if not sales_schema:
         return {"ok": False, "error": "sales_schema/schema_ventas requerido"}
     access = validate_access(context, company_id)
@@ -49,6 +50,8 @@ def resolve_context(context: dict) -> dict:
             "empresa_id": company_id,
             "schema": data.get("schema"),
             "sales_schema": sales_schema,
+            "inventory_schema": inventory_schema,
+            "schema_inventario": inventory_schema,
             "project_code": data.get("project_code"),
             "module_code": data.get("module_code") or "logistics",
             "duration_minutes_default": int(trip_defaults.get("duration_minutes") or 120),
@@ -75,6 +78,13 @@ def db(ctx: dict) -> SupabaseClient:
 
 def sales_db(ctx: dict) -> SupabaseClient:
     return SupabaseClient({**ctx, "schema": ctx["sales_schema"]})
+
+
+def inventory_db(ctx: dict) -> SupabaseClient | None:
+    inventory_schema = str(ctx.get("inventory_schema") or ctx.get("schema_inventario") or "").strip()
+    if not inventory_schema:
+        return None
+    return SupabaseClient({**ctx, "schema": inventory_schema})
 
 
 def is_dry_run(context: dict) -> bool:
@@ -250,6 +260,56 @@ def list_catalogs(ctx: dict) -> dict:
         "drivers": drivers.get("data") if drivers.get("ok") else [],
         "product_config": products.get("data") if products.get("ok") else [],
     }
+
+
+def list_current_stock(ctx: dict) -> list[dict]:
+    inv_db = inventory_db(ctx)
+    if inv_db is None:
+        return []
+    products_res = inv_db.rest_select("erp_products", filters={"active": "neq.false"}, select="id,folio,product_key,product_name,sku,unit,min_stock,is_key_product,active", order="product_name.asc", limit=10000)
+    movements_res = inv_db.rest_select("erp_kardex", select="product_id,quantity_in,quantity_out,created_at", order="created_at.desc", limit=10000)
+    if not products_res.get("ok") or not movements_res.get("ok"):
+        return []
+    return calculate_current_stock(products_res.get("data") or [], movements_res.get("data") or [])
+
+
+def calculate_current_stock(products: list[dict], movements: list[dict]) -> list[dict]:
+    by_product: dict[str, dict] = {}
+    for movement in movements:
+        product_id = str(movement.get("product_id") or "").strip()
+        if not product_id:
+            continue
+        row = by_product.setdefault(product_id, {"quantity": 0.0, "total_in": 0.0, "total_out": 0.0})
+        q_in = float(movement.get("quantity_in") or 0)
+        q_out = float(movement.get("quantity_out") or 0)
+        row["quantity"] += q_in - q_out
+        row["total_in"] += q_in
+        row["total_out"] += q_out
+    rows = []
+    for product in products:
+        product_id = str(product.get("id") or "")
+        stock = by_product.get(product_id, {"quantity": 0.0, "total_in": 0.0, "total_out": 0.0})
+        quantity = round(float(stock.get("quantity") or 0), 4)
+        min_stock = float(product.get("min_stock") or 0)
+        rows.append(
+            {
+                "product_id": product_id,
+                "folio": product.get("folio"),
+                "product_key": product.get("product_key"),
+                "product_name": product.get("product_name"),
+                "sku": product.get("sku"),
+                "unit": product.get("unit"),
+                "active": product.get("active") is not False,
+                "is_key_product": bool(product.get("is_key_product")),
+                "min_stock": min_stock,
+                "quantity": quantity,
+                "total_in": round(float(stock.get("total_in") or 0), 4),
+                "total_out": round(float(stock.get("total_out") or 0), 4),
+                "stock_delta": round(quantity - min_stock, 4),
+                "stock_status": "negativo" if quantity < 0 else "bajo" if min_stock and quantity < min_stock else "ok",
+            }
+        )
+    return rows
 
 
 def list_orders(ctx: dict, limit: int = 500) -> list[dict]:

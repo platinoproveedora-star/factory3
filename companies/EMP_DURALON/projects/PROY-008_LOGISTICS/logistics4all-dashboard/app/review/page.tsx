@@ -17,7 +17,7 @@ export default function ReviewPage() {
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase text-slate-600">Demo</span>
         </div>
       </header>
-      <LogisticsDashboard initialData={reviewData} initialError="" companyId="EMP_REVIEW" companyName="Duralon Demo" reviewMode />
+      <LogisticsDashboard initialData={reviewData} initialError="" companyId="review-company" companyName="Duralon Demo" reviewMode />
     </main>
   );
 }

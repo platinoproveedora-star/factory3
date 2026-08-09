@@ -11,6 +11,7 @@ export type LogisticsData = {
     drivers: CatalogRow[];
     product_config: ProductConfigRow[];
   };
+  inventory_stock?: InventoryStockRow[];
   key_products: { key: string; label: string }[];
   duration_minutes_default: number;
 };
@@ -115,6 +116,23 @@ export type ProductConfigRow = {
   product_key: string;
   product_label: string;
   priority: number;
+};
+
+export type InventoryStockRow = {
+  product_id: string;
+  folio?: string | null;
+  product_key?: string | null;
+  product_name?: string | null;
+  sku?: string | null;
+  unit?: string | null;
+  active?: boolean | null;
+  is_key_product?: boolean | null;
+  min_stock?: number | null;
+  quantity: number;
+  total_in?: number | null;
+  total_out?: number | null;
+  stock_delta?: number | null;
+  stock_status?: string | null;
 };
 
 export function logisticsContext(user: SessionUser, grants: AccessGrant[], companyId: string) {
