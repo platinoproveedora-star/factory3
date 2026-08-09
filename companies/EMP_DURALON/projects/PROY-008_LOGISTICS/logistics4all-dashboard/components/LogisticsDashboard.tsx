@@ -220,7 +220,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
   const trips = data?.trips || [];
   const activeTrips = trips.filter((trip) => !closedTripStatuses.has(trip.estado));
   const completedTrips = trips.filter((trip) => trip.estado === "completado");
-  const pendingOrders = orders.filter((order) => !order.logistics_assignment && order.status !== "remisionado");
+  const pendingOrders = orders.filter((order) => !order.logistics_assignment);
   const scheduledOrders = orders.filter((order) => {
     const assignment = order.logistics_assignment;
     return assignment && !closedTripStatuses.has(String(assignment.trip_estado || ""));
@@ -378,7 +378,12 @@ function OrdersTab({
                               {selected && <Check size={15} />}
                             </span>
                           </td>
-                          <td className="px-2 py-2 font-mono font-bold text-ink">{order.folio}</td>
+                          <td className="px-2 py-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono font-bold text-ink">{order.folio}</span>
+                              {order.status === "remisionado" && <span className="rounded bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase text-emerald-700">Remisionado</span>}
+                            </div>
+                          </td>
                           <td className="max-w-60 truncate px-2 py-2 font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</td>
                           <td className="px-2 py-2 text-slate-600">{order.fecha_entrega || "-"}</td>
                           <td className="px-2 py-2 text-right text-slate-700">{number.format(order.peso_kg || 0)} kg</td>
