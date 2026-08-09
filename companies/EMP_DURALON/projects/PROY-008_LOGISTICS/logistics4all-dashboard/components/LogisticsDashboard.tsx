@@ -220,7 +220,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
   const trips = data?.trips || [];
   const activeTrips = trips.filter((trip) => !closedTripStatuses.has(trip.estado));
   const completedTrips = trips.filter((trip) => trip.estado === "completado");
-  const pendingOrders = orders.filter((order) => !order.logistics_assignment);
+  const pendingOrders = orders.filter((order) => !order.logistics_assignment && isOperationalUnassignedOrder(order));
   const scheduledOrders = orders.filter((order) => {
     const assignment = order.logistics_assignment;
     return assignment && !closedTripStatuses.has(String(assignment.trip_estado || ""));
@@ -1210,6 +1210,25 @@ function compareTripsForAllocation(a: TripRow, b: TripRow) {
   const dateA = String(a.fecha_viaje || "9999-99-99");
   const dateB = String(b.fecha_viaje || "9999-99-99");
   return dateA.localeCompare(dateB) || compareTripsBySchedule(a, b);
+}
+
+function isOperationalUnassignedOrder(order: OrderRow) {
+  if (order.status !== "remisionado") return true;
+  const date = parseDateKey(order.fecha_entrega);
+  if (!date) return true;
+  const cutoff = addDays(startOfDay(new Date()), -7);
+  return date >= cutoff;
+}
+
+function parseDateKey(value?: string | null) {
+  const raw = String(value || "").slice(0, 10);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function topTripProducts(trip: TripRow, limit: number) {
