@@ -636,6 +636,7 @@ function PurchaseOrdersTab({
               <th className="px-2 py-2">Partidas</th>
               <th className="px-2 py-2 text-right">Peso</th>
               <th className="px-2 py-2 text-right">Importe</th>
+              <th className="px-2 py-2">Compra</th>
             </tr>
           </thead>
           <tbody>
@@ -654,6 +655,9 @@ function PurchaseOrdersTab({
                   <td className="px-2 py-2"><OrderItemsInline items={order.items || []} /></td>
                   <td className="px-2 py-2 text-right">{number.format(order.peso_kg || 0)} kg</td>
                   <td className="px-2 py-2 text-right font-semibold">{money.format(order.importe || 0)}</td>
+                  <td className="px-2 py-2" onClick={(event) => event.stopPropagation()}>
+                    <PurchaseConvertCell order={order} action={action} busy={busy} />
+                  </td>
                 </tr>
               );
             })}
