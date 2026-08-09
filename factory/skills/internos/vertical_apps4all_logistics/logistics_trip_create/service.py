@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared import ACTIVE_TRIP_STATUS, db, is_dry_run, list_orders, list_trip_orders, list_trips, now_iso, reserve_folio, reserve_folios, resolve_context, table_filters
+from _shared import ACTIVE_TRIP_STATUS, db, is_dry_run, list_orders, list_purchase_orders, list_trip_orders, list_trips, now_iso, reserve_folio, reserve_folios, resolve_context, table_filters
 
 
 class LogisticsTripCreateService:
@@ -36,7 +36,7 @@ class LogisticsTripCreateService:
         allow_empty = bool(context.get("allow_empty"))
         if not pedido_ids and not allow_empty:
             return {"ok": False, "error": "pedido_ids requerido para crear viaje o allow_empty=true"}
-        available_by_id = {str(order.get("id")): order for order in list_orders(ctx, limit=1000)}
+        available_by_id = {str(order.get("id")): order for order in (list_orders(ctx, limit=1000) + list_purchase_orders(ctx, limit=1000))}
         invalid = [pedido_id for pedido_id in pedido_ids if pedido_id not in available_by_id]
         if invalid:
             return {"ok": False, "error": "pedido no disponible para viaje", "data": {"pedido_ids": invalid}}
@@ -65,6 +65,9 @@ class LogisticsTripCreateService:
                     "trip_id": trip["id"],
                     "pedido_id": pedido_id,
                     "pedido_folio": order.get("folio"),
+                    "source_type": str(order.get("source_type") or "venta"),
+                    "source_id": pedido_id,
+                    "source_folio": order.get("folio"),
                     "fecha_entrega_override": context.get("fecha_entrega_override") or None,
                     "orden_carga": index,
                     "created_at": now_iso(),

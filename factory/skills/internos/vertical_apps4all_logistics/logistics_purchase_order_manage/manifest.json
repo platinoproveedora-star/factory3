@@ -1,0 +1,8 @@
+{
+  "name": "vertical_apps4all_logistics/logistics_purchase_order_manage",
+  "vertical": "vertical_apps4all_logistics",
+  "kind": "executable",
+  "description": "Administra pedidos de compra logisticos y los convierte a compras ERP cuando ya estan completos.",
+  "entrypoint": "skill.py",
+  "version": "0.1.0"
+}

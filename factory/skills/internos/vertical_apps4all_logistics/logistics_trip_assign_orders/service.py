@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared import ACTIVE_TRIP_STATUS, LOCKED_TRIP_STATUS, db, is_dry_run, list_trip_orders, list_trips, reserve_folios, resolve_context, table_filters
+from _shared import ACTIVE_TRIP_STATUS, LOCKED_TRIP_STATUS, db, is_dry_run, list_orders, list_purchase_orders, list_trip_orders, list_trips, reserve_folios, resolve_context, table_filters
 
 
 class LogisticsTripAssignOrdersService:
@@ -27,6 +27,10 @@ class LogisticsTripAssignOrdersService:
             return {"ok": False, "error": "viaje bloqueado para cambios de pedidos"}
         if is_dry_run(context):
             return {"ok": True, "message": "dry_run: no se modifico asignacion", "data": {"trip_id": trip_id, "pedido_ids": pedido_ids, "action": action}}
+        available_by_id = {str(order.get("id")): order for order in (list_orders(ctx, limit=1000) + list_purchase_orders(ctx, limit=1000))}
+        invalid = [pedido_id for pedido_id in pedido_ids if pedido_id not in available_by_id]
+        if invalid and action != "remove":
+            return {"ok": False, "error": "pedido no disponible para viaje", "data": {"pedido_ids": invalid}}
         if action == "remove":
             deleted = []
             for pedido_id in pedido_ids:
@@ -53,6 +57,8 @@ class LogisticsTripAssignOrdersService:
         folios = folios_result["data"]["folios"]
         for index, pedido_id in enumerate(new_pedido_ids, start=1):
             preserved = preserved_by_pedido.get(pedido_id) or {}
+            order = available_by_id[pedido_id]
+            source_type = str(order.get("source_type") or "venta")
             rows.append(
                 {
                     "folio": folios[index - 1],
@@ -61,6 +67,10 @@ class LogisticsTripAssignOrdersService:
                     "module_code": ctx["module_code"],
                     "trip_id": trip_id,
                     "pedido_id": pedido_id,
+                    "pedido_folio": order.get("folio"),
+                    "source_type": source_type,
+                    "source_id": pedido_id,
+                    "source_folio": order.get("folio"),
                     "peso_override_kg": context.get("peso_override_kg") if "peso_override_kg" in context else preserved.get("peso_override_kg"),
                     "fecha_entrega_override": context.get("fecha_entrega_override") if "fecha_entrega_override" in context else preserved.get("fecha_entrega_override"),
                     "orden_carga": index,

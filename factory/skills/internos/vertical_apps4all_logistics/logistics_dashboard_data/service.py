@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _shared import attach_orders_to_trips, list_catalogs, list_current_stock, list_orders, list_trip_orders, list_trips, resolve_context, trip_end_time
+from _shared import attach_orders_to_trips, list_catalogs, list_current_stock, list_orders, list_purchase_orders, list_trip_orders, list_trips, resolve_context, trip_end_time
 
 
 class LogisticsDashboardDataService:
@@ -15,7 +15,9 @@ class LogisticsDashboardDataService:
             return ctx_result
         ctx = ctx_result["data"]
         limit = min(max(int(context.get("limit") or 500), 1), 1000)
-        orders = list_orders(ctx, limit=limit)
+        sales_orders = list_orders(ctx, limit=limit)
+        purchase_orders = list_purchase_orders(ctx, limit=limit)
+        orders = sales_orders + purchase_orders
         trips = list_trips(ctx)
         trip_orders = list_trip_orders(ctx)
         catalogs = list_catalogs(ctx)
@@ -30,7 +32,7 @@ class LogisticsDashboardDataService:
                 continue
             vehicle = vehicles_by_id.get(str(trip.get("vehiculo_id") or ""))
             driver = drivers_by_id.get(str(trip.get("driver_id") or ""))
-            assignment_by_order[str(link.get("pedido_id"))] = {
+            assignment_by_order[str(link.get("source_id") or link.get("pedido_id"))] = {
                 "trip_id": trip.get("id"),
                 "trip_folio": trip.get("folio"),
                 "trip_estado": trip.get("estado"),
@@ -56,6 +58,8 @@ class LogisticsDashboardDataService:
                 "key_products": ctx.get("key_products") or [],
                 "duration_minutes_default": ctx.get("duration_minutes_default") or 120,
                 "available_orders": available_orders,
+                "available_sales_orders": [order for order in available_orders if order.get("source_type") != "compra"],
+                "available_purchase_orders": [order for order in available_orders if order.get("source_type") == "compra"],
                 "trips": enriched_trips,
                 "trip_orders": trip_orders,
                 "inventory_stock": inventory_stock,

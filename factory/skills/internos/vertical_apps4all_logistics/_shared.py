@@ -36,6 +36,8 @@ def resolve_context(context: dict) -> dict:
     sales_schema = str(context.get("sales_schema") or context.get("schema_ventas") or data.get("sales_schema") or "").strip()
     inventory_schema = str(context.get("inventory_schema") or context.get("schema_inventario") or data.get("inventory_schema") or data.get("schema_inventario") or "").strip()
     billing_schema = str(context.get("billing_schema") or context.get("schema_billing") or data.get("billing_schema") or data.get("schema_billing") or "").strip()
+    inventory_project_code = str(context.get("inventory_project_code") or context.get("project_inv") or data.get("inventory_project_code") or data.get("project_inv") or "").strip()
+    inventory_module_code = str(context.get("inventory_module_code") or context.get("module_inv") or data.get("inventory_module_code") or data.get("module_inv") or "inventario").strip()
     if not sales_schema:
         return {"ok": False, "error": "sales_schema/schema_ventas requerido"}
     access = validate_access(context, company_id)
@@ -55,6 +57,8 @@ def resolve_context(context: dict) -> dict:
             "schema_inventario": inventory_schema,
             "billing_schema": billing_schema,
             "schema_billing": billing_schema,
+            "inventory_project_code": inventory_project_code,
+            "inventory_module_code": inventory_module_code,
             "project_code": data.get("project_code"),
             "module_code": data.get("module_code") or "logistics",
             "duration_minutes_default": int(trip_defaults.get("duration_minutes") or 120),
@@ -172,6 +176,9 @@ create table if not exists {schema}.logistics_trip_orders (
   trip_id uuid not null references {schema}.logistics_trips(id) on delete cascade,
   pedido_id uuid not null,
   pedido_folio text,
+  source_type text not null default 'venta' check (source_type in ('venta','compra')),
+  source_id uuid,
+  source_folio text,
   peso_override_kg numeric(14,4),
   fecha_entrega_override date,
   orden_carga integer,
@@ -185,6 +192,36 @@ create table if not exists {schema}.logistics_trip_orders (
 
 alter table {schema}.logistics_trip_orders
   add column if not exists fecha_entrega_override date;
+alter table {schema}.logistics_trip_orders
+  add column if not exists source_type text not null default 'venta';
+alter table {schema}.logistics_trip_orders
+  add column if not exists source_id uuid;
+alter table {schema}.logistics_trip_orders
+  add column if not exists source_folio text;
+
+create table if not exists {schema}.logistics_purchase_orders (
+  id uuid primary key default gen_random_uuid(),
+  folio text unique not null,
+  empresa_id text not null,
+  project_code text not null,
+  module_code text not null,
+  supplier_id uuid,
+  supplier_name text,
+  pickup_address text,
+  fecha_recoleccion date,
+  status text not null default 'pendiente' check (status in ('borrador','pendiente','asignado','recibido','convertido','cancelado')),
+  total_weight_kg numeric(14,4) not null default 0,
+  subtotal numeric(14,2) not null default 0,
+  tax_total numeric(14,2) not null default 0,
+  total numeric(14,2) not null default 0,
+  purchase_folio text,
+  items jsonb not null default '[]',
+  notes text,
+  metadata jsonb not null default '{{}}',
+  created_by_user_id uuid,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
+);
 
 create table if not exists {schema}.logistics_vehicles (
   id uuid primary key default gen_random_uuid(),
@@ -237,6 +274,8 @@ create table if not exists {schema}.logistics_product_config (
 create index if not exists idx_logistics_trips_company_status on {schema}.logistics_trips (empresa_id, estado, fecha_viaje);
 create index if not exists idx_logistics_trip_orders_trip on {schema}.logistics_trip_orders (trip_id);
 create index if not exists idx_logistics_trip_orders_pedido on {schema}.logistics_trip_orders (empresa_id, pedido_id);
+create index if not exists idx_logistics_trip_orders_source on {schema}.logistics_trip_orders (empresa_id, source_type, source_id);
+create index if not exists idx_logistics_purchase_orders_company_status on {schema}.logistics_purchase_orders (empresa_id, status, fecha_recoleccion);
 
 grant usage on schema {schema} to anon, authenticated, service_role;
 grant select, insert, update, delete on all tables in schema {schema} to service_role;
@@ -269,6 +308,19 @@ def list_catalogs(ctx: dict) -> dict:
         "vehicles": vehicles.get("data") if vehicles.get("ok") else [],
         "drivers": drivers.get("data") if drivers.get("ok") else [],
         "product_config": products.get("data") if products.get("ok") else [],
+        **list_purchase_catalogs(ctx),
+    }
+
+
+def list_purchase_catalogs(ctx: dict) -> dict:
+    inv_db = inventory_db(ctx)
+    if inv_db is None:
+        return {"suppliers": [], "purchase_products": []}
+    suppliers = inv_db.rest_select("erp_parties", filters={"party_type": "in.(supplier,both)", "active": "neq.false"}, select="id,folio,party_name,phone,email,address,party_type,active", order="party_name.asc", limit=1000)
+    products = inv_db.rest_select("erp_products", filters={"active": "neq.false"}, select="id,folio,product_key,product_name,sku,unit,weight_kg,active", order="product_name.asc", limit=1000)
+    return {
+        "suppliers": suppliers.get("data") if suppliers.get("ok") else [],
+        "purchase_products": products.get("data") if products.get("ok") else [],
     }
 
 
@@ -349,6 +401,65 @@ def list_orders(ctx: dict, limit: int = 500) -> list[dict]:
             by_doc.setdefault(str(item.get("document_id") or ""), []).append(item)
     formatted = [format_order(row, by_doc.get(str(row.get("id") or ""), [])) for row in rows]
     return attach_billing_status(ctx, formatted)
+
+
+def list_purchase_orders(ctx: dict, limit: int = 500) -> list[dict]:
+    result = db(ctx).rest_select(
+        "logistics_purchase_orders",
+        filters=table_filters(ctx, {"status": "in.(borrador,pendiente,asignado,recibido)"}),
+        select="*",
+        order="fecha_recoleccion.asc,created_at.desc",
+        limit=limit,
+    )
+    if not result.get("ok"):
+        return []
+    return [format_purchase_order(row) for row in result.get("data") or []]
+
+
+def format_purchase_order(row: dict) -> dict:
+    items = row.get("items") if isinstance(row.get("items"), list) else []
+    parts = []
+    normalized_items = []
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("product_name_snapshot") or item.get("description") or "Producto").strip()
+        qty = float(item.get("quantity") or 0)
+        unit = str(item.get("unit") or "").strip()
+        line_total = float(item.get("line_total") or item.get("total_cost") or 0)
+        parts.append(f"{name} {num(qty)} {unit}".strip())
+        normalized_items.append(
+            {
+                "id": item.get("id") or f"{row.get('id')}-{index}",
+                "product_id": item.get("product_id"),
+                "inventory_product_id": item.get("product_id"),
+                "product_folio_snapshot": item.get("product_folio_snapshot"),
+                "product_name_snapshot": name,
+                "description": name,
+                "quantity": qty,
+                "unit": unit,
+                "line_total": line_total,
+                "weight_kg_total": float(item.get("weight_kg_total") or 0),
+                "unit_cost": item.get("unit_cost"),
+                "tax_rate": item.get("tax_rate"),
+            }
+        )
+    return {
+        **row,
+        "source_type": "compra",
+        "customer_name_snapshot": row.get("supplier_name") or "Sin proveedor",
+        "fecha_entrega": row.get("fecha_recoleccion"),
+        "delivery_address": row.get("pickup_address"),
+        "city": "Compra",
+        "status": row.get("status"),
+        "peso_kg": float(row.get("total_weight_kg") or 0),
+        "importe": float(row.get("total") or 0),
+        "partida_1": parts[0] if len(parts) > 0 else "",
+        "partida_2": parts[1] if len(parts) > 1 else "",
+        "partida_3": parts[2] if len(parts) > 2 else "",
+        "otras_partidas": f"+{len(parts) - 3} partidas" if len(parts) > 3 else "",
+        "items": normalized_items,
+    }
 
 
 def attach_billing_status(ctx: dict, orders: list[dict]) -> list[dict]:
@@ -477,6 +588,7 @@ def format_order(row: dict, items: list[dict]) -> dict:
     metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
     return {
         **row,
+        "source_type": "venta",
         "fecha_entrega": row.get("due_date") or row.get("document_date"),
         "peso_kg": float(row.get("total_weight_kg") or 0),
         "importe": float(row.get("total") or 0),
@@ -509,7 +621,7 @@ def attach_orders_to_trips(trips: list[dict], orders: list[dict], trip_orders: l
     orders_by_id = {str(order.get("id")): order for order in orders}
     by_trip: dict[str, list[dict]] = {}
     for link in trip_orders:
-        order = orders_by_id.get(str(link.get("pedido_id")))
+        order = orders_by_id.get(str(link.get("source_id") or link.get("pedido_id")))
         if order:
             override = link.get("peso_override_kg")
             fecha_entrega = link.get("fecha_entrega_override") or order.get("fecha_entrega")

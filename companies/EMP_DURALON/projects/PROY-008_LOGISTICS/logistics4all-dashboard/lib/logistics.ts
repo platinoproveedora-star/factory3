@@ -5,11 +5,15 @@ import type { AccessGrant } from "@/lib/platform";
 export type LogisticsData = {
   company_id: string;
   available_orders: OrderRow[];
+  available_sales_orders?: OrderRow[];
+  available_purchase_orders?: OrderRow[];
   trips: TripRow[];
   catalogs: {
     vehicles: CatalogRow[];
     drivers: CatalogRow[];
     product_config: ProductConfigRow[];
+    suppliers?: SupplierRow[];
+    purchase_products?: PurchaseProductRow[];
   };
   inventory_stock?: InventoryStockRow[];
   key_products: { key: string; label: string }[];
@@ -26,6 +30,11 @@ export type OrderRow = {
   city?: string | null;
   city_quadrant?: string | null;
   payment_method?: string | null;
+  source_type?: "venta" | "compra" | string | null;
+  supplier_id?: string | null;
+  supplier_name?: string | null;
+  pickup_address?: string | null;
+  purchase_folio?: string | null;
   paid_total?: number | null;
   balance_total?: number | null;
   status?: string | null;
@@ -77,6 +86,8 @@ export type OrderItemRow = {
   unit?: string | null;
   line_total?: number | null;
   weight_kg_total?: number | null;
+  unit_cost?: number | null;
+  tax_rate?: number | null;
 };
 
 export type TripRow = {
@@ -125,6 +136,23 @@ export type ProductConfigRow = {
   product_key: string;
   product_label: string;
   priority: number;
+};
+
+export type SupplierRow = {
+  id: string;
+  folio?: string | null;
+  party_name: string;
+  address?: string | null;
+};
+
+export type PurchaseProductRow = {
+  id: string;
+  folio?: string | null;
+  product_key?: string | null;
+  product_name: string;
+  sku?: string | null;
+  unit?: string | null;
+  weight_kg?: number | null;
 };
 
 export type InventoryStockRow = {

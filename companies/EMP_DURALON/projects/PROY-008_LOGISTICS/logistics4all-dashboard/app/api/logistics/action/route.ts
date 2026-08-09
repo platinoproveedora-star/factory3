@@ -11,6 +11,7 @@ const ACTION_SKILLS: Record<string, string> = {
   assign_orders: "vertical_apps4all_logistics/logistics_trip_assign_orders",
   manage_trip: "vertical_apps4all_logistics/logistics_trip_manage",
   catalog_manage: "vertical_apps4all_logistics/logistics_catalog_manage",
+  purchase_order_manage: "vertical_apps4all_logistics/logistics_purchase_order_manage",
   pedido_to_remision: "vertical_erp_ventas/erp_ventas_pedido_to_remision"
 };
 

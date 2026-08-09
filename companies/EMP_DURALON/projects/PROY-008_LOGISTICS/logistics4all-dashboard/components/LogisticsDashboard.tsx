@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { Archive, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, PackagePlus, Plus, RefreshCw, Save, Settings, Truck } from "lucide-react";
+import { Archive, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, PackagePlus, Plus, RefreshCw, Save, Settings, ShoppingCart, Truck } from "lucide-react";
 import type { CatalogRow, InventoryStockRow, LogisticsData, OrderRow, ProductTotal, TripRow } from "@/lib/logistics";
 
-type Tab = "orders" | "scheduled_orders" | "trips" | "week_calendar" | "calendar" | "completed_trips" | "config";
+type Tab = "orders" | "purchase_orders" | "scheduled_orders" | "trips" | "week_calendar" | "calendar" | "completed_trips" | "config";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 2 });
@@ -16,7 +16,9 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
   const [error, setError] = useState(initialError);
   const [tab, setTab] = useState<Tab>("orders");
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [selectedPurchaseOrders, setSelectedPurchaseOrders] = useState<string[]>([]);
   const [targetTripId, setTargetTripId] = useState("");
+  const [purchaseTargetTripId, setPurchaseTargetTripId] = useState("");
   const [busy, setBusy] = useState("");
 
   function applyReviewAction(name: string, context: Record<string, unknown>) {
@@ -216,12 +218,33 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
     }
   }
 
-  const orders = data?.available_orders || [];
+  async function createPurchaseTrip() {
+    if (!selectedPurchaseOrders.length) return;
+    const ok = await action("create_trip", { pedido_ids: selectedPurchaseOrders });
+    if (ok) {
+      setSelectedPurchaseOrders([]);
+      setTab("trips");
+    }
+  }
+
+  async function assignPurchaseToExistingTrip() {
+    if (!selectedPurchaseOrders.length || !purchaseTargetTripId) return;
+    const ok = await action("assign_orders", { trip_id: purchaseTargetTripId, pedido_ids: selectedPurchaseOrders });
+    if (ok) {
+      setSelectedPurchaseOrders([]);
+      setPurchaseTargetTripId("");
+      setTab("trips");
+    }
+  }
+
+  const orders = data?.available_sales_orders || (data?.available_orders || []).filter((order) => order.source_type !== "compra");
+  const purchaseOrders = data?.available_purchase_orders || (data?.available_orders || []).filter((order) => order.source_type === "compra");
   const trips = data?.trips || [];
   const activeTrips = trips.filter((trip) => !closedTripStatuses.has(trip.estado));
   const completedTrips = trips.filter((trip) => trip.estado === "completado");
   const pendingOrders = orders.filter((order) => !order.logistics_assignment && isOperationalUnassignedOrder(order));
-  const scheduledOrders = orders.filter((order) => {
+  const pendingPurchaseOrders = purchaseOrders.filter((order) => !order.logistics_assignment && !["convertido", "cancelado"].includes(String(order.status || "")));
+  const scheduledOrders = [...orders, ...purchaseOrders].filter((order) => {
     const assignment = order.logistics_assignment;
     return assignment && !closedTripStatuses.has(String(assignment.trip_estado || ""));
   });
@@ -231,7 +254,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
       <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-ink">{companyName}</h1>
-          <p className="text-sm text-slate-600">{pendingOrders.length} pedidos por programar · {activeTrips.length} viajes vivos · {completedTrips.length} terminados</p>
+          <p className="text-sm text-slate-600">{pendingOrders.length} ventas · {pendingPurchaseOrders.length} compras · {activeTrips.length} viajes vivos · {completedTrips.length} terminados</p>
         </div>
         <button onClick={refresh} className="btn-soft" disabled={busy === "refresh"}>
           <RefreshCw size={16} />
@@ -241,8 +264,9 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
 
       {error && <div className="mt-4 border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
-      <nav className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-7">
-        <TabButton active={tab === "orders"} onClick={() => setTab("orders")} icon={<PackagePlus size={17} />} label="Pedidos" />
+      <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-8">
+        <TabButton active={tab === "orders"} onClick={() => setTab("orders")} icon={<PackagePlus size={17} />} label="Pedido Venta" />
+        <TabButton active={tab === "purchase_orders"} onClick={() => setTab("purchase_orders")} icon={<ShoppingCart size={17} />} label="Pedido Compra" />
         <TabButton active={tab === "scheduled_orders"} onClick={() => setTab("scheduled_orders")} icon={<Clock size={17} />} label="Programados" />
         <TabButton active={tab === "trips"} onClick={() => setTab("trips")} icon={<Truck size={17} />} label="Viajes" />
         <TabButton active={tab === "week_calendar"} onClick={() => setTab("week_calendar")} icon={<CalendarDays size={17} />} label="Semana" />
@@ -263,6 +287,21 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
             trips={activeTrips}
             targetTripId={targetTripId}
             setTargetTripId={setTargetTripId}
+            busy={busy}
+          />
+        )}
+        {tab === "purchase_orders" && (
+          <PurchaseOrdersTab
+            orders={pendingPurchaseOrders}
+            selectedOrders={selectedPurchaseOrders}
+            setSelectedOrders={setSelectedPurchaseOrders}
+            createTrip={createPurchaseTrip}
+            assignToExistingTrip={assignPurchaseToExistingTrip}
+            trips={activeTrips}
+            targetTripId={purchaseTargetTripId}
+            setTargetTripId={setPurchaseTargetTripId}
+            catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }}
+            action={action}
             busy={busy}
           />
         )}
@@ -448,6 +487,180 @@ function OrdersTab({
         ))}
         {!orders.length && <Empty label="Sin pedidos disponibles" />}
       </div>
+    </div>
+  );
+}
+
+function PurchaseOrdersTab({
+  orders,
+  selectedOrders,
+  setSelectedOrders,
+  createTrip,
+  assignToExistingTrip,
+  trips,
+  targetTripId,
+  setTargetTripId,
+  catalogs,
+  action,
+  busy
+}: {
+  orders: OrderRow[];
+  selectedOrders: string[];
+  setSelectedOrders: (rows: string[]) => void;
+  createTrip: () => void;
+  assignToExistingTrip: () => void;
+  trips: TripRow[];
+  targetTripId: string;
+  setTargetTripId: (value: string) => void;
+  catalogs: LogisticsData["catalogs"];
+  action: (name: string, context: Record<string, unknown>) => Promise<boolean>;
+  busy: string;
+}) {
+  const suppliers = catalogs.suppliers || [];
+  const products = catalogs.purchase_products || [];
+  const [supplierId, setSupplierId] = useState("");
+  const [supplierName, setSupplierName] = useState("");
+  const [productId, setProductId] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState("");
+  const [unitCost, setUnitCost] = useState("");
+  const [taxRate, setTaxRate] = useState("0");
+  const [pickupDate, setPickupDate] = useState("");
+  const [pickupAddress, setPickupAddress] = useState("");
+  const [notes, setNotes] = useState("");
+  const activeTrips = trips.filter((trip) => !["completado", "cancelado"].includes(trip.estado));
+
+  function toggle(id: string) {
+    setSelectedOrders(selectedOrders.includes(id) ? selectedOrders.filter((item) => item !== id) : [...selectedOrders, id]);
+  }
+
+  async function createPurchaseOrder() {
+    const product = products.find((row) => row.id === productId);
+    if (!productId || !Number(quantity)) return;
+    const ok = await action("purchase_order_manage", {
+      action: "create",
+      supplier_id: supplierId || null,
+      supplier_name: supplierId ? undefined : supplierName || null,
+      pickup_address: pickupAddress || null,
+      fecha_recoleccion: pickupDate || null,
+      notes: notes || null,
+      items: [
+        {
+          product_id: productId,
+          product_name_snapshot: product?.product_name,
+          quantity: Number(quantity),
+          unit: unit || product?.unit || "",
+          unit_cost: unitCost.trim() === "" ? 0 : Number(unitCost),
+          tax_rate: Number(taxRate || 0)
+        }
+      ]
+    });
+    if (ok) {
+      setProductId("");
+      setQuantity("");
+      setUnit("");
+      setUnitCost("");
+      setTaxRate("0");
+      setNotes("");
+    }
+  }
+
+  return (
+    <div className="grid gap-3">
+      <section className="border border-line bg-white p-3 shadow-sm">
+        <h2 className="text-sm font-bold text-ink">Nuevo pedido compra</h2>
+        <div className="mt-3 grid gap-2 lg:grid-cols-4">
+          <select value={supplierId} onChange={(event) => setSupplierId(event.target.value)} className="input">
+            <option value="">Proveedor opcional</option>
+            {suppliers.map((supplier) => (
+              <option key={supplier.id} value={supplier.id}>{supplier.party_name}</option>
+            ))}
+          </select>
+          {!supplierId && <input value={supplierName} onChange={(event) => setSupplierName(event.target.value)} className="input" placeholder="Proveedor libre" />}
+          <select value={productId} onChange={(event) => {
+            const value = event.target.value;
+            setProductId(value);
+            const product = products.find((row) => row.id === value);
+            setUnit(product?.unit || "");
+          }} className="input">
+            <option value="">Producto</option>
+            {products.map((product) => (
+              <option key={product.id} value={product.id}>{product.product_name}</option>
+            ))}
+          </select>
+          <input value={quantity} onChange={(event) => setQuantity(event.target.value)} type="number" min="0" step="0.01" className="input" placeholder="Cantidad" />
+          <input value={unit} onChange={(event) => setUnit(event.target.value)} className="input" placeholder="Unidad" />
+          <input value={unitCost} onChange={(event) => setUnitCost(event.target.value)} type="number" min="0" step="0.01" className="input" placeholder="Precio opcional" />
+          <select value={taxRate} onChange={(event) => setTaxRate(event.target.value)} className="input">
+            <option value="0">IVA 0%</option>
+            <option value="0.08">IVA 8%</option>
+            <option value="0.16">IVA 16%</option>
+          </select>
+          <input value={pickupDate} onChange={(event) => setPickupDate(event.target.value)} type="date" className="input" />
+          <input value={pickupAddress} onChange={(event) => setPickupAddress(event.target.value)} className="input lg:col-span-2" placeholder="Lugar de recoleccion" />
+          <input value={notes} onChange={(event) => setNotes(event.target.value)} className="input" placeholder="Notas" />
+          <button onClick={createPurchaseOrder} disabled={!productId || !Number(quantity) || Boolean(busy)} className="btn-primary">
+            <Plus size={16} />
+            Crear pedido compra
+          </button>
+        </div>
+      </section>
+
+      <div className="sticky top-[116px] z-20 grid gap-3 border border-line bg-white p-3 shadow-sm sm:top-[65px] lg:grid-cols-[1fr_auto_auto] lg:items-center">
+        <p className="text-sm font-semibold text-ink">{selectedOrders.length} compras seleccionadas</p>
+        <div className="flex min-w-0 gap-2">
+          <select value={targetTripId} onChange={(event) => setTargetTripId(event.target.value)} className="input min-w-0" disabled={!activeTrips.length}>
+            <option value="">Viaje existente</option>
+            {activeTrips.map((trip) => (
+              <option key={trip.id} value={trip.id}>{trip.folio} · {trip.estado}</option>
+            ))}
+          </select>
+          <button onClick={assignToExistingTrip} className="btn-soft whitespace-nowrap" disabled={!selectedOrders.length || !targetTripId || Boolean(busy)}>
+            Agregar
+          </button>
+        </div>
+        <button onClick={createTrip} className="btn-primary" disabled={!selectedOrders.length || Boolean(busy)}>
+          <Plus size={16} />
+          Crear viaje
+        </button>
+      </div>
+
+      <div className="overflow-x-auto border border-line bg-white">
+        <table className="w-full min-w-[980px] border-collapse text-xs">
+          <thead className="bg-slate-50 text-left uppercase text-slate-500">
+            <tr>
+              <th className="px-2 py-2">Sel</th>
+              <th className="px-2 py-2">Pedido compra</th>
+              <th className="px-2 py-2">Proveedor</th>
+              <th className="px-2 py-2">Recoleccion</th>
+              <th className="px-2 py-2">Partidas</th>
+              <th className="px-2 py-2 text-right">Peso</th>
+              <th className="px-2 py-2 text-right">Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => {
+              const selected = selectedOrders.includes(order.id);
+              return (
+                <tr key={order.id} onClick={() => toggle(order.id)} className={`cursor-pointer border-t border-line ${selected ? "bg-steel/10" : "hover:bg-slate-50"}`}>
+                  <td className="px-2 py-2">
+                    <span className={`flex h-6 w-6 items-center justify-center rounded border ${selected ? "border-steel bg-steel text-white" : "border-line bg-white"}`}>
+                      {selected && <Check size={15} />}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2 font-mono font-bold text-ink">{order.folio}</td>
+                  <td className="px-2 py-2 font-semibold text-slate-800">{order.customer_name_snapshot || "Sin proveedor"}</td>
+                  <td className="px-2 py-2 text-slate-600">{order.fecha_entrega || "-"}</td>
+                  <td className="px-2 py-2"><OrderItemsInline items={order.items || []} /></td>
+                  <td className="px-2 py-2 text-right">{number.format(order.peso_kg || 0)} kg</td>
+                  <td className="px-2 py-2 text-right font-semibold">{money.format(order.importe || 0)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {!orders.length && <Empty label="Sin pedidos de compra pendientes" />}
     </div>
   );
 }
@@ -701,8 +914,9 @@ function TripPanel({
         <table className="w-full min-w-[1320px] border-collapse text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
+              <th className="px-3 py-2">Tipo</th>
               <th className="px-3 py-2">Pedido</th>
-              <th className="px-3 py-2">Cliente</th>
+              <th className="px-3 py-2">Cliente/Proveedor</th>
               <th className="px-3 py-2">Fecha entrega</th>
               <th className="px-3 py-2">Peso</th>
               <th className="px-3 py-2">Partida 1</th>
@@ -718,6 +932,11 @@ function TripPanel({
           <tbody>
             {trip.orders.map((order) => (
               <tr key={order.id} className="border-t border-line">
+                <td className="px-3 py-2">
+                  <span className={`rounded px-2 py-1 text-[10px] font-bold uppercase ${order.source_type === "compra" ? "bg-amber-50 text-amber-800" : "bg-steel/10 text-steel"}`}>
+                    {order.source_type === "compra" ? "Compra" : "Venta"}
+                  </span>
+                </td>
                 <td className="px-3 py-2 font-mono font-semibold">{order.folio}</td>
                 <td className="px-3 py-2">{order.customer_name_snapshot}</td>
                 <td className="px-3 py-2">
@@ -748,7 +967,7 @@ function TripPanel({
                 <td className="px-3 py-2">{order.partida_3 || "-"}</td>
                 <td className="px-3 py-2">{order.otras_partidas || "-"}</td>
                 <td className="px-3 py-2">
-                  <RemisionPrintCell order={order} companyId={companyId} />
+                  {order.source_type === "compra" ? <PurchaseConvertCell order={order} action={action} busy={busy} /> : <RemisionPrintCell order={order} companyId={companyId} />}
                 </td>
                 <td className="px-3 py-2 text-right font-semibold">{money.format(order.importe || 0)}</td>
                 <td className="px-3 py-2 text-right">
@@ -763,7 +982,7 @@ function TripPanel({
             ))}
             {!trip.orders.length && (
               <tr className="border-t border-line">
-                <td colSpan={12} className="px-3 py-5 text-center text-sm text-slate-500">
+                <td colSpan={13} className="px-3 py-5 text-center text-sm text-slate-500">
                   Viaje vacio. Puedes mover pedidos aqui desde Pedidos programados o desde otro viaje.
                 </td>
               </tr>
@@ -844,6 +1063,27 @@ function RemisionPrintCell({ order, companyId, compact = false }: { order: Order
           Sin precio
         </button>
       </div>
+    </div>
+  );
+}
+
+function PurchaseConvertCell({ order, action, busy }: { order: OrderRow; action: (name: string, context: Record<string, unknown>) => Promise<boolean>; busy: string }) {
+  if (order.purchase_folio) {
+    return <span className="font-mono text-xs font-bold text-emerald-800">{order.purchase_folio}</span>;
+  }
+  const hasSupplier = Boolean(order.supplier_id);
+  const hasCost = (order.items || []).every((item) => Number(item.unit_cost || 0) > 0);
+  async function convert() {
+    await action("purchase_order_manage", { action: "convert_to_purchase", purchase_order_id: order.id });
+  }
+  return (
+    <div className="flex min-w-44 flex-col gap-1">
+      <span className={`text-[10px] font-bold uppercase ${hasSupplier && hasCost ? "text-amber-700" : "text-slate-500"}`}>
+        {hasSupplier && hasCost ? "Lista para compra" : "Faltan datos"}
+      </span>
+      <button onClick={convert} disabled={!hasSupplier || !hasCost || Boolean(busy)} className="btn-soft min-h-8 px-2 text-xs">
+        Convertir a compra
+      </button>
     </div>
   );
 }
@@ -1181,6 +1421,7 @@ function buildInventoryAllocation(trips: TripRow[], inventoryStock: InventorySto
   for (const trip of scheduledTrips) {
     const tripRows: InventoryIssue[] = [];
     for (const order of trip.orders) {
+      if (order.source_type === "compra") continue;
       const rows: InventoryIssue[] = [];
       for (const item of order.items || []) {
         const key = productKey(item);
