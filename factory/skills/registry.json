@@ -452,6 +452,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_ventas/erp_ventas_wabiz_pedido_handler": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_ventas/erp_ventas_wabiz_pedido_handler",
+    "vertical": "vertical_erp_ventas",
+    "descripcion": "Handler conversacional de WhatsApp para captura rapida de pedidos: cliente, productos (nombre o /claves), cantidad y precio con IVA, con resumen y confirmacion.",
+    "path": "skills/internos/vertical_erp_ventas/erp_ventas_wabiz_pedido_handler",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_billing/erp_billing_schema_plan": {
     "tipo": "interno",
     "nombre": "vertical_erp_billing/erp_billing_schema_plan",
@@ -5039,10 +5048,10 @@
     "tipo": "interno",
     "nombre": "vertical_apps4all_marketplace/apps4all_marketplace_schema_setup",
     "vertical": "vertical_apps4all_marketplace",
-    "descripcion": "Adds marketplace/product columns to platform.modulos and reloads Supabase REST schema.",
+    "descripcion": "Crea schema marketplace Apps4All, modulos, eventos y tenant_sources compartido. dry_run=True por defecto.",
     "path": "skills/internos/vertical_apps4all_marketplace/apps4all_marketplace_schema_setup",
     "entrypoint": "skill.py",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "vertical_apps4all_marketplace/apps4all_marketplace_module_register": {
     "tipo": "interno",
@@ -5724,5 +5733,115 @@
     "entrypoint": "skill.py",
     "version": "0.1.0",
     "kind": "data"
+  },
+  "vertical_ceo4all/ceo4all_source_map": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_source_map",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "Lee platform.tenant_sources para el tenant activo.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_source_map",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "data"
+  },
+  "vertical_ceo4all/ceo4all_ai_interpret": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_ai_interpret",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "Traduce lenguaje natural a query_intent o condition_intent CEO4All.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_ai_interpret",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "data"
+  },
+  "vertical_ceo4all/ceo4all_query": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_query",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "Ejecuta query_intent CEO4All de forma segura sin IA.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_query",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "data"
+  },
+  "vertical_ceo4all/ceo4all_cards_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_cards_manage",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "CRUD de cards y tab_cards CEO4All. dry_run=True por defecto.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_cards_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "executable"
+  },
+  "vertical_ceo4all/ceo4all_tabs_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_tabs_manage",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "CRUD de tabs CEO4All; bloquea borrar tabs protegidas.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_tabs_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "executable"
+  },
+  "vertical_ceo4all/ceo4all_alert_rules_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_alert_rules_manage",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "CRUD de reglas de alerta CEO4All. dry_run=True por defecto.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_alert_rules_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "executable"
+  },
+  "vertical_ceo4all/ceo4all_alerts_run": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_alerts_run",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "Evalua reglas activas y crea/actualiza alerts CEO4All. dry_run=True por defecto.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_alerts_run",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "executable"
+  },
+  "vertical_ceo4all/ceo4all_alerts_suggest": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_alerts_suggest",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "Sugiere alert_rules con IA sin escribirlas.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_alerts_suggest",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "data"
+  },
+  "vertical_ceo4all/ceo4all_tasks_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_tasks_manage",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "CRUD de tasks CEO4All. dry_run=True por defecto.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_tasks_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "executable"
+  },
+  "vertical_ceo4all/ceo4all_schema_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_schema_setup",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "Crea/migra solo tablas ceo4all.*. dry_run=True por defecto.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_schema_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "executable"
+  },
+  "vertical_ceo4all/ceo4all_tenant_seed": {
+    "tipo": "interno",
+    "nombre": "vertical_ceo4all/ceo4all_tenant_seed",
+    "vertical": "vertical_ceo4all",
+    "descripcion": "Siembra tabs, cards y reglas default para un tenant. dry_run=True por defecto.",
+    "path": "skills/internos/vertical_ceo4all/ceo4all_tenant_seed",
+    "entrypoint": "skill.py",
+    "version": "0.1.0",
+    "kind": "executable"
   }
 }

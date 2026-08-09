@@ -10,8 +10,9 @@ from pathlib import Path
 _UA = "FactoryFactory/0.1 (+https://github.com/)"
 
 _MODO_HANDLERS: dict[str, str] = {
-    "logplat":  "emp_logplat_message_handler",
+    "logplat":  "vertical_emp_logplat/emp_logplat_message_handler",
     "fleet4all": "vertical_fleet4all_trips/fleet_message_handler",
+    "duralon_pedidos": "vertical_erp_ventas/erp_ventas_wabiz_pedido_handler",
 }
 
 _MODO_LABELS: dict[str, str] = {
@@ -19,6 +20,7 @@ _MODO_LABELS: dict[str, str] = {
     "rh":        "👥 *rh* — Recursos Humanos",
     "sat":       "🧾 *sat* — SAT / Fiscal",
     "fleet4all": "🚚 *fleet4all* — Fleet4All",
+    "duralon_pedidos": "🧾 *duralon_pedidos* — Pedidos Duralon",
 }
 
 _MSG_NO_ACCESO = (

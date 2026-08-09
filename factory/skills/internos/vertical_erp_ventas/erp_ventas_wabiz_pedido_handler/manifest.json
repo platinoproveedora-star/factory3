@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "erp_ventas_wabiz_pedido_handler",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Handler conversacional de WhatsApp (canal-agnostic) para captura rapida de pedidos de ventas: cliente por nombre o lista numerada, producto por nombre o /claves, cantidad y precio con IVA, resumen y confirmacion antes de guardar.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
