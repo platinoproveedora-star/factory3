@@ -43,6 +43,8 @@ class ErpBillingPaymentApplyService:
         new_paid = money(document.get("paid_total")) + amount
         new_balance = max(money(document.get("total")) - new_paid, 0)
         doc_status = "pagada" if new_balance <= 0 else "parcial"
+        linked_pedido = self._linked_pedido(sales_ctx, document)
+        linked_pedido_update = self._linked_pedido_update(linked_pedido, document, new_paid, new_balance, doc_status)
         payment_unapplied = max(unapplied - amount, 0)
         payment_status = "aplicado" if payment_unapplied <= 0 else "parcial"
         base_metadata = context.get("metadata") if isinstance(context.get("metadata"), dict) else {}
@@ -66,6 +68,7 @@ class ErpBillingPaymentApplyService:
         preview = {
             "application": {"folio": "BAPP-DRYRUN", **application},
             "document_update": {"paid_total": new_paid, "balance_total": new_balance, "status": doc_status},
+            "linked_pedido_update": linked_pedido_update,
             "payment_update": {"unapplied_amount": payment_unapplied, "status": payment_status},
         }
         if context.get("dry_run", True):
@@ -87,6 +90,11 @@ class ErpBillingPaymentApplyService:
         )
         if not doc_result.get("ok"):
             return doc_result
+        pedido_result = None
+        if linked_pedido and linked_pedido_update:
+            pedido_result = sales_db.rest_update("sales_documents", linked_pedido_update, {"id": linked_pedido["id"]})
+            if not pedido_result.get("ok"):
+                return pedido_result
         pay_result = billing_db.rest_update(
             "billing_payments",
             {"unapplied_amount": payment_unapplied, "status": payment_status, "updated_at": utc_now()},
@@ -98,7 +106,15 @@ class ErpBillingPaymentApplyService:
         insert_event(ctx, "payment_applied", {"payment_id": payment["id"], "document_id": document["id"], "amount": amount}, False)
         app_data = app_result.get("data") or []
         application_saved = app_data[0] if isinstance(app_data, list) and app_data else app_data
-        return {"ok": True, "data": {"application": application_saved, "document_update": doc_result.get("data"), "payment_update": pay_result.get("data")}}
+        return {
+            "ok": True,
+            "data": {
+                "application": application_saved,
+                "document_update": doc_result.get("data"),
+                "linked_pedido_update": pedido_result.get("data") if pedido_result else None,
+                "payment_update": pay_result.get("data"),
+            },
+        }
 
     def _payment(self, ctx: dict, context: dict) -> dict | None:
         payment_id = blank(context.get("payment_id"))
@@ -151,7 +167,51 @@ class ErpBillingPaymentApplyService:
         if not doc_id and not folio:
             return None
         filters = {"id": doc_id} if doc_id else {"folio": folio}
-        return fetch_one(SupabaseClient(sales_ctx), "sales_documents", filters, "id,folio,document_type,customer_id,customer_name_snapshot,total,paid_total,balance_total,status")
+        return fetch_one(
+            SupabaseClient(sales_ctx),
+            "sales_documents",
+            filters,
+            "id,folio,document_type,parent_document_id,root_document_id,customer_id,customer_name_snapshot,total,paid_total,balance_total,status,metadata",
+        )
+
+    def _linked_pedido(self, sales_ctx: dict, remision: dict) -> dict | None:
+        metadata = remision.get("metadata") if isinstance(remision.get("metadata"), dict) else {}
+        pedido_id = blank(remision.get("parent_document_id") or metadata.get("source_pedido_id") or metadata.get("pedido_id"))
+        pedido_folio = blank(metadata.get("source_pedido_folio") or metadata.get("pedido_folio"))
+        if not pedido_id and not pedido_folio:
+            return None
+        filters = {"id": pedido_id} if pedido_id else {"folio": pedido_folio}
+        return fetch_one(
+            SupabaseClient(sales_ctx),
+            "sales_documents",
+            {**filters, "document_type": "eq.pedido"},
+            "id,folio,status,total,paid_total,balance_total,metadata",
+        )
+
+    def _linked_pedido_update(self, pedido: dict | None, remision: dict, new_paid: float, new_balance: float, doc_status: str) -> dict | None:
+        if not pedido:
+            return None
+        metadata = pedido.get("metadata") if isinstance(pedido.get("metadata"), dict) else {}
+        billing_sync = metadata.get("billing_sync") if isinstance(metadata.get("billing_sync"), dict) else {}
+        metadata = {
+            **metadata,
+            "billing_sync": {
+                **billing_sync,
+                "source_remision_id": remision.get("id"),
+                "source_remision_folio": remision.get("folio"),
+                "payment_status": doc_status,
+                "paid_total": new_paid,
+                "balance_total": new_balance,
+                "updated_by_skill": "vertical_erp_billing/erp_billing_payment_apply",
+                "updated_at": utc_now(),
+            },
+        }
+        return {
+            "paid_total": new_paid,
+            "balance_total": new_balance,
+            "metadata": metadata,
+            "updated_at": utc_now(),
+        }
 
     def _same_customer(self, payment: dict, document: dict) -> dict:
         payment_customer_id = blank(payment.get("customer_id"))
