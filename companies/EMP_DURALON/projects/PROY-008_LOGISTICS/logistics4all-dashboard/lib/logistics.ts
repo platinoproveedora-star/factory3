@@ -43,6 +43,8 @@ export type OrderRow = {
   remision_status?: string | null;
   remision_paid_total?: number | null;
   remision_balance_total?: number | null;
+  inventory_allocation_required?: boolean | null;
+  inventory_allocation_source?: string | null;
   billing_folio?: string | null;
   billing_status?: string | null;
   billing_paid_total?: number | null;

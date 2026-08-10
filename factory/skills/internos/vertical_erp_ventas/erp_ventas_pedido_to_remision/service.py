@@ -58,6 +58,8 @@ class ErpVentasPedidoToRemisionService:
             "delivery_address": context.get("delivery_address") or pedido.get("delivery_address"),
             "external_folio": context.get("external_folio"),
             "notes": context.get("notes") or pedido.get("notes"),
+            "chofer": context.get("chofer") or context.get("driver"),
+            "unidad": context.get("unidad") or context.get("vehicle_unit"),
             "items": remision_items,
             "parent_document_id": pedido.get("id"),
             "root_document_id": pedido.get("root_document_id") or pedido.get("id"),

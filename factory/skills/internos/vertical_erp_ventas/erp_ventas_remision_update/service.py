@@ -15,9 +15,13 @@ class ErpVentasRemisionUpdateService:
             return {"ok": False, "error": "id o folio requerido"}
 
         update = {}
-        for field in ("external_folio", "delivery_address", "notes"):
+        for field in ("external_folio", "delivery_address", "notes", "chofer", "unidad"):
             if field in context:
                 update[field] = self._blank(context.get(field))
+        if "driver" in context and "chofer" not in update:
+            update["chofer"] = self._blank(context.get("driver"))
+        if "vehicle_unit" in context and "unidad" not in update:
+            update["unidad"] = self._blank(context.get("vehicle_unit"))
         if "status" in context:
             status = str(context.get("status") or "").strip()
             if status not in self.ALLOWED_STATUS:

@@ -4,6 +4,6 @@
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
-  "description": "Edita fecha, hora, duracion, vehiculo, chofer, estado, peso por pedido y notas de viajes Logistics4All.",
+  "description": "Edita fecha, hora, duracion, vehiculo, chofer, estado, peso por pedido y notas de viajes Logistics4All; sincroniza chofer/unidad en remisiones ya generadas sin alterar inventario.",
   "requires_env": ["SUPABASE_URL"]
 }

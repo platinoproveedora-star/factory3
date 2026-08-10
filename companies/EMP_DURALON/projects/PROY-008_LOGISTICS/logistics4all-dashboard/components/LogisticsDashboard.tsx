@@ -1387,6 +1387,8 @@ function CalendarTab({
           context: {
             pedido_id: order.id,
             document_date: trip.fecha_viaje || undefined,
+            chofer: driverName(catalogs.drivers, trip.driver_id) || undefined,
+            unidad: vehicleUnitLabel(catalogs.vehicles, trip.vehiculo_id) || undefined,
             notes: `Remision generada desde viaje ${trip.folio}`
           }
         })
@@ -1486,6 +1488,15 @@ function vehicleName(vehicles: CatalogRow[], id?: string | null) {
   return vehicles.find((row) => row.id === id)?.nombre || "";
 }
 
+function vehicleUnitLabel(vehicles: CatalogRow[], id?: string | null) {
+  const vehicle = vehicles.find((row) => row.id === id);
+  if (!vehicle) return "";
+  const name = String(vehicle.nombre || "").trim();
+  const plate = String(vehicle.placa || "").trim();
+  if (name && plate) return `${name} - Placas ${plate}`;
+  return name || plate;
+}
+
 function driverName(drivers: CatalogRow[], id?: string | null) {
   return drivers.find((row) => row.id === id)?.nombre || "";
 }
@@ -1544,6 +1555,7 @@ function buildInventoryAllocation(trips: TripRow[], inventoryStock: InventorySto
     const tripRows: InventoryIssue[] = [];
     for (const order of trip.orders) {
       if (order.source_type === "compra") continue;
+      if (!requiresInventoryAllocation(order)) continue;
       const rows: InventoryIssue[] = [];
       for (const item of order.items || []) {
         const key = productKey(item);
@@ -1575,6 +1587,14 @@ function buildInventoryAllocation(trips: TripRow[], inventoryStock: InventorySto
     }
   }
   return { orderIssues, tripIssues };
+}
+
+function requiresInventoryAllocation(order: OrderRow) {
+  if (order.inventory_allocation_required !== undefined && order.inventory_allocation_required !== null) {
+    return Boolean(order.inventory_allocation_required);
+  }
+  if (remisionFolio(order)) return false;
+  return String(order.status || "").trim().toLowerCase() !== "remisionado";
 }
 
 function compareTripsForAllocation(a: TripRow, b: TripRow) {

@@ -507,6 +507,7 @@ def attach_billing_status(ctx: dict, orders: list[dict]) -> list[dict]:
             source = "billing_payment_applications"
 
         billing_status = _billing_status(document_status, total, paid, balance)
+        allocation_required = _inventory_allocation_required(order, target_doc)
         enriched.append(
             {
                 **order,
@@ -515,12 +516,23 @@ def attach_billing_status(ctx: dict, orders: list[dict]) -> list[dict]:
                 "billing_paid_total": round(paid, 2),
                 "billing_balance": round(balance, 2),
                 "billing_source": source,
+                "inventory_allocation_required": allocation_required,
+                "inventory_allocation_source": "pedido_pendiente" if allocation_required else "remision_existente",
                 "remision_status": target_doc.get("status") if target_doc and has_remision else None,
                 "remision_paid_total": _money(target_doc.get("paid_total")) if target_doc and has_remision else None,
                 "remision_balance_total": _money(target_doc.get("balance_total")) if target_doc and has_remision else None,
             }
         )
     return enriched
+
+
+def _inventory_allocation_required(order: dict, target_doc: dict | None = None) -> bool:
+    status = str(order.get("status") or "").strip().lower()
+    remision_folio = str(order.get("remision_folio") or "").strip()
+    remision_id = str(order.get("remision_id") or "").strip()
+    if remision_folio or remision_id or target_doc:
+        return False
+    return status != "remisionado"
 
 
 def _sales_docs_by_folio(ctx: dict, folios: list[str]) -> dict[str, dict]:
