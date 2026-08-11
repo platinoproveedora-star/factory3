@@ -227,7 +227,7 @@ class WabizChannelRouterService:
 
     def _validate_code(self, codigo: str) -> dict | None:
         try:
-            qs  = urllib.parse.urlencode({"codigo": f"eq.{codigo}", "activo": "eq.true", "select": "*", "limit": "1"})
+            qs  = urllib.parse.urlencode({"codigo": f"ilike.{codigo}", "activo": "eq.true", "select": "*", "limit": "1"})
             url = f"{os.getenv('SUPABASE_URL', '').rstrip('/')}/rest/v1/wabiz_access_codes?{qs}"
             key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
             req = urllib.request.Request(url, headers={

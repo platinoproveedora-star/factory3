@@ -1,0 +1,12 @@
+{
+  "type": "skill",
+  "name": "wabiz_access_code_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea, lista o desactiva codigos de acceso (wabiz_access_codes) para que usuarios se registren en el bot WhatsApp con un empresa_id y user_mode dados.",
+  "requires_env": [
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ]
+}

@@ -3411,6 +3411,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_wabiz/wabiz_access_code_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_wabiz/wabiz_access_code_manage",
+    "vertical": "vertical_wabiz",
+    "descripcion": "Crea, lista o desactiva codigos de acceso (wabiz_access_codes) para que usuarios se registren en el bot WhatsApp con un empresa_id y user_mode dados.",
+    "path": "skills/internos/vertical_wabiz/wabiz_access_code_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "emp_logplat_message_handler": {
     "tipo": "interno",
     "nombre": "emp_logplat_message_handler",
@@ -5212,7 +5221,7 @@
     "tipo": "interno",
     "nombre": "vertical_apps4all_factory/apps4all_company_project_scaffold",
     "vertical": "vertical_apps4all_factory",
-    "descripcion": "Apps4All-named company/project scaffold plan for sellable modules.",
+    "descripcion": "Crea empresa+proyecto+dashboard Apps4All en un paso: orquesta apps4all_dash_scaffold (dashboard base Next.js/Vercel con auth completo) + company_scaffold. dry_run=true por defecto.",
     "path": "skills/internos/vertical_apps4all_factory/apps4all_company_project_scaffold",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -5647,6 +5656,24 @@
     "vertical": "vertical_fleet4all_cartaporte",
     "descripcion": "Envia el draft de Carta Porte al PAC via un adapter generico (PAC_PROVIDER/PAC_USER/PAC_PASSWORD/PAC_URL en env). Sin credenciales usa un adapter simulado (sandbox_simulated). Idempotente: draft ya stamped nunca se re-timbra.",
     "path": "skills/internos/vertical_fleet4all_cartaporte/pac_stamp",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/factu4all_schema_setup": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/factu4all_schema_setup",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Crea el schema factu4all (13 tablas: company_settings, pac_accounts, issuer_profiles, folio_series, parties, products, cfdi_documents, cfdi_item_movements, document_files, source_catalogs, product_source_links, party_source_links, supplier_product_mappings) en Supabase via Management API. dry_run=true por defecto.",
+    "path": "skills/internos/vertical_factu4all/factu4all_schema_setup",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/pac_stamp": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/pac_stamp",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Timbra un CFDI (cfdi_documents) ante el PAC configurado (Facturama Multiemisor). Adapter propio de Factu4All, independiente de vertical_fleet4all_cartaporte. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
+    "path": "skills/internos/vertical_factu4all/pac_stamp",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
