@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import SupabaseClient, blank, fetch_one, insert_event, money, resolve_billing_context, sales_context, utc_now  # noqa: E402
+from _common import SupabaseClient, blank, fetch_one, insert_event, is_cancelled_sales_document, money, resolve_billing_context, sales_context, utc_now  # noqa: E402
 
 
 _VALID_METHODS = {"cash", "transfer", "deposit", "card", "check", "other"}
@@ -138,7 +138,7 @@ class ErpBillingPaymentManageService:
                 return {"ok": False, "error": "remision destino no encontrada"}
             if str(document.get("document_type") or "").strip().lower() != "remision":
                 return {"ok": False, "error": "solo se pueden aplicar pagos a remisiones"}
-            if str(document.get("status") or "").strip().lower() == "cancelada":
+            if is_cancelled_sales_document(document):
                 return {"ok": False, "error": "no se puede aplicar a remision cancelada"}
             same_customer = self._same_customer(payment, document)
             if not same_customer.get("ok"):
@@ -215,7 +215,7 @@ class ErpBillingPaymentManageService:
             sales_db,
             "sales_documents",
             {"id": document_id},
-            "id,folio,document_type,customer_id,customer_name_snapshot,total,paid_total,balance_total,status",
+            "id,folio,document_type,customer_id,customer_name_snapshot,total,paid_total,balance_total,status,notes",
         )
 
     def _same_customer(self, payment: dict, document: dict) -> dict:
@@ -244,14 +244,14 @@ class ErpBillingPaymentManageService:
                 SupabaseClient(sales_ctx),
                 "sales_documents",
                 {"id": app.get("sales_document_id")},
-                "id,folio,total,paid_total,balance_total,status,document_type",
+                "id,folio,total,paid_total,balance_total,status,notes,document_type",
             )
             if not document:
                 continue
             new_paid = money(document.get("paid_total")) - money(app.get("amount_applied"))
             new_paid = max(new_paid, 0)
             new_balance = max(money(document.get("total")) - new_paid, 0)
-            status = "cancelada" if str(document.get("status") or "") == "cancelada" else "pagada" if new_balance <= 0 else "parcial" if new_paid > 0 else "pendiente"
+            status = "cancelada" if is_cancelled_sales_document(document) else "pagada" if new_balance <= 0 else "parcial" if new_paid > 0 else "pendiente"
             reversals.append(
                 {
                     "application_id": app.get("id"),

@@ -57,6 +57,7 @@ const fmtDate = (d?: string | null) =>
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 const PAYMENT_METHODS = ['cash', 'card', 'transfer', 'deposit', 'check', 'other'];
+const CANCELED_REMISION_STATUSES = new Set(['cancelada', 'cancelado', 'cancelled']);
 
 const METODO_LABEL: Record<string, string> = {
   cash: 'Efectivo',
@@ -93,6 +94,24 @@ function StatusBadge({ status }: { status?: string | null }) {
       {status ?? '-'}
     </span>
   );
+}
+
+function remisionStatus(remision: Remision) {
+  return String(remision.status ?? '').trim().toLowerCase();
+}
+
+function remisionBalance(remision: Remision) {
+  return remision.balance_total ?? remision.total - (remision.paid_total ?? 0);
+}
+
+function isOpenRemision(remision: Remision) {
+  const status = remisionStatus(remision);
+  return status !== 'pagada' && !isCanceledRemision(remision) && remisionBalance(remision) > 0;
+}
+
+function isCanceledRemision(remision: Remision) {
+  const notes = String(remision.notes ?? '').trim().toLowerCase();
+  return CANCELED_REMISION_STATUSES.has(remisionStatus(remision)) || notes.startsWith('cancelada ');
 }
 
 function Semaforo({ semaforo }: { semaforo: string }) {
@@ -387,7 +406,7 @@ export default function BillingDashboard() {
   async function submitNuevoPago() {
     const amount = parseFloat(form.amount || '0');
     const applications = remisiones
-      .filter((r) => r.customer_name_snapshot === form.customer && r.status !== 'cancelada' && r.status !== 'pagada')
+      .filter((r) => r.customer_name_snapshot === form.customer && isOpenRemision(r))
       .map((r) => ({ sales_document_id: r.id, amount_applied: parseFloat(form[`apply_${r.id}`] || '0') }))
       .filter((row) => row.amount_applied > 0);
     const totalApplied = applications.reduce((sum, row) => sum + row.amount_applied, 0);
@@ -856,7 +875,7 @@ export default function BillingDashboard() {
     <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="">Seleccionar remisión...</option>
       {remisiones
-        .filter((r) => r.status !== 'cancelada' && r.status !== 'pagada' && (r.balance_total ?? r.total) > 0)
+        .filter(isOpenRemision)
         .filter((r) => !customerName || r.customer_name_snapshot === customerName)
         .map((r) => (
           <option key={r.id} value={r.id}>
@@ -962,12 +981,12 @@ export default function BillingDashboard() {
                     <td className="px-4 py-3 text-right">
                       <div className="flex gap-2 justify-end">
                         <button onClick={() => api.getRemisionHtml(r.folio).then(api.openHtml)} title="Imprimir" className="text-gray-400 hover:text-blue-600"><Printer size={14} /></button>
-                        {r.status !== 'cancelada' && r.status !== 'pagada' && (
+                        {isOpenRemision(r) && (
                           <button onClick={() => { setRemisiones((prev) => prev); openModal({ kind: 'pago', remision: r }); }} className="text-xs bg-blue-600 text-white rounded px-2 py-1 hover:bg-blue-700">
                             Cobrar
                           </button>
                         )}
-                        {r.status !== 'cancelada' && (
+                        {!isCanceledRemision(r) && (
                           <button onClick={() => openModal({ kind: 'cancel_remision', remision: r })} title="Cancelar remision" className="text-red-400 hover:text-red-600">
                             <Ban size={14} />
                           </button>
@@ -1874,10 +1893,10 @@ export default function BillingDashboard() {
             <p className="mb-2 text-sm font-medium text-gray-700">Remisiones a aplicar</p>
             <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200">
               {(form.customer
-                ? remisiones.filter((r) => r.customer_name_snapshot === form.customer && r.status !== 'cancelada' && r.status !== 'pagada')
+                ? remisiones.filter((r) => r.customer_name_snapshot === form.customer && isOpenRemision(r))
                 : []
               ).map((r) => {
-                const balance = r.balance_total ?? r.total - (r.paid_total ?? 0);
+                const balance = remisionBalance(r);
                 return (
                   <div key={r.id} className="grid grid-cols-[1fr_120px] gap-2 border-b border-gray-100 px-3 py-2 last:border-b-0">
                     <div className="min-w-0">
@@ -1897,7 +1916,7 @@ export default function BillingDashboard() {
                   </div>
                 );
               })}
-              {(!form.customer || remisiones.filter((r) => r.customer_name_snapshot === form.customer && r.status !== 'cancelada' && r.status !== 'pagada').length === 0) && (
+              {(!form.customer || remisiones.filter((r) => r.customer_name_snapshot === form.customer && isOpenRemision(r)).length === 0) && (
                 <p className="px-3 py-6 text-center text-sm text-gray-400">Selecciona un cliente con remisiones pendientes</p>
               )}
             </div>
@@ -1940,7 +1959,7 @@ export default function BillingDashboard() {
                   const customerName = modal.payment.customer_name || '';
                   const options = remisiones.filter((r) => (
                     r.id === currentDocId ||
-                    (r.status !== 'cancelada' && r.customer_name_snapshot === customerName && (r.balance_total ?? r.total) > 0)
+                    (isOpenRemision(r) && r.customer_name_snapshot === customerName)
                   ));
                   return (
                     <div key={app.id} className="grid gap-2 sm:grid-cols-[1fr_120px]">

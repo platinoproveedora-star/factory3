@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import SupabaseClient, blank, fetch_one, money, resolve_billing_context, sales_context  # noqa: E402
+from _common import SupabaseClient, blank, fetch_one, is_cancelled_sales_document, money, resolve_billing_context, sales_context  # noqa: E402
 
 
 _ROOT = Path(__file__).resolve().parents[1]
@@ -149,7 +149,7 @@ class ErpBillingPaymentCreateAndApplyService:
                 db,
                 "sales_documents",
                 filters,
-                "id,folio,document_type,customer_id,customer_name_snapshot,total,paid_total,balance_total,status",
+                "id,folio,document_type,customer_id,customer_name_snapshot,total,paid_total,balance_total,status,notes",
             )
             if not doc:
                 return {"ok": False, "error": "remision no encontrada", "data": {"application": app}}
@@ -170,7 +170,7 @@ class ErpBillingPaymentCreateAndApplyService:
                 return {"ok": False, "error": "remision no encontrada"}
             if str(doc.get("document_type") or "").strip().lower() != "remision":
                 return {"ok": False, "error": "solo se pueden aplicar pagos a remisiones"}
-            if str(doc.get("status") or "").strip().lower() == "cancelada":
+            if is_cancelled_sales_document(doc):
                 return {"ok": False, "error": f"remision cancelada: {doc.get('folio')}"}
             if str(doc["id"]) in seen:
                 return {"ok": False, "error": f"remision duplicada: {doc.get('folio')}"}

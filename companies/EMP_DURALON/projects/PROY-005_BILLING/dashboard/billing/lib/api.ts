@@ -42,6 +42,7 @@ export type MoneyAccount = {
 export type Remision = {
   id: string;
   folio: string;
+  external_folio?: string | null;
   customer_id?: string | null;
   customer_name_snapshot: string;
   status: string;
@@ -51,6 +52,7 @@ export type Remision = {
   balance_total?: number;
   dias_vencido?: number;
   payment_account_names?: string;
+  notes?: string | null;
 };
 
 export type Payment = {
@@ -342,6 +344,8 @@ export async function getRemisiones(filters?: {
     {
       schema: ERP_CONTEXT.sales_schema,
       schema_ventas: ERP_CONTEXT.sales_schema,
+      inventory_schema: ERP_CONTEXT.inventory_schema,
+      schema_inventario: ERP_CONTEXT.inventory_schema,
       project_code: projectContext.sales_project_code,
       module_code: projectContext.sales_module_code,
       ...(filters ?? {}),

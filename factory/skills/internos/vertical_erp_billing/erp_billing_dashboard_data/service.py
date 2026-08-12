@@ -59,7 +59,7 @@ class ErpBillingDashboardDataService:
         today = today_iso()
         collected_today = sum(money(p.get("amount")) for p in payments if str(p.get("payment_date") or "") == today and p.get("status") != "cancelado")
         unapplied_total = sum(money(p.get("unapplied_amount")) for p in payments if p.get("status") in {"sin_aplicar", "capturado", "parcial"})
-        receivable_total = sum(money(f.get("balance_amount")) for f in folios if f.get("status") not in {"pagada", "cancelada"})
+        receivable_total = sum(money(f.get("balance_amount")) for f in folios if f.get("status") not in {"pagada", "cancelado"})
         pending_folios = [f for f in folios if f.get("status") in {"emitido", "parcial"}][:20]
         pending_validation = [p for p in payments if p.get("validation_status") in {"pending", "requiere_revision"} or p.get("ocr_status") == "pending"][:20]
         return {

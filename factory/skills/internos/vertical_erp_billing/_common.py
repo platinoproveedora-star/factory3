@@ -30,6 +30,14 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def is_cancelled_sales_document(document: dict) -> bool:
+    status = str(document.get("status") or "").strip().lower()
+    if status in {"cancelada", "cancelado", "cancelled"}:
+        return True
+    notes = str(document.get("notes") or "").strip().lower()
+    return notes.startswith("cancelada ")
+
+
 def schema_identifier(context: dict) -> str:
     schema = str(context.get("schema") or context.get("billing_schema") or context.get("supabase_schema") or "").strip()
     if not _VALID_SCHEMA.match(schema):

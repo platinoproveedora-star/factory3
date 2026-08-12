@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import SupabaseClient, blank, fetch_one, insert_event, money, resolve_billing_context, sales_context, utc_now  # noqa: E402
+from _common import SupabaseClient, blank, fetch_one, insert_event, is_cancelled_sales_document, money, resolve_billing_context, sales_context, utc_now  # noqa: E402
 
 
 class ErpBillingAnticipoApplyService:
@@ -34,11 +34,13 @@ class ErpBillingAnticipoApplyService:
         if not doc_id and not doc_folio:
             return {"ok": False, "error": "sales_document_id o sales_folio requerido"}
         doc_filters = {"id": doc_id} if doc_id else {"folio": doc_folio}
-        document = fetch_one(SupabaseClient(sales_ctx), "sales_documents", doc_filters, "id,folio,document_type,total,paid_total,balance_total,status,customer_id,customer_name_snapshot")
+        document = fetch_one(SupabaseClient(sales_ctx), "sales_documents", doc_filters, "id,folio,document_type,total,paid_total,balance_total,status,notes,customer_id,customer_name_snapshot")
         if not document:
             return {"ok": False, "error": "remision no encontrada"}
         if str(document.get("document_type") or "").strip().lower() != "remision":
             return {"ok": False, "error": "solo se pueden aplicar anticipos a remisiones; los pedidos no son CXC"}
+        if is_cancelled_sales_document(document):
+            return {"ok": False, "error": f"no se puede aplicar anticipo a remision cancelada: {document.get('folio')}"}
 
         unapplied = money(anticipo.get("unapplied_amount"))
         doc_balance = money(document.get("balance_total") if document.get("balance_total") is not None else document.get("total"))

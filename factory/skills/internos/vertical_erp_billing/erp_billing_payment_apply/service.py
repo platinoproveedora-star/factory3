@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import SupabaseClient, blank, fetch_one, identity_row, insert_event, money, reserve_folio, resolve_billing_context, sales_context, utc_now  # noqa: E402
+from _common import SupabaseClient, blank, fetch_one, identity_row, insert_event, is_cancelled_sales_document, money, reserve_folio, resolve_billing_context, sales_context, utc_now  # noqa: E402
 
 
 class ErpBillingPaymentApplyService:
@@ -28,6 +28,8 @@ class ErpBillingPaymentApplyService:
             return {"ok": False, "error": "sales_document_id/sales_folio requerido o no encontrado"}
         if str(document.get("document_type") or "").strip().lower() != "remision":
             return {"ok": False, "error": "solo se pueden aplicar pagos a remisiones; los pedidos no son CXC"}
+        if is_cancelled_sales_document(document):
+            return {"ok": False, "error": f"no se puede aplicar pago a remision cancelada: {document.get('folio')}"}
         customer_check = self._same_customer(payment, document)
         if not customer_check.get("ok"):
             return customer_check
@@ -171,7 +173,7 @@ class ErpBillingPaymentApplyService:
             SupabaseClient(sales_ctx),
             "sales_documents",
             filters,
-            "id,folio,document_type,parent_document_id,root_document_id,customer_id,customer_name_snapshot,total,paid_total,balance_total,status,metadata",
+            "id,folio,document_type,parent_document_id,root_document_id,customer_id,customer_name_snapshot,total,paid_total,balance_total,status,notes,metadata",
         )
 
     def _linked_pedido(self, sales_ctx: dict, remision: dict) -> dict | None:

@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from _common import SupabaseClient, blank, fetch_one, identity_row, insert_event, money, reserve_folio, resolve_billing_context, sales_context, utc_now  # noqa: E402
+from _common import SupabaseClient, blank, fetch_one, identity_row, insert_event, is_cancelled_sales_document, money, reserve_folio, resolve_billing_context, sales_context, utc_now  # noqa: E402
 
 
 class ErpBillingDevolucionApplyService:
@@ -70,11 +70,13 @@ class ErpBillingDevolucionApplyService:
         if not doc_id:
             return {"ok": False, "error": "la devolucion no tiene remision vinculada — usa resolution='anticipo'"}
 
-        document = fetch_one(SupabaseClient(sales_ctx), "sales_documents", {"id": doc_id}, "id,folio,document_type,total,paid_total,balance_total,status")
+        document = fetch_one(SupabaseClient(sales_ctx), "sales_documents", {"id": doc_id}, "id,folio,document_type,total,paid_total,balance_total,status,notes")
         if not document:
             return {"ok": False, "error": "remision vinculada no encontrada"}
         if str(document.get("document_type") or "").strip().lower() != "remision":
             return {"ok": False, "error": "solo se pueden aplicar devoluciones a remisiones; los pedidos no son CXC"}
+        if is_cancelled_sales_document(document):
+            return {"ok": False, "error": f"no se puede aplicar devolucion a remision cancelada: {document.get('folio')}"}
 
         new_balance = max(money(document.get("balance_total") if document.get("balance_total") is not None else document.get("total")) - amount, 0)
         new_paid = money(document.get("total")) - new_balance

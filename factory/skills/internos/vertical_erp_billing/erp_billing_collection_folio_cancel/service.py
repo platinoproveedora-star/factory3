@@ -54,4 +54,13 @@ class ErpBillingCollectionFolioCancelService:
         return fetch_one(SupabaseClient(ctx), "billing_collection_folios", filters)
 
     def _linked_payment(self, ctx: dict, folio: dict) -> dict | None:
-        return fetch_one(SupabaseClient(ctx), "billing_payments", {"collection_folio_id": folio.get("id")}, "id,folio,status")
+        result = SupabaseClient(ctx).rest_select(
+            "billing_payments",
+            filters={"collection_folio_id": folio.get("id")},
+            select="id,folio,status",
+            limit=200,
+        )
+        if not result.get("ok"):
+            raise RuntimeError(result.get("error") or "error leyendo pagos ligados")
+        active = [row for row in result.get("data") or [] if str(row.get("status") or "") != "cancelado"]
+        return active[0] if active else None
