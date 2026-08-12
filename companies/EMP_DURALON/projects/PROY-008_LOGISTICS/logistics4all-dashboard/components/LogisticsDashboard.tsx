@@ -1529,6 +1529,43 @@ function productLabel(item: NonNullable<OrderRow["items"]>[number]) {
   return String(item.product_name_snapshot || item.description || "Producto");
 }
 
+function productKeys(item: NonNullable<OrderRow["items"]>[number]) {
+  return uniqueKeys([
+    item.inventory_product_id,
+    item.product_id,
+    item.product_folio_snapshot,
+    item.product_name_snapshot,
+    item.description
+  ]);
+}
+
+function stockKeys(row: InventoryStockRow) {
+  return uniqueKeys([row.product_id, row.folio, row.product_key, row.sku, row.product_name]);
+}
+
+function uniqueKeys(values: Array<string | number | null | undefined>) {
+  const keys = new Set<string>();
+  for (const value of values) {
+    const raw = String(value || "").trim();
+    if (!raw) continue;
+    keys.add(raw);
+    keys.add(raw.toLowerCase());
+    const normalized = normalizeProductKey(raw);
+    if (normalized) keys.add(normalized);
+  }
+  return Array.from(keys);
+}
+
+function normalizeProductKey(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 type InventoryIssue = {
   product_key: string;
   product_name: string;
@@ -1539,12 +1576,12 @@ type InventoryIssue = {
 };
 
 function buildInventoryAllocation(trips: TripRow[], inventoryStock: InventoryStockRow[]) {
-  const stock = new Map<string, number>();
+  const stock = new Map<string, { quantity: number }>();
   const labels = new Map<string, { name: string; unit: string }>();
   for (const row of inventoryStock) {
-    const keys = [row.product_id, row.product_key, row.sku, row.product_name].map((value) => String(value || "").trim()).filter(Boolean);
-    for (const key of keys) {
-      stock.set(key, Number(row.quantity || 0));
+    const bucket = { quantity: Number(row.quantity || 0) };
+    for (const key of stockKeys(row)) {
+      stock.set(key, bucket);
       labels.set(key, { name: String(row.product_name || key), unit: String(row.unit || "") });
     }
   }
@@ -1558,11 +1595,12 @@ function buildInventoryAllocation(trips: TripRow[], inventoryStock: InventorySto
       if (!requiresInventoryAllocation(order)) continue;
       const rows: InventoryIssue[] = [];
       for (const item of order.items || []) {
-        const key = productKey(item);
-        if (!stock.has(key)) continue;
         const required = Number(item.quantity || 0);
         if (!required) continue;
-        const available = Number(stock.get(key) || 0);
+        const keys = productKeys(item);
+        const key = keys.find((candidate) => stock.has(candidate)) || productKey(item);
+        const bucket = stock.get(key);
+        const available = bucket ? bucket.quantity : 0;
         const availableForOrder = Math.max(available, 0);
         const productInfo = labels.get(key) || { name: productLabel(item), unit: String(item.unit || "") };
         if (availableForOrder < required) {
@@ -1575,7 +1613,9 @@ function buildInventoryAllocation(trips: TripRow[], inventoryStock: InventorySto
             unit: String(item.unit || productInfo.unit || "")
           });
         }
-        stock.set(key, available - required);
+        if (bucket) {
+          bucket.quantity = available - required;
+        }
       }
       if (rows.length) {
         orderIssues.set(order.id, rows);
