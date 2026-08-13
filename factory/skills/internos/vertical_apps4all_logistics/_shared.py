@@ -467,17 +467,20 @@ def format_purchase_order(row: dict) -> dict:
 
 
 def attach_billing_status(ctx: dict, orders: list[dict]) -> list[dict]:
-    targets = []
+    remision_targets = []
+    billing_targets = []
     for order in orders:
         folio = str(order.get("folio") or "").strip()
         remision_folio = str(order.get("remision_folio") or "").strip()
         if remision_folio:
-            targets.append(remision_folio)
+            remision_targets.append(remision_folio)
+            billing_targets.append(remision_folio)
         elif folio:
-            targets.append(folio)
-    target_folios = sorted({folio for folio in targets if folio})
-    remision_docs = _sales_docs_by_folio(ctx, target_folios)
-    billing = _billing_rows_by_folio(ctx, target_folios)
+            billing_targets.append(folio)
+    remision_folios = sorted({folio for folio in remision_targets if folio})
+    billing_folios = sorted({folio for folio in billing_targets if folio})
+    remision_docs = _remision_docs_by_folio(ctx, remision_folios)
+    billing = _billing_rows_by_folio(ctx, billing_folios)
 
     enriched = []
     for order in orders:
@@ -530,17 +533,21 @@ def _inventory_allocation_required(order: dict, target_doc: dict | None = None) 
     status = str(order.get("status") or "").strip().lower()
     remision_folio = str(order.get("remision_folio") or "").strip()
     remision_id = str(order.get("remision_id") or "").strip()
-    if remision_folio or remision_id or target_doc:
+    if remision_folio or remision_id or _is_remision_doc(target_doc):
         return False
     return status != "remisionado"
 
 
-def _sales_docs_by_folio(ctx: dict, folios: list[str]) -> dict[str, dict]:
+def _is_remision_doc(row: dict | None) -> bool:
+    return str((row or {}).get("document_type") or "").strip().lower() == "remision"
+
+
+def _remision_docs_by_folio(ctx: dict, folios: list[str]) -> dict[str, dict]:
     if not folios:
         return {}
     result = sales_db(ctx).rest_select(
         "sales_documents",
-        filters={"empresa_id": f"eq.{ctx['company_id']}", "folio": f"in.({','.join(folios)})"},
+        filters={"empresa_id": f"eq.{ctx['company_id']}", "folio": f"in.({','.join(folios)})", "document_type": "eq.remision"},
         select="id,folio,document_type,status,total,paid_total,balance_total",
         limit=max(len(folios), 1),
     )

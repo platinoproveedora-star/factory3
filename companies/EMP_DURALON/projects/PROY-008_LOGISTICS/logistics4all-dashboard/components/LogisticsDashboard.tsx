@@ -313,7 +313,7 @@ export function LogisticsDashboard({ initialData, initialError, companyId, compa
         {tab === "scheduled_orders" && <ScheduledOrdersTab orders={scheduledOrders} trips={activeTrips} action={action} busy={busy} />}
         {tab === "trips" && <TripsTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} reviewMode={reviewMode} updateOrderLogistics={updateOrderLogistics} createEmptyTrip={createEmptyTrip} companyId={companyId} />}
         {tab === "week_calendar" && <WeekCalendarTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} inventoryStock={data?.inventory_stock || []} />}
-        {tab === "calendar" && <CalendarTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} companyId={companyId} refresh={refresh} setError={setError} />}
+        {tab === "calendar" && <CalendarTab trips={activeTrips} catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} inventoryStock={data?.inventory_stock || []} companyId={companyId} refresh={refresh} setError={setError} />}
         {tab === "completed_trips" && <CompletedTripsTab trips={completedTrips} action={action} busy={busy} />}
         {tab === "config" && <ConfigTab catalogs={data?.catalogs || { vehicles: [], drivers: [], product_config: [] }} action={action} busy={busy} />}
       </section>
@@ -1344,16 +1344,19 @@ function WeekCalendarTab({ trips, catalogs, inventoryStock }: { trips: TripRow[]
 function CalendarTab({
   trips,
   catalogs,
+  inventoryStock,
   companyId,
   refresh,
   setError
 }: {
   trips: TripRow[];
   catalogs: LogisticsData["catalogs"];
+  inventoryStock: InventoryStockRow[];
   companyId: string;
   refresh: () => Promise<void>;
   setError: (value: string) => void;
 }) {
+  const allocation = useMemo(() => buildInventoryAllocation(trips, inventoryStock), [trips, inventoryStock]);
   const days = useMemo(() => {
     const grouped = new Map<string, TripRow[]>();
     trips.filter((trip) => trip.fecha_viaje).forEach((trip) => {
@@ -1418,20 +1421,31 @@ function CalendarTab({
             </button>
           </header>
           <div className="grid gap-3 p-3">
-            {rows.map((trip) => (
-              <div key={trip.id} className="border-l-4 p-3" style={vehicleColorStyle(vehicleIndex.get(String(trip.vehiculo_id || "")) ?? 0)}>
+            {rows.map((trip) => {
+              const colorIndex = vehicleIndex.get(String(trip.vehiculo_id || "")) ?? 0;
+              const tripHasShortage = Boolean(allocation.tripIssues.get(trip.id)?.length);
+              return (
+              <div key={trip.id} className={`border-l-4 p-3 ${tripHasShortage ? "ring-2 ring-red-300" : ""}`} style={tripHasShortage ? shortageTripColorStyle(colorIndex) : vehicleColorStyle(colorIndex)}>
                 <p className="font-mono font-bold">{trip.hora_inicio?.slice(0, 5) || "--:--"}-{trip.hora_fin || "--:--"} · {trip.folio}</p>
                 <p className="text-sm text-slate-600">{trip.summary.orders_count} pedidos · {number.format(trip.summary.peso_total_kg)} kg · {money.format(trip.summary.importe_total)}</p>
                 <p className="text-xs font-bold text-emerald-800">Total a cobrar: {money.format(tripCollectTotal(trip))}</p>
                 <p className="text-xs font-semibold text-slate-600">{vehicleName(catalogs.vehicles, trip.vehiculo_id) || "Sin vehiculo"}</p>
+                {tripHasShortage && (
+                  <div className="mt-2 border border-red-300 bg-red-50 px-2 py-1 text-xs font-bold text-red-800">
+                    {allocation.tripIssues.get(trip.id)?.slice(0, 3).map((issue) => (
+                      <p key={`${issue.product_key}-${issue.required}`}>Falta {number.format(issue.shortage)} {issue.unit || ""} {issue.product_name}</p>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button onClick={() => remisionarTrip(trip, false)} className="btn-soft px-3 text-xs">Remisionar $</button>
                   <button onClick={() => remisionarTrip(trip, true)} className="btn-soft px-3 text-xs">Remisionar sin $</button>
                 </div>
                 <ProductTotals products={trip.summary.key_products} compact />
-                <CalendarProductMatrix trip={trip} companyId={companyId} />
+                <CalendarProductMatrix trip={trip} companyId={companyId} orderIssues={allocation.orderIssues} />
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}
@@ -1440,7 +1454,7 @@ function CalendarTab({
   );
 }
 
-function CalendarProductMatrix({ trip, companyId }: { trip: TripRow; companyId?: string }) {
+function CalendarProductMatrix({ trip, companyId, orderIssues }: { trip: TripRow; companyId?: string; orderIssues?: Map<string, InventoryIssue[]> }) {
   const products = topTripProducts(trip, 6);
   return (
     <div className="mt-3 overflow-x-auto border border-line bg-white">
@@ -1461,8 +1475,10 @@ function CalendarProductMatrix({ trip, companyId }: { trip: TripRow; companyId?:
           </tr>
         </thead>
         <tbody>
-          {trip.orders.map((order) => (
-            <tr key={order.id} className="border-t border-line">
+          {trip.orders.map((order) => {
+            const issues = orderIssues?.get(order.id) || [];
+            return (
+            <tr key={order.id} className={`border-t border-line ${issues.length ? "bg-red-50 text-red-900" : ""}`}>
               <td className="px-2 py-2 font-mono font-bold text-ink">{order.folio}</td>
               <td className="max-w-56 truncate px-2 py-2 font-semibold text-slate-800">{order.customer_name_snapshot || "Sin cliente"}</td>
               {products.map((product) => (
@@ -1475,9 +1491,15 @@ function CalendarProductMatrix({ trip, companyId }: { trip: TripRow; companyId?:
               <td className="px-2 py-2 text-right font-semibold text-ink">{money.format(order.importe || 0)}</td>
               <td className="px-2 py-2 text-right font-semibold text-emerald-800">{money.format(orderCollectAmount(order))}</td>
               <td className="px-2 py-2 text-slate-700">{order.payment_method || "-"}</td>
-              <td className="max-w-72 px-2 py-2 text-slate-700">{order.delivery_address || order.city || "Sin lugar"}</td>
+              <td className="max-w-72 px-2 py-2 text-slate-700">
+                {order.delivery_address || order.city || "Sin lugar"}
+                {issues.map((issue) => (
+                  <p key={issue.product_key} className="mt-1 text-[10px] font-bold text-red-800">Falta {number.format(issue.shortage)} {issue.unit || ""} {issue.product_name}</p>
+                ))}
+              </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -1630,11 +1652,12 @@ function buildInventoryAllocation(trips: TripRow[], inventoryStock: InventorySto
 }
 
 function requiresInventoryAllocation(order: OrderRow) {
-  if (order.inventory_allocation_required !== undefined && order.inventory_allocation_required !== null) {
-    return Boolean(order.inventory_allocation_required);
-  }
   if (remisionFolio(order)) return false;
-  return String(order.status || "").trim().toLowerCase() !== "remisionado";
+  if (order.remision_id) return false;
+  const status = String(order.status || "").trim().toLowerCase();
+  if (status === "remisionado") return false;
+  if (order.inventory_allocation_required === true) return true;
+  return true;
 }
 
 function compareTripsForAllocation(a: TripRow, b: TripRow) {
