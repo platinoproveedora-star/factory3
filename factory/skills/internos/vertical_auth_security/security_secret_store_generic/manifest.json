@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_auth_security/security_secret_store_generic",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Cifra un payload arbitrario (dict de strings) con DEK/AES-256-GCM + KEK maestra. Guarda en platform.secrets. Variante generica de security_secret_store (esa es especifica de e.firma cer/key/password con validacion DER). owner_user_id DEBE ser un uuid real de platform.users (hay FK) — para secretos scoped a company_id sin usuario especifico, usar un vault propio del modulo en su propio schema.",
+  "requires_env": ["PLATFORM_KEK_V1", "PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
+}

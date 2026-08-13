@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/party_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "CRUD de parties (clientes/proveedores fiscales) por company_id+rfc+party_type. action=create|update|list. dry_run=true por defecto.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

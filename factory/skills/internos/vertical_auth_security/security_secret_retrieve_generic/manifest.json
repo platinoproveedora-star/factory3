@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_auth_security/security_secret_retrieve_generic",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Descifra un payload arbitrario desde platform.secrets guardado por security_secret_store_generic. SOLO server-to-server, nunca exponer via HTTP publica.",
+  "requires_env": ["PLATFORM_KEK_V1", "PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -97,6 +97,7 @@ class Apps4AllDashScaffoldService:
                 "PLATFORM_JWT_SECRET",
                 "PLATFORM_SUPABASE_URL",
                 "PLATFORM_SUPABASE_SERVICE_ROLE_KEY",
+                "MODULE_CODE",
             ],
         }
         (target / "project.json").write_text(json.dumps(project, indent=2) + "\n", encoding="utf-8")
@@ -109,6 +110,10 @@ class Apps4AllDashScaffoldService:
                     "PLATFORM_SUPABASE_URL=",
                     "PLATFORM_SUPABASE_SERVICE_ROLE_KEY=",
                     "NEXT_PUBLIC_APPS4ALL_URL=",
+                    f"MODULE_CODE={module_code}",
+                    f"MODULE_COOKIE_NAME={module_code}_token",
+                    f"NEXT_PUBLIC_APP_TITLE={dashboard_name}",
+                    f"NEXT_PUBLIC_APP_DESCRIPTION=Modulo Apps4All {module_code}",
                     f"{module_code.upper()}_SCHEMA={schema}",
                     f"{module_code.upper()}_MODULE_CODE={module_code}",
                     f"{module_code.upper()}_PROJECT_CODE={project_code}",

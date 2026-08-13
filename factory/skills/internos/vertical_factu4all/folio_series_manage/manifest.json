@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/folio_series_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "CRUD de folio_series por company_id+series+cfdi_type+environment. action=create|update|list|next (reserva el siguiente numero de forma consecutiva). dry_run=true por defecto.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

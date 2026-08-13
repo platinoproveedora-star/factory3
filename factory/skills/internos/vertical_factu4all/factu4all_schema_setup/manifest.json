@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/factu4all_schema_setup",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Crea el schema factu4all (13 tablas) en Supabase via Management API. dry_run=true por defecto devuelve el SQL sin ejecutar.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_ACCESS_TOKEN"]
+}

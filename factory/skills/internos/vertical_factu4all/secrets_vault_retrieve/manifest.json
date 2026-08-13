@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/secrets_vault_retrieve",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Descifra un secreto de factu4all.secrets_vault (PAC credentials, CSD). SOLO uso interno server-to-server (pac_stamp). internal_only=true, bloqueado en /run/ HTTP.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "PLATFORM_KEK_V1"],
+  "internal_only": true
+}

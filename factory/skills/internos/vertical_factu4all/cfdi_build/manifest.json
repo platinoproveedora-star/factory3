@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/cfdi_build",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Arma el draft de un CFDI (direct_invoice o source_invoice) en cfdi_documents: resuelve issuer_profile/party, reserva folio via folio_series_manage (action=next), calcula subtotal/tax_total/total desde items y persiste cada item en cfdi_item_movements (con snapshot de clave/unidad SAT si el item viene ligado a products). No timbra (eso lo hace pac_stamp). dry_run=true no reserva folio ni escribe.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

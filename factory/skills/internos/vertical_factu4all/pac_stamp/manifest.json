@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/pac_stamp",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Timbra un CFDI (cfdi_documents) ante el PAC configurado (Facturama Multiemisor). Valida emisor/receptor/pago/items completos antes de timbrar. Sin credenciales PAC configuradas devuelve pac_not_configured — solo simula si context.allow_simulated=true explicito, guardando status=simulated (nunca stamped). XML se sube a Supabase Storage (bucket privado factu4all-documents) y se registra en document_files — nunca a disco local. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

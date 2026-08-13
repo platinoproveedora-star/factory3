@@ -145,6 +145,24 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_auth_security/security_secret_store_generic": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_secret_store_generic",
+    "vertical": "vertical_auth_security",
+    "descripcion": "Cifra un payload arbitrario (dict, ej. credenciales PAC user/password) con DEK/AES-256-GCM + KEK maestra. Guarda en platform.secrets. Variante generica de security_secret_store (esa es especifica de e.firma con validacion DER).",
+    "path": "skills/internos/vertical_auth_security/security_secret_store_generic",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_auth_security/security_secret_retrieve_generic": {
+    "tipo": "interno",
+    "nombre": "vertical_auth_security/security_secret_retrieve_generic",
+    "vertical": "vertical_auth_security",
+    "descripcion": "Descifra un payload arbitrario desde platform.secrets guardado por security_secret_store_generic. SOLO server-to-server.",
+    "path": "skills/internos/vertical_auth_security/security_secret_retrieve_generic",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_auth_security/security_secret_retrieve": {
     "tipo": "interno",
     "nombre": "vertical_auth_security/security_secret_retrieve",
@@ -5668,11 +5686,84 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_factu4all/issuer_profile_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/issuer_profile_manage",
+    "vertical": "vertical_factu4all",
+    "descripcion": "CRUD de issuer_profiles (datos fiscales del emisor) por company_id+rfc. action=create|update|list. dry_run=true por defecto.",
+    "path": "skills/internos/vertical_factu4all/issuer_profile_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/party_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/party_manage",
+    "vertical": "vertical_factu4all",
+    "descripcion": "CRUD de parties (clientes/proveedores fiscales) por company_id+rfc+party_type. action=create|update|list. dry_run=true por defecto.",
+    "path": "skills/internos/vertical_factu4all/party_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/product_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/product_manage",
+    "vertical": "vertical_factu4all",
+    "descripcion": "CRUD de products (catalogo fiscal, doble clave source_product_key + sat_product_key) por company_id+source_product_key. action=create|update|list. dry_run=true por defecto.",
+    "path": "skills/internos/vertical_factu4all/product_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/folio_series_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/folio_series_manage",
+    "vertical": "vertical_factu4all",
+    "descripcion": "CRUD de folio_series por company_id+series+cfdi_type+environment. action=create|update|list|next (reserva el siguiente numero). dry_run=true por defecto.",
+    "path": "skills/internos/vertical_factu4all/folio_series_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/cfdi_build": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/cfdi_build",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Arma el draft de un CFDI en cfdi_documents: resuelve issuer_profile/party, reserva folio, calcula totales y persiste cada item en cfdi_item_movements con snapshot SAT. No timbra. dry_run=true no reserva folio ni escribe.",
+    "path": "skills/internos/vertical_factu4all/cfdi_build",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/secrets_vault_manage": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/secrets_vault_manage",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Vault propio de Factu4All (factu4all.secrets_vault) para credenciales PAC y CSD por company_id. DEK/AES-256-GCM + KEK maestra (PLATFORM_KEK_V1). action=store|status. Descifrar es vertical_factu4all/secrets_vault_retrieve (internal_only, separado).",
+    "path": "skills/internos/vertical_factu4all/secrets_vault_manage",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/secrets_vault_retrieve": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/secrets_vault_retrieve",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Descifra un secreto de factu4all.secrets_vault. internal_only=true — bloqueado en /run/ HTTP por factory_api.py. Unico consumidor: pac_stamp via SkillRunner.",
+    "path": "skills/internos/vertical_factu4all/secrets_vault_retrieve",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/cfdi_document_list": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/cfdi_document_list",
+    "vertical": "vertical_factu4all",
+    "kind": "data",
+    "descripcion": "Lista cfdi_documents por company_id, filtrable por direction (issued|received) y status. kind=data para dashboard.",
+    "path": "skills/internos/vertical_factu4all/cfdi_document_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_factu4all/pac_stamp": {
     "tipo": "interno",
     "nombre": "vertical_factu4all/pac_stamp",
     "vertical": "vertical_factu4all",
-    "descripcion": "Timbra un CFDI (cfdi_documents) ante el PAC configurado (Facturama Multiemisor). Adapter propio de Factu4All, independiente de vertical_fleet4all_cartaporte. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
+    "descripcion": "Timbra un CFDI validando emisor/receptor/pago/items completos. Sin credenciales devuelve pac_not_configured; solo simula con allow_simulated=true, guardando status=simulated (nunca stamped). XML sube a bucket privado factu4all-documents + document_files, nunca a /tmp. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
     "path": "skills/internos/vertical_factu4all/pac_stamp",
     "entrypoint": "skill.py",
     "version": "0.1.0"

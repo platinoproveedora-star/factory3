@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/secrets_vault_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Vault propio de Factu4All (factu4all.secrets_vault) para credenciales PAC y CSD por company_id, sin depender de platform.secrets (esa tiene FK a un usuario especifico, no sirve para secretos a nivel empresa). Mismo cifrado DEK/AES-256-GCM + KEK maestra (PLATFORM_KEK_V1). action=store|retrieve|status. retrieve SOLO uso interno server-to-server.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "PLATFORM_KEK_V1"]
+}
