@@ -54,6 +54,7 @@ export default function SettingsForm() {
     rfc: "", legal_name: "", fiscal_regime: "", expedition_place: "",
     commercial_name: "", fiscal_email: "", fiscal_address: "", status: "ready",
   });
+  const [companySettingsForm, setCompanySettingsForm] = useState({ country: "MX", default_pac_provider: "facturama", default_environment: "sandbox" });
   const [pacForm, setPacForm] = useState({ user: "", password: "", url: "https://apisandbox.facturama.mx" });
   const [csdForm, setCsdForm] = useState({ rfc: "", cer_b64: "", key_b64: "", password: "" });
   const [csdFileNames, setCsdFileNames] = useState({ cer: "", key: "" });
@@ -61,20 +62,33 @@ export default function SettingsForm() {
 
   async function refresh() {
     setLoading(true);
-    const [issuerRes, seriesRes, pacRes] = await Promise.all([
+    const [issuerRes, seriesRes, pacRes, settingsRes] = await Promise.all([
       api<{ issuer_profiles: IssuerProfile[] }>("/api/factu4all/issuer"),
       api<{ folio_series: FolioSeries[] }>("/api/factu4all/series"),
       api<{ configured: boolean }>("/api/factu4all/secrets/pac?pac_provider=facturama"),
+      api<{ settings: any }>("/api/factu4all/company-settings"),
     ]);
     setIssuers(issuerRes.data?.issuer_profiles || []);
     setSeries(seriesRes.data?.folio_series || []);
     setPacConfigured(Boolean(pacRes.data?.configured));
+    if (settingsRes.data?.settings) {
+      const s = settingsRes.data.settings;
+      setCompanySettingsForm({ country: s.country || "MX", default_pac_provider: s.default_pac_provider || "facturama", default_environment: s.default_environment || "sandbox" });
+    }
     setLoading(false);
   }
 
   useEffect(() => {
     refresh();
   }, []);
+
+  async function submitCompanySettings(event: React.FormEvent) {
+    event.preventDefault();
+    setMessage("Guardando configuracion...");
+    const res = await api("/api/factu4all/company-settings", { method: "POST", body: JSON.stringify(companySettingsForm) });
+    setMessage(res.ok ? "Configuracion guardada." : `Error: ${res.error}`);
+    if (res.ok) refresh();
+  }
 
   async function submitIssuer(event: React.FormEvent) {
     event.preventDefault();
@@ -140,6 +154,30 @@ export default function SettingsForm() {
           <li>{pacConfigured ? "✅" : "⬜"} Credenciales PAC configuradas</li>
           <li>{hasDefaultSeries ? "✅" : "⬜"} Serie default activa</li>
         </ul>
+      </section>
+
+      <section className="card">
+        <h2 className="text-sm font-semibold uppercase text-slate-500">Configuración general</h2>
+        <form onSubmit={submitCompanySettings} className="mt-3 grid gap-3 sm:grid-cols-3">
+          <label className="block">
+            <span className="label">País</span>
+            <input className="input" value={companySettingsForm.country} onChange={(e) => setCompanySettingsForm({ ...companySettingsForm, country: e.target.value.toUpperCase() })} />
+          </label>
+          <label className="block">
+            <span className="label">PAC por defecto</span>
+            <input className="input" value={companySettingsForm.default_pac_provider} onChange={(e) => setCompanySettingsForm({ ...companySettingsForm, default_pac_provider: e.target.value })} />
+          </label>
+          <label className="block">
+            <span className="label">Ambiente por defecto</span>
+            <select className="input" value={companySettingsForm.default_environment} onChange={(e) => setCompanySettingsForm({ ...companySettingsForm, default_environment: e.target.value })}>
+              <option value="sandbox">Sandbox</option>
+              <option value="production">Producción</option>
+            </select>
+          </label>
+          <div className="sm:col-span-3">
+            <button className="btn-primary px-4 py-2" type="submit">Guardar configuración</button>
+          </div>
+        </form>
       </section>
 
       <section className="card">

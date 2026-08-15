@@ -295,6 +295,12 @@ class PacStampService:
             return {"ok": False, "error": "cfdi_document_not_found"}
         current = rows[0]
 
+        action = str(context.get("action") or "stamp").strip().lower()
+        if action == "cancel":
+            return self._cancel(db, context, company_id, folio, current)
+        if action == "status":
+            return self._check_status(context, company_id, current)
+
         if current.get("status") in ("stamped", "simulated"):
             return {"ok": True, "data": {"cfdi_document": current, "warnings": [f"already_{current.get('status')}: se devolvio el CFDI existente, no se re-timbro"]}}
 
@@ -386,7 +392,97 @@ class PacStampService:
         if not storage_path:
             warnings.append("No se pudo subir el XML al bucket — revisar supabase_storage_upload")
 
+        if not is_simulated and uuid_sat:
+            pdf_path = self._store_pdf(company_id, current, adapter, uuid_sat)
+            if pdf_path:
+                db.rest_update("cfdi_documents", values={"pdf_storage_path": pdf_path}, filters={"company_id": f"eq.{company_id}", "folio": f"eq.{folio}"})
+                db.rest_insert("document_files", {
+                    "folio": f"DOC-{company_id}-{uuid_sat}-pdf",
+                    "company_id": company_id,
+                    "cfdi_document_id": current["id"],
+                    "uuid": uuid_sat,
+                    "file_type": "pdf",
+                    "storage_bucket": _BUCKET,
+                    "storage_path": pdf_path,
+                    "content_type": "application/pdf",
+                })
+                persisted["pdf_storage_path"] = pdf_path
+            else:
+                warnings.append("No se pudo obtener/subir el PDF del PAC — el XML si quedo guardado")
+
         return {"ok": True, "data": {"cfdi_document": persisted, "warnings": warnings}}
+
+    def _store_pdf(self, company_id: str, current: dict, adapter: "PacAdapter", uuid_sat: str) -> str:
+        try:
+            res = adapter.download_pdf(uuid_sat)
+        except NotImplementedError:
+            return ""
+        if not res.get("ok"):
+            return ""
+        pdf_b64 = (res.get("data") or {}).get("pdf_b64") or ""
+        if not pdf_b64:
+            return ""
+        environment = current.get("environment") or "sandbox"
+        cfdi_type = current.get("cfdi_type") or "cfdi"
+        now = datetime.now(timezone.utc)
+        path = f"{company_id}/{environment}/{cfdi_type}/{now:%Y}/{now:%m}/{uuid_sat}.pdf"
+        upload = _runner().run(
+            "vertical_supabase/supabase_storage_upload",
+            {"bucket": _BUCKET, "path": path, "content_b64": pdf_b64, "content_type": "application/pdf"},
+        )
+        return path if upload.get("ok") else ""
+
+    def _cancel(self, db: SupabaseClient, context: dict, company_id: str, folio: str, current: dict) -> dict:
+        status = current.get("status")
+        if status not in ("stamped", "simulated"):
+            return {"ok": False, "error": "cfdi_not_stamped", "data": {"detail": f"status actual: {status}, solo se puede cancelar stamped|simulated"}}
+        if status == "cancelled":
+            return {"ok": True, "data": {"cfdi_document": current, "warnings": ["already_cancelled"]}}
+
+        motivo = str(context.get("motivo") or "02").strip()
+        uuid_sat = current.get("uuid") or ""
+
+        if status == "simulated":
+            cancel_result = {"ok": True}
+        else:
+            adapter_context = {**context}
+            adapter_context.setdefault("pac_provider", current.get("pac_provider"))
+            adapter = get_pac_adapter(adapter_context, company_id)
+            if adapter is None:
+                return {"ok": False, "error": "pac_not_configured"}
+            try:
+                cancel_result = adapter.cancel(uuid_sat, motivo)
+            except NotImplementedError as exc:
+                cancel_result = {"ok": False, "error": str(exc)}
+
+        if not cancel_result.get("ok"):
+            return {"ok": False, "error": "pac_cancel_error", "data": {"detail": cancel_result.get("error")}}
+
+        upd = db.rest_update(
+            "cfdi_documents",
+            values={"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat()},
+            filters={"company_id": f"eq.{company_id}", "folio": f"eq.{folio}"},
+        )
+        if not upd.get("ok"):
+            return {"ok": False, "error": "db_persistence_failed", "data": {"detail": upd.get("error")}}
+        return {"ok": True, "data": {"cfdi_document": (upd.get("data") or [current])[0]}}
+
+    def _check_status(self, context: dict, company_id: str, current: dict) -> dict:
+        uuid_sat = current.get("uuid") or ""
+        if not uuid_sat or current.get("status") in ("draft", "simulated"):
+            return {"ok": True, "data": {"status": current.get("status"), "pac_status": None}}
+        adapter_context = {**context}
+        adapter_context.setdefault("pac_provider", current.get("pac_provider"))
+        adapter = get_pac_adapter(adapter_context, company_id)
+        if adapter is None:
+            return {"ok": False, "error": "pac_not_configured"}
+        try:
+            res = adapter.get_cfdi(uuid_sat)
+        except NotImplementedError as exc:
+            return {"ok": False, "error": str(exc)}
+        if not res.get("ok"):
+            return {"ok": False, "error": "pac_error", "data": {"detail": res.get("error")}}
+        return {"ok": True, "data": {"status": current.get("status"), "pac_status": res.get("data")}}
 
     def _folio_number(self, cfdi_folio: str | None, series: str | None) -> str:
         cfdi_folio = cfdi_folio or ""

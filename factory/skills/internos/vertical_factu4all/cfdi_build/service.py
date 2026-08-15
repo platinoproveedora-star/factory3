@@ -39,8 +39,13 @@ class CfdiBuildService:
 
         totals = self._compute_totals(items, issuer_profile.get("iva_rate") if isinstance(issuer_profile, dict) else None)
 
+        company_settings = self._resolve_company_settings(company_id)
+
         cfdi_type = str(context.get("cfdi_type") or "ingreso").strip().lower()
-        environment = str(context.get("environment") or issuer_profile.get("environment") or "sandbox").strip().lower()
+        environment = str(
+            context.get("environment") or issuer_profile.get("environment") or company_settings.get("default_environment") or "sandbox"
+        ).strip().lower()
+        pac_provider = issuer_profile.get("pac_provider") or company_settings.get("default_pac_provider")
 
         folio_res = _runner().run(
             "vertical_factu4all/folio_series_manage",
@@ -74,7 +79,7 @@ class CfdiBuildService:
             "payment_method": context.get("payment_method"),
             "payment_form": context.get("payment_form"),
             "currency": context.get("currency") or "MXN",
-            "pac_provider": issuer_profile.get("pac_provider"),
+            "pac_provider": pac_provider,
             "environment": environment,
             "series": series,
             "cfdi_folio": cfdi_folio,
@@ -157,6 +162,12 @@ class CfdiBuildService:
         res = db.rest_select("products", filters=filters, select="*", limit=1)
         rows = res.get("data") or [] if res.get("ok") else []
         return rows[0] if rows else None
+
+    def _resolve_company_settings(self, company_id: str) -> dict:
+        res = _runner().run("vertical_factu4all/company_settings_manage", {"action": "get", "company_id": company_id})
+        if not res.get("ok"):
+            return {}
+        return (res.get("data") or {}).get("settings") or {}
 
     def _resolve_issuer(self, db: SupabaseClient, company_id: str, context: dict) -> dict:
         issuer_profile_id = str(context.get("issuer_profile_id") or "").strip()

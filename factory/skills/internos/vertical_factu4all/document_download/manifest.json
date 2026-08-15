@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/document_download",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Genera una URL firmada temporal (5 min) para descargar un XML/PDF de document_files (bucket privado factu4all-documents). Requiere company_id+folio (del cfdi_document)+file_type.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

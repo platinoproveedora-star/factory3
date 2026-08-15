@@ -7,6 +7,15 @@ export function companyContext(companyId: string): Ctx {
   return { company_id: companyId };
 }
 
+// ── Config de la empresa ─────────────────────────────────────────────────
+export async function getCompanySettings(companyId: string) {
+  return callSkill<SkillMap>("vertical_factu4all/company_settings_manage", { ...companyContext(companyId), action: "get" });
+}
+
+export async function saveCompanySettings(companyId: string, fields: Ctx) {
+  return callSkill<SkillMap>("vertical_factu4all/company_settings_manage", { ...companyContext(companyId), action: "save", ...fields, dry_run: false });
+}
+
 // ── Emisor fiscal ────────────────────────────────────────────────────────
 export async function listIssuerProfiles(companyId: string) {
   return callSkill<SkillMap>("vertical_factu4all/issuer_profile_manage", { ...companyContext(companyId), action: "list" });
@@ -95,4 +104,16 @@ export async function buildInvoice(companyId: string, fields: Ctx, dryRun = fals
 
 export async function stampInvoice(companyId: string, folio: string) {
   return callSkill<SkillMap>("vertical_factu4all/pac_stamp", { ...companyContext(companyId), folio, dry_run: false });
+}
+
+export async function cancelInvoice(companyId: string, folio: string, motivo = "02") {
+  return callSkill<SkillMap>("vertical_factu4all/pac_stamp", { ...companyContext(companyId), action: "cancel", folio, motivo });
+}
+
+export async function invoiceStatus(companyId: string, folio: string) {
+  return callSkill<SkillMap>("vertical_factu4all/pac_stamp", { ...companyContext(companyId), action: "status", folio });
+}
+
+export async function downloadInvoiceFile(companyId: string, folio: string, fileType: "xml" | "pdf") {
+  return callSkill<SkillMap>("vertical_factu4all/document_download", { ...companyContext(companyId), folio, file_type: fileType });
 }
