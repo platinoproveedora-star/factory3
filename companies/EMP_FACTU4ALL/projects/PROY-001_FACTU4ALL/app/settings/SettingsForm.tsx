@@ -31,6 +31,18 @@ async function api<T = any>(url: string, init?: RequestInit): Promise<{ ok: bool
   return res.json().catch(() => ({ ok: false, error: "parse error" }));
 }
 
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.split(",")[1] || "");
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function SettingsForm() {
   const [issuers, setIssuers] = useState<IssuerProfile[]>([]);
   const [series, setSeries] = useState<FolioSeries[]>([]);
@@ -44,6 +56,7 @@ export default function SettingsForm() {
   });
   const [pacForm, setPacForm] = useState({ user: "", password: "", url: "https://apisandbox.facturama.mx" });
   const [csdForm, setCsdForm] = useState({ rfc: "", cer_b64: "", key_b64: "", password: "" });
+  const [csdFileNames, setCsdFileNames] = useState({ cer: "", key: "" });
   const [seriesForm, setSeriesForm] = useState({ series: "F", cfdi_type: "ingreso", is_default: true });
 
   async function refresh() {
@@ -82,12 +95,27 @@ export default function SettingsForm() {
     }
   }
 
+  async function handleCsdFile(kind: "cer" | "key", file: File | null) {
+    if (!file) return;
+    const b64 = await readFileAsBase64(file);
+    setCsdForm((prev) => ({ ...prev, [`${kind}_b64`]: b64 }));
+    setCsdFileNames((prev) => ({ ...prev, [kind]: file.name }));
+  }
+
   async function submitCsd(event: React.FormEvent) {
     event.preventDefault();
+    if (!csdForm.cer_b64 || !csdForm.key_b64) {
+      setMessage("Sube el archivo .cer y el archivo .key.");
+      return;
+    }
     setMessage("Guardando CSD...");
     const res = await api("/api/factu4all/secrets/csd", { method: "POST", body: JSON.stringify(csdForm) });
     setMessage(res.ok ? "CSD guardado." : `Error: ${res.error}`);
-    if (res.ok) refresh();
+    if (res.ok) {
+      setCsdForm({ rfc: csdForm.rfc, cer_b64: "", key_b64: "", password: "" });
+      setCsdFileNames({ cer: "", key: "" });
+      refresh();
+    }
   }
 
   async function submitSeries(event: React.FormEvent) {
@@ -204,12 +232,24 @@ export default function SettingsForm() {
             <input className="input" required value={csdForm.rfc} onChange={(e) => setCsdForm({ ...csdForm, rfc: e.target.value.toUpperCase() })} />
           </label>
           <label className="block">
-            <span className="label">Certificado (.cer) en base64</span>
-            <textarea className="input" rows={3} required value={csdForm.cer_b64} onChange={(e) => setCsdForm({ ...csdForm, cer_b64: e.target.value })} />
+            <span className="label">Certificado (.cer)</span>
+            <input
+              className="input"
+              type="file"
+              accept=".cer"
+              onChange={(e) => handleCsdFile("cer", e.target.files?.[0] || null)}
+            />
+            {csdFileNames.cer && <p className="mt-1 text-xs text-slate-500">{csdFileNames.cer}</p>}
           </label>
           <label className="block">
-            <span className="label">Llave (.key) en base64</span>
-            <textarea className="input" rows={3} required value={csdForm.key_b64} onChange={(e) => setCsdForm({ ...csdForm, key_b64: e.target.value })} />
+            <span className="label">Llave (.key)</span>
+            <input
+              className="input"
+              type="file"
+              accept=".key"
+              onChange={(e) => handleCsdFile("key", e.target.files?.[0] || null)}
+            />
+            {csdFileNames.key && <p className="mt-1 text-xs text-slate-500">{csdFileNames.key}</p>}
           </label>
           <label className="block">
             <span className="label">Password de la llave</span>
