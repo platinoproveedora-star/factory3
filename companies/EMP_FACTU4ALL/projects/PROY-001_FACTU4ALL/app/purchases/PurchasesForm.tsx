@@ -54,8 +54,16 @@ export default function PurchasesForm() {
     setPreview(null);
     setImported(null);
     setMessage("");
-    const text = await readFileAsText(file);
-    setXml(text);
+    try {
+      const text = await readFileAsText(file);
+      if (!text.trim()) {
+        setMessage("El archivo se leyó vacío.");
+        return;
+      }
+      setXml(text);
+    } catch (error: any) {
+      setMessage(`No se pudo leer el archivo: ${error?.message || error}`);
+    }
   }
 
   async function handlePreview() {
@@ -98,12 +106,12 @@ export default function PurchasesForm() {
         <input className="input mt-3" type="file" accept=".xml" onChange={(e) => handleFile(e.target.files?.[0] || null)} />
         {fileName && <p className="mt-1 text-xs text-slate-500">{fileName}</p>}
 
-        {xml && (
+        {fileName && (
           <div className="mt-3 flex gap-2">
-            <button className="btn-ghost px-4 py-2" disabled={busy} onClick={handlePreview}>
+            <button className="btn-ghost px-4 py-2" disabled={busy || !xml} onClick={handlePreview}>
               Vista previa
             </button>
-            <button className="btn-primary px-4 py-2" disabled={busy} onClick={handleImport}>
+            <button className="btn-primary px-4 py-2" disabled={busy || !xml} onClick={handleImport}>
               Importar y sumar al kardex
             </button>
           </div>
