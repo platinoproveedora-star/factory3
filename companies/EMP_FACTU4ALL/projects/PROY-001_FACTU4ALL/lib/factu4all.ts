@@ -117,3 +117,8 @@ export async function invoiceStatus(companyId: string, folio: string) {
 export async function downloadInvoiceFile(companyId: string, folio: string, fileType: "xml" | "pdf") {
   return callSkill<SkillMap>("vertical_factu4all/document_download", { ...companyContext(companyId), folio, file_type: fileType });
 }
+
+// ── Kardex fiscal ────────────────────────────────────────────────────────
+export async function listItemMovements(companyId: string, movementDirection?: string) {
+  return callSkill<SkillMap>("vertical_factu4all/cfdi_item_movement_list", { ...companyContext(companyId), movement_direction: movementDirection });
+}

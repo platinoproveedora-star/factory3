@@ -5,6 +5,9 @@ export default function Nav({ active }: { active: string }) {
     { href: "/dashboard", label: "Inicio", key: "dashboard" },
     { href: "/invoices/new", label: "Nueva factura", key: "new" },
     { href: "/invoices", label: "Facturas emitidas", key: "invoices" },
+    { href: "/parties", label: "Clientes/Proveedores", key: "parties" },
+    { href: "/products", label: "Productos fiscales", key: "products" },
+    { href: "/kardex", label: "Kardex fiscal", key: "kardex" },
     { href: "/settings", label: "Configuración", key: "settings" },
   ];
   return (

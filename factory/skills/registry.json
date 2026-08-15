@@ -5767,6 +5767,16 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_factu4all/cfdi_item_movement_list": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/cfdi_item_movement_list",
+    "vertical": "vertical_factu4all",
+    "kind": "data",
+    "descripcion": "Lista cfdi_item_movements (kardex fiscal) por company_id, filtrable por movement_direction y product_id. kind=data para dashboard.",
+    "path": "skills/internos/vertical_factu4all/cfdi_item_movement_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_factu4all/cfdi_document_list": {
     "tipo": "interno",
     "nombre": "vertical_factu4all/cfdi_document_list",
