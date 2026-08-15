@@ -5767,6 +5767,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_factu4all/purchase_invoice_ingest": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/purchase_invoice_ingest",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Ingesta CFDI de compra (factura recibida): parsea XML, crea/matchea proveedor y productos (via supplier_product_mappings, crea nuevo con clave SAT si no hay match), guarda cfdi_documents (direction=received) + XML en bucket, suma entrada en cfdi_item_movements + product_stock (environment=production). Bloquea UUID duplicado. dry_run=true solo previsualiza.",
+    "path": "skills/internos/vertical_factu4all/purchase_invoice_ingest",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_factu4all/cfdi_item_movement_list": {
     "tipo": "interno",
     "nombre": "vertical_factu4all/cfdi_item_movement_list",

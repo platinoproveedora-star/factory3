@@ -53,12 +53,19 @@ class SatCfdiParserService:
 
         conceptos = []
         for c in root.findall(f".//{{{ns}}}Concepto"):
+            concepto_traslado = c.find(f".//{{{ns}}}Traslado")
             conceptos.append({
                 "descripcion":    c.get("Descripcion", ""),
                 "cantidad":       c.get("Cantidad", ""),
                 "valor_unitario": c.get("ValorUnitario", ""),
                 "importe":        c.get("Importe", ""),
+                "descuento":      c.get("Descuento", "0"),
                 "clave_prod_serv": c.get("ClaveProdServ", ""),
+                "clave_unidad":   c.get("ClaveUnidad", ""),
+                "unidad":         c.get("Unidad", ""),
+                "no_identificacion": c.get("NoIdentificacion", ""),
+                "objeto_imp":     c.get("ObjetoImp", ""),
+                "iva_concepto":   concepto_traslado.get("Importe", "0") if concepto_traslado is not None else "0",
             })
 
         impuestos = {
