@@ -214,6 +214,19 @@ CREATE TABLE IF NOT EXISTS {schema}.cfdi_item_movements (
   metadata                    jsonb DEFAULT '{}'
 );
 
+ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS environment text;
+ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS balance_after numeric(14,4);
+
+CREATE TABLE IF NOT EXISTS {schema}.product_stock (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id     text NOT NULL,
+  product_id     uuid NOT NULL REFERENCES {schema}.products(id) ON DELETE CASCADE,
+  environment    text NOT NULL DEFAULT 'sandbox',
+  current_stock  numeric(14,4) NOT NULL DEFAULT 0,
+  updated_at     timestamptz DEFAULT now(),
+  UNIQUE (company_id, product_id, environment)
+);
+
 CREATE TABLE IF NOT EXISTS {schema}.document_files (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   folio             text UNIQUE NOT NULL,
@@ -320,6 +333,7 @@ CREATE INDEX IF NOT EXISTS idx_factu4all_cfdi_item_movements_doc ON {schema}.cfd
 CREATE INDEX IF NOT EXISTS idx_factu4all_cfdi_item_movements_product ON {schema}.cfdi_item_movements(company_id, product_id);
 CREATE INDEX IF NOT EXISTS idx_factu4all_document_files_doc ON {schema}.document_files(cfdi_document_id);
 CREATE INDEX IF NOT EXISTS idx_factu4all_supplier_mappings_company ON {schema}.supplier_product_mappings(company_id, status);
+CREATE INDEX IF NOT EXISTS idx_factu4all_product_stock_lookup ON {schema}.product_stock(company_id, product_id, environment);
 
 GRANT USAGE ON SCHEMA {schema} TO anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA {schema} TO anon, authenticated, service_role;
@@ -347,6 +361,7 @@ _TABLES = [
     "party_source_links",
     "supplier_product_mappings",
     "secrets_vault",
+    "product_stock",
 ]
 
 

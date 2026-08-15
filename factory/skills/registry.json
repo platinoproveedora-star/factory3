@@ -5708,7 +5708,7 @@
     "tipo": "interno",
     "nombre": "vertical_factu4all/product_manage",
     "vertical": "vertical_factu4all",
-    "descripcion": "CRUD de products (catalogo fiscal, doble clave source_product_key + sat_product_key) por company_id+source_product_key. action=create|update|list. dry_run=true por defecto.",
+    "descripcion": "CRUD de products (catalogo fiscal, doble clave source_product_key + sat_product_key) por company_id+source_product_key. action=create|update|list. list incluye stock por ambiente desde product_stock. dry_run=true por defecto.",
     "path": "skills/internos/vertical_factu4all/product_manage",
     "entrypoint": "skill.py",
     "version": "0.1.0"
@@ -5791,7 +5791,7 @@
     "tipo": "interno",
     "nombre": "vertical_factu4all/pac_stamp",
     "vertical": "vertical_factu4all",
-    "descripcion": "action=stamp: timbra validando emisor/receptor/pago/items; sin credenciales pac_not_configured, simula solo con allow_simulated=true. XML/PDF suben a bucket privado factu4all-documents + document_files. action=cancel: cancela CFDI. action=status: consulta estado en el PAC. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
+    "descripcion": "action=stamp: timbra validando emisor/receptor/pago/items y resta stock en product_stock (inventario propio por company_id+product_id+environment, sandbox y production separados); sin credenciales pac_not_configured, simula solo con allow_simulated=true. XML/PDF suben a bucket privado factu4all-documents + document_files. action=cancel: cancela CFDI y revierte stock. action=status: consulta estado en el PAC. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
     "path": "skills/internos/vertical_factu4all/pac_stamp",
     "entrypoint": "skill.py",
     "version": "0.1.0"

@@ -4,6 +4,6 @@
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
-  "description": "action=stamp (default): timbra un CFDI validando emisor/receptor/pago/items. Sin credenciales devuelve pac_not_configured; solo simula con allow_simulated=true (status=simulated). XML y PDF (si el PAC es real) se suben a bucket privado factu4all-documents + document_files. action=cancel: cancela un CFDI stamped/simulated (motivo SAT). action=status: consulta get_cfdi en el PAC. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
+  "description": "action=stamp (default): timbra un CFDI validando emisor/receptor/pago/items. Al quedar stamped/simulated resta existencia en product_stock (inventario propio de Factu4All por company_id+product_id+environment, separado de cualquier ERP; sandbox y production llevan contador separado). Sin credenciales devuelve pac_not_configured; solo simula con allow_simulated=true. XML y PDF (si el PAC es real) se suben a bucket privado factu4all-documents + document_files. action=cancel: cancela un CFDI stamped/simulated (motivo SAT) y revierte el stock con un movimiento out_cancelled nuevo. action=status: consulta get_cfdi en el PAC. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
   "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
 }

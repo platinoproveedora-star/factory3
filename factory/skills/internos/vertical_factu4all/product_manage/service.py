@@ -64,4 +64,14 @@ class ProductManageService:
         res = db.rest_select("products", filters={"company_id": f"eq.{company_id}"}, select="*", order="created_at.desc")
         if not res.get("ok"):
             return {"ok": False, "error": "db_query_failed", "data": {"detail": res.get("error")}}
-        return {"ok": True, "data": {"products": res.get("data") or []}}
+        products = res.get("data") or []
+
+        stock_res = db.rest_select("product_stock", filters={"company_id": f"eq.{company_id}"}, select="product_id,environment,current_stock")
+        stock_by_product: dict[str, dict] = {}
+        if stock_res.get("ok"):
+            for row in stock_res.get("data") or []:
+                stock_by_product.setdefault(row["product_id"], {})[row["environment"]] = row["current_stock"]
+        for product in products:
+            product["stock"] = stock_by_product.get(product["id"], {})
+
+        return {"ok": True, "data": {"products": products}}

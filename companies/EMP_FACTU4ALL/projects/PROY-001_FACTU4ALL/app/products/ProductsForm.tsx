@@ -11,6 +11,7 @@ type Product = {
   tax_object?: string;
   iva_rate: number;
   status: string;
+  stock?: { sandbox?: number; production?: number };
 };
 
 async function api<T = any>(url: string, init?: RequestInit): Promise<{ ok: boolean; data?: T; error?: string }> {
@@ -100,7 +101,7 @@ export default function ProductsForm() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase text-slate-500">
-                  <th className="py-1">Clave origen</th><th>Nombre fiscal</th><th>Clave SAT</th><th>Unidad SAT</th><th>Estado</th><th></th>
+                  <th className="py-1">Clave origen</th><th>Nombre fiscal</th><th>Clave SAT</th><th>Unidad SAT</th><th>Estado</th><th>Stock sandbox</th><th>Stock producción</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -111,6 +112,8 @@ export default function ProductsForm() {
                     <td>{row.sat_product_key || "—"}</td>
                     <td>{row.sat_unit_key || "—"}</td>
                     <td>{row.status}</td>
+                    <td className={Number(row.stock?.sandbox || 0) < 0 ? "text-amber-600" : ""}>{row.stock?.sandbox ?? 0}</td>
+                    <td className={Number(row.stock?.production || 0) < 0 ? "text-amber-600" : ""}>{row.stock?.production ?? 0}</td>
                     <td>
                       {row.status !== "ready" && (
                         <button className="btn-ghost px-3 py-1 text-xs" disabled={busyKey === row.source_product_key} onClick={() => markReady(row.source_product_key)}>
