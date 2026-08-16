@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/expense_vault_report",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Boveda de facturas de egreso (recibidas): lista todos los cfdi_documents direction=received de la empresa con todos sus datos, agrupados por classification_group (mercancia, gasto_general, activo_fijo, servicio, etc.) y por periodo (year/month), con subtotales de IVA/retenciones/total por grupo — pensado para armar la declaracion mensual y anual. Filtros opcionales: year, month, classification_group. kind=data para dashboard.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

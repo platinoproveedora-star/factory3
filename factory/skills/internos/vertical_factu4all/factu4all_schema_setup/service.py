@@ -124,6 +124,9 @@ CREATE TABLE IF NOT EXISTS {schema}.products (
   metadata            jsonb DEFAULT '{}'
 );
 
+ALTER TABLE {schema}.products ADD COLUMN IF NOT EXISTS classification_group text DEFAULT 'pending_review';
+ALTER TABLE {schema}.products ADD COLUMN IF NOT EXISTS classification_source text DEFAULT 'pending_review';
+
 CREATE TABLE IF NOT EXISTS {schema}.cfdi_documents (
   id                        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   folio                     text UNIQUE NOT NULL,
@@ -174,6 +177,33 @@ ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS issuer_profile_id u
 ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS issuer_rfc_snapshot text;
 ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS issuer_legal_name_snapshot text;
 
+-- Clasificacion oficial SAT (c_UsoCFDI) — a nivel documento completo.
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS uso_cfdi text;
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS classification_group text;
+
+-- Moneda extranjera: tipo de cambio del XML (1 si es MXN) y total en moneda original.
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS exchange_rate numeric(14,6) DEFAULT 1;
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS total_original_currency numeric(14,2);
+
+-- Retenciones (nodo Retencion del comprobante, ya se parseaban y se descartaban).
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS retencion_iva numeric(14,2) DEFAULT 0;
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS retencion_isr numeric(14,2) DEFAULT 0;
+
+-- PPD / Complemento de Pago (REP): el IVA de una factura PPD solo es
+-- acreditable cuando existe su REP. 'n_a' = no aplica (PUE), 'pending_rep' =
+-- PPD sin REP todavia, 'paid_confirmed' = REP recibido y vinculado.
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS payment_status text DEFAULT 'n_a';
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS rep_received_at timestamptz;
+
+-- Ciclo de vida de cancelacion — propia (lo que timbramos) y de terceros
+-- (facturas recibidas que un proveedor cancela despues de importadas).
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS sat_status text DEFAULT 'vigente';
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS sat_status_checked_at timestamptz;
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS cancellation_response text;
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS cancellation_deadline_at timestamptz;
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS related_cfdi_uuid text;
+ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS related_cfdi_relation_type text;
+
 DROP INDEX IF EXISTS {schema}.uq_factu4all_no_double_stamp;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_factu4all_no_double_stamp
   ON {schema}.cfdi_documents (company_id, source_system, source_type, source_id)
@@ -220,6 +250,7 @@ ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS lot_cost_snaps
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS weighted_avg_cost_before numeric(14,4);
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS weighted_avg_cost_after numeric(14,4);
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS last_purchase_cost_snapshot numeric(14,4);
+ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS classification_group_snapshot text;
 
 CREATE TABLE IF NOT EXISTS {schema}.warehouses (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -373,6 +404,20 @@ CREATE TABLE IF NOT EXISTS {schema}.supplier_product_mappings (
   metadata                    jsonb DEFAULT '{}'
 );
 
+-- Complemento de pago (REP): un REP puede pagar varias facturas (parcialidades
+-- cruzadas) y una factura PPD puede cobrarse en varios REP — tabla de enlace
+-- N:N. El REP mismo se guarda como una fila normal en cfdi_documents
+-- (cfdi_type='pago'), asi la boveda lo incluye igual que cualquier documento.
+CREATE TABLE IF NOT EXISTS {schema}.payment_complement_links (
+  id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id           text NOT NULL,
+  payment_document_id  uuid NOT NULL REFERENCES {schema}.cfdi_documents(id) ON DELETE CASCADE,
+  related_document_id  uuid NOT NULL REFERENCES {schema}.cfdi_documents(id) ON DELETE CASCADE,
+  imp_pagado           numeric(14,2) DEFAULT 0,
+  created_at           timestamptz DEFAULT now(),
+  UNIQUE (payment_document_id, related_document_id)
+);
+
 CREATE TABLE IF NOT EXISTS {schema}.secrets_vault (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id     text NOT NULL,
@@ -406,6 +451,10 @@ CREATE INDEX IF NOT EXISTS idx_factu4all_inventory_period_lookup ON {schema}.inv
 CREATE INDEX IF NOT EXISTS idx_factu4all_cost_lots_lookup ON {schema}.inventory_cost_lots(company_id, product_id, warehouse_id, environment, issued_at);
 CREATE INDEX IF NOT EXISTS idx_factu4all_lot_consumption_lot ON {schema}.inventory_lot_consumption(lot_id);
 CREATE INDEX IF NOT EXISTS idx_factu4all_lot_consumption_movement ON {schema}.inventory_lot_consumption(movement_id);
+CREATE INDEX IF NOT EXISTS idx_factu4all_cfdi_documents_classification ON {schema}.cfdi_documents(company_id, direction, classification_group);
+CREATE INDEX IF NOT EXISTS idx_factu4all_cfdi_documents_payment_status ON {schema}.cfdi_documents(company_id, payment_status);
+CREATE INDEX IF NOT EXISTS idx_factu4all_payment_links_payment ON {schema}.payment_complement_links(payment_document_id);
+CREATE INDEX IF NOT EXISTS idx_factu4all_payment_links_related ON {schema}.payment_complement_links(related_document_id);
 
 GRANT USAGE ON SCHEMA {schema} TO anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA {schema} TO anon, authenticated, service_role;
@@ -438,6 +487,7 @@ _TABLES = [
     "inventory_period_balance",
     "inventory_cost_lots",
     "inventory_lot_consumption",
+    "payment_complement_links",
 ]
 
 

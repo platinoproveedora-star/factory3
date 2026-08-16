@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 type IssuerProfile = { id: string; rfc: string; legal_name: string; status: string };
-type Party = { id: string; rfc: string; legal_name: string; party_type: string };
+type Party = { id: string; rfc: string; legal_name: string; party_type: string; cfdi_use_default?: string };
 type FolioSeries = { id: string; series: string; cfdi_type: string; is_default: boolean };
 type Product = { id: string; source_product_key: string; fiscal_product_name: string; sat_product_key: string; sat_unit_key: string; status: string };
 type Item = { source_product_key: string; description: string; quantity: number; unit_price: number; iva_rate: number };
@@ -19,6 +19,24 @@ const PAYMENT_FORMS = [
   { code: "04", label: "04 - Tarjeta de crédito" },
   { code: "28", label: "28 - Tarjeta de débito" },
   { code: "99", label: "99 - Por definir" },
+];
+
+// Catalogo oficial c_UsoCFDI (SAT) — solo las claves relevantes para
+// facturas B2B que emite la empresa (se omiten D01-D10, deducciones
+// personales de individuos).
+const USO_CFDI_CATALOG = [
+  { code: "G01", label: "G01 - Adquisición de mercancías" },
+  { code: "G02", label: "G02 - Devoluciones, descuentos o bonificaciones" },
+  { code: "G03", label: "G03 - Gastos en general" },
+  { code: "I01", label: "I01 - Construcciones" },
+  { code: "I02", label: "I02 - Mobiliario y equipo de oficina por inversiones" },
+  { code: "I03", label: "I03 - Equipo de transporte" },
+  { code: "I04", label: "I04 - Equipo de cómputo y accesorios" },
+  { code: "I05", label: "I05 - Dados, troqueles, moldes, matrices y otros activos" },
+  { code: "I06", label: "I06 - Comunicaciones telefónicas" },
+  { code: "I07", label: "I07 - Comunicaciones satelitales" },
+  { code: "I08", label: "I08 - Otra maquinaria y equipo" },
+  { code: "S01", label: "S01 - Sin efectos fiscales" },
 ];
 
 const emptyItem = (): Item => ({ source_product_key: "", description: "", quantity: 1, unit_price: 0, iva_rate: 0.16 });
@@ -41,6 +59,8 @@ export default function NewInvoiceForm() {
   const [newPartyRegime, setNewPartyRegime] = useState("");
   const [newPartyZip, setNewPartyZip] = useState("");
   const [newPartyCfdiUse, setNewPartyCfdiUse] = useState("G03");
+  const [usoCfdi, setUsoCfdi] = useState("");
+  const [usoCfdiTouched, setUsoCfdiTouched] = useState(false);
 
   const [items, setItems] = useState<Item[]>([emptyItem()]);
   const [preview, setPreview] = useState<any>(null);
@@ -67,6 +87,16 @@ export default function NewInvoiceForm() {
       setProducts((productRes.data?.products || []).filter((p) => p.status === "ready"));
     })();
   }, []);
+
+  useEffect(() => {
+    if (usoCfdiTouched) return;
+    if (newParty) {
+      setUsoCfdi(newPartyCfdiUse);
+      return;
+    }
+    const party = parties.find((p) => p.rfc === existingPartyRfc);
+    if (party?.cfdi_use_default) setUsoCfdi(party.cfdi_use_default);
+  }, [existingPartyRfc, newParty, newPartyCfdiUse, parties, usoCfdiTouched]);
 
   function updateItem(index: number, patch: Partial<Item>) {
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)));
@@ -114,6 +144,7 @@ export default function NewInvoiceForm() {
       series: seriesCode,
       payment_method: paymentMethod,
       payment_form: paymentForm,
+      uso_cfdi: usoCfdi,
       items: items.map((item) => ({
         source_product_key: item.source_product_key || undefined,
         description: item.description,
@@ -259,11 +290,31 @@ export default function NewInvoiceForm() {
               <input className="input" value={newPartyZip} onChange={(e) => setNewPartyZip(e.target.value)} />
             </label>
             <label className="block">
-              <span className="label">Uso CFDI</span>
+              <span className="label">Uso CFDI por default (queda guardado en el cliente)</span>
               <input className="input" value={newPartyCfdiUse} onChange={(e) => setNewPartyCfdiUse(e.target.value.toUpperCase())} />
             </label>
           </div>
         )}
+
+        <label className="mt-3 block">
+          <span className="label">Uso CFDI de esta factura</span>
+          <select
+            className="input"
+            value={usoCfdi}
+            onChange={(e) => {
+              setUsoCfdi(e.target.value);
+              setUsoCfdiTouched(true);
+            }}
+          >
+            <option value="">Selecciona un uso CFDI</option>
+            {USO_CFDI_CATALOG.map((row) => (
+              <option key={row.code} value={row.code}>
+                {row.label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">Obligatorio para timbrar — precargado con el default del cliente, editable por factura.</p>
+        </label>
       </section>
 
       <section className="card">

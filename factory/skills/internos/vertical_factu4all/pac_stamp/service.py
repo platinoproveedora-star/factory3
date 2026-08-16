@@ -25,7 +25,7 @@ class PacAdapter:
     def stamp(self, cfdi_draft: dict) -> dict:
         raise NotImplementedError
 
-    def cancel(self, uuid_sat: str, motivo: str) -> dict:
+    def cancel(self, uuid_sat: str, motivo: str, related_cfdi_uuid: str | None = None) -> dict:
         raise NotImplementedError
 
     def get_cfdi(self, uuid_sat: str) -> dict:
@@ -57,7 +57,7 @@ class NullPacAdapter(PacAdapter):
         )
         return {"ok": True, "uuid_sat": fake_uuid, "xml": xml}
 
-    def cancel(self, uuid_sat: str, motivo: str) -> dict:
+    def cancel(self, uuid_sat: str, motivo: str, related_cfdi_uuid: str | None = None) -> dict:
         return {"ok": True}
 
     def get_cfdi(self, uuid_sat: str) -> dict:
@@ -147,7 +147,7 @@ class FacturamaPacAdapter(PacAdapter):
                 "Total": round(subtotal + tax_amount, 2),
             })
 
-        return {
+        payload = {
             "Serie": cfdi_draft.get("series"),
             "Folio": str(cfdi_draft.get("cfdi_number") or ""),
             "Currency": cfdi_draft.get("currency") or "MXN",
@@ -164,12 +164,22 @@ class FacturamaPacAdapter(PacAdapter):
             "Receiver": {
                 "Rfc": party.get("rfc"),
                 "Name": party.get("legal_name"),
-                "CfdiUse": party.get("cfdi_use_default"),
+                "CfdiUse": cfdi_draft.get("uso_cfdi") or party.get("cfdi_use_default"),
                 "FiscalRegime": party.get("tax_regime"),
                 "TaxZipCode": party.get("tax_zip_code"),
             },
             "Items": line_items,
         }
+        related_cfdi_uuid = cfdi_draft.get("related_cfdi_uuid")
+        if related_cfdi_uuid:
+            # NO probado contra sandbox real: nombre/forma exacta de este nodo
+            # documentado por Facturama como "CfdiRelationships" — validar en
+            # cuanto haya credenciales reales.
+            payload["CfdiRelationships"] = [{
+                "Type": cfdi_draft.get("related_cfdi_relation_type") or "04",
+                "CfdiRelated": [{"Uuid": related_cfdi_uuid}],
+            }]
+        return payload
 
     def stamp(self, cfdi_draft: dict) -> dict:
         payload = self._build_payload(cfdi_draft)
@@ -187,8 +197,14 @@ class FacturamaPacAdapter(PacAdapter):
         xml = body.get("Xml") or body.get("xml") or ""
         return {"ok": True, "uuid_sat": uuid_sat, "xml": xml, "raw": body}
 
-    def cancel(self, uuid_sat: str, motivo: str) -> dict:
-        res = self._request("DELETE", f"/api-lite/cfdis/{uuid_sat}?motive={motivo}")
+    def cancel(self, uuid_sat: str, motivo: str, related_cfdi_uuid: str | None = None) -> dict:
+        # NO probado contra sandbox real: nombre de query param para el folio
+        # sustituto (motivo 01) documentado por Facturama como "uuidReplacement" —
+        # validar en cuanto haya credenciales reales.
+        path = f"/api-lite/cfdis/{uuid_sat}?motive={motivo}"
+        if motivo == "01" and related_cfdi_uuid:
+            path += f"&uuidReplacement={related_cfdi_uuid}"
+        res = self._request("DELETE", path)
         if not res.get("ok"):
             return {"ok": False, "error": res.get("error")}
         return {"ok": True}
@@ -444,6 +460,23 @@ class PacStampService:
         motivo = str(context.get("motivo") or "02").strip()
         uuid_sat = current.get("uuid") or ""
 
+        # Motivo 01 (comprobante emitido con errores CON relacion) exige que
+        # el CFDI sustituto ya exista, timbrado, y traiga CfdiRelacionados
+        # tipo 04 apuntando a este UUID — si no, el receptor pierde el
+        # comprobante fiscal sin sustituto valido (regla RMF vigente).
+        related_cfdi_uuid = str(context.get("related_cfdi_uuid") or "").strip()
+        if motivo == "01":
+            if not related_cfdi_uuid:
+                return {"ok": False, "error": "motivo_01_requiere_related_cfdi_uuid", "data": {"detail": "cancelar con motivo 01 exige el UUID del CFDI sustituto ya timbrado (related_cfdi_uuid)"}}
+            sub_res = db.rest_select(
+                "cfdi_documents",
+                filters={"company_id": f"eq.{company_id}", "uuid": f"eq.{related_cfdi_uuid}", "related_cfdi_uuid": f"eq.{uuid_sat}"},
+                select="id,status", limit=1,
+            )
+            substitute = (sub_res.get("data") or [None])[0] if sub_res.get("ok") else None
+            if not substitute or substitute.get("status") not in ("stamped", "simulated"):
+                return {"ok": False, "error": "sustituto_no_encontrado", "data": {"detail": "no se encontro un CFDI timbrado que declare related_cfdi_uuid=este folio y relation_type=04 — timbra primero el sustituto"}}
+
         if status == "simulated":
             cancel_result = {"ok": True}
         else:
@@ -453,7 +486,7 @@ class PacStampService:
             if adapter is None:
                 return {"ok": False, "error": "pac_not_configured"}
             try:
-                cancel_result = adapter.cancel(uuid_sat, motivo)
+                cancel_result = adapter.cancel(uuid_sat, motivo, related_cfdi_uuid or None)
             except NotImplementedError as exc:
                 cancel_result = {"ok": False, "error": str(exc)}
 
@@ -462,7 +495,12 @@ class PacStampService:
 
         upd = db.rest_update(
             "cfdi_documents",
-            values={"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat()},
+            values={
+                "status": "cancelled",
+                "cancelled_at": datetime.now(timezone.utc).isoformat(),
+                "related_cfdi_uuid": related_cfdi_uuid or current.get("related_cfdi_uuid"),
+                "related_cfdi_relation_type": "04" if related_cfdi_uuid else current.get("related_cfdi_relation_type"),
+            },
             filters={"company_id": f"eq.{company_id}", "folio": f"eq.{folio}"},
         )
         if not upd.get("ok"):
@@ -512,16 +550,20 @@ class PacStampService:
             quantity = float(movement.get("quantity") or 0)
             if not product_id or quantity <= 0:
                 continue
+            # Solo mercancia mueve inventario/costeo — un servicio o venta de
+            # activo fijo se queda registrado en el kardex fiscal pero no en
+            # almacen. Igual se fecha (issued_at) para que la boveda lo liste
+            # correctamente aunque no toque stock.
+            is_merchandise = movement.get("classification_group_snapshot") == "mercancia"
 
             if not reverse:
                 stamp_issued_at = issued_at or datetime.now(timezone.utc).isoformat()
-                db.rest_update(
-                    "cfdi_item_movements",
-                    values={"environment": environment, "warehouse_id": warehouse_id, "issued_at": stamp_issued_at},
-                    filters={"id": f"eq.{movement['id']}"},
-                )
+                values = {"environment": environment, "issued_at": stamp_issued_at}
+                if is_merchandise:
+                    values["warehouse_id"] = warehouse_id
+                db.rest_update("cfdi_item_movements", values=values, filters={"id": f"eq.{movement['id']}"})
                 recalc_from = stamp_issued_at
-            else:
+            elif is_merchandise:
                 now_iso = datetime.now(timezone.utc).isoformat()
                 db.rest_insert("cfdi_item_movements", {
                     **{k: v for k, v in movement.items() if k not in ("id", "created_at", "folio", "balance_after")},
@@ -534,7 +576,11 @@ class PacStampService:
                     "cancels_movement_id": movement["id"],
                 })
                 recalc_from = now_iso
+            else:
+                continue
 
+            if not is_merchandise:
+                continue
             self._trigger_recalculate(company_id, product_id, warehouse_id, environment, recalc_from)
             _runner().run("vertical_factu4all/inventory_cost_recalculate", {
                 "company_id": company_id, "product_id": product_id, "warehouse_id": warehouse_id,

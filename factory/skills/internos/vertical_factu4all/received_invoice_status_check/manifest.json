@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/received_invoice_status_check",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Ciclo de vida de cancelacion de facturas RECIBIDAS (egresos que un proveedor cancela despues de importadas). action=check: consulta el servicio publico de verificacion de CFDI del SAT (sin credenciales, RFC emisor/receptor/total/UUID) para uno o todos los documentos vigentes de la empresa; si detecta Cancelado marca sat_status=cancelacion_pendiente y abre una ventana de 72 horas (cancellation_deadline_at) para aceptar/rechazar. action=accept/reject: registra la respuesta del receptor. NO implementa el buzon tributario oficial (requiere e.firma) — es un registro de control interno, no sustituye la aceptacion formal ante el SAT.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/concept_classify",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Decide el classification_group (mercancia, gasto_general, activo_fijo, servicio, etc.) de un concepto/documento fiscal. Prioridad: 1) clasificacion manual ya guardada en el producto (classification_source='manual', siempre gana), 2) vertical_sat/sat_prodserv_classify (UsoCFDI para egresos, segmento de ClaveProdServ para ingresos). Solo classification_group='mercancia' debe mover inventario.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

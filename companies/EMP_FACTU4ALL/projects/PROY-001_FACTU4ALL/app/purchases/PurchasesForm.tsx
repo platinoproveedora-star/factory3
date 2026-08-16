@@ -12,16 +12,6 @@ type BatchResult = {
   failed: number;
   failed_items: { index: number; error: string; detail?: string }[];
 };
-type PurchaseInvoice = {
-  id: string;
-  folio: string;
-  cfdi_folio: string;
-  party_rfc_snapshot: string;
-  party_legal_name_snapshot: string;
-  total: number;
-  uuid: string;
-  created_at: string;
-};
 type PendingOrder = {
   id: string;
   folio: string;
@@ -33,6 +23,28 @@ type PendingOrder = {
   metadata?: { expected_date?: string; items?: { source_product_key?: string; description?: string; quantity?: number; estimated_unit_price?: number }[] };
 };
 type PoItemRow = { source_product_key: string; quantity: number; estimated_unit_price: number };
+type VaultGroup = { classification_group: string; count: number; subtotal: number; tax_total: number; retencion_iva: number; retencion_isr: number; total: number };
+type VaultDoc = {
+  id: string; folio: string; uuid: string; party_rfc_snapshot: string; party_legal_name_snapshot: string;
+  classification_group: string; uso_cfdi: string; payment_status: string; total: number; issued_at: string;
+};
+type PendingCancellation = {
+  id: string; uuid: string; folio: string; party_rfc_snapshot: string; party_legal_name_snapshot: string;
+  total: number; cancellation_deadline_at: string;
+};
+
+const GROUP_LABELS: Record<string, string> = {
+  mercancia: "Mercancía",
+  gasto_general: "Gasto general",
+  activo_fijo: "Activo fijo / inversión",
+  servicio: "Servicio",
+  devolucion_descuento: "Devolución / descuento",
+  sin_efecto_fiscal: "Sin efectos fiscales",
+  deduccion_personal: "Deducción personal",
+  complemento_pago: "Complemento de pago",
+  nomina: "Nómina",
+  pending_review: "Sin clasificar",
+};
 
 async function api<T = any>(url: string, init?: RequestInit): Promise<{ ok: boolean; data?: T; error?: string }> {
   const res = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers || {}) } });
@@ -55,7 +67,6 @@ export default function PurchasesForm() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [imported, setImported] = useState<{ items: ImportedItem[] } | null>(null);
   const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
-  const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
   const [poReference, setPoReference] = useState("");
   const [message, setMessage] = useState("");
@@ -64,18 +75,75 @@ export default function PurchasesForm() {
   const [poForm, setPoForm] = useState({ source_id: "", supplier_rfc: "", supplier_name: "", expected_date: "" });
   const [poItems, setPoItems] = useState<PoItemRow[]>([{ source_product_key: "", quantity: 1, estimated_unit_price: 0 }]);
 
+  const [vaultGroups, setVaultGroups] = useState<VaultGroup[]>([]);
+  const [vaultDocs, setVaultDocs] = useState<VaultDoc[]>([]);
+  const [vaultYear, setVaultYear] = useState("");
+  const [vaultMonth, setVaultMonth] = useState("");
+  const [pendingCancellations, setPendingCancellations] = useState<PendingCancellation[]>([]);
+  const [repFileName, setRepFileName] = useState("");
+
   async function refresh() {
-    const [invRes, poRes] = await Promise.all([
-      api<{ cfdi_documents: PurchaseInvoice[] }>("/api/factu4all/purchases"),
+    const [poRes, cancelRes] = await Promise.all([
       api<{ purchase_orders: PendingOrder[] }>("/api/factu4all/purchase-orders"),
+      api<{ pending: PendingCancellation[] }>("/api/factu4all/cancellations"),
     ]);
-    setInvoices(invRes.data?.cfdi_documents || []);
     setPendingOrders(poRes.data?.purchase_orders || []);
+    setPendingCancellations(cancelRes.data?.pending || []);
+    await refreshVault();
+  }
+
+  async function refreshVault(year?: string, month?: string) {
+    const params = new URLSearchParams();
+    if (year ?? vaultYear) params.set("year", year ?? vaultYear);
+    if (month ?? vaultMonth) params.set("month", month ?? vaultMonth);
+    const res = await api<{ groups: VaultGroup[]; documents: VaultDoc[] }>(`/api/factu4all/expense-vault?${params.toString()}`);
+    setVaultGroups(res.data?.groups || []);
+    setVaultDocs(res.data?.documents || []);
   }
 
   useEffect(() => {
     refresh();
   }, []);
+
+  async function handleVaultFilterChange(year: string, month: string) {
+    setVaultYear(year);
+    setVaultMonth(month);
+    await refreshVault(year, month);
+  }
+
+  async function handleUploadRep(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const text = await readFileAsText(files[0]);
+      setRepFileName(files[0].name);
+      const res = await api("/api/factu4all/payment-complements", { method: "POST", body: JSON.stringify({ xml: text, preview: false }) });
+      if (!res.ok) {
+        setMessage(res.error || "Error al importar el REP");
+        return;
+      }
+      const data = res.data as { matched: { folio: string }[]; unmatched: { uuid: string }[] };
+      setMessage(`REP importado — ${data.matched.length} factura(s) marcada(s) como pagada(s)${data.unmatched.length ? `, ${data.unmatched.length} sin coincidencia` : ""}.`);
+      refresh();
+    } catch (error: any) {
+      setMessage(`No se pudo leer el archivo: ${error?.message || error}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function respondCancellation(uuid: string, action: "accept" | "reject") {
+    setBusy(true);
+    const res = await api("/api/factu4all/cancellations", { method: "POST", body: JSON.stringify({ action, uuid }) });
+    setBusy(false);
+    if (!res.ok) {
+      setMessage(res.error || "Error al responder la cancelación");
+      return;
+    }
+    setMessage(action === "accept" ? "Cancelación aceptada." : "Cancelación rechazada — la factura sigue vigente.");
+    refresh();
+  }
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -184,6 +252,33 @@ export default function PurchasesForm() {
   return (
     <div className="mt-6 space-y-6">
       {message && <p className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">{message}</p>}
+
+      {pendingCancellations.length > 0 && (
+        <section className="card border-amber-300 bg-amber-50">
+          <h2 className="text-sm font-semibold uppercase text-amber-700">Cancelaciones pendientes de responder ({pendingCancellations.length})</h2>
+          <p className="mt-1 text-xs text-amber-700">Un proveedor solicitó cancelar una factura ya importada. Tienes 72 horas para aceptar o rechazar.</p>
+          <div className="mt-3 space-y-2">
+            {pendingCancellations.map((row) => (
+              <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-white p-2 text-sm">
+                <div>
+                  {row.party_legal_name_snapshot} ({row.party_rfc_snapshot}) — ${row.total}
+                  <div className="text-xs text-slate-400">
+                    UUID {row.uuid} · límite {row.cancellation_deadline_at ? new Date(row.cancellation_deadline_at).toLocaleString() : "—"}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button className="btn-ghost px-3 py-1 text-xs" disabled={busy} onClick={() => respondCancellation(row.uuid, "reject")}>
+                    Rechazar
+                  </button>
+                  <button className="btn-primary px-3 py-1 text-xs" disabled={busy} onClick={() => respondCancellation(row.uuid, "accept")}>
+                    Aceptar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="card">
         <h2 className="text-sm font-semibold uppercase text-slate-500">Órdenes de compra / remisiones pendientes</h2>
@@ -348,27 +443,93 @@ export default function PurchasesForm() {
       </section>
 
       <section className="card">
-        <h2 className="text-sm font-semibold uppercase text-slate-500">Facturas de compra importadas</h2>
-        {invoices.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">Todavía no hay facturas de compra importadas.</p>
+        <h2 className="text-sm font-semibold uppercase text-slate-500">Complemento de pago (REP)</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Sube el REP que te manda el proveedor cuando pagas una factura PPD — solo entonces ese IVA es acreditable en la bóveda.
+        </p>
+        <input className="input mt-3" type="file" accept=".xml" onChange={(e) => handleUploadRep(e.target.files)} />
+        {repFileName && <p className="mt-1 text-xs text-slate-500">{repFileName}</p>}
+      </section>
+
+      <section className="card">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase text-slate-500">Bóveda de egresos</h2>
+          <div className="flex gap-2">
+            <input
+              className="input w-24"
+              type="number"
+              placeholder="Año"
+              value={vaultYear}
+              onChange={(e) => handleVaultFilterChange(e.target.value, vaultMonth)}
+            />
+            <input
+              className="input w-20"
+              type="number"
+              placeholder="Mes"
+              min={1}
+              max={12}
+              value={vaultMonth}
+              onChange={(e) => handleVaultFilterChange(vaultYear, e.target.value)}
+            />
+          </div>
+        </div>
+        <p className="mt-1 text-xs text-slate-500">Todas las facturas de egreso clasificadas — solo "Mercancía" mueve inventario. Pensado para la declaración mensual/anual.</p>
+
+        {vaultGroups.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-500">Sin facturas de egreso en este período.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase text-slate-500">
-                  <th className="py-1">Proveedor</th><th>Total</th><th>UUID</th><th>Fecha</th>
+                  <th className="py-1">Clasificación</th><th>Facturas</th><th>Subtotal</th><th>IVA</th><th>Ret. IVA</th><th>Ret. ISR</th><th>Total</th>
                 </tr>
               </thead>
               <tbody>
-                {invoices.map((row) => (
+                {vaultGroups.map((g) => (
+                  <tr key={g.classification_group} className="border-t border-slate-100">
+                    <td className="py-1 font-medium">{GROUP_LABELS[g.classification_group] || g.classification_group}</td>
+                    <td>{g.count}</td>
+                    <td>${g.subtotal}</td>
+                    <td>${g.tax_total}</td>
+                    <td>${g.retencion_iva}</td>
+                    <td>${g.retencion_isr}</td>
+                    <td className="font-semibold">${g.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {vaultDocs.length > 0 && (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase text-slate-500">
+                  <th className="py-1">Proveedor</th><th>Clasificación</th><th>Uso CFDI</th><th>Pago</th><th>Total</th><th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vaultDocs.map((row) => (
                   <tr key={row.id} className="border-t border-slate-100">
                     <td className="py-1">
                       {row.party_legal_name_snapshot}
                       <div className="text-xs text-slate-400">{row.party_rfc_snapshot}</div>
                     </td>
+                    <td className="text-xs">{GROUP_LABELS[row.classification_group] || row.classification_group || "—"}</td>
+                    <td className="text-xs text-slate-500">{row.uso_cfdi || "—"}</td>
+                    <td className="text-xs">
+                      {row.payment_status === "pending_rep" ? (
+                        <span className="text-amber-600">PPD pendiente de REP</span>
+                      ) : row.payment_status === "paid_confirmed" ? (
+                        <span className="text-emerald-600">Pagada (REP)</span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td>${row.total}</td>
-                    <td className="max-w-[160px] truncate text-xs text-slate-500">{row.uuid}</td>
-                    <td className="text-xs text-slate-500">{new Date(row.created_at).toLocaleDateString()}</td>
+                    <td className="text-xs text-slate-500">{row.issued_at ? new Date(row.issued_at).toLocaleDateString() : "—"}</td>
                   </tr>
                 ))}
               </tbody>

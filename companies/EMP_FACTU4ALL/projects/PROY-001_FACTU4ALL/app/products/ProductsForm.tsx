@@ -11,8 +11,18 @@ type Product = {
   tax_object?: string;
   iva_rate: number;
   status: string;
+  classification_group?: string;
+  classification_source?: string;
   stock?: { sandbox?: number; production?: number };
 };
+
+const CLASSIFICATION_OPTIONS = [
+  { value: "mercancia", label: "Mercancía (mueve inventario)" },
+  { value: "gasto_general", label: "Gasto general" },
+  { value: "activo_fijo", label: "Activo fijo / inversión" },
+  { value: "servicio", label: "Servicio" },
+  { value: "otro", label: "Otro" },
+];
 
 async function api<T = any>(url: string, init?: RequestInit): Promise<{ ok: boolean; data?: T; error?: string }> {
   const res = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers || {}) } });
@@ -58,6 +68,19 @@ export default function ProductsForm() {
     refresh();
   }
 
+  async function setClassification(sourceProductKey: string, classificationGroup: string) {
+    setBusyKey(sourceProductKey);
+    const res = await api("/api/factu4all/products", {
+      method: "POST",
+      body: JSON.stringify({ source_product_key: sourceProductKey, classification_group: classificationGroup, classification_source: "manual" }),
+    });
+    if (!res.ok) setMessage(res.error || "Error al clasificar");
+    setBusyKey(null);
+    refresh();
+  }
+
+  const pendingReview = products.filter((p) => p.classification_source === "pending_review" || !p.classification_group);
+
   return (
     <div className="mt-6 space-y-6">
       {message && <p className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">{message}</p>}
@@ -91,6 +114,38 @@ export default function ProductsForm() {
         </form>
       </section>
 
+      {pendingReview.length > 0 && (
+        <section className="card border-amber-300 bg-amber-50">
+          <h2 className="text-sm font-semibold uppercase text-amber-700">Sin clasificar ({pendingReview.length})</h2>
+          <p className="mt-1 text-xs text-amber-700">
+            El sistema no pudo inferir automáticamente si estos conceptos son mercancía, gasto general, activo fijo o servicio. Mientras no se clasifiquen, no afectan inventario.
+          </p>
+          <div className="mt-3 space-y-2">
+            {pendingReview.map((row) => (
+              <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-white p-2 text-sm">
+                <div>
+                  {row.fiscal_product_name}
+                  <div className="text-xs text-slate-400">{row.source_product_key} · clave SAT {row.sat_product_key || "—"}</div>
+                </div>
+                <select
+                  className="input w-56"
+                  disabled={busyKey === row.source_product_key}
+                  value=""
+                  onChange={(e) => e.target.value && setClassification(row.source_product_key, e.target.value)}
+                >
+                  <option value="">Clasificar como...</option>
+                  {CLASSIFICATION_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="card">
         {loading ? (
           <p className="text-sm text-slate-500">Cargando...</p>
@@ -101,7 +156,7 @@ export default function ProductsForm() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase text-slate-500">
-                  <th className="py-1">Clave origen</th><th>Nombre fiscal</th><th>Clave SAT</th><th>Unidad SAT</th><th>Estado</th><th>Stock sandbox</th><th>Stock producción</th><th></th>
+                  <th className="py-1">Clave origen</th><th>Nombre fiscal</th><th>Clave SAT</th><th>Unidad SAT</th><th>Clasificación</th><th>Estado</th><th>Stock sandbox</th><th>Stock producción</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -111,6 +166,10 @@ export default function ProductsForm() {
                     <td>{row.fiscal_product_name}</td>
                     <td>{row.sat_product_key || "—"}</td>
                     <td>{row.sat_unit_key || "—"}</td>
+                    <td className="text-xs">
+                      {row.classification_group || "—"}
+                      {row.classification_source && <div className="text-xs text-slate-400">{row.classification_source}</div>}
+                    </td>
                     <td>{row.status}</td>
                     <td className={Number(row.stock?.sandbox || 0) < 0 ? "text-amber-600" : ""}>{row.stock?.sandbox ?? 0}</td>
                     <td className={Number(row.stock?.production || 0) < 0 ? "text-amber-600" : ""}>{row.stock?.production ?? 0}</td>

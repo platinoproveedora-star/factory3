@@ -10,6 +10,7 @@ _FIELDS = [
     "source_product_name", "fiscal_product_name", "fiscal_description",
     "sat_product_key", "sat_unit_key", "sat_unit_name", "tax_object",
     "iva_rate", "ieps_rate", "category", "sat_group_key", "status",
+    "classification_group", "classification_source",
 ]
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 

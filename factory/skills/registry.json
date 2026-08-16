@@ -2590,8 +2590,17 @@
     "tipo": "interno",
     "nombre": "vertical_sat/sat_cfdi_parser",
     "vertical": "vertical_sat",
-    "descripcion": "Parsea XML CFDI 3.3/4.0 y retorna dict estructurado: uuid, rfcs, total, fecha, conceptos.",
+    "descripcion": "Parsea XML CFDI 3.3/4.0 y retorna dict estructurado: uuid, rfcs, total, fecha, conceptos, impuestos (iva/isr retenido, tipo_cambio), cfdi_relacionados (cancelacion con sustitucion), pago_doctos_relacionados (complemento de pago).",
     "path": "skills/internos/vertical_sat/sat_cfdi_parser",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_sat/sat_prodserv_classify": {
+    "tipo": "interno",
+    "nombre": "vertical_sat/sat_prodserv_classify",
+    "vertical": "vertical_sat",
+    "descripcion": "Clasifica un concepto/documento fiscal en un grupo generico (mercancia, gasto_general, activo_fijo, servicio, devolucion_descuento, sin_efecto_fiscal, deduccion_personal, complemento_pago, nomina, pending_review) usando c_UsoCFDI (prioridad, egresos) y el segmento de c_ClaveProdServ como respaldo (ingresos). No es un campo oficial de SAT.",
+    "path": "skills/internos/vertical_sat/sat_prodserv_classify",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
@@ -5856,8 +5865,45 @@
     "tipo": "interno",
     "nombre": "vertical_factu4all/pac_stamp",
     "vertical": "vertical_factu4all",
-    "descripcion": "action=stamp: timbra validando emisor/receptor/pago/items y resta stock en product_stock (inventario propio por company_id+product_id+environment, sandbox y production separados); sin credenciales pac_not_configured, simula solo con allow_simulated=true. XML/PDF suben a bucket privado factu4all-documents + document_files. action=cancel: cancela CFDI y revierte stock. action=status: consulta estado en el PAC. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
+    "descripcion": "action=stamp: timbra validando emisor/receptor/pago/items y resta stock en product_stock solo para items classification_group_snapshot=mercancia (inventario propio por company_id+product_id+warehouse_id+environment, sandbox y production separados); sin credenciales pac_not_configured, simula solo con allow_simulated=true. XML/PDF suben a bucket privado factu4all-documents + document_files. action=cancel: cancela CFDI, exige related_cfdi_uuid si motivo=01 (sustituto ya timbrado con CfdiRelacionados tipo 04), revierte stock solo de items mercancia. action=status: consulta estado en el PAC. dry_run=true no contacta al PAC. Idempotente por company_id+folio.",
     "path": "skills/internos/vertical_factu4all/pac_stamp",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/concept_classify": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/concept_classify",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Decide el classification_group (mercancia, gasto_general, activo_fijo, servicio, etc.) de un concepto/documento fiscal. Prioridad: clasificacion manual ya guardada en el producto, luego vertical_sat/sat_prodserv_classify (UsoCFDI para egresos, segmento ClaveProdServ para ingresos). Solo classification_group=mercancia mueve inventario.",
+    "path": "skills/internos/vertical_factu4all/concept_classify",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/expense_vault_report": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/expense_vault_report",
+    "vertical": "vertical_factu4all",
+    "kind": "data",
+    "descripcion": "Boveda de facturas de egreso: lista todos los cfdi_documents direction=received con todos sus datos, agrupados por classification_group y por periodo (year/month), con subtotales de IVA/retenciones/total por grupo — para declaracion mensual y anual. Filtros: year, month, classification_group. kind=data.",
+    "path": "skills/internos/vertical_factu4all/expense_vault_report",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/payment_complement_ingest": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/payment_complement_ingest",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Importa un REP (CFDI tipo P) recibido de un proveedor. Se guarda como fila normal en cfdi_documents (direction=received, cfdi_type=pago) y por cada DoctoRelacionado vincula (payment_complement_links) contra la factura PPD original ya importada, marcandola payment_status=paid_confirmed. Solo cubre REP recibidos (compras PPD).",
+    "path": "skills/internos/vertical_factu4all/payment_complement_ingest",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/received_invoice_status_check": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/received_invoice_status_check",
+    "vertical": "vertical_factu4all",
+    "descripcion": "action=check: consulta el servicio publico de verificacion de CFDI del SAT para facturas recibidas vigentes; si detecta Cancelado abre ventana de 72h (cancellation_deadline_at). action=accept/reject: registra respuesta del receptor. action=list_pending: lista cancelaciones pendientes de responder. No sustituye la aceptacion formal en el buzon tributario (requiere e.firma).",
+    "path": "skills/internos/vertical_factu4all/received_invoice_status_check",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

@@ -160,3 +160,26 @@ export async function listPendingPurchaseOrders(companyId: string) {
 export async function createPurchaseOrder(companyId: string, fields: Ctx) {
   return callSkill<SkillMap>("vertical_factu4all/purchase_order_create", { ...companyContext(companyId), source_system: "manual", ...fields, dry_run: false });
 }
+
+// ── Boveda de egresos ────────────────────────────────────────────────────
+export async function getExpenseVaultReport(companyId: string, filters?: { year?: number; month?: number; classification_group?: string }) {
+  return callSkill<SkillMap>("vertical_factu4all/expense_vault_report", { ...companyContext(companyId), ...filters });
+}
+
+// ── Complemento de pago (REP / PPD) ──────────────────────────────────────
+export async function ingestPaymentComplement(companyId: string, xml: string, preview: boolean) {
+  return callSkill<SkillMap>("vertical_factu4all/payment_complement_ingest", { ...companyContext(companyId), xml, dry_run: preview });
+}
+
+// ── Cancelaciones de facturas recibidas ──────────────────────────────────
+export async function checkReceivedInvoiceStatus(companyId: string, uuid?: string) {
+  return callSkill<SkillMap>("vertical_factu4all/received_invoice_status_check", { ...companyContext(companyId), action: "check", uuid });
+}
+
+export async function listPendingCancellations(companyId: string) {
+  return callSkill<SkillMap>("vertical_factu4all/received_invoice_status_check", { ...companyContext(companyId), action: "list_pending" });
+}
+
+export async function respondCancellation(companyId: string, uuid: string, response: "accept" | "reject") {
+  return callSkill<SkillMap>("vertical_factu4all/received_invoice_status_check", { ...companyContext(companyId), action: response, uuid });
+}

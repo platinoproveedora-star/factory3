@@ -88,6 +88,28 @@ class SatCfdiParserService:
             if retencion.get("Impuesto") == "001":
                 impuestos["isr_retenido"] += importe
 
+        # CfdiRelacionados: usado en cancelacion con sustitucion (motivo 01,
+        # TipoRelacion 04) — buscado por local-name porque el nodo vive en el
+        # namespace raiz del comprobante (no tiene namespace propio).
+        cfdi_relacionados = []
+        nodo_relacionados = root.find(f"{{{ns}}}CfdiRelacionados")
+        if nodo_relacionados is not None:
+            tipo_relacion = nodo_relacionados.get("TipoRelacion", "")
+            for rel in nodo_relacionados.findall(f"{{{ns}}}CfdiRelacionado"):
+                cfdi_relacionados.append({"tipo_relacion": tipo_relacion, "uuid": rel.get("UUID", "")})
+
+        # DoctoRelacionado del complemento de pago (Pagos 1.0/2.0) — se busca
+        # por local-name porque el namespace del complemento trae version
+        # (Pagos10/Pagos20) y cambia entre CFDI 3.3 y 4.0.
+        pago_doctos_relacionados = []
+        for docto in root.findall(".//*[@IdDocumento]"):
+            pago_doctos_relacionados.append({
+                "uuid": docto.get("IdDocumento", ""),
+                "imp_pagado": docto.get("ImpPagado", "0"),
+                "moneda_dr": docto.get("MonedaDR", ""),
+                "num_parcialidad": docto.get("NumParcialidad", ""),
+            })
+
         return {
             "uuid":             tfd.get("UUID", "") if tfd is not None else "",
             "version":          a("Version"),
@@ -111,6 +133,8 @@ class SatCfdiParserService:
             "conceptos":        conceptos,
             "impuestos":        impuestos,
             "iva":              round(impuestos["iva_trasladado"] - impuestos["iva_retenido"], 2),
+            "cfdi_relacionados": cfdi_relacionados,
+            "pago_doctos_relacionados": pago_doctos_relacionados,
             "xml_raw":          xml_str if isinstance(xml_str, str) else xml_str.decode("utf-8"),
         }
 

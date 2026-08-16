@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "sat_prodserv_classify",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Clasifica un concepto/documento fiscal en un grupo generico (mercancia, gasto_general, activo_fijo, servicio, devolucion_descuento, sin_efecto_fiscal, deduccion_personal, complemento_pago, nomina, pending_review) usando dos catalogos oficiales del SAT: c_UsoCFDI (prioridad, es un catalogo cerrado que el receptor declara) y el segmento (primeros 2 digitos) de c_ClaveProdServ como respaldo/heuristico. No es un campo oficial de SAT — es taxonomia propia construida sobre esos dos catalogos.",
+  "requires_env": []
+}

@@ -65,8 +65,23 @@ class PurchaseInvoiceIngestService:
         uuid_val = cfdi.get("uuid") or ""
         if not uuid_val:
             return {"ok": False, "error": "xml_sin_uuid", "data": {"detail": "el XML no trae timbre fiscal (UUID)"}}
+        if cfdi.get("tipo_comprobante") == "P":
+            return {"ok": False, "error": "es_complemento_de_pago", "data": {"detail": "este XML es un Recibo Electronico de Pago (REP) — usa vertical_factu4all/payment_complement_ingest, no este skill"}}
         if not cfdi.get("conceptos"):
             return {"ok": False, "error": "xml_sin_conceptos"}
+
+        uso_cfdi = cfdi.get("uso_cfdi") or ""
+        classify_res = _runner().run("vertical_factu4all/concept_classify", {"company_id": company_id, "uso_cfdi": uso_cfdi})
+        classify_data = classify_res.get("data") or {} if classify_res.get("ok") else {}
+        classification_group = classify_data.get("classification_group", "pending_review")
+        classification_source = classify_data.get("source", "pending_review")
+        is_merchandise = classification_group == "mercancia"
+
+        moneda = (cfdi.get("moneda") or "MXN").upper()
+        exchange_rate = self._num(cfdi.get("tipo_cambio")) or 1.0
+        if moneda == "MXN":
+            exchange_rate = 1.0
+        total_original = self._num(cfdi.get("total"))
 
         db = SupabaseClient({**context, "schema": _SCHEMA})
         dup = db.rest_select("cfdi_documents", filters={"company_id": f"eq.{company_id}", "uuid": f"eq.{uuid_val}", "direction": "eq.received"}, select="id,folio", limit=1)
@@ -84,6 +99,9 @@ class PurchaseInvoiceIngestService:
                     "rfc_emisor": cfdi.get("rfc_emisor"),
                     "nombre_emisor": cfdi.get("nombre_emisor"),
                     "total": cfdi.get("total"),
+                    "uso_cfdi": uso_cfdi,
+                    "classification_group": classification_group,
+                    "affects_inventory": is_merchandise,
                     "items": preview_items,
                 },
             }
@@ -96,6 +114,8 @@ class PurchaseInvoiceIngestService:
             return {"ok": False, "error": "supplier_resolve_failed", "data": {"detail": supplier_res.get("error")}}
         supplier = supplier_res["data"]["party"]
 
+        payment_method = cfdi.get("metodo_pago") or ""
+        impuestos = cfdi.get("impuestos") or {}
         doc_row = {
             "folio": f"CFDI-{company_id}-RECV-{uuid_val}",
             "company_id": company_id,
@@ -109,18 +129,25 @@ class PurchaseInvoiceIngestService:
             "party_type": "supplier",
             "party_rfc_snapshot": cfdi.get("rfc_emisor"),
             "party_legal_name_snapshot": cfdi.get("nombre_emisor"),
-            "payment_method": cfdi.get("metodo_pago"),
+            "payment_method": payment_method,
             "payment_form": cfdi.get("forma_pago"),
-            "currency": cfdi.get("moneda") or "MXN",
+            "currency": moneda,
+            "exchange_rate": exchange_rate,
+            "total_original_currency": total_original,
+            "uso_cfdi": uso_cfdi,
+            "classification_group": classification_group,
+            "retencion_iva": round(self._num(impuestos.get("iva_retenido")) * exchange_rate, 2),
+            "retencion_isr": round(self._num(impuestos.get("isr_retenido")) * exchange_rate, 2),
+            "payment_status": "pending_rep" if payment_method.upper() == "PPD" else "n_a",
             "environment": _ENVIRONMENT,
             "cfdi_folio": cfdi.get("folio"),
             "series": cfdi.get("serie"),
             "uuid": uuid_val,
             "status": "received",
-            "subtotal": self._num(cfdi.get("subtotal")),
-            "discount_total": self._num(cfdi.get("descuento")),
-            "tax_total": self._num(cfdi.get("iva")),
-            "total": self._num(cfdi.get("total")),
+            "subtotal": round(self._num(cfdi.get("subtotal")) * exchange_rate, 2),
+            "discount_total": round(self._num(cfdi.get("descuento")) * exchange_rate, 2),
+            "tax_total": round(self._num(cfdi.get("iva")) * exchange_rate, 2),
+            "total": round(total_original * exchange_rate, 2),
             "issued_at": cfdi.get("fecha_timbrado") or cfdi.get("fecha_emision"),
         }
 
@@ -159,16 +186,16 @@ class PurchaseInvoiceIngestService:
                 "content_type": "application/xml",
             })
 
-        warehouse_id = self._default_warehouse(company_id)
+        warehouse_id = self._default_warehouse(company_id) if is_merchandise else ""
 
         items_result = []
         for concepto in cfdi["conceptos"]:
-            product, created = self._resolve_or_create_product(db, company_id, cfdi.get("rfc_emisor"), concepto)
+            product, created = self._resolve_or_create_product(db, company_id, cfdi.get("rfc_emisor"), concepto, classification_group, classification_source)
             quantity = self._num(concepto.get("cantidad"))
-            unit_price = self._num(concepto.get("valor_unitario"))
-            discount = self._num(concepto.get("descuento"))
-            tax_amount = self._num(concepto.get("iva_concepto"))
-            subtotal = self._num(concepto.get("importe"))
+            unit_price = round(self._num(concepto.get("valor_unitario")) * exchange_rate, 4)
+            discount = round(self._num(concepto.get("descuento")) * exchange_rate, 2)
+            tax_amount = round(self._num(concepto.get("iva_concepto")) * exchange_rate, 2)
+            subtotal = round(self._num(concepto.get("importe")) * exchange_rate, 2)
 
             db.rest_insert("cfdi_item_movements", {
                 "folio": f"{cfdi_document['folio']}-{product['id'][:8]}",
@@ -178,10 +205,11 @@ class PurchaseInvoiceIngestService:
                 "movement_direction": "in",
                 "document_direction": "received",
                 "business_effect": "purchase_expense",
+                "classification_group_snapshot": classification_group,
                 "party_id": supplier.get("id"),
                 "party_type": "supplier",
                 "product_id": product["id"],
-                "warehouse_id": warehouse_id,
+                "warehouse_id": warehouse_id or None,
                 "source_product_key": product.get("source_product_key"),
                 "source_product_name": concepto.get("descripcion"),
                 "fiscal_product_name_snapshot": product.get("fiscal_product_name"),
@@ -197,7 +225,7 @@ class PurchaseInvoiceIngestService:
                 "environment": _ENVIRONMENT,
                 "issued_at": doc_row["issued_at"],
             })
-            if warehouse_id:
+            if is_merchandise and warehouse_id:
                 self._trigger_recalculate(company_id, product["id"], warehouse_id, _ENVIRONMENT, doc_row["issued_at"])
                 _runner().run("vertical_factu4all/inventory_cost_recalculate", {
                     "company_id": company_id, "product_id": product["id"], "warehouse_id": warehouse_id,
@@ -209,9 +237,16 @@ class PurchaseInvoiceIngestService:
                 "product_id": product["id"],
                 "product_created": created,
                 "sat_product_key": product.get("sat_product_key"),
+                "classification_group": classification_group,
             })
 
-        return {"ok": True, "data": {"cfdi_document": cfdi_document, "supplier": supplier, "items": items_result}}
+        return {
+            "ok": True,
+            "data": {
+                "cfdi_document": cfdi_document, "supplier": supplier, "items": items_result,
+                "classification_group": classification_group, "affects_inventory": is_merchandise,
+            },
+        }
 
     def _preview_item(self, concepto: dict) -> dict:
         return {
@@ -221,7 +256,7 @@ class PurchaseInvoiceIngestService:
             "clave_unidad": concepto.get("clave_unidad"),
         }
 
-    def _resolve_or_create_product(self, db: SupabaseClient, company_id: str, supplier_rfc: str, concepto: dict) -> tuple[dict, bool]:
+    def _resolve_or_create_product(self, db: SupabaseClient, company_id: str, supplier_rfc: str, concepto: dict, classification_group: str, classification_source: str) -> tuple[dict, bool]:
         supplier_key = str(concepto.get("no_identificacion") or concepto.get("clave_prod_serv") or "").strip()
         mapping_res = db.rest_select(
             "supplier_product_mappings",
@@ -254,6 +289,8 @@ class PurchaseInvoiceIngestService:
                 "sat_unit_key": concepto.get("clave_unidad") or "",
                 "sat_unit_name": concepto.get("unidad") or "",
                 "tax_object": concepto.get("objeto_imp") or "02",
+                "classification_group": classification_group,
+                "classification_source": classification_source,
                 "status": "revisar",
             }
             ins = db.rest_insert("products", row)

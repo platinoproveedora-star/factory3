@@ -37,7 +37,11 @@ class CfdiBuildService:
             return party
         party_row = party["data"]
 
-        totals = self._compute_totals(items, issuer_profile.get("iva_rate") if isinstance(issuer_profile, dict) else None)
+        uso_cfdi = str(context.get("uso_cfdi") or party_row.get("cfdi_use_default") or "").strip().upper()
+        if not uso_cfdi:
+            return {"ok": False, "error": "uso_cfdi_requerido", "data": {"detail": "UsoCFDI es obligatorio para timbrar (catalogo c_UsoCFDI del SAT) — pasalo en context o configuralo como default del cliente"}}
+
+        totals = self._compute_totals(db, company_id, items)
 
         company_settings = self._resolve_company_settings(company_id)
 
@@ -79,6 +83,10 @@ class CfdiBuildService:
             "payment_method": context.get("payment_method"),
             "payment_form": context.get("payment_form"),
             "currency": context.get("currency") or "MXN",
+            "uso_cfdi": uso_cfdi,
+            "related_cfdi_uuid": context.get("related_cfdi_uuid"),
+            "related_cfdi_relation_type": (context.get("related_cfdi_relation_type") or "04") if context.get("related_cfdi_uuid") else None,
+            "payment_status": "pending_rep" if str(context.get("payment_method") or "").upper() == "PPD" else "n_a",
             "pac_provider": pac_provider,
             "environment": environment,
             "series": series,
@@ -109,17 +117,18 @@ class CfdiBuildService:
         return {"ok": True, "data": {"cfdi_document": cfdi_document, "items": items}}
 
     def _build_item_movements(self, db: SupabaseClient, company_id: str, cfdi_document: dict, party_row: dict, items: list) -> list:
-        default_rate = 0.16
         rows = []
         for index, item in enumerate(items, start=1):
             product = self._resolve_product(db, company_id, item)
             quantity = float(item.get("quantity") or 0)
             unit_price = float(item.get("unit_price") or 0)
             discount = float(item.get("discount_amount") or 0)
-            iva_rate = float(item.get("iva_rate")) if item.get("iva_rate") not in (None, "") else default_rate
+            iva_rate, ieps_rate = self._resolve_item_rates(product, item)
             line_subtotal = quantity * unit_price
             taxable = max(line_subtotal - discount, 0)
-            tax_amount = round(taxable * iva_rate, 2)
+            tax_amount = round(taxable * (iva_rate + ieps_rate), 2)
+            clave_prod_serv = (product or {}).get("sat_product_key") or item.get("sat_product_key") or ""
+            classification_group = self._classify_item(company_id, product, clave_prod_serv)
             rows.append({
                 "folio": f"{cfdi_document['folio']}-{index}",
                 "company_id": company_id,
@@ -127,6 +136,7 @@ class CfdiBuildService:
                 "movement_direction": "out",
                 "document_direction": cfdi_document.get("direction"),
                 "business_effect": cfdi_document.get("business_effect"),
+                "classification_group_snapshot": classification_group,
                 "source_document_id": cfdi_document.get("source_id"),
                 "source_document_folio": cfdi_document.get("source_folio"),
                 "party_id": party_row.get("id"),
@@ -136,7 +146,7 @@ class CfdiBuildService:
                 "source_product_key": item.get("source_product_key") or (product or {}).get("source_product_key"),
                 "source_product_name": item.get("source_product_name") or (product or {}).get("source_product_name"),
                 "fiscal_product_name_snapshot": (product or {}).get("fiscal_product_name") or item.get("description"),
-                "sat_product_key_snapshot": (product or {}).get("sat_product_key") or item.get("sat_product_key"),
+                "sat_product_key_snapshot": clave_prod_serv,
                 "sat_unit_key_snapshot": (product or {}).get("sat_unit_key") or item.get("sat_unit_key"),
                 "sat_group_key_snapshot": (product or {}).get("sat_group_key") or item.get("sat_group_key"),
                 "tax_object_snapshot": (product or {}).get("tax_object") or item.get("tax_object"),
@@ -148,6 +158,20 @@ class CfdiBuildService:
                 "total": round(taxable + tax_amount, 2),
             })
         return rows
+
+    def _resolve_item_rates(self, product: dict | None, item: dict) -> tuple[float, float]:
+        default_iva = 0.16
+        iva_rate = float(item["iva_rate"]) if item.get("iva_rate") not in (None, "") else float((product or {}).get("iva_rate") or default_iva)
+        ieps_rate = float(item["ieps_rate"]) if item.get("ieps_rate") not in (None, "") else float((product or {}).get("ieps_rate") or 0)
+        return iva_rate, ieps_rate
+
+    def _classify_item(self, company_id: str, product: dict | None, clave_prod_serv: str) -> str:
+        if product and product.get("classification_source") == "manual" and product.get("classification_group"):
+            return product["classification_group"]
+        res = _runner().run("vertical_sat/sat_prodserv_classify", {"clave_prod_serv": clave_prod_serv})
+        if not res.get("ok"):
+            return "pending_review"
+        return (res.get("data") or {}).get("classification_group", "pending_review")
 
     def _resolve_product(self, db: SupabaseClient, company_id: str, item: dict) -> dict | None:
         product_id = str(item.get("product_id") or "").strip()
@@ -207,21 +231,21 @@ class CfdiBuildService:
             return {"ok": False, "error": "party_not_found"}
         return {"ok": True, "data": rows[0]}
 
-    def _compute_totals(self, items: list, default_iva_rate) -> dict:
-        default_rate = float(default_iva_rate) if default_iva_rate not in (None, "") else 0.16
+    def _compute_totals(self, db: SupabaseClient, company_id: str, items: list) -> dict:
         subtotal = 0.0
         discount_total = 0.0
         tax_total = 0.0
         for item in items:
+            product = self._resolve_product(db, company_id, item)
             quantity = float(item.get("quantity") or 0)
             unit_price = float(item.get("unit_price") or 0)
             discount = float(item.get("discount_amount") or 0)
-            iva_rate = float(item.get("iva_rate")) if item.get("iva_rate") not in (None, "") else default_rate
+            iva_rate, ieps_rate = self._resolve_item_rates(product, item)
             line_subtotal = quantity * unit_price
             taxable = max(line_subtotal - discount, 0)
             subtotal += line_subtotal
             discount_total += discount
-            tax_total += taxable * iva_rate
+            tax_total += taxable * (iva_rate + ieps_rate)
         total = subtotal - discount_total + tax_total
         return {
             "subtotal": round(subtotal, 2),

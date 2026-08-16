@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/payment_complement_ingest",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Importa un Recibo Electronico de Pago (REP, CFDI tipo P) recibido de un proveedor. El REP en si se guarda como una fila normal en cfdi_documents (direction=received, cfdi_type=pago) para que la boveda lo incluya, y por cada DoctoRelacionado se vincula (payment_complement_links) contra la factura PPD original ya importada, marcandola payment_status=paid_confirmed — solo entonces ese IVA es acreditable en el reporte mensual. Solo cubre REP recibidos (compras PPD); emitir un REP propio para ventas PPD es un flujo separado no cubierto aqui.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
