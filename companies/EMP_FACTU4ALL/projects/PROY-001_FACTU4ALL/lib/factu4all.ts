@@ -112,7 +112,10 @@ export async function buildInvoice(companyId: string, fields: Ctx, dryRun = fals
 }
 
 export async function stampInvoice(companyId: string, folio: string) {
-  return callSkill<SkillMap>("vertical_factu4all/pac_stamp", { ...companyContext(companyId), folio, dry_run: false });
+  // allow_simulated es solo un respaldo — si hay credenciales PAC reales
+  // configuradas, esas tienen prioridad automatica (ver pac_stamp/get_pac_adapter).
+  // Sin credenciales, permite probar el flujo completo en sandbox.
+  return callSkill<SkillMap>("vertical_factu4all/pac_stamp", { ...companyContext(companyId), folio, dry_run: false, allow_simulated: true });
 }
 
 export async function cancelInvoice(companyId: string, folio: string, motivo = "02") {
