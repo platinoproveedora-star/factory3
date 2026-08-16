@@ -16,6 +16,10 @@ type Movement = {
   total: number;
   uuid?: string | null;
   created_at: string;
+  lot_cost_snapshot?: number | null;
+  weighted_avg_cost_before?: number | null;
+  weighted_avg_cost_after?: number | null;
+  last_purchase_cost_snapshot?: number | null;
 };
 
 type Valuation = {
@@ -115,6 +119,7 @@ export default function KardexTable() {
                   <th>Clave SAT</th>
                   <th>Cantidad</th>
                   <th>Total</th>
+                  <th>Costo (lote / prom. antes / prom. después / último)</th>
                   <th>UUID</th>
                 </tr>
               </thead>
@@ -134,6 +139,11 @@ export default function KardexTable() {
                     <td>{row.sat_product_key_snapshot || "—"}</td>
                     <td>{row.quantity}</td>
                     <td>${row.total}</td>
+                    <td className="text-xs text-slate-500">
+                      {row.movement_direction === "out" && row.lot_cost_snapshot != null
+                        ? `$${row.lot_cost_snapshot} / $${row.weighted_avg_cost_before} / $${row.weighted_avg_cost_after} / $${row.last_purchase_cost_snapshot}`
+                        : "—"}
+                    </td>
                     <td className="max-w-[140px] truncate text-xs text-slate-500">{row.uuid || "—"}</td>
                   </tr>
                 ))}

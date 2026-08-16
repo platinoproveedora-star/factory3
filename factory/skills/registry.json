@@ -5789,7 +5789,7 @@
     "tipo": "interno",
     "nombre": "vertical_factu4all/inventory_cost_recalculate",
     "vertical": "vertical_factu4all",
-    "descripcion": "Motor de costeo PEPS (metodo aceptado SAT/LISR). Rebuild completo de inventory_cost_lots + inventory_lot_consumption repasando todos los movimientos en orden cronologico; actualiza in_cost/out_cost/closing_value en inventory_period_balance. dry_run=true no escribe.",
+    "descripcion": "Motor de costeo PEPS (metodo aceptado SAT/LISR). Rebuild completo de inventory_cost_lots + inventory_lot_consumption repasando todos los movimientos en orden cronologico; guarda 4 costos por venta en cfdi_item_movements (lot/promedio antes/promedio despues/ultimo costo, recalculados no congelados) y actualiza in_cost/out_cost/closing_value en inventory_period_balance. dry_run=true no escribe.",
     "path": "skills/internos/vertical_factu4all/inventory_cost_recalculate",
     "entrypoint": "skill.py",
     "version": "0.1.0"

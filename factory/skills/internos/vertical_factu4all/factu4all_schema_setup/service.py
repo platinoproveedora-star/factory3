@@ -216,6 +216,10 @@ CREATE TABLE IF NOT EXISTS {schema}.cfdi_item_movements (
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS environment text;
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS balance_after numeric(14,4);
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS cancels_movement_id uuid REFERENCES {schema}.cfdi_item_movements(id);
+ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS lot_cost_snapshot numeric(14,4);
+ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS weighted_avg_cost_before numeric(14,4);
+ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS weighted_avg_cost_after numeric(14,4);
+ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS last_purchase_cost_snapshot numeric(14,4);
 
 CREATE TABLE IF NOT EXISTS {schema}.warehouses (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),

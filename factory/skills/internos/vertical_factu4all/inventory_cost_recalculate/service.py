@@ -39,7 +39,9 @@ class InventoryCostRecalculateService:
         lots: list[dict] = []
         consumption_by_movement: dict[str, list[dict]] = {}
         period_cost: dict[tuple[int, int], dict[str, float]] = {}
+        movement_snapshots: dict[str, dict] = {}
         warnings: list[str] = []
+        last_purchase_cost = 0.0
 
         for movement in movements:
             direction = movement["movement_direction"]
@@ -57,8 +59,15 @@ class InventoryCostRecalculateService:
                     "issued_at": movement["issued_at"], "consumptions": [],
                 })
                 bucket["in_cost"] += quantity * unit_cost
+                last_purchase_cost = unit_cost
 
             elif direction == "out":
+                # 4 costos de referencia (igual que el ERP de Duralon, pero
+                # recalculados aqui cada vez en vez de congelados al momento
+                # de la venta): costo del lote realmente consumido (PEPS),
+                # promedio ponderado de todos los lotes antes/despues de esta
+                # venta, y el ultimo costo de compra conocido hasta ese punto.
+                weighted_avg_before = self._weighted_avg(lots)
                 to_consume = quantity
                 consumed = []
                 for lot in lots:
@@ -74,7 +83,14 @@ class InventoryCostRecalculateService:
                 if to_consume > 0:
                     warnings.append(f"movimiento {movement['id']}: no hay suficiente costo historico para {to_consume} unidades — se valuo esa parte en $0 (venta sin compra respaldando)")
                 consumption_by_movement[movement["id"]] = consumed
-                bucket["out_cost"] += sum(c["quantity"] * c["unit_cost"] for c in consumed)
+                out_cost = sum(c["quantity"] * c["unit_cost"] for c in consumed)
+                bucket["out_cost"] += out_cost
+                movement_snapshots[movement["id"]] = {
+                    "lot_cost_snapshot": round(out_cost / quantity, 4) if quantity else 0.0,
+                    "weighted_avg_cost_before": weighted_avg_before,
+                    "weighted_avg_cost_after": self._weighted_avg(lots),
+                    "last_purchase_cost_snapshot": round(last_purchase_cost, 4),
+                }
 
             elif direction == "out_cancelled":
                 original_id = movement.get("cancels_movement_id")
@@ -115,6 +131,9 @@ class InventoryCostRecalculateService:
                     "lot_id": lot_db_id, "movement_id": movement_id, "quantity": entry["quantity"], "unit_cost": entry["unit_cost"],
                 })
 
+        for movement_id, snapshot in movement_snapshots.items():
+            db.rest_update("cfdi_item_movements", snapshot, {"id": f"eq.{movement_id}"})
+
         periods_res = db.rest_select(
             "inventory_period_balance",
             filters={"company_id": f"eq.{company_id}", "product_id": f"eq.{product_id}", "warehouse_id": f"eq.{warehouse_id}", "environment": f"eq.{environment}"},
@@ -137,6 +156,14 @@ class InventoryCostRecalculateService:
             updated_periods.append({"year": year, "month": month, **values})
 
         return {"ok": True, "data": {"lots_created": len(lots), "periods_updated": updated_periods, "warnings": warnings}}
+
+    def _weighted_avg(self, lots: list[dict]) -> float:
+        active = [lot for lot in lots if lot["quantity_remaining"] > 0]
+        qty = sum(lot["quantity_remaining"] for lot in active)
+        if qty <= 0:
+            return 0.0
+        value = sum(lot["quantity_remaining"] * lot["unit_cost"] for lot in active)
+        return round(value / qty, 4)
 
     def _period_end(self, year: int, month: int) -> str:
         next_year, next_month = (year + 1, 1) if month == 12 else (year, month + 1)
