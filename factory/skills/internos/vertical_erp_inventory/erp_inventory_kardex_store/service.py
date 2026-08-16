@@ -54,9 +54,15 @@ class ErpInventoryKardexStoreService:
             "notes": context.get("notes"),
             "created_by_user_id": context.get("created_by_user_id"),
             "erp_tags": context.get("erp_tags") or {},
-            "metadata": context.get("metadata") or {},
+            "metadata": self._metadata_with_warehouse(context),
         }
         return {"ok": True, "data": {"dry_run": context.get("dry_run", True), "movement": row}}
+
+    def _metadata_with_warehouse(self, context: dict) -> dict:
+        metadata = dict(context.get("metadata")) if isinstance(context.get("metadata"), dict) else {}
+        warehouse_id = str(context.get("warehouse_id") or context.get("warehouse_code") or metadata.get("warehouse_id") or "PRINCIPAL").strip()
+        metadata["warehouse_id"] = warehouse_id or "PRINCIPAL"
+        return metadata
 
     def _num(self, value, default: float = 0.0) -> float:
         if value is None:

@@ -1,9 +1,16 @@
 from __future__ import annotations
 
-from factory.engine import SupabaseClient
+import json
+import os
+import urllib.error
+import urllib.request
 
 
 class Apps4AllMarketplaceModuleActivateService:
+    """platform.access_grants vive en el proyecto Supabase de la plataforma
+    (PLATFORM_SUPABASE_*), no en el proyecto operativo de ninguna empresa.
+    """
+
     def ejecutar(self, context: dict) -> dict:
         user_id = str(context.get("user_id") or "").strip()
         company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
@@ -27,7 +34,28 @@ class Apps4AllMarketplaceModuleActivateService:
         }
         if context.get("dry_run", True):
             return {"ok": True, "message": "dry_run", "data": {"grant": row}}
-        result = SupabaseClient({"schema": "platform"}).rest_upsert("access_grants", row, "user_id,company_id,modulo_code")
-        if not result.get("ok"):
-            return result
-        return {"ok": True, "message": "module activated", "data": {"grant": (result.get("data") or [row])[0]}}
+
+        url = (context.get("platform_supabase_url") or os.getenv("PLATFORM_SUPABASE_URL", "")).rstrip("/")
+        key = context.get("platform_supabase_service_role_key") or os.getenv("PLATFORM_SUPABASE_SERVICE_ROLE_KEY", "")
+        if not url or not key:
+            return {"ok": False, "error": "Faltan PLATFORM_SUPABASE_URL o PLATFORM_SUPABASE_SERVICE_ROLE_KEY"}
+
+        req = urllib.request.Request(
+            f"{url}/rest/v1/access_grants?on_conflict=user_id,company_id,modulo_code",
+            data=json.dumps(row).encode("utf-8"),
+            headers={
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                "Content-Profile": "platform",
+                "Prefer": "resolution=merge-duplicates,return=representation",
+                "User-Agent": "FactoryFactory/0.1 (+https://github.com/)",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            return {"ok": False, "error": f"HTTP {exc.code}: {exc.read().decode('utf-8', errors='replace')}"}
+        return {"ok": True, "message": "module activated", "data": {"grant": (data or [row])[0]}}

@@ -1,0 +1,16 @@
+{
+  "company_id": "EMP_STOCK4ALL",
+  "project_code": "PROY-001",
+  "project_name": "Stock4All",
+  "module_code": "stock4all",
+  "schema": "stock4all",
+  "platform": "vercel",
+  "requires_env": [
+    "FACTORY_API_URL",
+    "FACTORY_RUN_SECRET",
+    "PLATFORM_JWT_SECRET",
+    "PLATFORM_SUPABASE_URL",
+    "PLATFORM_SUPABASE_SERVICE_ROLE_KEY",
+    "MODULE_CODE"
+  ]
+}

@@ -94,7 +94,7 @@ class ErpInventoryKardexSaveService:
             "balance_amount": max(base_amount - paid, 0),
             "payment_status": context.get("payment_status") or ("pagado" if base_amount and paid >= base_amount else "parcial" if paid > 0 else "pendiente"),
             "notes": self._blank(context.get("notes")),
-            "metadata": context.get("metadata") if isinstance(context.get("metadata"), dict) else {},
+            "metadata": self._metadata_with_warehouse(context),
         }
         if dry_run:
             return {"ok": True, "message": "dry_run: no se guardo movimiento", "data": {"movement": row}}
@@ -127,6 +127,12 @@ class ErpInventoryKardexSaveService:
     def _blank(self, value):
         value = str(value or "").strip()
         return value or None
+
+    def _metadata_with_warehouse(self, context: dict) -> dict:
+        metadata = dict(context.get("metadata")) if isinstance(context.get("metadata"), dict) else {}
+        warehouse_id = str(context.get("warehouse_id") or context.get("warehouse_code") or metadata.get("warehouse_id") or "PRINCIPAL").strip()
+        metadata["warehouse_id"] = warehouse_id or "PRINCIPAL"
+        return metadata
 
     def _current_stock(self, context: dict, product_id: str) -> float:
         result = SupabaseClient(context).rest_select(

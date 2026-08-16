@@ -12,6 +12,7 @@ class ErpInventoryKardexListService:
         end_date = str(context.get("end_date") or "").strip()
         product_id = str(context.get("product_id") or "").strip()
         source_type = str(context.get("source_type") or "").strip()
+        warehouse_id = str(context.get("warehouse_id") or context.get("warehouse_code") or "").strip()
         if start_date and end_date:
             start = self._as_date(start_date)
             end = self._as_date(end_date)
@@ -45,8 +46,10 @@ class ErpInventoryKardexListService:
         rows = result.get("data") or []
         if end_date:
             rows = [row for row in rows if str(row.get("movement_date") or "") <= end_date]
+        if warehouse_id:
+            rows = [row for row in rows if str((row.get("metadata") or {}).get("warehouse_id") or "PRINCIPAL") == warehouse_id]
         rows = self._with_products(db, rows)
-        return {"ok": True, "data": {"movements": rows, "limit": limit, "start_date": start_date or None, "end_date": end_date or None, "product_id": product_id or None, "source_type": source_type or None}}
+        return {"ok": True, "data": {"movements": rows, "limit": limit, "start_date": start_date or None, "end_date": end_date or None, "product_id": product_id or None, "source_type": source_type or None, "warehouse_id": warehouse_id or None}}
 
     def _as_date(self, value: str):
         try:

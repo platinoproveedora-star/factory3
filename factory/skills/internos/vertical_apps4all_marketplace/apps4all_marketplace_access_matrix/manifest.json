@@ -5,5 +5,5 @@
   "kind": "data",
   "entrypoint": "skill.py",
   "description": "Lists access grants by module/company for Marketplace administration.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
 }

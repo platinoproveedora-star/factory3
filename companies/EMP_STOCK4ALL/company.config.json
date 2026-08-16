@@ -1,0 +1,25 @@
+{
+  "company_id": "EMP_STOCK4ALL",
+  "company_name": "Stock4All",
+  "short_name": "",
+  "company_type": "saas_module",
+  "industry": "inventory_management",
+  "status": "active",
+  "relationship": "platform_module",
+  "primary_contact": {
+    "name": "",
+    "email": ""
+  },
+  "objective": "Modulo Apps4All multi-tenant/multialmacen de inventario, reusando la logica de vertical_erp_inventory. EMP_DURALON es el tenant piloto via platform.tenant_sources -> uc101_proy004.",
+  "legacy_ids": {},
+  "dashboards": [],
+  "skill_stack": [],
+  "channels": [],
+  "storage": {
+    "supabase_schema": "stock4all",
+    "buckets": []
+  },
+  "default_authorizer": null,
+  "created_at": "2026-08-16T01:11:39.564373+00:00",
+  "updated_at": "2026-08-16T01:11:39.564373+00:00"
+}

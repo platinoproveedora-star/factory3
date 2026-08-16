@@ -5,5 +5,5 @@
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Registers or updates a sellable Apps4All module in platform.modulos.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
 }

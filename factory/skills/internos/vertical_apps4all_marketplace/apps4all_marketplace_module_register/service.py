@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
+import os
 import re
-
-from factory.engine import SupabaseClient
+import urllib.error
+import urllib.request
 
 
 CODE_RE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -10,6 +12,10 @@ STATUSES = {"draft", "beta", "live", "deprecated"}
 
 
 class Apps4AllMarketplaceModuleRegisterService:
+    """platform.modulos vive en el proyecto Supabase de la plataforma
+    (PLATFORM_SUPABASE_*), no en el proyecto operativo de ninguna empresa.
+    """
+
     def ejecutar(self, context: dict) -> dict:
         module_code = str(context.get("module_code") or context.get("modulo_code") or "").strip()
         title = str(context.get("title") or context.get("nombre") or module_code).strip()
@@ -39,8 +45,27 @@ class Apps4AllMarketplaceModuleRegisterService:
         if context.get("dry_run", True):
             return {"ok": True, "message": "dry_run", "data": {"module": row}}
 
-        db = SupabaseClient({"schema": "platform"})
-        result = db.rest_upsert("modulos", row, "code")
-        if not result.get("ok"):
-            return result
-        return {"ok": True, "message": "module registered", "data": {"module": (result.get("data") or [row])[0]}}
+        url = (context.get("platform_supabase_url") or os.getenv("PLATFORM_SUPABASE_URL", "")).rstrip("/")
+        key = context.get("platform_supabase_service_role_key") or os.getenv("PLATFORM_SUPABASE_SERVICE_ROLE_KEY", "")
+        if not url or not key:
+            return {"ok": False, "error": "Faltan PLATFORM_SUPABASE_URL o PLATFORM_SUPABASE_SERVICE_ROLE_KEY"}
+
+        req = urllib.request.Request(
+            f"{url}/rest/v1/modulos?on_conflict=code",
+            data=json.dumps(row).encode("utf-8"),
+            headers={
+                "apikey": key,
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                "Content-Profile": "platform",
+                "Prefer": "resolution=merge-duplicates,return=representation",
+                "User-Agent": "FactoryFactory/0.1 (+https://github.com/)",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            return {"ok": False, "error": f"HTTP {exc.code}: {exc.read().decode('utf-8', errors='replace')}"}
+        return {"ok": True, "message": "module registered", "data": {"module": (data or [row])[0]}}

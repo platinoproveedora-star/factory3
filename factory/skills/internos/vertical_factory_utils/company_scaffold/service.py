@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -36,6 +37,8 @@ class CompanyScaffoldService:
                 "status": "active",
                 "projects_dir": f"companies/{company_id}/projects",
             },
+            company_dir / "company.config.json": self._company_config(company_id, schema, context),
+            company_dir / "README.md": self._readme_md(company_id, project_code, module_code, schema, platform, context),
             project_dir / "project.json": {
                 "company_id": company_id,
                 "project_code": project_code,
@@ -93,6 +96,55 @@ class CompanyScaffoldService:
             "- Todo codigo reusable recibe identidad por context/config.\n"
             "- No hardcodear empresa, schema, project_code, URLs ni tokens.\n"
             "- Antes de cierre correr `factory_no_hardcode_audit`.\n"
+        )
+
+    def _company_config(self, company_id: str, schema: str, context: dict) -> dict:
+        now = datetime.now(timezone.utc).isoformat()
+        primary_contact = context.get("primary_contact")
+        legacy_ids = context.get("legacy_ids")
+        return {
+            "company_id": company_id,
+            "company_name": str(context.get("company_name") or "").strip(),
+            "short_name": str(context.get("short_name") or "").strip(),
+            "company_type": str(context.get("company_type") or "").strip(),
+            "industry": str(context.get("industry") or "").strip(),
+            "status": "active",
+            "relationship": str(context.get("relationship") or "").strip(),
+            "primary_contact": primary_contact if isinstance(primary_contact, dict) else {"name": "", "email": ""},
+            "objective": str(context.get("objective") or "").strip(),
+            "legacy_ids": legacy_ids if isinstance(legacy_ids, dict) else {},
+            "dashboards": [],
+            "skill_stack": [],
+            "channels": [],
+            "storage": {"supabase_schema": schema, "buckets": []},
+            "default_authorizer": context.get("default_authorizer") or None,
+            "created_at": now,
+            "updated_at": now,
+        }
+
+    def _readme_md(self, company_id: str, project_code: str, module_code: str, schema: str, platform: str, context: dict) -> str:
+        company_name = str(context.get("company_name") or "").strip()
+        title_line = f"**{company_name}**\n\n" if company_name else ""
+        return (
+            f"# {company_id}\n\n"
+            f"{title_line}"
+            f"Empresa Factory3. Identidad principal: `{company_id}`.\n\n"
+            "## Proyectos\n\n"
+            "| Codigo | Modulo | Estado | Dashboard |\n"
+            "|---|---|---|---|\n"
+            f"| {project_code} | {module_code} | planned | - |\n\n"
+            "## Infraestructura\n\n"
+            "| Recurso | Valor |\n"
+            "|---|---|\n"
+            f"| Schema {module_code} | `{schema}` |\n"
+            f"| Plataforma | {platform} |\n\n"
+            "## Identidad ERP\n\n"
+            "```text\n"
+            f"empresa_id = {company_id}\n"
+            f"company_id = {company_id}\n"
+            f"{project_code} = {module_code}\n"
+            "```\n\n"
+            "Todo registro operativo lleva: `empresa_id` + `project_code` + `module_code` + `id uuid` + `folio text unique`.\n"
         )
 
     def _rel(self, path: Path, repo_root: Path) -> str:

@@ -5,5 +5,5 @@
   "kind": "executable",
   "entrypoint": "skill.py",
   "description": "Activates a marketplace module for a company/user by creating an access_grant.",
-  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  "requires_env": ["PLATFORM_SUPABASE_URL", "PLATFORM_SUPABASE_SERVICE_ROLE_KEY"]
 }
