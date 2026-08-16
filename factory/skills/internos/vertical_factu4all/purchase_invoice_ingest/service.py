@@ -22,9 +22,39 @@ def _runner():
 class PurchaseInvoiceIngestService:
     def ejecutar(self, context: dict) -> dict:
         company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
-        xml = context.get("xml") or ""
         if not company_id:
             return {"ok": False, "error": "company_id_requerido"}
+
+        xmls = context.get("xmls") if isinstance(context.get("xmls"), list) else None
+        if xmls is not None:
+            return self._ingest_batch(context, company_id, xmls)
+
+        xml = context.get("xml") or ""
+        if not xml:
+            return {"ok": False, "error": "xml_requerido"}
+        return self._ingest_one(context, company_id, xml)
+
+    def _ingest_batch(self, context: dict, company_id: str, xmls: list) -> dict:
+        """Carga masiva: nunca aborta todo el lote por un archivo malo o
+        duplicado — reporta que se importo, que ya existia y que fallo."""
+        imported, skipped, failed = [], [], []
+        for index, xml in enumerate(xmls):
+            res = self._ingest_one(context, company_id, str(xml or ""))
+            if res.get("ok"):
+                imported.append({"index": index, "uuid": (res.get("data") or {}).get("cfdi_document", {}).get("uuid") or (res.get("data") or {}).get("uuid")})
+            elif res.get("error") == "ya_importado":
+                skipped.append({"index": index, "detail": (res.get("data") or {}).get("detail")})
+            else:
+                failed.append({"index": index, "error": res.get("error"), "detail": (res.get("data") or {}).get("detail")})
+        return {
+            "ok": True,
+            "data": {
+                "total": len(xmls), "imported": len(imported), "skipped_duplicates": len(skipped), "failed": len(failed),
+                "imported_items": imported, "skipped_items": skipped, "failed_items": failed,
+            },
+        }
+
+    def _ingest_one(self, context: dict, company_id: str, xml: str) -> dict:
         if not xml:
             return {"ok": False, "error": "xml_requerido"}
 
@@ -93,8 +123,26 @@ class PurchaseInvoiceIngestService:
             "total": self._num(cfdi.get("total")),
             "issued_at": cfdi.get("fecha_timbrado") or cfdi.get("fecha_emision"),
         }
-        doc_res = db.rest_insert("cfdi_documents", doc_row)
-        if not doc_res.get("ok"):
+
+        po_reference = str(context.get("po_reference") or "").strip()
+        pending_po = None
+        if po_reference:
+            po_res = db.rest_select(
+                "cfdi_documents",
+                filters={"company_id": f"eq.{company_id}", "source_type": "eq.purchase_order", "source_id": f"eq.{po_reference}", "status": "eq.pending_xml"},
+                select="id,folio", limit=1,
+            )
+            pending_po = (po_res.get("data") or [None])[0] if po_res.get("ok") else None
+
+        if pending_po:
+            # Concilia: reemplaza el registro pendiente con los datos fiscales
+            # reales en vez de crear un CFDI nuevo — la orden de compra y la
+            # factura terminan siendo el MISMO registro (mismo folio original).
+            reconcile_row = {**doc_row, "folio": pending_po["folio"], "source_type": "purchase_order", "source_id": po_reference}
+            doc_res = db.rest_update("cfdi_documents", reconcile_row, {"id": f"eq.{pending_po['id']}"})
+        else:
+            doc_res = db.rest_insert("cfdi_documents", doc_row)
+        if not doc_res.get("ok") or not doc_res.get("data"):
             return {"ok": False, "error": "db_persistence_failed", "data": {"detail": doc_res.get("error")}}
         cfdi_document = doc_res["data"][0]
 
@@ -151,6 +199,10 @@ class PurchaseInvoiceIngestService:
             })
             if warehouse_id:
                 self._trigger_recalculate(company_id, product["id"], warehouse_id, _ENVIRONMENT, doc_row["issued_at"])
+                _runner().run("vertical_factu4all/inventory_cost_recalculate", {
+                    "company_id": company_id, "product_id": product["id"], "warehouse_id": warehouse_id,
+                    "environment": _ENVIRONMENT, "dry_run": False,
+                })
             items_result.append({
                 "descripcion": concepto.get("descripcion"),
                 "cantidad": quantity,

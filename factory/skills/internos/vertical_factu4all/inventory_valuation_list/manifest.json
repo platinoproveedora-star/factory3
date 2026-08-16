@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/inventory_valuation_list",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Lista la valuacion de inventario (metodo PEPS) por producto: ultimo periodo calculado en inventory_period_balance (closing_qty, closing_value) por company_id, opcionalmente filtrado por environment. kind=data para dashboard.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

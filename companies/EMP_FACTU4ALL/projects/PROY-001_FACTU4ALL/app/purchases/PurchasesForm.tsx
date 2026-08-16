@@ -5,6 +5,13 @@ import { useEffect, useState } from "react";
 type PreviewItem = { descripcion: string; cantidad: string; clave_prod_serv: string; clave_unidad: string };
 type Preview = { uuid: string; rfc_emisor: string; nombre_emisor: string; total: string; items: PreviewItem[] };
 type ImportedItem = { descripcion: string; cantidad: number; product_id: string; product_created: boolean; sat_product_key: string };
+type BatchResult = {
+  total: number;
+  imported: number;
+  skipped_duplicates: number;
+  failed: number;
+  failed_items: { index: number; error: string; detail?: string }[];
+};
 type PurchaseInvoice = {
   id: string;
   folio: string;
@@ -31,10 +38,12 @@ function readFileAsText(file: File): Promise<string> {
 }
 
 export default function PurchasesForm() {
-  const [fileName, setFileName] = useState("");
+  const [fileNames, setFileNames] = useState<string[]>([]);
   const [xml, setXml] = useState("");
+  const [xmls, setXmls] = useState<string[]>([]);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [imported, setImported] = useState<{ items: ImportedItem[] } | null>(null);
+  const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
   const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -48,21 +57,30 @@ export default function PurchasesForm() {
     refresh();
   }, []);
 
-  async function handleFile(file: File | null) {
-    if (!file) return;
-    setFileName(file.name);
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
     setPreview(null);
     setImported(null);
+    setBatchResult(null);
     setMessage("");
     try {
-      const text = await readFileAsText(file);
-      if (!text.trim()) {
-        setMessage("El archivo se leyó vacío.");
+      const list = Array.from(files);
+      const texts = await Promise.all(list.map((f) => readFileAsText(f)));
+      const nonEmpty = texts.filter((t) => t.trim());
+      if (!nonEmpty.length) {
+        setMessage("Los archivos se leyeron vacíos.");
         return;
       }
-      setXml(text);
+      setFileNames(list.map((f) => f.name));
+      if (list.length === 1) {
+        setXml(nonEmpty[0]);
+        setXmls([]);
+      } else {
+        setXmls(nonEmpty);
+        setXml("");
+      }
     } catch (error: any) {
-      setMessage(`No se pudo leer el archivo: ${error?.message || error}`);
+      setMessage(`No se pudo leer alguno de los archivos: ${error?.message || error}`);
     }
   }
 
@@ -92,8 +110,24 @@ export default function PurchasesForm() {
     setImported(res.data as { items: ImportedItem[] });
     setMessage("Factura importada y kardex actualizado.");
     setXml("");
-    setFileName("");
+    setFileNames([]);
     setPreview(null);
+    refresh();
+  }
+
+  async function handleBatchImport() {
+    if (!xmls.length) return;
+    setBusy(true);
+    setMessage("");
+    const res = await api("/api/factu4all/purchases", { method: "POST", body: JSON.stringify({ xmls }) });
+    setBusy(false);
+    if (!res.ok) {
+      setMessage(res.error || "Error al importar el lote");
+      return;
+    }
+    setBatchResult(res.data as BatchResult);
+    setXmls([]);
+    setFileNames([]);
     refresh();
   }
 
@@ -103,16 +137,25 @@ export default function PurchasesForm() {
 
       <section className="card">
         <h2 className="text-sm font-semibold uppercase text-slate-500">Subir XML de compra</h2>
-        <input className="input mt-3" type="file" accept=".xml" onChange={(e) => handleFile(e.target.files?.[0] || null)} />
-        {fileName && <p className="mt-1 text-xs text-slate-500">{fileName}</p>}
+        <p className="mt-1 text-xs text-slate-500">Puedes seleccionar varios archivos a la vez (carga masiva) — duplicados se saltan sin detener el resto.</p>
+        <input className="input mt-3" type="file" accept=".xml" multiple onChange={(e) => handleFiles(e.target.files)} />
+        {fileNames.length > 0 && <p className="mt-1 text-xs text-slate-500">{fileNames.length === 1 ? fileNames[0] : `${fileNames.length} archivos seleccionados`}</p>}
 
-        {fileName && (
+        {xml && (
           <div className="mt-3 flex gap-2">
-            <button className="btn-ghost px-4 py-2" disabled={busy || !xml} onClick={handlePreview}>
+            <button className="btn-ghost px-4 py-2" disabled={busy} onClick={handlePreview}>
               Vista previa
             </button>
-            <button className="btn-primary px-4 py-2" disabled={busy || !xml} onClick={handleImport}>
+            <button className="btn-primary px-4 py-2" disabled={busy} onClick={handleImport}>
               Importar y sumar al kardex
+            </button>
+          </div>
+        )}
+
+        {xmls.length > 0 && (
+          <div className="mt-3">
+            <button className="btn-primary px-4 py-2" disabled={busy} onClick={handleBatchImport}>
+              Importar los {xmls.length} archivos
             </button>
           </div>
         )}
@@ -142,6 +185,23 @@ export default function PurchasesForm() {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {batchResult && (
+          <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm">
+            <p className="font-semibold">
+              Lote procesado: {batchResult.imported} importadas, {batchResult.skipped_duplicates} ya existían, {batchResult.failed} fallaron (de {batchResult.total}).
+            </p>
+            {batchResult.failed_items.length > 0 && (
+              <ul className="mt-2 space-y-1 text-xs text-red-700">
+                {batchResult.failed_items.map((item) => (
+                  <li key={item.index}>
+                    Archivo #{item.index + 1}: {item.error} {item.detail ? `— ${item.detail}` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </section>

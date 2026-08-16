@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/purchase_order_create",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Contrato de entrada para una orden de compra o remision recibida ANTES del XML del proveedor (mercancia que ya llego fisicamente pero cuya factura fiscal tardara). Crea un cfdi_documents en status=pending_xml SIN mover inventario (no es un documento fiscal, no cuenta para el SAT) — solo queda pendiente de conciliar cuando llegue el XML real via purchase_invoice_ingest(po_reference=source_id). Pensado para que el ERP operativo (remisiones/ordenes de compra) empuje aqui sus recepciones. Los items esperados se guardan en metadata.items. dry_run=true no escribe.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

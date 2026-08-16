@@ -132,9 +132,17 @@ export async function listItemMovements(companyId: string, movementDirection?: s
   return callSkill<SkillMap>("vertical_factu4all/cfdi_item_movement_list", { ...companyContext(companyId), movement_direction: movementDirection });
 }
 
+export async function listInventoryValuation(companyId: string, environment?: string) {
+  return callSkill<SkillMap>("vertical_factu4all/inventory_valuation_list", { ...companyContext(companyId), environment });
+}
+
 // ── Egresos (facturas de compra recibidas) ──────────────────────────────
 export async function ingestPurchaseInvoice(companyId: string, xml: string, preview: boolean) {
   return callSkill<SkillMap>("vertical_factu4all/purchase_invoice_ingest", { ...companyContext(companyId), xml, dry_run: preview });
+}
+
+export async function ingestPurchaseInvoicesBatch(companyId: string, xmls: string[]) {
+  return callSkill<SkillMap>("vertical_factu4all/purchase_invoice_ingest", { ...companyContext(companyId), xmls, dry_run: false });
 }
 
 export async function listPurchaseInvoices(companyId: string) {

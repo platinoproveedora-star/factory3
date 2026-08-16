@@ -4,6 +4,6 @@
   "version": "0.1.0",
   "kind": "executable",
   "entrypoint": "skill.py",
-  "description": "Ingesta de CFDI de compra (factura recibida de proveedor): parsea XML (vertical_sat/sat_cfdi_parser), crea/matchea proveedor fiscal, crea/matchea productos por supplier_product_mappings (o los crea nuevos con la clave SAT si no hay match), guarda cfdi_documents (direction=received, business_effect=purchase_expense) + XML en bucket, y suma cada concepto como entrada en cfdi_item_movements + product_stock (environment=production, son documentos fiscales reales). Bloquea UUID duplicado. dry_run=true no escribe.",
+  "description": "Ingesta de CFDI de compra (factura recibida de proveedor). context.xml para uno solo, context.xmls (lista) para carga masiva — el lote nunca aborta por un archivo malo o duplicado, reporta imported/skipped_duplicates/failed por indice. context.po_reference (opcional) = source_id de una orden de compra pendiente (creada con purchase_order_create) para conciliar en vez de crear un CFDI nuevo. Parsea XML (vertical_sat/sat_cfdi_parser), crea/matchea proveedor fiscal y productos (via supplier_product_mappings, o los crea con la clave SAT si no hay match), guarda cfdi_documents (direction=received) + XML en bucket, dispara inventory_recalculate + inventory_cost_recalculate (PEPS) por cada producto afectado (environment=production, son documentos fiscales reales). Bloquea UUID duplicado. dry_run=true (solo modo un XML) solo previsualiza.",
   "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
 }

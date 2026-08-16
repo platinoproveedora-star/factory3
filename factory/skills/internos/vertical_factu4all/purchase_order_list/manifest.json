@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/purchase_order_list",
+  "version": "0.1.0",
+  "kind": "data",
+  "entrypoint": "skill.py",
+  "description": "Lista ordenes de compra/remisiones pendientes de conciliar con el XML real del proveedor (cfdi_documents con status=pending_xml, source_type=purchase_order) por company_id. kind=data.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

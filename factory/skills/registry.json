@@ -5785,12 +5785,50 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_factu4all/inventory_cost_recalculate": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/inventory_cost_recalculate",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Motor de costeo PEPS (metodo aceptado SAT/LISR). Rebuild completo de inventory_cost_lots + inventory_lot_consumption repasando todos los movimientos en orden cronologico; actualiza in_cost/out_cost/closing_value en inventory_period_balance. dry_run=true no escribe.",
+    "path": "skills/internos/vertical_factu4all/inventory_cost_recalculate",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/purchase_order_create": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/purchase_order_create",
+    "vertical": "vertical_factu4all",
+    "descripcion": "Contrato de entrada para una orden de compra/remision recibida ANTES del XML del proveedor. Crea cfdi_documents en status=pending_xml SIN mover inventario (no es documento fiscal). Pensado para que el ERP operativo empuje aqui sus recepciones; se concilia despues con purchase_invoice_ingest(po_reference=source_id). dry_run=true no escribe.",
+    "path": "skills/internos/vertical_factu4all/purchase_order_create",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/purchase_order_list": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/purchase_order_list",
+    "vertical": "vertical_factu4all",
+    "kind": "data",
+    "descripcion": "Lista ordenes de compra/remisiones pendientes de conciliar (status=pending_xml) por company_id. kind=data.",
+    "path": "skills/internos/vertical_factu4all/purchase_order_list",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_factu4all/purchase_invoice_ingest": {
     "tipo": "interno",
     "nombre": "vertical_factu4all/purchase_invoice_ingest",
     "vertical": "vertical_factu4all",
-    "descripcion": "Ingesta CFDI de compra (factura recibida): parsea XML, crea/matchea proveedor y productos (via supplier_product_mappings, crea nuevo con clave SAT si no hay match), guarda cfdi_documents (direction=received) + XML en bucket, suma entrada en cfdi_item_movements + product_stock (environment=production). Bloquea UUID duplicado. dry_run=true solo previsualiza.",
+    "descripcion": "Ingesta CFDI de compra. xml=uno, xmls=lote (nunca aborta por duplicado/malo, reporta por indice). po_reference concilia contra una orden pendiente (purchase_order_create) en vez de crear CFDI nuevo. Crea/matchea proveedor y productos, guarda cfdi_documents + XML en bucket, dispara inventory_recalculate + inventory_cost_recalculate PEPS. Bloquea UUID duplicado. dry_run=true (modo un XML) solo previsualiza.",
     "path": "skills/internos/vertical_factu4all/purchase_invoice_ingest",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
+  "vertical_factu4all/inventory_valuation_list": {
+    "tipo": "interno",
+    "nombre": "vertical_factu4all/inventory_valuation_list",
+    "vertical": "vertical_factu4all",
+    "kind": "data",
+    "descripcion": "Lista la valuacion PEPS de inventario por producto: ultimo periodo calculado (closing_qty, closing_value) por company_id, filtrable por environment. kind=data.",
+    "path": "skills/internos/vertical_factu4all/inventory_valuation_list",
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },

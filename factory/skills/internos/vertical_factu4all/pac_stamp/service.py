@@ -531,10 +531,15 @@ class PacStampService:
                     "warehouse_id": warehouse_id,
                     "issued_at": now_iso,
                     "cancelled_at": now_iso,
+                    "cancels_movement_id": movement["id"],
                 })
                 recalc_from = now_iso
 
             self._trigger_recalculate(company_id, product_id, warehouse_id, environment, recalc_from)
+            _runner().run("vertical_factu4all/inventory_cost_recalculate", {
+                "company_id": company_id, "product_id": product_id, "warehouse_id": warehouse_id,
+                "environment": environment, "dry_run": False,
+            })
 
     def _default_warehouse(self, company_id: str) -> str:
         res = _runner().run("vertical_factu4all/warehouse_manage", {"action": "ensure_default", "company_id": company_id})

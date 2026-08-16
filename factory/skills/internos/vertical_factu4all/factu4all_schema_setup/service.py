@@ -215,6 +215,7 @@ CREATE TABLE IF NOT EXISTS {schema}.cfdi_item_movements (
 
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS environment text;
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS balance_after numeric(14,4);
+ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS cancels_movement_id uuid REFERENCES {schema}.cfdi_item_movements(id);
 
 CREATE TABLE IF NOT EXISTS {schema}.warehouses (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -263,6 +264,29 @@ CREATE TABLE IF NOT EXISTS {schema}.inventory_period_balance (
   closing_value  numeric(14,2) DEFAULT 0,
   computed_at    timestamptz DEFAULT now(),
   UNIQUE (company_id, product_id, warehouse_id, environment, year, month)
+);
+
+CREATE TABLE IF NOT EXISTS {schema}.inventory_cost_lots (
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id         text NOT NULL,
+  product_id         uuid NOT NULL REFERENCES {schema}.products(id) ON DELETE CASCADE,
+  warehouse_id       uuid REFERENCES {schema}.warehouses(id),
+  environment        text NOT NULL DEFAULT 'sandbox',
+  source_movement_id uuid REFERENCES {schema}.cfdi_item_movements(id),
+  unit_cost          numeric(14,4) DEFAULT 0,
+  quantity_in        numeric(14,4) DEFAULT 0,
+  quantity_remaining numeric(14,4) DEFAULT 0,
+  issued_at          timestamptz,
+  created_at         timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS {schema}.inventory_lot_consumption (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lot_id       uuid NOT NULL REFERENCES {schema}.inventory_cost_lots(id) ON DELETE CASCADE,
+  movement_id  uuid REFERENCES {schema}.cfdi_item_movements(id),
+  quantity     numeric(14,4) DEFAULT 0,
+  unit_cost    numeric(14,4) DEFAULT 0,
+  created_at   timestamptz DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS {schema}.document_files (
@@ -375,6 +399,9 @@ CREATE INDEX IF NOT EXISTS idx_factu4all_product_stock_lookup ON {schema}.produc
 CREATE INDEX IF NOT EXISTS idx_factu4all_warehouses_company ON {schema}.warehouses(company_id, status);
 CREATE INDEX IF NOT EXISTS idx_factu4all_cfdi_item_movements_issued ON {schema}.cfdi_item_movements(company_id, product_id, issued_at);
 CREATE INDEX IF NOT EXISTS idx_factu4all_inventory_period_lookup ON {schema}.inventory_period_balance(company_id, product_id, warehouse_id, environment, year, month);
+CREATE INDEX IF NOT EXISTS idx_factu4all_cost_lots_lookup ON {schema}.inventory_cost_lots(company_id, product_id, warehouse_id, environment, issued_at);
+CREATE INDEX IF NOT EXISTS idx_factu4all_lot_consumption_lot ON {schema}.inventory_lot_consumption(lot_id);
+CREATE INDEX IF NOT EXISTS idx_factu4all_lot_consumption_movement ON {schema}.inventory_lot_consumption(movement_id);
 
 GRANT USAGE ON SCHEMA {schema} TO anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA {schema} TO anon, authenticated, service_role;
@@ -405,6 +432,8 @@ _TABLES = [
     "product_stock",
     "warehouses",
     "inventory_period_balance",
+    "inventory_cost_lots",
+    "inventory_lot_consumption",
 ]
 
 

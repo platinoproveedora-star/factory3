@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/inventory_cost_recalculate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Motor de costeo PEPS (primeras entradas, primeras salidas — metodo aceptado por el SAT/LISR). Reconstruye desde cero (borra y repite) los lotes de costo (inventory_cost_lots) y su consumo (inventory_lot_consumption) para un producto+almacen+ambiente, repasando TODOS sus movimientos en orden cronologico: cada 'in' crea un lote a su costo unitario; cada 'out' consume lotes del mas antiguo al mas nuevo (FIFO) y registra que lote uso; cada 'out_cancelled' revierte exactamente el consumo del movimiento que cancela (via cancels_movement_id), regresando la cantidad a un lote nuevo valuado al costo promedio de lo que habia consumido. Al final actualiza in_cost/out_cost/closing_value en inventory_period_balance para cada mes que ya tenga saldo de cantidad calculado. dry_run=true no escribe.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
