@@ -140,8 +140,8 @@ export async function listInventoryValuation(companyId: string, environment?: st
 }
 
 // ── Egresos (facturas de compra recibidas) ──────────────────────────────
-export async function ingestPurchaseInvoice(companyId: string, xml: string, preview: boolean) {
-  return callSkill<SkillMap>("vertical_factu4all/purchase_invoice_ingest", { ...companyContext(companyId), xml, dry_run: preview });
+export async function ingestPurchaseInvoice(companyId: string, xml: string, preview: boolean, poReference?: string) {
+  return callSkill<SkillMap>("vertical_factu4all/purchase_invoice_ingest", { ...companyContext(companyId), xml, dry_run: preview, po_reference: poReference });
 }
 
 export async function ingestPurchaseInvoicesBatch(companyId: string, xmls: string[]) {
@@ -150,4 +150,13 @@ export async function ingestPurchaseInvoicesBatch(companyId: string, xmls: strin
 
 export async function listPurchaseInvoices(companyId: string) {
   return callSkill<SkillMap>("vertical_factu4all/cfdi_document_list", { ...companyContext(companyId), direction: "received" });
+}
+
+// ── Ordenes de compra / remisiones pendientes ───────────────────────────
+export async function listPendingPurchaseOrders(companyId: string) {
+  return callSkill<SkillMap>("vertical_factu4all/purchase_order_list", { ...companyContext(companyId), status: "pending_xml" });
+}
+
+export async function createPurchaseOrder(companyId: string, fields: Ctx) {
+  return callSkill<SkillMap>("vertical_factu4all/purchase_order_create", { ...companyContext(companyId), source_system: "manual", ...fields, dry_run: false });
 }

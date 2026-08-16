@@ -22,6 +22,17 @@ type PurchaseInvoice = {
   uuid: string;
   created_at: string;
 };
+type PendingOrder = {
+  id: string;
+  folio: string;
+  source_id: string;
+  party_rfc_snapshot: string;
+  party_legal_name_snapshot: string;
+  total: number;
+  created_at: string;
+  metadata?: { expected_date?: string; items?: { source_product_key?: string; description?: string; quantity?: number; estimated_unit_price?: number }[] };
+};
+type PoItemRow = { source_product_key: string; quantity: number; estimated_unit_price: number };
 
 async function api<T = any>(url: string, init?: RequestInit): Promise<{ ok: boolean; data?: T; error?: string }> {
   const res = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers || {}) } });
@@ -45,12 +56,21 @@ export default function PurchasesForm() {
   const [imported, setImported] = useState<{ items: ImportedItem[] } | null>(null);
   const [batchResult, setBatchResult] = useState<BatchResult | null>(null);
   const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
+  const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
+  const [poReference, setPoReference] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [poForm, setPoForm] = useState({ source_id: "", supplier_rfc: "", supplier_name: "", expected_date: "" });
+  const [poItems, setPoItems] = useState<PoItemRow[]>([{ source_product_key: "", quantity: 1, estimated_unit_price: 0 }]);
+
   async function refresh() {
-    const res = await api<{ cfdi_documents: PurchaseInvoice[] }>("/api/factu4all/purchases");
-    setInvoices(res.data?.cfdi_documents || []);
+    const [invRes, poRes] = await Promise.all([
+      api<{ cfdi_documents: PurchaseInvoice[] }>("/api/factu4all/purchases"),
+      api<{ purchase_orders: PendingOrder[] }>("/api/factu4all/purchase-orders"),
+    ]);
+    setInvoices(invRes.data?.cfdi_documents || []);
+    setPendingOrders(poRes.data?.purchase_orders || []);
   }
 
   useEffect(() => {
@@ -101,17 +121,18 @@ export default function PurchasesForm() {
     if (!xml) return;
     setBusy(true);
     setMessage("");
-    const res = await api("/api/factu4all/purchases", { method: "POST", body: JSON.stringify({ xml, preview: false }) });
+    const res = await api("/api/factu4all/purchases", { method: "POST", body: JSON.stringify({ xml, preview: false, po_reference: poReference || undefined }) });
     setBusy(false);
     if (!res.ok) {
       setMessage(res.error || "Error al importar");
       return;
     }
     setImported(res.data as { items: ImportedItem[] });
-    setMessage("Factura importada y kardex actualizado.");
+    setMessage(poReference ? "Factura importada — orden pendiente conciliada." : "Factura importada y kardex actualizado.");
     setXml("");
     setFileNames([]);
     setPreview(null);
+    setPoReference("");
     refresh();
   }
 
@@ -131,15 +152,130 @@ export default function PurchasesForm() {
     refresh();
   }
 
+  function updatePoItem(index: number, patch: Partial<PoItemRow>) {
+    setPoItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  }
+
+  async function submitPurchaseOrder(event: React.FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setMessage("");
+    const res = await api("/api/factu4all/purchase-orders", {
+      method: "POST",
+      body: JSON.stringify({
+        source_id: poForm.source_id,
+        supplier_rfc: poForm.supplier_rfc.toUpperCase(),
+        supplier_name: poForm.supplier_name,
+        expected_date: poForm.expected_date || undefined,
+        items: poItems.filter((item) => item.source_product_key),
+      }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      setMessage(res.error || "Error al crear la orden de compra");
+      return;
+    }
+    setMessage("Orden de compra registrada — pendiente de factura.");
+    setPoForm({ source_id: "", supplier_rfc: "", supplier_name: "", expected_date: "" });
+    setPoItems([{ source_product_key: "", quantity: 1, estimated_unit_price: 0 }]);
+    refresh();
+  }
+
   return (
     <div className="mt-6 space-y-6">
       {message && <p className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">{message}</p>}
+
+      <section className="card">
+        <h2 className="text-sm font-semibold uppercase text-slate-500">Órdenes de compra / remisiones pendientes</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Documento previo a la factura de egreso — no mueve inventario, solo queda como "falta esta factura". Lo normal es que el
+          ERP la mande automático; este formulario es para capturarla a mano si hace falta.
+        </p>
+
+        <form onSubmit={submitPurchaseOrder} className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="label">Referencia (folio propio)</span>
+            <input className="input" required value={poForm.source_id} onChange={(e) => setPoForm({ ...poForm, source_id: e.target.value })} placeholder="OC-0099" />
+          </label>
+          <label className="block">
+            <span className="label">RFC proveedor</span>
+            <input className="input" required value={poForm.supplier_rfc} onChange={(e) => setPoForm({ ...poForm, supplier_rfc: e.target.value })} />
+          </label>
+          <label className="block">
+            <span className="label">Nombre proveedor</span>
+            <input className="input" value={poForm.supplier_name} onChange={(e) => setPoForm({ ...poForm, supplier_name: e.target.value })} />
+          </label>
+          <label className="block">
+            <span className="label">Fecha esperada</span>
+            <input className="input" type="date" value={poForm.expected_date} onChange={(e) => setPoForm({ ...poForm, expected_date: e.target.value })} />
+          </label>
+
+          <div className="sm:col-span-2 space-y-2">
+            <span className="label">Conceptos esperados</span>
+            {poItems.map((item, index) => (
+              <div key={index} className="grid gap-2 sm:grid-cols-3">
+                <input className="input" placeholder="Clave / SKU" value={item.source_product_key} onChange={(e) => updatePoItem(index, { source_product_key: e.target.value })} />
+                <input className="input" type="number" placeholder="Cantidad" value={item.quantity} onChange={(e) => updatePoItem(index, { quantity: Number(e.target.value) })} />
+                <input className="input" type="number" placeholder="Precio estimado" value={item.estimated_unit_price} onChange={(e) => updatePoItem(index, { estimated_unit_price: Number(e.target.value) })} />
+              </div>
+            ))}
+            <button type="button" className="btn-ghost px-3 py-1 text-xs" onClick={() => setPoItems((prev) => [...prev, { source_product_key: "", quantity: 1, estimated_unit_price: 0 }])}>
+              + Agregar concepto
+            </button>
+          </div>
+
+          <div className="sm:col-span-2">
+            <button className="btn-primary px-4 py-2" type="submit" disabled={busy}>
+              Registrar orden pendiente
+            </button>
+          </div>
+        </form>
+
+        {pendingOrders.length > 0 && (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase text-slate-500">
+                  <th className="py-1">Referencia</th><th>Proveedor</th><th>Total estimado</th><th>Fecha esperada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingOrders.map((row) => (
+                  <tr key={row.id} className="border-t border-slate-100">
+                    <td className="py-1">{row.source_id}</td>
+                    <td>
+                      {row.party_legal_name_snapshot}
+                      <div className="text-xs text-slate-400">{row.party_rfc_snapshot}</div>
+                    </td>
+                    <td>${row.total}</td>
+                    <td className="text-xs text-slate-500">{row.metadata?.expected_date || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section className="card">
         <h2 className="text-sm font-semibold uppercase text-slate-500">Subir XML de compra</h2>
         <p className="mt-1 text-xs text-slate-500">Puedes seleccionar varios archivos a la vez (carga masiva) — duplicados se saltan sin detener el resto.</p>
         <input className="input mt-3" type="file" accept=".xml" multiple onChange={(e) => handleFiles(e.target.files)} />
         {fileNames.length > 0 && <p className="mt-1 text-xs text-slate-500">{fileNames.length === 1 ? fileNames[0] : `${fileNames.length} archivos seleccionados`}</p>}
+
+        {xml && pendingOrders.length > 0 && (
+          <label className="mt-3 block">
+            <span className="label">¿Concilia con una orden pendiente? (opcional)</span>
+            <select className="input" value={poReference} onChange={(e) => setPoReference(e.target.value)}>
+              <option value="">No, es una compra nueva</option>
+              {pendingOrders.map((row) => (
+                <option key={row.id} value={row.source_id}>
+                  {row.source_id} — {row.party_legal_name_snapshot}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {xml && (
           <div className="mt-3 flex gap-2">
