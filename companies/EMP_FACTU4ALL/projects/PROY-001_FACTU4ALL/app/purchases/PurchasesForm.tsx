@@ -231,8 +231,12 @@ export default function PurchasesForm() {
           </div>
         </form>
 
-        {pendingOrders.length > 0 && (
-          <div className="mt-4 overflow-x-auto">
+        <div className="mt-4">
+          <h3 className="text-xs font-semibold uppercase text-slate-400">Pendientes ({pendingOrders.length})</h3>
+          {pendingOrders.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-500">Todavía no hay órdenes de compra pendientes.</p>
+          ) : (
+          <div className="mt-2 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase text-slate-500">
@@ -254,7 +258,8 @@ export default function PurchasesForm() {
               </tbody>
             </table>
           </div>
-        )}
+          )}
+        </div>
       </section>
 
       <section className="card">
