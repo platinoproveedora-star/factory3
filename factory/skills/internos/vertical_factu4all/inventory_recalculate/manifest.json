@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/inventory_recalculate",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "Motor de recalculo de inventario por mes/anio. El saldo NO es un contador incremental: se recalcula sumando los movimientos reales (cfdi_item_movements) por periodo, con el saldo inicial de cada mes = saldo final del anterior. Recibe from_year/from_month (el periodo del movimiento que disparo el recalculo) y repropaga hacia adelante hasta el mes actual — asi un XML que llega tarde de un mes ya cerrado corrige ese mes y todos los siguientes automaticamente. Actualiza product_stock (cache del saldo actual) al final. dry_run=true no escribe.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}

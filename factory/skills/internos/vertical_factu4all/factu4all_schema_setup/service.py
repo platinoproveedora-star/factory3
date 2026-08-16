@@ -170,7 +170,6 @@ CREATE TABLE IF NOT EXISTS {schema}.cfdi_documents (
   metadata                  jsonb DEFAULT '{}'
 );
 
-ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS tax_object_snapshot text;
 ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS issuer_profile_id uuid REFERENCES {schema}.issuer_profiles(id);
 ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS issuer_rfc_snapshot text;
 ALTER TABLE {schema}.cfdi_documents ADD COLUMN IF NOT EXISTS issuer_legal_name_snapshot text;
@@ -217,14 +216,53 @@ CREATE TABLE IF NOT EXISTS {schema}.cfdi_item_movements (
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS environment text;
 ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS balance_after numeric(14,4);
 
+CREATE TABLE IF NOT EXISTS {schema}.warehouses (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  folio        text UNIQUE NOT NULL,
+  company_id   text NOT NULL,
+  code         text NOT NULL,
+  name         text NOT NULL,
+  is_default   boolean DEFAULT false,
+  status       text DEFAULT 'active',
+  created_at   timestamptz DEFAULT now(),
+  updated_at   timestamptz DEFAULT now(),
+  UNIQUE (company_id, code)
+);
+
 CREATE TABLE IF NOT EXISTS {schema}.product_stock (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id     text NOT NULL,
   product_id     uuid NOT NULL REFERENCES {schema}.products(id) ON DELETE CASCADE,
+  warehouse_id   uuid REFERENCES {schema}.warehouses(id),
   environment    text NOT NULL DEFAULT 'sandbox',
   current_stock  numeric(14,4) NOT NULL DEFAULT 0,
   updated_at     timestamptz DEFAULT now(),
   UNIQUE (company_id, product_id, environment)
+);
+
+ALTER TABLE {schema}.product_stock ADD COLUMN IF NOT EXISTS warehouse_id uuid REFERENCES {schema}.warehouses(id);
+ALTER TABLE {schema}.product_stock DROP CONSTRAINT IF EXISTS product_stock_company_id_product_id_environment_key;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_factu4all_product_stock ON {schema}.product_stock(company_id, product_id, warehouse_id, environment);
+
+ALTER TABLE {schema}.cfdi_item_movements ADD COLUMN IF NOT EXISTS warehouse_id uuid REFERENCES {schema}.warehouses(id);
+
+CREATE TABLE IF NOT EXISTS {schema}.inventory_period_balance (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id     text NOT NULL,
+  product_id     uuid NOT NULL REFERENCES {schema}.products(id) ON DELETE CASCADE,
+  warehouse_id   uuid REFERENCES {schema}.warehouses(id),
+  environment    text NOT NULL DEFAULT 'sandbox',
+  year           int NOT NULL,
+  month          int NOT NULL,
+  opening_qty    numeric(14,4) DEFAULT 0,
+  in_qty         numeric(14,4) DEFAULT 0,
+  out_qty        numeric(14,4) DEFAULT 0,
+  closing_qty    numeric(14,4) DEFAULT 0,
+  in_cost        numeric(14,2) DEFAULT 0,
+  out_cost       numeric(14,2) DEFAULT 0,
+  closing_value  numeric(14,2) DEFAULT 0,
+  computed_at    timestamptz DEFAULT now(),
+  UNIQUE (company_id, product_id, warehouse_id, environment, year, month)
 );
 
 CREATE TABLE IF NOT EXISTS {schema}.document_files (
@@ -334,6 +372,9 @@ CREATE INDEX IF NOT EXISTS idx_factu4all_cfdi_item_movements_product ON {schema}
 CREATE INDEX IF NOT EXISTS idx_factu4all_document_files_doc ON {schema}.document_files(cfdi_document_id);
 CREATE INDEX IF NOT EXISTS idx_factu4all_supplier_mappings_company ON {schema}.supplier_product_mappings(company_id, status);
 CREATE INDEX IF NOT EXISTS idx_factu4all_product_stock_lookup ON {schema}.product_stock(company_id, product_id, environment);
+CREATE INDEX IF NOT EXISTS idx_factu4all_warehouses_company ON {schema}.warehouses(company_id, status);
+CREATE INDEX IF NOT EXISTS idx_factu4all_cfdi_item_movements_issued ON {schema}.cfdi_item_movements(company_id, product_id, issued_at);
+CREATE INDEX IF NOT EXISTS idx_factu4all_inventory_period_lookup ON {schema}.inventory_period_balance(company_id, product_id, warehouse_id, environment, year, month);
 
 GRANT USAGE ON SCHEMA {schema} TO anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA {schema} TO anon, authenticated, service_role;
@@ -362,6 +403,8 @@ _TABLES = [
     "supplier_product_mappings",
     "secrets_vault",
     "product_stock",
+    "warehouses",
+    "inventory_period_balance",
 ]
 
 

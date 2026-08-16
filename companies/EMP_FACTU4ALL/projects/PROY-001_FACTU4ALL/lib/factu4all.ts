@@ -7,6 +7,15 @@ export function companyContext(companyId: string): Ctx {
   return { company_id: companyId };
 }
 
+// ── Almacenes ────────────────────────────────────────────────────────────
+export async function listWarehouses(companyId: string) {
+  return callSkill<SkillMap>("vertical_factu4all/warehouse_manage", { ...companyContext(companyId), action: "list" });
+}
+
+export async function saveWarehouse(companyId: string, fields: Ctx) {
+  return callSkill<SkillMap>("vertical_factu4all/warehouse_manage", { ...companyContext(companyId), action: "create", ...fields, dry_run: false });
+}
+
 // ── Config de la empresa ─────────────────────────────────────────────────
 export async function getCompanySettings(companyId: string) {
   return callSkill<SkillMap>("vertical_factu4all/company_settings_manage", { ...companyContext(companyId), action: "get" });

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import random
 import re
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -113,6 +111,8 @@ class PurchaseInvoiceIngestService:
                 "content_type": "application/xml",
             })
 
+        warehouse_id = self._default_warehouse(company_id)
+
         items_result = []
         for concepto in cfdi["conceptos"]:
             product, created = self._resolve_or_create_product(db, company_id, cfdi.get("rfc_emisor"), concepto)
@@ -133,6 +133,7 @@ class PurchaseInvoiceIngestService:
                 "party_id": supplier.get("id"),
                 "party_type": "supplier",
                 "product_id": product["id"],
+                "warehouse_id": warehouse_id,
                 "source_product_key": product.get("source_product_key"),
                 "source_product_name": concepto.get("descripcion"),
                 "fiscal_product_name_snapshot": product.get("fiscal_product_name"),
@@ -147,8 +148,9 @@ class PurchaseInvoiceIngestService:
                 "total": round(subtotal - discount + tax_amount, 2),
                 "environment": _ENVIRONMENT,
                 "issued_at": doc_row["issued_at"],
-                "balance_after": self._adjust_stock(db, company_id, product["id"], _ENVIRONMENT, quantity),
             })
+            if warehouse_id:
+                self._trigger_recalculate(company_id, product["id"], warehouse_id, _ENVIRONMENT, doc_row["issued_at"])
             items_result.append({
                 "descripcion": concepto.get("descripcion"),
                 "cantidad": quantity,
@@ -218,29 +220,23 @@ class PurchaseInvoiceIngestService:
         })
         return product, True
 
-    def _adjust_stock(self, db: SupabaseClient, company_id: str, product_id: str, environment: str, delta: float) -> float | None:
-        filters = {"company_id": f"eq.{company_id}", "product_id": f"eq.{product_id}", "environment": f"eq.{environment}"}
-        for attempt in range(12):
-            if attempt > 0:
-                time.sleep(random.uniform(0.02, 0.08) * attempt)
-            rows_res = db.rest_select("product_stock", filters=filters, select="*", limit=1)
-            if not rows_res.get("ok"):
-                return None
-            rows = rows_res.get("data") or []
-            if not rows:
-                new_value = round(delta, 4)
-                ins = db.rest_insert("product_stock", {"company_id": company_id, "product_id": product_id, "environment": environment, "current_stock": new_value})
-                if ins.get("ok") and ins.get("data"):
-                    return new_value
-                continue
-            row = rows[0]
-            current_value = float(row.get("current_stock") or 0)
-            new_value = round(current_value + delta, 4)
-            cas_filters = {"id": f"eq.{row['id']}", "current_stock": f"eq.{current_value}"}
-            upd = db.rest_update("product_stock", {"current_stock": new_value, "updated_at": datetime.now(timezone.utc).isoformat()}, cas_filters)
-            if upd.get("ok") and upd.get("data"):
-                return new_value
-        return None
+    def _default_warehouse(self, company_id: str) -> str:
+        res = _runner().run("vertical_factu4all/warehouse_manage", {"action": "ensure_default", "company_id": company_id})
+        if not res.get("ok"):
+            return ""
+        return (res.get("data") or {}).get("warehouse", {}).get("id") or ""
+
+    def _trigger_recalculate(self, company_id: str, product_id: str, warehouse_id: str, environment: str, issued_at: str | None) -> None:
+        issued_at = issued_at or datetime.now(timezone.utc).isoformat()
+        try:
+            year, month = int(issued_at[0:4]), int(issued_at[5:7])
+        except (ValueError, IndexError):
+            now = datetime.now(timezone.utc)
+            year, month = now.year, now.month
+        _runner().run("vertical_factu4all/inventory_recalculate", {
+            "company_id": company_id, "product_id": product_id, "warehouse_id": warehouse_id,
+            "environment": environment, "from_year": year, "from_month": month, "dry_run": False,
+        })
 
     def _store_xml(self, company_id: str, uuid_val: str, xml: str) -> str:
         import base64

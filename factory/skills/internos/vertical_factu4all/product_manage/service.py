@@ -66,11 +66,15 @@ class ProductManageService:
             return {"ok": False, "error": "db_query_failed", "data": {"detail": res.get("error")}}
         products = res.get("data") or []
 
+        # current_stock ya viene sumado por almacen (product_stock puede tener
+        # una fila por almacen del mismo producto+ambiente) — se suma aqui
+        # para mostrar el total consolidado en el listado.
         stock_res = db.rest_select("product_stock", filters={"company_id": f"eq.{company_id}"}, select="product_id,environment,current_stock")
         stock_by_product: dict[str, dict] = {}
         if stock_res.get("ok"):
             for row in stock_res.get("data") or []:
-                stock_by_product.setdefault(row["product_id"], {})[row["environment"]] = row["current_stock"]
+                bucket = stock_by_product.setdefault(row["product_id"], {})
+                bucket[row["environment"]] = round(float(bucket.get(row["environment"], 0)) + float(row["current_stock"] or 0), 4)
         for product in products:
             product["stock"] = stock_by_product.get(product["id"], {})
 

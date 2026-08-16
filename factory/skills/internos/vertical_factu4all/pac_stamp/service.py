@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import base64
 import os
-import random
-import time
 import uuid as _uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -375,7 +373,7 @@ class PacStampService:
             return {"ok": False, "error": "db_persistence_failed", "data": {"detail": upd.get("error")}}
         persisted = (upd.get("data") or [current])[0]
 
-        self._apply_stock_for_document(db, company_id, current["id"], current.get("environment") or "sandbox", reverse=False)
+        self._apply_stock_for_document(db, company_id, current["id"], current.get("environment") or "sandbox", reverse=False, issued_at=persisted.get("issued_at"))
 
         if storage_path:
             db.rest_insert("document_files", {
@@ -470,7 +468,7 @@ class PacStampService:
         if not upd.get("ok"):
             return {"ok": False, "error": "db_persistence_failed", "data": {"detail": upd.get("error")}}
 
-        self._apply_stock_for_document(db, company_id, current["id"], current.get("environment") or "sandbox", reverse=True)
+        self._apply_stock_for_document(db, company_id, current["id"], current.get("environment") or "sandbox", reverse=True, issued_at=None)
 
         return {"ok": True, "data": {"cfdi_document": (upd.get("data") or [current])[0]}}
 
@@ -491,13 +489,14 @@ class PacStampService:
             return {"ok": False, "error": "pac_error", "data": {"detail": res.get("error")}}
         return {"ok": True, "data": {"status": current.get("status"), "pac_status": res.get("data")}}
 
-    def _apply_stock_for_document(self, db: SupabaseClient, company_id: str, cfdi_document_id: str, environment: str, reverse: bool) -> None:
-        """Inventario propio de Factu4All (independiente del ERP). Al timbrar
-        (stamped/simulated), cada item con product_id resta existencia del
-        producto para ese company_id+environment. Al cancelar, se revierte
-        (se suma de vuelta) via un movimiento out_cancelled nuevo — nunca se
-        borra el movimiento original, es historial. Simulado y produccion
-        llevan existencia separada (mismo product_id, distinto environment)."""
+    def _apply_stock_for_document(self, db: SupabaseClient, company_id: str, cfdi_document_id: str, environment: str, reverse: bool, issued_at: str | None) -> None:
+        """Inventario propio de Factu4All (independiente del ERP). El saldo no
+        se incrementa en tiempo real: cada item con product_id se etiqueta con
+        su almacen y se dispara vertical_factu4all/inventory_recalculate para
+        el mes fiscal correspondiente, que recalcula ese mes y repropaga hacia
+        adelante. Al cancelar, se revierte via un movimiento out_cancelled
+        NUEVO fechado hoy (la cancelacion es un evento fiscal de hoy, no una
+        edicion retroactiva del mes original) — nunca se borra el original."""
         mv_res = db.rest_select(
             "cfdi_item_movements",
             filters={"cfdi_document_id": f"eq.{cfdi_document_id}", "movement_direction": "eq.out"},
@@ -505,55 +504,54 @@ class PacStampService:
         )
         if not mv_res.get("ok"):
             return
+        warehouse_id = self._default_warehouse(company_id)
+        if not warehouse_id:
+            return
         for movement in mv_res.get("data") or []:
             product_id = movement.get("product_id")
             quantity = float(movement.get("quantity") or 0)
             if not product_id or quantity <= 0:
                 continue
-            delta = quantity if reverse else -quantity
-            new_balance = self._adjust_stock(db, company_id, product_id, environment, delta)
+
             if not reverse:
+                stamp_issued_at = issued_at or datetime.now(timezone.utc).isoformat()
                 db.rest_update(
                     "cfdi_item_movements",
-                    values={"balance_after": new_balance, "environment": environment},
+                    values={"environment": environment, "warehouse_id": warehouse_id, "issued_at": stamp_issued_at},
                     filters={"id": f"eq.{movement['id']}"},
                 )
+                recalc_from = stamp_issued_at
             else:
+                now_iso = datetime.now(timezone.utc).isoformat()
                 db.rest_insert("cfdi_item_movements", {
-                    **{k: v for k, v in movement.items() if k not in ("id", "created_at", "folio")},
+                    **{k: v for k, v in movement.items() if k not in ("id", "created_at", "folio", "balance_after")},
                     "folio": f"{movement['folio']}-CANCEL",
                     "movement_direction": "out_cancelled",
-                    "balance_after": new_balance,
                     "environment": environment,
-                    "cancelled_at": datetime.now(timezone.utc).isoformat(),
+                    "warehouse_id": warehouse_id,
+                    "issued_at": now_iso,
+                    "cancelled_at": now_iso,
                 })
+                recalc_from = now_iso
 
-    def _adjust_stock(self, db: SupabaseClient, company_id: str, product_id: str, environment: str, delta: float) -> float | None:
-        """Compare-and-swap sobre product_stock — mismo patron que la reserva
-        atomica de folio_series_manage, para que timbrados concurrentes no
-        pisen el mismo contador."""
-        filters = {"company_id": f"eq.{company_id}", "product_id": f"eq.{product_id}", "environment": f"eq.{environment}"}
-        for attempt in range(12):
-            if attempt > 0:
-                time.sleep(random.uniform(0.02, 0.08) * attempt)
-            rows_res = db.rest_select("product_stock", filters=filters, select="*", limit=1)
-            if not rows_res.get("ok"):
-                return None
-            rows = rows_res.get("data") or []
-            if not rows:
-                new_value = round(delta, 4)
-                ins = db.rest_insert("product_stock", {"company_id": company_id, "product_id": product_id, "environment": environment, "current_stock": new_value})
-                if ins.get("ok") and ins.get("data"):
-                    return new_value
-                continue
-            row = rows[0]
-            current_value = float(row.get("current_stock") or 0)
-            new_value = round(current_value + delta, 4)
-            cas_filters = {"id": f"eq.{row['id']}", "current_stock": f"eq.{current_value}"}
-            upd = db.rest_update("product_stock", {"current_stock": new_value, "updated_at": datetime.now(timezone.utc).isoformat()}, cas_filters)
-            if upd.get("ok") and upd.get("data"):
-                return new_value
-        return None
+            self._trigger_recalculate(company_id, product_id, warehouse_id, environment, recalc_from)
+
+    def _default_warehouse(self, company_id: str) -> str:
+        res = _runner().run("vertical_factu4all/warehouse_manage", {"action": "ensure_default", "company_id": company_id})
+        if not res.get("ok"):
+            return ""
+        return (res.get("data") or {}).get("warehouse", {}).get("id") or ""
+
+    def _trigger_recalculate(self, company_id: str, product_id: str, warehouse_id: str, environment: str, issued_at_iso: str) -> None:
+        try:
+            year, month = int(issued_at_iso[0:4]), int(issued_at_iso[5:7])
+        except (ValueError, IndexError):
+            now = datetime.now(timezone.utc)
+            year, month = now.year, now.month
+        _runner().run("vertical_factu4all/inventory_recalculate", {
+            "company_id": company_id, "product_id": product_id, "warehouse_id": warehouse_id,
+            "environment": environment, "from_year": year, "from_month": month, "dry_run": False,
+        })
 
     def _folio_number(self, cfdi_folio: str | None, series: str | None) -> str:
         cfdi_folio = cfdi_folio or ""

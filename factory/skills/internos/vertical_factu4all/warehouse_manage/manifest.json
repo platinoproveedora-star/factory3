@@ -1,0 +1,9 @@
+{
+  "type": "skill",
+  "name": "vertical_factu4all/warehouse_manage",
+  "version": "0.1.0",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "description": "CRUD de warehouses (almacenes) por company_id+code. action=create|update|list|ensure_default (crea/regresa el almacen PRINCIPAL si la empresa aun no tiene ninguno). dry_run=true por defecto.",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
