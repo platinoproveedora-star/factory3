@@ -177,8 +177,13 @@ function ProductPicker({
   const [name, setName] = useState(prefillName);
   const [sku, setSku] = useState(prefillSku);
   const [unit, setUnit] = useState(prefillUnit || "pieza");
+  const [category, setCategory] = useState("");
+  const [brand, setBrand] = useState("");
   const [saving, setSaving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  const categoryOptions = uniqueSorted(stock.map((r) => r.category));
+  const brandOptions = uniqueSorted(stock.map((r) => r.brand));
 
   async function handleCreate() {
     if (!name.trim()) return;
@@ -188,7 +193,7 @@ function ProductPicker({
       const res = await fetch("/api/inventory/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_name: name, sku, unit: unit || "pieza" })
+        body: JSON.stringify({ product_name: name, sku, unit: unit || "pieza", category, brand })
       });
       const json = await res.json();
       if (!json.ok) {
@@ -210,6 +215,12 @@ function ProductPicker({
         <div className="flex gap-1">
           <input className="input" placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} />
           <input className="input w-20" placeholder="Unidad" value={unit} onChange={(e) => setUnit(e.target.value)} />
+        </div>
+        <div className="flex gap-1">
+          <CatalogSelect label="Categoria" options={categoryOptions} value={category} onChange={setCategory} />
+          <CatalogSelect label="Marca" options={brandOptions} value={brand} onChange={setBrand} />
+        </div>
+        <div className="flex gap-1">
           <button type="button" disabled={saving} className="btn-primary px-2 text-xs" onClick={handleCreate}>
             Crear
           </button>
@@ -243,6 +254,93 @@ function ProductPicker({
 }
 
 type Party = { id: string; party_name: string; party_type: string };
+
+/** Select de proveedor + opcion de dar de alta uno nuevo sin salir del
+ * formulario de compra. */
+function SupplierPicker({
+  suppliers,
+  value,
+  onChange,
+  onSupplierCreated
+}: {
+  suppliers: Party[];
+  value: string;
+  onChange: (partyId: string) => void;
+  onSupplierCreated: () => Promise<void>;
+}) {
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const [rfc, setRfc] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  async function handleCreate() {
+    if (!name.trim()) return;
+    setSaving(true);
+    setLocalError(null);
+    try {
+      const res = await fetch("/api/inventory/parties", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ party_name: name, party_type: "supplier", rfc, phone })
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setLocalError(json.error || "error creando proveedor");
+        return;
+      }
+      await onSupplierCreated();
+      onChange(json.data.party.id);
+      setName("");
+      setRfc("");
+      setPhone("");
+      setCreating(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (creating) {
+    return (
+      <div className="grid gap-1">
+        <input className="input" placeholder="Nombre del proveedor" value={name} onChange={(e) => setName(e.target.value)} />
+        <div className="flex gap-1">
+          <input className="input" placeholder="RFC (opcional)" value={rfc} onChange={(e) => setRfc(e.target.value)} />
+          <input className="input" placeholder="Telefono (opcional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <button type="button" disabled={saving} className="btn-primary px-2 text-xs" onClick={handleCreate}>
+            Crear
+          </button>
+          <button type="button" className="btn-ghost px-2 text-xs" onClick={() => setCreating(false)}>
+            x
+          </button>
+        </div>
+        {localError && <p className="text-xs text-red-600">{localError}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <select
+      required
+      className="input"
+      value={value}
+      onChange={(event) => {
+        if (event.target.value === "__new__") setCreating(true);
+        else onChange(event.target.value);
+      }}
+    >
+      <option value="">Selecciona un proveedor</option>
+      {suppliers.map((party) => (
+        <option key={party.id} value={party.id}>
+          {party.party_name}
+        </option>
+      ))}
+      <option value="__new__">+ Nuevo proveedor...</option>
+    </select>
+  );
+}
+
 type Warehouse = { id: string; code: string; name: string; is_default: boolean };
 type PurchaseItem = { product_id: string; lot_code: string; quantity: string; unit_cost: string; tax_rate: string; notes: string };
 
@@ -1005,14 +1103,7 @@ export default function InventoryPanel() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <div className="col-span-2">
               <label className="label">Proveedor</label>
-              <select required className="input" value={pSupplierId} onChange={(e) => setPSupplierId(e.target.value)}>
-                <option value="">Selecciona un proveedor</option>
-                {suppliers.map((party) => (
-                  <option key={party.id} value={party.id}>
-                    {party.party_name}
-                  </option>
-                ))}
-              </select>
+              <SupplierPicker suppliers={suppliers} value={pSupplierId} onChange={setPSupplierId} onSupplierCreated={loadParties} />
             </div>
             <div>
               <label className="label">Fecha</label>
@@ -1199,14 +1290,7 @@ export default function InventoryPanel() {
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="col-span-2">
                   <label className="label">Proveedor</label>
-                  <select required className="input" value={dSupplierId} onChange={(e) => setDSupplierId(e.target.value)}>
-                    <option value="">Selecciona un proveedor</option>
-                    {suppliers.map((party) => (
-                      <option key={party.id} value={party.id}>
-                        {party.party_name}
-                      </option>
-                    ))}
-                  </select>
+                  <SupplierPicker suppliers={suppliers} value={dSupplierId} onChange={setDSupplierId} onSupplierCreated={loadParties} />
                 </div>
                 <div>
                   <label className="label">Fecha</label>
