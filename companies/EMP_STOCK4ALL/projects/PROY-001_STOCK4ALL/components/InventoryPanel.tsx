@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useMemo, useState, FormEvent } from "react";
 
 type StockRow = {
   product_id: string;
   folio: string;
+  product_key: string | null;
   product_name: string;
   sku: string | null;
   category: string | null;
+  category_2: string | null;
+  brand: string | null;
   unit: string;
   quantity: number;
   min_stock: number;
@@ -15,6 +18,81 @@ type StockRow = {
   avg_cost: number;
   estimated_value: number;
 };
+
+function uniqueSorted(values: (string | null | undefined)[]): string[] {
+  const set = new Set(values.map((v) => (v || "").trim()).filter(Boolean));
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
+}
+
+/** Select con catalogo de valores ya capturados + opcion de escribir uno nuevo. */
+function CatalogSelect({
+  label,
+  options,
+  value,
+  onChange,
+  placeholder
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const [customMode, setCustomMode] = useState(false);
+
+  if (customMode) {
+    return (
+      <div>
+        <label className="label">{label}</label>
+        <div className="flex gap-2">
+          <input
+            className="input"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={placeholder}
+            autoFocus
+          />
+          <button
+            type="button"
+            className="btn-ghost px-3 text-xs"
+            onClick={() => {
+              setCustomMode(false);
+              onChange("");
+            }}
+          >
+            Lista
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <select
+        className="input"
+        value={value}
+        onChange={(event) => {
+          if (event.target.value === "__new__") {
+            setCustomMode(true);
+            onChange("");
+          } else {
+            onChange(event.target.value);
+          }
+        }}
+      >
+        <option value="">Selecciona...</option>
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+        <option value="__new__">+ Nueva...</option>
+      </select>
+    </div>
+  );
+}
 
 type Party = { id: string; party_name: string; party_type: string };
 
@@ -44,6 +122,20 @@ export default function InventoryPanel() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<"stock" | "producto" | "compra">("stock");
+
+  const [npName, setNpName] = useState("");
+  const [npKey, setNpKey] = useState("");
+  const [npSku, setNpSku] = useState("");
+  const [npCategory, setNpCategory] = useState("");
+  const [npCategory2, setNpCategory2] = useState("");
+  const [npBrand, setNpBrand] = useState("");
+  const [npUnit, setNpUnit] = useState("pieza");
+  const [npMinStock, setNpMinStock] = useState("0");
+
+  const categoryOptions = useMemo(() => uniqueSorted(stock.map((r) => r.category)), [stock]);
+  const category2Options = useMemo(() => uniqueSorted(stock.map((r) => r.category_2)), [stock]);
+  const brandOptions = useMemo(() => uniqueSorted(stock.map((r) => r.brand)), [stock]);
+  const unitOptions = useMemo(() => uniqueSorted(["pieza", ...stock.map((r) => r.unit)]), [stock]);
 
   async function loadStock(status: "active" | "inactive" = statusFilter) {
     setLoading(true);
@@ -85,13 +177,15 @@ export default function InventoryPanel() {
     event.preventDefault();
     setError(null);
     setNotice(null);
-    const form = new FormData(event.currentTarget);
     const body = {
-      product_name: String(form.get("product_name") || ""),
-      sku: String(form.get("sku") || ""),
-      category: String(form.get("category") || ""),
-      unit: String(form.get("unit") || "pieza"),
-      min_stock: Number(form.get("min_stock") || 0)
+      product_name: npName,
+      product_key: npKey,
+      sku: npSku,
+      category: npCategory,
+      category_2: npCategory2,
+      brand: npBrand,
+      unit: npUnit || "pieza",
+      min_stock: Number(npMinStock || 0)
     };
     const res = await fetch("/api/inventory/products", {
       method: "POST",
@@ -104,7 +198,14 @@ export default function InventoryPanel() {
       return;
     }
     setNotice(`Producto ${json.data.product.folio} creado`);
-    event.currentTarget.reset();
+    setNpName("");
+    setNpKey("");
+    setNpSku("");
+    setNpCategory("");
+    setNpCategory2("");
+    setNpBrand("");
+    setNpUnit("pieza");
+    setNpMinStock("0");
     loadStock();
   }
 
@@ -259,29 +360,54 @@ export default function InventoryPanel() {
 
       {tab === "producto" && (
         <form onSubmit={handleNewProduct} className="card mt-4 grid max-w-xl gap-3">
+          <p className="text-xs text-muted">Alta de catalogo. El folio se asigna solo (interno).</p>
           <div>
-            <label className="label">Nombre del producto</label>
-            <input name="product_name" required className="input" placeholder="Tuberia PVC 4 pulgadas" />
+            <label className="label">Nombre</label>
+            <input
+              required
+              className="input"
+              placeholder="Tuberia PVC 4 pulgadas"
+              value={npName}
+              onChange={(event) => setNpName(event.target.value)}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">SKU / codigo</label>
-              <input name="sku" className="input" />
+              <label className="label">Clave interna</label>
+              <input
+                className="input"
+                placeholder="La modifica el cliente"
+                value={npKey}
+                onChange={(event) => setNpKey(event.target.value)}
+              />
             </div>
             <div>
-              <label className="label">Categoria</label>
-              <input name="category" className="input" placeholder="tuberia" />
+              <label className="label">SKU</label>
+              <input
+                className="input"
+                placeholder="Codigo de fabrica"
+                value={npSku}
+                onChange={(event) => setNpSku(event.target.value)}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Unidad</label>
-              <input name="unit" className="input" defaultValue="pieza" />
-            </div>
-            <div>
-              <label className="label">Stock minimo (alerta)</label>
-              <input name="min_stock" type="number" step="0.01" className="input" defaultValue={0} />
-            </div>
+            <CatalogSelect label="Categoria" options={categoryOptions} value={npCategory} onChange={setNpCategory} placeholder="tuberia" />
+            <CatalogSelect label="Categoria 2" options={category2Options} value={npCategory2} onChange={setNpCategory2} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <CatalogSelect label="Marca" options={brandOptions} value={npBrand} onChange={setNpBrand} />
+            <CatalogSelect label="Unidad" options={unitOptions} value={npUnit} onChange={setNpUnit} placeholder="pieza" />
+          </div>
+          <div>
+            <label className="label">Minimo (alerta de stock bajo)</label>
+            <input
+              type="number"
+              step="0.01"
+              className="input"
+              value={npMinStock}
+              onChange={(event) => setNpMinStock(event.target.value)}
+            />
           </div>
           <button type="submit" className="btn-primary px-4 py-2">
             Guardar producto
