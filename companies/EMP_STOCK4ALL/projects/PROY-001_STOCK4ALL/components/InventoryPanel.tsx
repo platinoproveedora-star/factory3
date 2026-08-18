@@ -94,6 +94,150 @@ function CatalogSelect({
   );
 }
 
+/** Selector de almacen (ya existentes + crear nuevo). Se usa igual arriba
+ * en el header y dentro del borrador -- ambos comparten el mismo estado
+ * para que sean, literalmente, el mismo selector. */
+function WarehousePicker({
+  warehouses,
+  value,
+  onChange,
+  adding,
+  setAdding,
+  newCode,
+  setNewCode,
+  newName,
+  setNewName,
+  onCreate
+}: {
+  warehouses: Warehouse[];
+  value: string;
+  onChange: (value: string) => void;
+  adding: boolean;
+  setAdding: (value: boolean) => void;
+  newCode: string;
+  setNewCode: (value: string) => void;
+  newName: string;
+  setNewName: (value: string) => void;
+  onCreate: () => void;
+}) {
+  if (adding) {
+    return (
+      <div className="flex items-center gap-1">
+        <input className="input w-24" placeholder="Codigo" value={newCode} onChange={(e) => setNewCode(e.target.value)} />
+        <input className="input w-40" placeholder="Nombre" value={newName} onChange={(e) => setNewName(e.target.value)} />
+        <button type="button" className="btn-primary px-3 text-xs" onClick={onCreate}>
+          Crear
+        </button>
+        <button type="button" className="btn-ghost px-2 text-xs" onClick={() => setAdding(false)}>
+          x
+        </button>
+      </div>
+    );
+  }
+  return (
+    <select
+      className="input w-auto"
+      value={value}
+      onChange={(event) => {
+        if (event.target.value === "__new__") setAdding(true);
+        else onChange(event.target.value);
+      }}
+    >
+      {warehouses.map((warehouse) => (
+        <option key={warehouse.id} value={warehouse.code}>
+          {warehouse.name} ({warehouse.code})
+        </option>
+      ))}
+      <option value="__new__">+ Nuevo almacen...</option>
+    </select>
+  );
+}
+
+/** Select de producto del catalogo + opcion de dar de alta uno nuevo sin
+ * salir del renglon (util cuando el documento trae productos que todavia
+ * no existen, ej. la primera compra de una categoria nueva). */
+function ProductPicker({
+  stock,
+  value,
+  onChange,
+  prefillName,
+  prefillSku,
+  onProductCreated
+}: {
+  stock: StockRow[];
+  value: string;
+  onChange: (productId: string) => void;
+  prefillName: string;
+  prefillSku: string;
+  onProductCreated: () => Promise<void>;
+}) {
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState(prefillName);
+  const [sku, setSku] = useState(prefillSku);
+  const [saving, setSaving] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  async function handleCreate() {
+    if (!name.trim()) return;
+    setSaving(true);
+    setLocalError(null);
+    try {
+      const res = await fetch("/api/inventory/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_name: name, sku, unit: "pieza" })
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setLocalError(json.error || "error creando producto");
+        return;
+      }
+      await onProductCreated();
+      onChange(json.data.product.id);
+      setCreating(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (creating) {
+    return (
+      <div className="grid gap-1">
+        <input className="input" placeholder="Nombre del producto" value={name} onChange={(e) => setName(e.target.value)} />
+        <div className="flex gap-1">
+          <input className="input" placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} />
+          <button type="button" disabled={saving} className="btn-primary px-2 text-xs" onClick={handleCreate}>
+            Crear
+          </button>
+          <button type="button" className="btn-ghost px-2 text-xs" onClick={() => setCreating(false)}>
+            x
+          </button>
+        </div>
+        {localError && <p className="text-xs text-red-600">{localError}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <select
+      className="input"
+      value={value}
+      onChange={(event) => {
+        if (event.target.value === "__new__") setCreating(true);
+        else onChange(event.target.value);
+      }}
+    >
+      <option value="">Selecciona...</option>
+      {stock.map((row) => (
+        <option key={row.product_id} value={row.product_id}>
+          {row.product_name} {row.sku ? `(${row.sku})` : ""}
+        </option>
+      ))}
+      <option value="__new__">+ Nuevo producto...</option>
+    </select>
+  );
+}
+
 type Party = { id: string; party_name: string; party_type: string };
 type Warehouse = { id: string; code: string; name: string; is_default: boolean };
 type PurchaseItem = { product_id: string; lot_code: string; quantity: string; unit_cost: string; tax_rate: string; notes: string };
@@ -108,7 +252,7 @@ function emptyPurchaseItem(): PurchaseItem {
   return { product_id: "", lot_code: "", quantity: "", unit_cost: "", tax_rate: "0.16", notes: "" };
 }
 
-type DraftItem = PurchaseItem & { producto_texto: string; unidad_texto: string };
+type DraftItem = PurchaseItem & { producto_texto: string; unidad_texto: string; sku_texto: string };
 type PurchaseDraft = {
   id: string;
   file_name: string | null;
@@ -121,7 +265,7 @@ type PurchaseDraft = {
 
 function draftItemsFromExtracted(extracted: any): DraftItem[] {
   const items = Array.isArray(extracted?.items) ? extracted.items : [];
-  if (!items.length) return [{ ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "" }];
+  if (!items.length) return [{ ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "", sku_texto: "" }];
   return items.map((item: any) => ({
     product_id: item.product_id || "",
     lot_code: item.lot_code || "",
@@ -130,7 +274,8 @@ function draftItemsFromExtracted(extracted: any): DraftItem[] {
     tax_rate: item.tax_rate != null ? String(item.tax_rate) : "0.16",
     notes: item.notes || "",
     producto_texto: item.producto_texto || item.producto || "",
-    unidad_texto: item.unidad_texto || item.unidad || ""
+    unidad_texto: item.unidad_texto || item.unidad || "",
+    sku_texto: item.sku_texto || item.sku || ""
   }));
 }
 
@@ -297,7 +442,7 @@ export default function InventoryPanel() {
   }
 
   function addDraftItem() {
-    setDraftItems((items) => [...items, { ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "" }]);
+    setDraftItems((items) => [...items, { ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "", sku_texto: "" }]);
   }
 
   function removeDraftItem(index: number) {
@@ -542,37 +687,18 @@ export default function InventoryPanel() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="label mb-0">Almacen</label>
-          {!addingWarehouse ? (
-            <select
-              className="input w-auto"
-              value={warehouseId}
-              onChange={(event) => {
-                if (event.target.value === "__new__") {
-                  setAddingWarehouse(true);
-                } else {
-                  setWarehouseId(event.target.value);
-                }
-              }}
-            >
-              {warehouses.map((warehouse) => (
-                <option key={warehouse.id} value={warehouse.code}>
-                  {warehouse.name} ({warehouse.code})
-                </option>
-              ))}
-              <option value="__new__">+ Nuevo almacen...</option>
-            </select>
-          ) : (
-            <div className="flex items-center gap-1">
-              <input className="input w-24" placeholder="Codigo" value={newWarehouseCode} onChange={(e) => setNewWarehouseCode(e.target.value)} />
-              <input className="input w-40" placeholder="Nombre" value={newWarehouseName} onChange={(e) => setNewWarehouseName(e.target.value)} />
-              <button type="button" className="btn-primary px-3 text-xs" onClick={handleCreateWarehouse}>
-                Crear
-              </button>
-              <button type="button" className="btn-ghost px-2 text-xs" onClick={() => setAddingWarehouse(false)}>
-                x
-              </button>
-            </div>
-          )}
+          <WarehousePicker
+            warehouses={warehouses}
+            value={warehouseId}
+            onChange={setWarehouseId}
+            adding={addingWarehouse}
+            setAdding={setAddingWarehouse}
+            newCode={newWarehouseCode}
+            setNewCode={setNewWarehouseCode}
+            newName={newWarehouseName}
+            setNewName={setNewWarehouseName}
+            onCreate={handleCreateWarehouse}
+          />
           <label className="label mb-0">Ver</label>
           <select
             className="input w-auto"
@@ -938,6 +1064,7 @@ export default function InventoryPanel() {
                   <thead>
                     <tr className="text-xs uppercase text-muted">
                       <th className="py-1">Leido del documento</th>
+                      <th>SKU / clave proveedor</th>
                       <th>Producto (catalogo)</th>
                       <th>Lote</th>
                       <th>Cantidad</th>
@@ -952,19 +1079,16 @@ export default function InventoryPanel() {
                         <td className="py-1 pr-2 text-xs text-muted">
                           {item.producto_texto} {item.unidad_texto ? `(${item.unidad_texto})` : ""}
                         </td>
+                        <td className="pr-2 text-xs text-muted">{item.sku_texto || "-"}</td>
                         <td className="pr-2">
-                          <select
-                            className="input"
+                          <ProductPicker
+                            stock={stock}
                             value={item.product_id}
-                            onChange={(e) => updateDraftItem(index, { product_id: e.target.value })}
-                          >
-                            <option value="">Selecciona...</option>
-                            {stock.map((row) => (
-                              <option key={row.product_id} value={row.product_id}>
-                                {row.product_name} {row.sku ? `(${row.sku})` : ""}
-                              </option>
-                            ))}
-                          </select>
+                            onChange={(productId) => updateDraftItem(index, { product_id: productId })}
+                            prefillName={item.producto_texto}
+                            prefillSku={item.sku_texto}
+                            onProductCreated={loadStock}
+                          />
                         </td>
                         <td className="pr-2">
                           <input className="input" value={item.lot_code} onChange={(e) => updateDraftItem(index, { lot_code: e.target.value })} />
@@ -1021,7 +1145,21 @@ export default function InventoryPanel() {
                 </div>
               </div>
 
-              <p className="text-xs text-muted">Almacen: {warehouseId || "-"}</p>
+              <div className="flex items-center gap-2">
+                <label className="label mb-0">Almacen</label>
+                <WarehousePicker
+                  warehouses={warehouses}
+                  value={warehouseId}
+                  onChange={setWarehouseId}
+                  adding={addingWarehouse}
+                  setAdding={setAddingWarehouse}
+                  newCode={newWarehouseCode}
+                  setNewCode={setNewWarehouseCode}
+                  newName={newWarehouseName}
+                  setNewName={setNewWarehouseName}
+                  onCreate={handleCreateWarehouse}
+                />
+              </div>
               <div className="flex gap-2">
                 <button type="button" className="btn-ghost px-4 py-2" onClick={handleSaveDraft}>
                   Guardar borrador

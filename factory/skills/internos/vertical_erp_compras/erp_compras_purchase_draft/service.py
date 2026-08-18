@@ -26,6 +26,8 @@ _EXTRACT_SCHEMA = {
     "items": (
         "arreglo de renglones de compra; cada elemento debe ser un objeto con: "
         "producto (nombre o descripcion tal como aparece en el documento), "
+        "sku (clave, codigo o numero de parte del proveedor/fabricante para ese producto, tal como "
+        "aparece en el documento -- suele ser una columna separada del nombre; usa null si no existe), "
         "cantidad (numero), costo_unitario (numero, precio unitario SIN IVA si se puede distinguir), "
         "unidad (unidad de medida si aparece, ej. pieza, kg, rollo, metro)"
     ),
@@ -34,8 +36,10 @@ _EXTRACT_SCHEMA = {
 _EXTRACT_CONTEXT = (
     "Eres un asistente que lee documentos de compra (facturas, notas de remision, cotizaciones) "
     "de una empresa de materiales de construccion en Mexico, incluyendo tuberia. Extrae TODOS los "
-    "renglones de productos comprados con su cantidad y costo unitario. Si el documento desglosa IVA, "
-    "usa el costo unitario SIN IVA. Si un campo no se puede determinar usa null."
+    "renglones de productos comprados con su cantidad y costo unitario. Estos documentos casi siempre "
+    "traen una columna de clave/codigo/SKU del proveedor separada del nombre del producto -- captura "
+    "ese valor en el campo sku de cada renglon, no lo mezcles con el nombre del producto. Si el "
+    "documento desglosa IVA, usa el costo unitario SIN IVA. Si un campo no se puede determinar usa null."
 )
 
 
