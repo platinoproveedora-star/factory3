@@ -490,6 +490,123 @@ function statusLabel(status: string) {
   return { text: "OK", className: "text-emerald-600" };
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function openPrintWindow(html: string) {
+  const win = window.open("", "_blank");
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+}
+
+const PRINT_STYLES = `
+  body { font-family: Arial, sans-serif; color: #111827; margin: 32px; }
+  header { display: flex; justify-content: space-between; border-bottom: 2px solid #111827; padding-bottom: 16px; }
+  h1 { margin: 0; font-size: 24px; }
+  .right { text-align: right; }
+  .muted { color: #64748b; font-size: 12px; }
+  .box { border: 1px solid #cbd5e1; padding: 12px; margin-top: 18px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 12px; }
+  th { background: #f1f5f9; text-align: left; }
+  th, td { border: 1px solid #cbd5e1; padding: 7px; }
+  .num { text-align: right; }
+  .totals { margin-left: auto; width: 260px; margin-top: 18px; }
+  .totals div { display: flex; justify-content: space-between; padding: 6px 0; }
+  .total { border-top: 2px solid #111827; font-weight: bold; font-size: 16px; }
+  @media print { body { margin: 18mm; } .no-print { display: none; } }
+`;
+
+/** Vista previa imprimible de los productos que se van a dar de alta,
+ * lo leido del documento junto a lo que realmente se va a crear. */
+function buildProductsPreviewHtml(
+  rows: { producto_texto: string; sku_texto: string; category: string; brand: string; unit: string }[]
+): string {
+  const rowsHtml = rows
+    .map(
+      (row, index) => `<tr>
+        <td>${index + 1}</td>
+        <td>${escapeHtml(row.producto_texto || "-")}</td>
+        <td>${escapeHtml(row.sku_texto || "-")}</td>
+        <td>${escapeHtml(row.category || "-")}</td>
+        <td>${escapeHtml(row.brand || "-")}</td>
+        <td>${escapeHtml(row.unit || "-")}</td>
+      </tr>`
+    )
+    .join("");
+  return `<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8" /><title>Revision de productos nuevos</title><style>${PRINT_STYLES}</style></head>
+<body>
+<button class="no-print" onclick="window.print()">Imprimir / guardar PDF</button>
+<header><div><h1>Productos nuevos a dar de alta</h1><p class="muted">${rows.length} producto(s) -- revisar contra lo leido del documento antes de crear</p></div></header>
+<table>
+  <thead><tr><th>#</th><th>Nombre (leido del documento)</th><th>SKU</th><th>Categoria</th><th>Marca</th><th>Unidad</th></tr></thead>
+  <tbody>${rowsHtml}</tbody>
+</table>
+</body>
+</html>`;
+}
+
+type PurchasePreviewItem = { productName: string; sku: string; lotCode: string; quantity: string; unitCost: string; taxRate: string };
+
+/** Vista previa imprimible de la compra completa, estilo remision, ANTES
+ * de guardarla -- misma plantilla visual que erp_compras_purchase_pdf
+ * usa para compras ya confirmadas, para que se vean iguales. */
+function buildPurchasePreviewHtml(params: {
+  supplierName: string;
+  movementDate: string;
+  externalFolio: string;
+  paidAmount: number;
+  notes: string;
+  warehouseLabel: string;
+  items: PurchasePreviewItem[];
+}): string {
+  const amounts = sumAmounts(params.items.map((item) => ({ quantity: item.quantity, unit_cost: item.unitCost, tax_rate: item.taxRate })));
+  const rowsHtml = params.items
+    .map((item, index) => {
+      const line = lineAmounts(item.quantity, item.unitCost, item.taxRate);
+      return `<tr>
+        <td>${index + 1}</td>
+        <td>${escapeHtml(item.productName)}${item.sku ? ` <span class="muted">(${escapeHtml(item.sku)})</span>` : ""}</td>
+        <td>${escapeHtml(item.lotCode || "GENERAL")}</td>
+        <td class="num">${escapeHtml(item.quantity || "0")}</td>
+        <td class="num">${money(Number(item.unitCost || 0))}</td>
+        <td class="num">${money(line.subtotal)}</td>
+        <td class="num">${money(line.tax)}</td>
+        <td class="num">${money(line.total)}</td>
+      </tr>`;
+    })
+    .join("");
+  return `<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8" /><title>Vista previa de compra</title><style>${PRINT_STYLES}</style></head>
+<body>
+<button class="no-print" onclick="window.print()">Imprimir / guardar PDF</button>
+<header>
+  <div><h1>Compra / Entrada -- BORRADOR</h1><p class="muted">Vista previa, todavia no se ha registrado en el ERP</p></div>
+  <div class="right">
+    <p class="muted">Fecha: ${escapeHtml(params.movementDate || "-")}</p>
+    <p class="muted">Folio proveedor: ${escapeHtml(params.externalFolio || "-")}</p>
+    <p class="muted">Almacen: ${escapeHtml(params.warehouseLabel || "-")}</p>
+  </div>
+</header>
+<section class="box"><strong>Proveedor:</strong> ${escapeHtml(params.supplierName || "-")}<br /><strong>Notas:</strong> ${escapeHtml(params.notes || "-")}</section>
+<table>
+  <thead><tr><th>#</th><th>Producto</th><th>Lote</th><th class="num">Cantidad</th><th class="num">Costo unit.</th><th class="num">Subtotal</th><th class="num">IVA</th><th class="num">Total</th></tr></thead>
+  <tbody>${rowsHtml}</tbody>
+</table>
+<section class="totals">
+  <div><span>Subtotal</span><span>${money(amounts.subtotal)}</span></div>
+  <div><span>IVA</span><span>${money(amounts.tax)}</span></div>
+  <div><span>Pagado</span><span>${money(params.paidAmount)}</span></div>
+  <div class="total"><span>Total</span><span>${money(amounts.total)}</span></div>
+</section>
+</body>
+</html>`;
+}
+
 export default function InventoryPanel() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [warehouseId, setWarehouseId] = useState("");
@@ -758,6 +875,65 @@ export default function InventoryPanel() {
     } finally {
       setBulkCreating(false);
     }
+  }
+
+  function handlePreviewNewProducts() {
+    const rows = unmatchedDraftIndexes.map((index) => ({
+      producto_texto: draftItems[index].producto_texto,
+      sku_texto: draftItems[index].sku_texto,
+      category: bulkCategory,
+      brand: bulkBrand,
+      unit: bulkUnit
+    }));
+    openPrintWindow(buildProductsPreviewHtml(rows));
+  }
+
+  function previewItemsFrom(items: { product_id: string; producto_texto?: string; sku_texto?: string; lot_code: string; quantity: string; unit_cost: string; tax_rate: string }[]): PurchasePreviewItem[] {
+    return items
+      .filter((item) => item.product_id || item.producto_texto)
+      .map((item) => {
+        const product = stock.find((row) => row.product_id === item.product_id);
+        return {
+          productName: product?.product_name || item.producto_texto || "(sin producto)",
+          sku: product?.sku || item.sku_texto || "",
+          lotCode: item.lot_code,
+          quantity: item.quantity,
+          unitCost: item.unit_cost,
+          taxRate: item.tax_rate
+        };
+      });
+  }
+
+  function handlePreviewPurchase() {
+    const supplierName = suppliers.find((party) => party.id === pSupplierId)?.party_name || "(sin proveedor)";
+    const warehouseLabel = warehouses.find((w) => w.code === warehouseId)?.name || warehouseId;
+    openPrintWindow(
+      buildPurchasePreviewHtml({
+        supplierName,
+        movementDate: pMovementDate,
+        externalFolio: pExternalFolio,
+        paidAmount: Number(pPaidAmount || 0),
+        notes: pNotes,
+        warehouseLabel,
+        items: previewItemsFrom(purchaseItems)
+      })
+    );
+  }
+
+  function handlePreviewDraftPurchase() {
+    const supplierName = suppliers.find((party) => party.id === dSupplierId)?.party_name || "(sin proveedor)";
+    const warehouseLabel = warehouses.find((w) => w.code === warehouseId)?.name || warehouseId;
+    openPrintWindow(
+      buildPurchasePreviewHtml({
+        supplierName,
+        movementDate: dMovementDate,
+        externalFolio: dExternalFolio,
+        paidAmount: Number(dPaidAmount || 0),
+        notes: dNotes,
+        warehouseLabel,
+        items: previewItemsFrom(draftItems)
+      })
+    );
   }
 
   const categoryOptions = useMemo(() => uniqueSorted(stock.map((r) => r.category)), [stock]);
@@ -1227,9 +1403,14 @@ export default function InventoryPanel() {
           </div>
 
           <p className="text-xs text-muted">Almacen: {warehouseId || "-"}</p>
-          <button type="submit" className="btn-primary w-fit px-4 py-2">
-            Registrar compra
-          </button>
+          <div className="flex gap-2">
+            <button type="button" className="btn-ghost px-4 py-2" onClick={handlePreviewPurchase}>
+              Vista previa PDF
+            </button>
+            <button type="submit" className="btn-primary px-4 py-2">
+              Registrar compra
+            </button>
+          </div>
         </form>
       )}
 
@@ -1324,14 +1505,14 @@ export default function InventoryPanel() {
                       <input type="number" step="0.01" className="input" value={bulkMinStock} onChange={(e) => setBulkMinStock(e.target.value)} />
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    disabled={bulkCreating}
-                    className="btn-primary mt-2 px-3 py-1 text-xs"
-                    onClick={handleBulkCreate}
-                  >
-                    {bulkCreating ? "Creando..." : `Crear todos los productos nuevos (${unmatchedDraftIndexes.length})`}
-                  </button>
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" className="btn-ghost px-3 py-1 text-xs" onClick={handlePreviewNewProducts}>
+                      Vista previa PDF
+                    </button>
+                    <button type="button" disabled={bulkCreating} className="btn-primary px-3 py-1 text-xs" onClick={handleBulkCreate}>
+                      {bulkCreating ? "Creando..." : `Crear todos los productos nuevos (${unmatchedDraftIndexes.length})`}
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -1490,6 +1671,9 @@ export default function InventoryPanel() {
                 />
               </div>
               <div className="flex gap-2">
+                <button type="button" className="btn-ghost px-4 py-2" onClick={handlePreviewDraftPurchase}>
+                  Vista previa PDF
+                </button>
                 <button type="button" className="btn-ghost px-4 py-2" onClick={handleSaveDraft}>
                   Guardar borrador
                 </button>
