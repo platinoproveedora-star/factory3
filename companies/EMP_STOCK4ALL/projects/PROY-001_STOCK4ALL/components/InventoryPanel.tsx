@@ -95,8 +95,18 @@ function CatalogSelect({
 }
 
 type Party = { id: string; party_name: string; party_type: string };
+type Warehouse = { id: string; code: string; name: string; is_default: boolean };
+type PurchaseItem = { product_id: string; lot_code: string; quantity: string; unit_cost: string; tax_rate: string; notes: string };
 
-const WAREHOUSES = [{ id: "PRINCIPAL", label: "Principal" }];
+const TAX_RATES = [
+  { value: "0", label: "IVA 0%" },
+  { value: "0.08", label: "IVA 8%" },
+  { value: "0.16", label: "IVA 16%" }
+];
+
+function emptyPurchaseItem(): PurchaseItem {
+  return { product_id: "", lot_code: "", quantity: "", unit_cost: "", tax_rate: "0.16", notes: "" };
+}
 
 function money(value: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(value || 0));
@@ -113,7 +123,11 @@ function statusLabel(status: string) {
 }
 
 export default function InventoryPanel() {
-  const [warehouseId, setWarehouseId] = useState("PRINCIPAL");
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [warehouseId, setWarehouseId] = useState("");
+  const [addingWarehouse, setAddingWarehouse] = useState(false);
+  const [newWarehouseCode, setNewWarehouseCode] = useState("");
+  const [newWarehouseName, setNewWarehouseName] = useState("");
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive">("active");
   const [stock, setStock] = useState<StockRow[]>([]);
   const [summary, setSummary] = useState<{ products: number; low_stock: number; negative_stock: number; estimated_value: number } | null>(null);
@@ -131,6 +145,34 @@ export default function InventoryPanel() {
   const [npBrand, setNpBrand] = useState("");
   const [npUnit, setNpUnit] = useState("pieza");
   const [npMinStock, setNpMinStock] = useState("0");
+
+  const [pSupplierId, setPSupplierId] = useState("");
+  const [pMovementDate, setPMovementDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [pExternalFolio, setPExternalFolio] = useState("");
+  const [pPaidAmount, setPPaidAmount] = useState("0");
+  const [pNotes, setPNotes] = useState("");
+  const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([emptyPurchaseItem()]);
+
+  function updatePurchaseItem(index: number, patch: Partial<PurchaseItem>) {
+    setPurchaseItems((items) => items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  }
+
+  function addPurchaseItem() {
+    setPurchaseItems((items) => [...items, emptyPurchaseItem()]);
+  }
+
+  function removePurchaseItem(index: number) {
+    setPurchaseItems((items) => (items.length > 1 ? items.filter((_, i) => i !== index) : items));
+  }
+
+  const purchaseTotal = useMemo(
+    () =>
+      purchaseItems.reduce((sum, item) => {
+        const subtotal = Number(item.quantity || 0) * Number(item.unit_cost || 0);
+        return sum + subtotal * (1 + Number(item.tax_rate || 0));
+      }, 0),
+    [purchaseItems]
+  );
 
   const categoryOptions = useMemo(() => uniqueSorted(stock.map((r) => r.category)), [stock]);
   const category2Options = useMemo(() => uniqueSorted(stock.map((r) => r.category_2)), [stock]);
@@ -168,9 +210,43 @@ export default function InventoryPanel() {
     }
   }
 
+  async function loadWarehouses() {
+    try {
+      const res = await fetch("/api/inventory/warehouses", { cache: "no-store" });
+      const json = await res.json();
+      if (json.ok) {
+        const list: Warehouse[] = json.data.warehouses || [];
+        setWarehouses(list);
+        setWarehouseId((current) => current || list.find((w) => w.is_default)?.code || list[0]?.code || "");
+      }
+    } catch {
+      // silencioso: el default (ensure_default) igual se crea del lado del servidor
+    }
+  }
+
+  async function handleCreateWarehouse() {
+    if (!newWarehouseCode.trim() || !newWarehouseName.trim()) return;
+    const res = await fetch("/api/inventory/warehouses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: newWarehouseCode.trim().toUpperCase(), name: newWarehouseName.trim() })
+    });
+    const json = await res.json();
+    if (!json.ok) {
+      setError(json.error || "error creando almacen");
+      return;
+    }
+    setNewWarehouseCode("");
+    setNewWarehouseName("");
+    setAddingWarehouse(false);
+    await loadWarehouses();
+    setWarehouseId(json.data.warehouse.code);
+  }
+
   useEffect(() => {
     loadStock();
     loadParties();
+    loadWarehouses();
   }, []);
 
   async function handleNewProduct(event: FormEvent<HTMLFormElement>) {
@@ -213,16 +289,30 @@ export default function InventoryPanel() {
     event.preventDefault();
     setError(null);
     setNotice(null);
-    const form = new FormData(event.currentTarget);
+    const items = purchaseItems
+      .filter((item) => item.product_id && Number(item.quantity) > 0)
+      .map((item) => ({
+        product_id: item.product_id,
+        lot_code: item.lot_code || undefined,
+        quantity: Number(item.quantity),
+        unit_cost: Number(item.unit_cost || 0),
+        tax_rate: Number(item.tax_rate),
+        notes: item.notes || undefined
+      }));
+    if (!items.length) {
+      setError("Agrega al menos un renglon con producto y cantidad");
+      return;
+    }
     const body = {
-      source_type: "compra",
-      product_id: String(form.get("product_id") || ""),
-      party_id: String(form.get("party_id") || ""),
-      quantity: Number(form.get("quantity") || 0),
-      unit_cost: Number(form.get("unit_cost") || 0),
-      warehouse_id: warehouseId
+      supplier_id: pSupplierId,
+      movement_date: pMovementDate,
+      external_folio: pExternalFolio || undefined,
+      paid_amount: Number(pPaidAmount || 0),
+      notes: pNotes || undefined,
+      warehouse_id: warehouseId,
+      items
     };
-    const res = await fetch("/api/inventory/kardex", {
+    const res = await fetch("/api/inventory/purchases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -232,8 +322,12 @@ export default function InventoryPanel() {
       setError(json.error || "error registrando compra");
       return;
     }
-    setNotice(`Compra ${json.data.movement.folio} registrada`);
-    event.currentTarget.reset();
+    setNotice(`Compra ${json.data.purchase.source_folio} registrada (${money(json.data.purchase.total_cost)})`);
+    setPSupplierId("");
+    setPExternalFolio("");
+    setPPaidAmount("0");
+    setPNotes("");
+    setPurchaseItems([emptyPurchaseItem()]);
     loadStock();
   }
 
@@ -244,19 +338,39 @@ export default function InventoryPanel() {
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-moss">Stock4All</p>
           <h1 className="mt-2 text-3xl font-semibold text-ink">Inventario</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <label className="label mb-0">Almacen</label>
-          <select
-            className="input w-auto"
-            value={warehouseId}
-            onChange={(event) => setWarehouseId(event.target.value)}
-          >
-            {WAREHOUSES.map((warehouse) => (
-              <option key={warehouse.id} value={warehouse.id}>
-                {warehouse.label}
-              </option>
-            ))}
-          </select>
+          {!addingWarehouse ? (
+            <select
+              className="input w-auto"
+              value={warehouseId}
+              onChange={(event) => {
+                if (event.target.value === "__new__") {
+                  setAddingWarehouse(true);
+                } else {
+                  setWarehouseId(event.target.value);
+                }
+              }}
+            >
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.code}>
+                  {warehouse.name} ({warehouse.code})
+                </option>
+              ))}
+              <option value="__new__">+ Nuevo almacen...</option>
+            </select>
+          ) : (
+            <div className="flex items-center gap-1">
+              <input className="input w-24" placeholder="Codigo" value={newWarehouseCode} onChange={(e) => setNewWarehouseCode(e.target.value)} />
+              <input className="input w-40" placeholder="Nombre" value={newWarehouseName} onChange={(e) => setNewWarehouseName(e.target.value)} />
+              <button type="button" className="btn-primary px-3 text-xs" onClick={handleCreateWarehouse}>
+                Crear
+              </button>
+              <button type="button" className="btn-ghost px-2 text-xs" onClick={() => setAddingWarehouse(false)}>
+                x
+              </button>
+            </div>
+          )}
           <label className="label mb-0">Ver</label>
           <select
             className="input w-auto"
@@ -416,41 +530,124 @@ export default function InventoryPanel() {
       )}
 
       {tab === "compra" && (
-        <form onSubmit={handlePurchase} className="card mt-4 grid max-w-xl gap-3">
-          <div>
-            <label className="label">Producto</label>
-            <select name="product_id" required className="input">
-              <option value="">Selecciona un producto</option>
-              {stock.map((row) => (
-                <option key={row.product_id} value={row.product_id}>
-                  {row.product_name} {row.sku ? `(${row.sku})` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label">Proveedor</label>
-            <select name="party_id" required className="input">
-              <option value="">Selecciona un proveedor</option>
-              {suppliers.map((party) => (
-                <option key={party.id} value={party.id}>
-                  {party.party_name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Cantidad</label>
-              <input name="quantity" type="number" step="0.01" required className="input" />
+        <form onSubmit={handlePurchase} className="card mt-4 grid gap-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="col-span-2">
+              <label className="label">Proveedor</label>
+              <select required className="input" value={pSupplierId} onChange={(e) => setPSupplierId(e.target.value)}>
+                <option value="">Selecciona un proveedor</option>
+                {suppliers.map((party) => (
+                  <option key={party.id} value={party.id}>
+                    {party.party_name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="label">Costo unitario</label>
-              <input name="unit_cost" type="number" step="0.01" required className="input" />
+              <label className="label">Fecha</label>
+              <input type="date" required className="input" value={pMovementDate} onChange={(e) => setPMovementDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="label">Folio proveedor</label>
+              <input className="input" placeholder="Opcional" value={pExternalFolio} onChange={(e) => setPExternalFolio(e.target.value)} />
             </div>
           </div>
-          <p className="text-xs text-muted">Almacen: {warehouseId}</p>
-          <button type="submit" className="btn-primary px-4 py-2">
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-xs uppercase text-muted">
+                  <th className="py-1">Producto</th>
+                  <th>Lote</th>
+                  <th>Cantidad</th>
+                  <th>Costo unit.</th>
+                  <th>IVA</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {purchaseItems.map((item, index) => (
+                  <tr key={index}>
+                    <td className="py-1 pr-2">
+                      <select
+                        className="input"
+                        value={item.product_id}
+                        onChange={(e) => updatePurchaseItem(index, { product_id: e.target.value })}
+                      >
+                        <option value="">Selecciona...</option>
+                        {stock.map((row) => (
+                          <option key={row.product_id} value={row.product_id}>
+                            {row.product_name} {row.sku ? `(${row.sku})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="pr-2">
+                      <input
+                        className="input"
+                        placeholder="GENERAL"
+                        value={item.lot_code}
+                        onChange={(e) => updatePurchaseItem(index, { lot_code: e.target.value })}
+                      />
+                    </td>
+                    <td className="pr-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        value={item.quantity}
+                        onChange={(e) => updatePurchaseItem(index, { quantity: e.target.value })}
+                      />
+                    </td>
+                    <td className="pr-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="input"
+                        value={item.unit_cost}
+                        onChange={(e) => updatePurchaseItem(index, { unit_cost: e.target.value })}
+                      />
+                    </td>
+                    <td className="pr-2">
+                      <select className="input" value={item.tax_rate} onChange={(e) => updatePurchaseItem(index, { tax_rate: e.target.value })}>
+                        {TAX_RATES.map((rate) => (
+                          <option key={rate.value} value={rate.value}>
+                            {rate.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <button type="button" className="btn-ghost px-2 text-xs" onClick={() => removePurchaseItem(index)}>
+                        Quitar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button type="button" className="btn-ghost mt-2 px-3 py-1 text-xs" onClick={addPurchaseItem}>
+              + Agregar renglon
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div>
+              <label className="label">Pagado</label>
+              <input type="number" step="0.01" className="input" value={pPaidAmount} onChange={(e) => setPPaidAmount(e.target.value)} />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Notas</label>
+              <input className="input" value={pNotes} onChange={(e) => setPNotes(e.target.value)} />
+            </div>
+            <div className="flex flex-col justify-end">
+              <p className="text-xs text-muted">Total estimado</p>
+              <p className="text-lg font-semibold text-ink">{money(purchaseTotal)}</p>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted">Almacen: {warehouseId || "-"}</p>
+          <button type="submit" className="btn-primary w-fit px-4 py-2">
             Registrar compra
           </button>
         </form>

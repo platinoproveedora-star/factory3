@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_inventory/erp_inventory_warehouse_manage",
+  "vertical": "vertical_erp_inventory",
+  "descripcion": "CRUD de almacenes por empresa (multiempresa) en el schema propio del modulo (stock4all). action=list|create|ensure_default.",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "version": "0.1.0",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+}
