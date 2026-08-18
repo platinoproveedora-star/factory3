@@ -750,96 +750,256 @@ function InventoryTab({ products, stock, lotStock }: { products: Product[]; stoc
   );
 }
 
-function InventoryLotTable({ rows }: { rows: NonNullable<DashboardData['lot_stock']> }) {
+type SortDir = 'asc' | 'desc';
+
+function SortableTh({
+  label,
+  active,
+  dir,
+  align,
+  onClick
+}: {
+  label: string;
+  active: boolean;
+  dir: SortDir;
+  align?: 'left' | 'right';
+  onClick: () => void;
+}) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-[1320px] text-xs">
-        <thead className="border-y border-slate-200 bg-slate-50 uppercase text-slate-500">
-          <tr>
-            <th className="px-4 py-3 text-left">Producto / lote</th>
-            <th className="px-4 py-3 text-left">Lote</th>
-            <th className="px-4 py-3 text-left">Marca</th>
-            <th className="px-4 py-3 text-left">Categoria</th>
-            <th className="px-4 py-3 text-left">Categoria 2</th>
-            <th className="px-4 py-3 text-right">Stock</th>
-            <th className="px-4 py-3 text-right">Entrada</th>
-            <th className="px-4 py-3 text-right">Salida</th>
-            <th className="px-4 py-3 text-left">Unidad</th>
-            <th className="px-4 py-3 text-right">Costo compra</th>
-            <th className="px-4 py-3 text-right">Ultimo costo</th>
-            <th className="px-4 py-3 text-right">Valor est.</th>
-            <th className="px-4 py-3 text-left">Ult. mov.</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={`${row.product_id}-${row.lot_code}`} className="border-b border-slate-100">
-              <td className="px-4 py-3 font-medium text-slate-900">{row.display_name}</td>
-              <td className="px-4 py-3 text-slate-600">{row.lot_code}</td>
-              <td className="px-4 py-3 text-slate-600">{row.brand || '-'}</td>
-              <td className="px-4 py-3 text-slate-600">{row.category || '-'}</td>
-              <td className="px-4 py-3 text-slate-600">{row.category_2 || '-'}</td>
-              <td className={`px-4 py-3 text-right font-semibold ${Number(row.quantity || 0) < 0 ? 'text-red-600' : 'text-slate-950'}`}>{qty(row.quantity)}</td>
-              <td className="px-4 py-3 text-right">{qty(row.total_in)}</td>
-              <td className="px-4 py-3 text-right">{qty(row.total_out)}</td>
-              <td className="px-4 py-3 text-slate-500">{row.unit}</td>
-              <td className="px-4 py-3 text-right">{money(row.lot_unit_cost ?? row.last_cost ?? row.avg_cost)}</td>
-              <td className="px-4 py-3 text-right">{money(row.last_cost)}</td>
-              <td className="px-4 py-3 text-right">{money(row.estimated_value)}</td>
-              <td className="px-4 py-3 text-slate-500">{row.last_movement_date || '-'}</td>
+    <th
+      className={`cursor-pointer select-none whitespace-nowrap px-4 py-3 ${align === 'right' ? 'text-right' : 'text-left'} ${active ? 'text-slate-800' : ''}`}
+      onClick={onClick}
+    >
+      {label}
+      <span className="ml-1 inline-block w-2 text-slate-400">{active ? (dir === 'asc' ? '▲' : '▼') : ''}</span>
+    </th>
+  );
+}
+
+function sortRows<T>(rows: T[], sortKey: string | null, sortDir: SortDir, getValue: (row: T, key: string) => string | number): T[] {
+  if (!sortKey) return rows;
+  return [...rows].sort((a, b) => {
+    const va = getValue(a, sortKey);
+    const vb = getValue(b, sortKey);
+    const result = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb), 'es');
+    return sortDir === 'asc' ? result : -result;
+  });
+}
+
+function InventoryLotTable({ rows }: { rows: NonNullable<DashboardData['lot_stock']> }) {
+  const [brandFilter, setBrandFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const brandOptions = uniqueOptions(rows.map((row) => row.brand));
+  const categoryOptions = uniqueOptions(rows.map((row) => row.category));
+
+  let visibleRows = rows;
+  if (brandFilter) visibleRows = visibleRows.filter((row) => (row.brand || '') === brandFilter);
+  if (categoryFilter) visibleRows = visibleRows.filter((row) => (row.category || '') === categoryFilter);
+
+  type LotRow = (typeof rows)[number];
+  const getValue = (row: LotRow, key: string): string | number => {
+    switch (key) {
+      case 'display_name': return row.display_name || '';
+      case 'lot_code': return row.lot_code || '';
+      case 'brand': return row.brand || '';
+      case 'category': return row.category || '';
+      case 'category_2': return row.category_2 || '';
+      case 'quantity': return Number(row.quantity || 0);
+      case 'total_in': return Number(row.total_in || 0);
+      case 'total_out': return Number(row.total_out || 0);
+      case 'unit': return row.unit || '';
+      case 'cost': return Number(row.lot_unit_cost ?? row.last_cost ?? row.avg_cost ?? 0);
+      case 'last_cost': return Number(row.last_cost || 0);
+      case 'estimated_value': return Number(row.estimated_value || 0);
+      case 'last_movement_date': return row.last_movement_date || '';
+      default: return '';
+    }
+  };
+  const sortedRows = sortRows(visibleRows, sortKey, sortDir, getValue);
+
+  function handleSort(key: string) {
+    if (sortKey === key) setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+  const th = (key: string, label: string, align?: 'left' | 'right') => (
+    <SortableTh label={label} active={sortKey === key} dir={sortDir} align={align} onClick={() => handleSort(key)} />
+  );
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2 text-xs">
+        <label className="flex items-center gap-1 text-slate-600">
+          Marca
+          <select className="rounded border border-slate-300 px-2 py-1" value={brandFilter} onChange={(event) => setBrandFilter(event.target.value)}>
+            <option value="">Todas</option>
+            {brandOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-1 text-slate-600">
+          Categoria
+          <select className="rounded border border-slate-300 px-2 py-1" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+            <option value="">Todas</option>
+            {categoryOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-[1320px] text-xs">
+          <thead className="border-y border-slate-200 bg-slate-50 uppercase text-slate-500">
+            <tr>
+              {th('display_name', 'Producto / lote')}
+              {th('lot_code', 'Lote')}
+              {th('brand', 'Marca')}
+              {th('category', 'Categoria')}
+              {th('category_2', 'Categoria 2')}
+              {th('quantity', 'Stock', 'right')}
+              {th('total_in', 'Entrada', 'right')}
+              {th('total_out', 'Salida', 'right')}
+              {th('unit', 'Unidad')}
+              {th('cost', 'Costo compra', 'right')}
+              {th('last_cost', 'Ultimo costo', 'right')}
+              {th('estimated_value', 'Valor est.', 'right')}
+              {th('last_movement_date', 'Ult. mov.')}
             </tr>
-          ))}
-          {rows.length === 0 && <tr><td colSpan={13} className="px-4 py-8 text-center text-sm text-slate-500">Sin lotes para mostrar</td></tr>}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sortedRows.map((row) => (
+              <tr key={`${row.product_id}-${row.lot_code}`} className="border-b border-slate-100">
+                <td className="px-4 py-3 font-medium text-slate-900">{row.display_name}</td>
+                <td className="px-4 py-3 text-slate-600">{row.lot_code}</td>
+                <td className="px-4 py-3 text-slate-600">{row.brand || '-'}</td>
+                <td className="px-4 py-3 text-slate-600">{row.category || '-'}</td>
+                <td className="px-4 py-3 text-slate-600">{row.category_2 || '-'}</td>
+                <td className={`px-4 py-3 text-right font-semibold ${Number(row.quantity || 0) < 0 ? 'text-red-600' : 'text-slate-950'}`}>{qty(row.quantity)}</td>
+                <td className="px-4 py-3 text-right">{qty(row.total_in)}</td>
+                <td className="px-4 py-3 text-right">{qty(row.total_out)}</td>
+                <td className="px-4 py-3 text-slate-500">{row.unit}</td>
+                <td className="px-4 py-3 text-right">{money(row.lot_unit_cost ?? row.last_cost ?? row.avg_cost)}</td>
+                <td className="px-4 py-3 text-right">{money(row.last_cost)}</td>
+                <td className="px-4 py-3 text-right">{money(row.estimated_value)}</td>
+                <td className="px-4 py-3 text-slate-500">{row.last_movement_date || '-'}</td>
+              </tr>
+            ))}
+            {sortedRows.length === 0 && <tr><td colSpan={13} className="px-4 py-8 text-center text-sm text-slate-500">Sin lotes para mostrar</td></tr>}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
 function InventoryStockTable({ rows, compact }: { rows: DashboardData['stock']; compact?: boolean }) {
+  const [brandFilter, setBrandFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const brandOptions = uniqueOptions(rows.map((row) => row.brand));
+  const categoryOptions = uniqueOptions(rows.map((row) => row.category));
+
+  let visibleRows = rows;
+  if (brandFilter) visibleRows = visibleRows.filter((row) => (row.brand || '') === brandFilter);
+  if (categoryFilter) visibleRows = visibleRows.filter((row) => (row.category || '') === categoryFilter);
+
+  type StockRow = (typeof rows)[number];
+  const getValue = (row: StockRow, key: string): string | number => {
+    switch (key) {
+      case 'product_name': return row.product_name || '';
+      case 'folio': return row.folio || '';
+      case 'brand': return row.brand || '';
+      case 'category': return row.category || '';
+      case 'quantity': return Number(row.quantity || 0);
+      case 'min_stock': return Number(row.min_stock || 0);
+      case 'stock_delta': return Number(row.stock_delta || 0);
+      case 'total_in': return Number(row.total_in || 0);
+      case 'total_out': return Number(row.total_out || 0);
+      case 'unit': return row.unit || '';
+      case 'avg_cost': return Number(row.avg_cost || 0);
+      case 'last_cost': return Number(row.last_cost || 0);
+      case 'estimated_value': return Number(row.estimated_value || 0);
+      default: return '';
+    }
+  };
+  const sortedRows = sortRows(visibleRows, sortKey, sortDir, getValue);
+
+  function handleSort(key: string) {
+    if (sortKey === key) setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+  const th = (key: string, label: string, align?: 'left' | 'right') => (
+    <SortableTh label={label} active={sortKey === key} dir={sortDir} align={align} onClick={() => handleSort(key)} />
+  );
+
   return (
-    <div className="overflow-x-auto">
-      <table className={`${compact ? 'min-w-[1180px] text-xs' : 'min-w-[1180px] text-sm'}`}>
-        <thead className="border-y border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
-          <tr>
-            <th className="px-4 py-3 text-left">Semaforo</th>
-            <th className="px-4 py-3 text-left">Producto</th>
-            <th className="px-4 py-3 text-left">Folio</th>
-            <th className="px-4 py-3 text-left">Categoria</th>
-            <th className="px-4 py-3 text-right">Stock</th>
-            <th className="px-4 py-3 text-right">Minimo</th>
-            <th className="px-4 py-3 text-right">Diferencia</th>
-            <th className="px-4 py-3 text-right">Entrada</th>
-            <th className="px-4 py-3 text-right">Salida</th>
-            <th className="px-4 py-3 text-left">Unidad</th>
-            <th className="px-4 py-3 text-right">Costo prom.</th>
-            <th className="px-4 py-3 text-right">Ultimo costo</th>
-            <th className="px-4 py-3 text-right">Valor est.</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.product_id} className="border-b border-slate-100">
-              <td className="px-4 py-3"><StockBadge status={row.stock_status} /></td>
-              <td className="px-4 py-3 font-medium text-slate-900">{row.product_name}</td>
-              <td className="px-4 py-3 text-slate-500">{row.folio}</td>
-              <td className="px-4 py-3 text-slate-600">{row.category || '-'}</td>
-              <td className={`px-4 py-3 text-right font-semibold ${Number(row.quantity || 0) < 0 ? 'text-red-600' : 'text-slate-950'}`}>{qty(row.quantity)}</td>
-              <td className="px-4 py-3 text-right">{qty(row.min_stock)}</td>
-              <td className="px-4 py-3 text-right">{qty(row.stock_delta)}</td>
-              <td className="px-4 py-3 text-right">{qty(row.total_in)}</td>
-              <td className="px-4 py-3 text-right">{qty(row.total_out)}</td>
-              <td className="px-4 py-3 text-slate-500">{row.unit}</td>
-              <td className="px-4 py-3 text-right">{money(row.avg_cost)}</td>
-              <td className="px-4 py-3 text-right">{money(row.last_cost)}</td>
-              <td className="px-4 py-3 text-right">{money(row.estimated_value)}</td>
+    <div>
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2 text-xs">
+        <label className="flex items-center gap-1 text-slate-600">
+          Marca
+          <select className="rounded border border-slate-300 px-2 py-1" value={brandFilter} onChange={(event) => setBrandFilter(event.target.value)}>
+            <option value="">Todas</option>
+            {brandOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-1 text-slate-600">
+          Categoria
+          <select className="rounded border border-slate-300 px-2 py-1" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+            <option value="">Todas</option>
+            {categoryOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+      </div>
+      <div className="overflow-x-auto">
+        <table className={`${compact ? 'min-w-[1180px] text-xs' : 'min-w-[1180px] text-sm'}`}>
+          <thead className="border-y border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-3 text-left">Semaforo</th>
+              {th('product_name', 'Producto')}
+              {th('folio', 'Folio')}
+              {th('category', 'Categoria')}
+              {th('quantity', 'Stock', 'right')}
+              {th('min_stock', 'Minimo', 'right')}
+              {th('stock_delta', 'Diferencia', 'right')}
+              {th('total_in', 'Entrada', 'right')}
+              {th('total_out', 'Salida', 'right')}
+              {th('unit', 'Unidad')}
+              {th('avg_cost', 'Costo prom.', 'right')}
+              {th('last_cost', 'Ultimo costo', 'right')}
+              {th('estimated_value', 'Valor est.', 'right')}
             </tr>
-          ))}
-          {rows.length === 0 && (
-            <tr><td colSpan={13} className="px-4 py-8 text-center text-sm text-slate-500">Sin productos para mostrar</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sortedRows.map((row) => (
+              <tr key={row.product_id} className="border-b border-slate-100">
+                <td className="px-4 py-3"><StockBadge status={row.stock_status} /></td>
+                <td className="px-4 py-3 font-medium text-slate-900">{row.product_name}</td>
+                <td className="px-4 py-3 text-slate-500">{row.folio}</td>
+                <td className="px-4 py-3 text-slate-600">{row.category || '-'}</td>
+                <td className={`px-4 py-3 text-right font-semibold ${Number(row.quantity || 0) < 0 ? 'text-red-600' : 'text-slate-950'}`}>{qty(row.quantity)}</td>
+                <td className="px-4 py-3 text-right">{qty(row.min_stock)}</td>
+                <td className="px-4 py-3 text-right">{qty(row.stock_delta)}</td>
+                <td className="px-4 py-3 text-right">{qty(row.total_in)}</td>
+                <td className="px-4 py-3 text-right">{qty(row.total_out)}</td>
+                <td className="px-4 py-3 text-slate-500">{row.unit}</td>
+                <td className="px-4 py-3 text-right">{money(row.avg_cost)}</td>
+                <td className="px-4 py-3 text-right">{money(row.last_cost)}</td>
+                <td className="px-4 py-3 text-right">{money(row.estimated_value)}</td>
+              </tr>
+            ))}
+            {sortedRows.length === 0 && (
+              <tr><td colSpan={13} className="px-4 py-8 text-center text-sm text-slate-500">Sin productos para mostrar</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
