@@ -21,8 +21,16 @@ _MAX_HISTORY = 12
 _PROGRESS_STEPS = {
     "client", "client_confirm_new", "client_pick",
     "fecha", "fecha_manual",
-    "product", "product_pick", "quantity", "price", "confirm",
+    "product", "product_pick", "quantity", "price", "lot_pick",
+    "payment_method", "confirm",
 }
+_PAYMENT_METHODS = [
+    ("cash", "Contado"),
+    ("credit", "Crédito"),
+    ("transfer", "Transferencia"),
+    ("check", "Cheque"),
+    ("other", "Otro"),
+]
 
 _AYUDA = (
     "*Pedidos por WhatsApp*\n\n"
@@ -125,7 +133,11 @@ class ErpVentasWabizPedidoHandlerService:
         if step == "quantity":
             return self._handle_quantity(body, state)
         if step == "price":
-            return self._handle_price(body, state)
+            return self._handle_price(body, state, cfg)
+        if step == "lot_pick":
+            return self._handle_lot_pick(body, state)
+        if step == "payment_method":
+            return self._handle_payment_method(body, state)
         if step == "confirm":
             return self._handle_confirm(text_lower, state, cfg, dry_run)
         return "Escribe *pedido* para iniciar uno nuevo.", {}
@@ -221,7 +233,8 @@ class ErpVentasWabizPedidoHandlerService:
             items = state.get("items") or []
             if not items:
                 return "Todavia no agregas ningun producto.", state
-            return self._build_summary(items, state), {**state, "step": "confirm"}
+            new_state = {**state, "step": "payment_method"}
+            return self._payment_method_prompt(), new_state
 
         if text_bare == "claves":
             products = self._search_key_products(cfg)
@@ -284,29 +297,61 @@ class ErpVentasWabizPedidoHandlerService:
         new_state = {**state, "step": "price", "pending_qty": qty}
         return f"Cantidad: {self._fmt_num(qty)} ✓ ¿Precio unitario (con IVA)?", new_state
 
-    def _handle_price(self, body: str, state: dict) -> tuple[str, dict]:
+    def _handle_price(self, body: str, state: dict, cfg: dict) -> tuple[str, dict]:
         price = self._parse_number(body)
         if price is None or price < 0:
             return "Escribe un precio valido (ej: 214.6).", state
         product = state.get("pending_product") or {}
         qty = state.get("pending_qty") or 0
+        lots = self._lot_options(cfg, product.get("id"))
+        if len(lots) > 1:
+            new_state = {**state, "step": "lot_pick", "pending_price": price, "lot_candidates": lots}
+            return self._lot_pick_prompt(product, lots), new_state
+        lot_code = lots[0]["lot_code"] if lots else None
+        return self._finish_item(product, qty, price, lot_code, state)
+
+    def _handle_lot_pick(self, body: str, state: dict) -> tuple[str, dict]:
+        candidates = state.get("lot_candidates") or []
+        idx = self._parse_index(body)
+        if idx is None or idx < 1 or idx > len(candidates):
+            return f"Escribe un numero del 1 al {len(candidates)}.", state
+        lot = candidates[idx - 1]
+        product = state.get("pending_product") or {}
+        qty = state.get("pending_qty") or 0
+        price = state.get("pending_price") or 0
+        return self._finish_item(product, qty, price, lot.get("lot_code"), state)
+
+    def _finish_item(self, product: dict, qty: float, price: float, lot_code: str | None, state: dict) -> tuple[str, dict]:
         item = {
             "product_id": product.get("id"),
             "product_name": product.get("product_name"),
             "unit": product.get("unit"),
             "quantity": qty,
             "unit_price_inc_vat": price,
+            "lot_code": lot_code,
         }
         items = list(state.get("items") or [])
         items.append(item)
-        new_state = {k: v for k, v in state.items() if k not in ("pending_product", "pending_qty")}
+        new_state = {
+            k: v for k, v in state.items()
+            if k not in ("pending_product", "pending_qty", "pending_price", "lot_candidates")
+        }
         new_state = {**new_state, "step": "product", "items": items}
         line_total = round(qty * price, 2)
+        lot_suffix = f" (lote {lot_code})" if lot_code else ""
         reply = (
-            f"✅ {self._fmt_num(qty)} x {product.get('product_name')} @ ${price:,.2f} = ${line_total:,.2f}\n\n"
+            f"✅ {self._fmt_num(qty)} x {product.get('product_name')}{lot_suffix} @ ${price:,.2f} = ${line_total:,.2f}\n\n"
             '¿Otro producto? Escribe nombre/#/clave o "fin" para terminar.'
         )
         return reply, new_state
+
+    def _handle_payment_method(self, body: str, state: dict) -> tuple[str, dict]:
+        idx = self._parse_index(body)
+        if idx is None or idx < 1 or idx > len(_PAYMENT_METHODS):
+            return f"Escribe un numero del 1 al {len(_PAYMENT_METHODS)}.", state
+        value, label = _PAYMENT_METHODS[idx - 1]
+        new_state = {**state, "step": "confirm", "payment_method": value, "payment_method_label": label}
+        return self._build_summary(state.get("items") or [], new_state), new_state
 
     def _handle_confirm(self, text_lower: str, state: dict, cfg: dict, dry_run: bool) -> tuple[str, dict]:
         edit_match = _EDIT_RE.match(text_lower)
@@ -324,11 +369,13 @@ class ErpVentasWabizPedidoHandlerService:
                 "quantity": it["quantity"],
                 "unit": it.get("unit") or "pieza",
                 "unit_price_inc_vat": it["unit_price_inc_vat"],
+                "lot_code": it.get("lot_code"),
             }
             for it in items
         ]
         res = self._create_pedido(
-            cfg, state.get("customer_id"), state.get("customer_name"), payload_items, state.get("due_date"), dry_run
+            cfg, state.get("customer_id"), state.get("customer_name"), payload_items,
+            state.get("due_date"), state.get("payment_method"), dry_run,
         )
         if not res.get("ok"):
             return f"⚠️ No pude guardar el pedido: {res.get('error')}", state
@@ -413,6 +460,17 @@ class ErpVentasWabizPedidoHandlerService:
         lines = [f"{i}. {p['product_name']}" for i, p in enumerate(products, start=1)]
         return "Productos clave:\n" + "\n".join(lines) + "\n\nEscribe el numero."
 
+    def _lot_pick_prompt(self, product: dict, lots: list[dict]) -> str:
+        lines = [f"{i}. {lot.get('label')}" for i, lot in enumerate(lots, start=1)]
+        return (
+            f"Lotes disponibles de {product.get('product_name')}:\n" + "\n".join(lines)
+            + "\n\nEscribe el numero de lote."
+        )
+
+    def _payment_method_prompt(self) -> str:
+        lines = [f"{i}. {label}" for i, (_, label) in enumerate(_PAYMENT_METHODS, start=1)]
+        return "¿Forma de pago?\n" + "\n".join(lines) + "\n\nEscribe el numero."
+
     def _ayuda(self, cfg: dict) -> str:
         products = self._search_key_products(cfg)
         if not products:
@@ -428,9 +486,12 @@ class ErpVentasWabizPedidoHandlerService:
             lines.append(f"{i}. {self._fmt_num(it['quantity'])} x {it['product_name']} = ${line_total:,.2f}")
         customer_name = state.get("customer_name", "")
         entrega = self._fmt_due_date(state.get("due_date"))
+        pago = state.get("payment_method_label")
+        pago_line = f"Forma de pago: {pago}\n" if pago else ""
         return (
             f"\U0001f4cb Resumen — {customer_name}\n"
             f"Entrega: {entrega}\n"
+            f"{pago_line}"
             + "\n".join(lines)
             + f"\n\nTotal (IVA incluido): ${total_inc:,.2f}\n\n"
             'Escribe *confirmar* para guardar, *cambiar N* para corregir una partida, o *cancelar*.'
@@ -468,6 +529,11 @@ class ErpVentasWabizPedidoHandlerService:
             p = state.get("pending_product") or {}
             qty = state.get("pending_qty")
             lines.append(f"\nFalta: precio de {self._fmt_num(qty)} x {p.get('product_name')}.")
+        elif step == "lot_pick":
+            p = state.get("pending_product") or {}
+            lines.append(f"\nFalta: elegir lote de {p.get('product_name')}.")
+        elif step == "payment_method":
+            lines.append("\nFalta: forma de pago.")
         elif step in ("client", "client_confirm_new", "client_pick"):
             lines.append("\nFalta: definir el cliente.")
         elif step == "confirm":
@@ -507,6 +573,12 @@ class ErpVentasWabizPedidoHandlerService:
             p = state.get("pending_product") or {}
             qty = state.get("pending_qty")
             return f"Cantidad: {self._fmt_num(qty)} ✓ ¿Precio unitario (con IVA)?"
+        if step == "lot_pick":
+            product = state.get("pending_product") or {}
+            candidates = state.get("lot_candidates") or []
+            return self._lot_pick_prompt(product, candidates)
+        if step == "payment_method":
+            return self._payment_method_prompt()
         if step == "confirm":
             return self._build_summary(state.get("items") or [], state)
         return "Escribe *pedido* para iniciar uno nuevo."
@@ -600,7 +672,8 @@ class ErpVentasWabizPedidoHandlerService:
         return _runner().run("vertical_erp_ventas/erp_ventas_customer_get_or_create", payload)
 
     def _create_pedido(
-        self, cfg: dict, customer_id: str, customer_name: str, items: list[dict], due_date: str | None, dry_run: bool
+        self, cfg: dict, customer_id: str, customer_name: str, items: list[dict],
+        due_date: str | None, payment_method: str | None, dry_run: bool,
     ) -> dict:
         payload = {
             "company_id": cfg["empresa_id"],
@@ -610,9 +683,21 @@ class ErpVentasWabizPedidoHandlerService:
             "customer_name": customer_name,
             "items": items,
             "due_date": due_date,
+            "payment_method": payment_method,
             "dry_run": dry_run,
         }
         return _runner().run("vertical_erp_ventas/erp_ventas_pedido_create", payload)
+
+    def _lot_options(self, cfg: dict, product_id: str | None) -> list[dict]:
+        if not product_id:
+            return []
+        res = _runner().run(
+            "vertical_erp_inventory/erp_inventory_lot_options",
+            {**self._inventory_context(cfg), "product_id": product_id},
+        )
+        if not res.get("ok"):
+            return []
+        return (res.get("data") or {}).get("lots") or []
 
     # ── ESTADO ────────────────────────────────────────────────────────────────
 
