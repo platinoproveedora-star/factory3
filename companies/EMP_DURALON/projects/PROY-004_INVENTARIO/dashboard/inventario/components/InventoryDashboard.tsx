@@ -701,11 +701,15 @@ function OldInventoryTab({ products, stock, movements }: { products: Product[]; 
 
 function InventoryTab({ products, stock, lotStock }: { products: Product[]; stock: DashboardData['stock']; lotStock: NonNullable<DashboardData['lot_stock']> }) {
   const [showKeyOnly, setShowKeyOnly] = useState(true);
+  const [showEmptyLots, setShowEmptyLots] = useState(false);
   const visibleIds = new Set(products.map((product) => product.id));
   const visibleStock = stock.filter((row) => visibleIds.has(row.product_id));
   const visibleLotStock = lotStock.filter((row) => visibleIds.has(row.product_id));
   const filteredStock = showKeyOnly ? visibleStock.filter((row) => row.is_key_product) : visibleStock;
-  const filteredLotStock = showKeyOnly ? visibleLotStock.filter((row) => row.is_key_product) : visibleLotStock;
+  const keyFilteredLotStock = showKeyOnly ? visibleLotStock.filter((row) => row.is_key_product) : visibleLotStock;
+  const filteredLotStock = showEmptyLots
+    ? keyFilteredLotStock
+    : keyFilteredLotStock.filter((row) => !row.lot_code || row.lot_code === 'GENERAL' || Number(row.quantity || 0) !== 0);
   const filterLabel = showKeyOnly ? 'productos clave' : 'todos los productos';
   return (
     <div className="space-y-5">
@@ -715,15 +719,26 @@ function InventoryTab({ products, stock, lotStock }: { products: Product[]; stoc
             <h3 className="text-sm font-semibold text-slate-950">Inventario por lote</h3>
             <p className="mt-0.5 text-xs text-slate-500">{`${filteredLotStock.length} lotes visibles - ${filterLabel}`}</p>
           </div>
-          <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
-            <input
-              type="checkbox"
-              checked={showKeyOnly}
-              onChange={(event) => setShowKeyOnly(event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Solo productos clave
-          </label>
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={showKeyOnly}
+                onChange={(event) => setShowKeyOnly(event.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              Solo productos clave
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={showEmptyLots}
+                onChange={(event) => setShowEmptyLots(event.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              Ver lotes sin existencia
+            </label>
+          </div>
         </div>
         <InventoryLotTable rows={filteredLotStock} />
       </section>
