@@ -511,6 +511,7 @@ const PRINT_STYLES = `
   table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 12px; }
   th { background: #f1f5f9; text-align: left; }
   th, td { border: 1px solid #cbd5e1; padding: 7px; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
   .num { text-align: right; }
   .totals { margin-left: auto; width: 260px; margin-top: 18px; }
   .totals div { display: flex; justify-content: space-between; padding: 6px 0; }
@@ -1309,8 +1310,8 @@ export default function InventoryPanel() {
                 {purchaseItems.map((item, index) => {
                   const amounts = lineAmounts(item.quantity, item.unit_cost, item.tax_rate);
                   return (
-                  <tr key={index}>
-                    <td className="py-1 pr-2">
+                  <tr key={index} className="border-b-2 border-border align-top even:bg-slate-50">
+                    <td className="py-2 pr-2">
                       <select
                         className="input"
                         value={item.product_id}
@@ -1538,8 +1539,8 @@ export default function InventoryPanel() {
                     {draftItems.map((item, index) => {
                       const amounts = lineAmounts(item.quantity, item.unit_cost, item.tax_rate);
                       return (
-                      <tr key={index}>
-                        <td className="py-1 pr-2">
+                      <tr key={index} className="border-b-2 border-border align-top even:bg-slate-50">
+                        <td className="py-2 pr-2">
                           <input
                             className="input"
                             value={item.producto_texto}
