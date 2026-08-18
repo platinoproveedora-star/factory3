@@ -36,6 +36,7 @@ function statusLabel(status: string) {
 
 export default function InventoryPanel() {
   const [warehouseId, setWarehouseId] = useState("PRINCIPAL");
+  const [statusFilter, setStatusFilter] = useState<"active" | "inactive">("active");
   const [stock, setStock] = useState<StockRow[]>([]);
   const [summary, setSummary] = useState<{ products: number; low_stock: number; negative_stock: number; estimated_value: number } | null>(null);
   const [suppliers, setSuppliers] = useState<Party[]>([]);
@@ -44,11 +45,11 @@ export default function InventoryPanel() {
   const [notice, setNotice] = useState<string | null>(null);
   const [tab, setTab] = useState<"stock" | "producto" | "compra">("stock");
 
-  async function loadStock() {
+  async function loadStock(status: "active" | "inactive" = statusFilter) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/inventory/stock", { cache: "no-store" });
+      const res = await fetch(`/api/inventory/stock?status=${status}`, { cache: "no-store" });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "error cargando stock");
       setStock(json.data.stock || []);
@@ -58,6 +59,11 @@ export default function InventoryPanel() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleStatusChange(next: "active" | "inactive") {
+    setStatusFilter(next);
+    loadStock(next);
   }
 
   async function loadParties() {
@@ -149,6 +155,15 @@ export default function InventoryPanel() {
                 {warehouse.label}
               </option>
             ))}
+          </select>
+          <label className="label mb-0">Ver</label>
+          <select
+            className="input w-auto"
+            value={statusFilter}
+            onChange={(event) => handleStatusChange(event.target.value as "active" | "inactive")}
+          >
+            <option value="active">Activos</option>
+            <option value="inactive">Inactivos</option>
           </select>
         </div>
       </section>

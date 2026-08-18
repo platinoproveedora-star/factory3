@@ -15,11 +15,21 @@ class ErpInventoryCurrentStockReportService:
         for result in (products_res, movements_res):
             if not result.get("ok"):
                 return result
-        rows = self._stock(products_res.get("data") or [], movements_res.get("data") or [])
+
+        products = products_res.get("data") or []
+        active_status = str(context.get("active_status") or "").strip().lower()
+        if active_status == "active":
+            products = [p for p in products if p.get("active") is not False]
+        elif active_status == "inactive":
+            products = [p for p in products if p.get("active") is False]
+        # sin active_status: comportamiento identico al de siempre (todos los productos)
+
+        rows = self._stock(products, movements_res.get("data") or [])
         return {
             "ok": True,
             "data": {
                 "stock": rows,
+                "active_status": active_status or None,
                 "key_products": [row for row in rows if row.get("is_key_product")],
                 "summary": {
                     "products": len(rows),
