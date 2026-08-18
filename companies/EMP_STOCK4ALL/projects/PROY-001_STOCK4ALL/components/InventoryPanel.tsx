@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, FormEvent } from "react";
+import { useEffect, useMemo, useState, FormEvent, ChangeEvent } from "react";
 
 type StockRow = {
   product_id: string;
@@ -108,6 +108,44 @@ function emptyPurchaseItem(): PurchaseItem {
   return { product_id: "", lot_code: "", quantity: "", unit_cost: "", tax_rate: "0.16", notes: "" };
 }
 
+type DraftItem = PurchaseItem & { producto_texto: string; unidad_texto: string };
+type PurchaseDraft = {
+  id: string;
+  file_name: string | null;
+  file_url: string | null;
+  status: string;
+  supplier_name_hint: string | null;
+  extracted_json: any;
+  created_at: string;
+};
+
+function draftItemsFromExtracted(extracted: any): DraftItem[] {
+  const items = Array.isArray(extracted?.items) ? extracted.items : [];
+  if (!items.length) return [{ ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "" }];
+  return items.map((item: any) => ({
+    product_id: item.product_id || "",
+    lot_code: item.lot_code || "",
+    quantity: item.quantity != null ? String(item.quantity) : item.cantidad != null ? String(item.cantidad) : "",
+    unit_cost: item.unit_cost != null ? String(item.unit_cost) : item.costo_unitario != null ? String(item.costo_unitario) : "",
+    tax_rate: item.tax_rate != null ? String(item.tax_rate) : "0.16",
+    notes: item.notes || "",
+    producto_texto: item.producto_texto || item.producto || "",
+    unidad_texto: item.unidad_texto || item.unidad || ""
+  }));
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.split(",")[1] || "");
+    };
+    reader.onerror = () => reject(new Error("no se pudo leer el archivo"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function money(value: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(value || 0));
 }
@@ -135,7 +173,7 @@ export default function InventoryPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [tab, setTab] = useState<"stock" | "producto" | "compra">("stock");
+  const [tab, setTab] = useState<"stock" | "producto" | "compra" | "compra_archivo">("stock");
 
   const [npName, setNpName] = useState("");
   const [npKey, setNpKey] = useState("");
@@ -173,6 +211,169 @@ export default function InventoryPanel() {
       }, 0),
     [purchaseItems]
   );
+
+  const [drafts, setDrafts] = useState<PurchaseDraft[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [activeDraft, setActiveDraft] = useState<PurchaseDraft | null>(null);
+  const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
+  const [dSupplierId, setDSupplierId] = useState("");
+  const [dMovementDate, setDMovementDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dExternalFolio, setDExternalFolio] = useState("");
+  const [dPaidAmount, setDPaidAmount] = useState("0");
+  const [dNotes, setDNotes] = useState("");
+
+  async function loadDrafts() {
+    try {
+      const res = await fetch("/api/inventory/purchase-drafts", { cache: "no-store" });
+      const json = await res.json();
+      if (json.ok) setDrafts((json.data.drafts || []).filter((d: PurchaseDraft) => d.status === "draft"));
+    } catch {
+      // silencioso
+    }
+  }
+
+  function openDraft(draft: PurchaseDraft) {
+    setActiveDraft(draft);
+    const extracted = draft.extracted_json || {};
+    setDraftItems(draftItemsFromExtracted(extracted));
+    setDSupplierId(extracted.supplier_id || "");
+    setDMovementDate(extracted.fecha || new Date().toISOString().slice(0, 10));
+    setDExternalFolio(extracted.folio_proveedor || "");
+    setDPaidAmount(String(extracted.paid_amount || 0));
+    setDNotes(extracted.notes || "");
+  }
+
+  function closeDraft() {
+    setActiveDraft(null);
+    setDraftItems([]);
+  }
+
+  async function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      setError("Archivo demasiado grande (max 4MB)");
+      return;
+    }
+    setError(null);
+    setNotice(null);
+    setUploading(true);
+    try {
+      const content_b64 = await fileToBase64(file);
+      const res = await fetch("/api/inventory/purchase-drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content_b64, media_type: file.type, filename: file.name })
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setError(json.error || "error subiendo/leyendo el archivo");
+        return;
+      }
+      setNotice("Archivo leido. Revisa la tabla antes de confirmar.");
+      await loadDrafts();
+      openDraft(json.data.draft);
+    } catch (err: any) {
+      setError(err.message || "error subiendo archivo");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDeleteDraft(id: string) {
+    const res = await fetch(`/api/inventory/purchase-drafts/${id}`, { method: "DELETE" });
+    const json = await res.json();
+    if (!json.ok) {
+      setError(json.error || "error borrando borrador");
+      return;
+    }
+    if (activeDraft?.id === id) closeDraft();
+    loadDrafts();
+  }
+
+  function updateDraftItem(index: number, patch: Partial<DraftItem>) {
+    setDraftItems((items) => items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  }
+
+  function addDraftItem() {
+    setDraftItems((items) => [...items, { ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "" }]);
+  }
+
+  function removeDraftItem(index: number) {
+    setDraftItems((items) => (items.length > 1 ? items.filter((_, i) => i !== index) : items));
+  }
+
+  function buildExtractedJson() {
+    return {
+      supplier_id: dSupplierId,
+      fecha: dMovementDate,
+      folio_proveedor: dExternalFolio,
+      paid_amount: Number(dPaidAmount || 0),
+      notes: dNotes,
+      items: draftItems
+    };
+  }
+
+  async function handleSaveDraft() {
+    if (!activeDraft) return;
+    setError(null);
+    setNotice(null);
+    const res = await fetch(`/api/inventory/purchase-drafts/${activeDraft.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ extracted_json: buildExtractedJson() })
+    });
+    const json = await res.json();
+    if (!json.ok) {
+      setError(json.error || "error guardando borrador");
+      return;
+    }
+    setNotice("Borrador guardado");
+    loadDrafts();
+  }
+
+  async function handleConfirmDraft() {
+    if (!activeDraft) return;
+    setError(null);
+    setNotice(null);
+    const items = draftItems
+      .filter((item) => item.product_id && Number(item.quantity) > 0)
+      .map((item) => ({
+        product_id: item.product_id,
+        lot_code: item.lot_code || undefined,
+        quantity: Number(item.quantity),
+        unit_cost: Number(item.unit_cost || 0),
+        tax_rate: Number(item.tax_rate),
+        notes: item.notes || undefined
+      }));
+    if (!items.length || !dSupplierId) {
+      setError("Selecciona proveedor y asigna producto a cada renglon antes de ingresar la compra");
+      return;
+    }
+    const res = await fetch(`/api/inventory/purchase-drafts/${activeDraft.id}/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        supplier_id: dSupplierId,
+        movement_date: dMovementDate,
+        external_folio: dExternalFolio || undefined,
+        paid_amount: Number(dPaidAmount || 0),
+        notes: dNotes || undefined,
+        warehouse_id: warehouseId,
+        items
+      })
+    });
+    const json = await res.json();
+    if (!json.ok) {
+      setError(json.error || "error registrando compra");
+      return;
+    }
+    setNotice(`Compra ${json.data.purchase.source_folio} registrada (${money(json.data.purchase.total_cost)})`);
+    closeDraft();
+    loadDrafts();
+    loadStock();
+  }
 
   const categoryOptions = useMemo(() => uniqueSorted(stock.map((r) => r.category)), [stock]);
   const category2Options = useMemo(() => uniqueSorted(stock.map((r) => r.category_2)), [stock]);
@@ -247,6 +448,7 @@ export default function InventoryPanel() {
     loadStock();
     loadParties();
     loadWarehouses();
+    loadDrafts();
   }, []);
 
   async function handleNewProduct(event: FormEvent<HTMLFormElement>) {
@@ -411,7 +613,8 @@ export default function InventoryPanel() {
         {[
           { id: "stock", label: "Stock" },
           { id: "producto", label: "Nuevo producto" },
-          { id: "compra", label: "Registrar compra" }
+          { id: "compra", label: "Registrar compra" },
+          { id: "compra_archivo", label: "Compra con Archivo" }
         ].map((item) => (
           <button
             key={item.id}
@@ -651,6 +854,185 @@ export default function InventoryPanel() {
             Registrar compra
           </button>
         </form>
+      )}
+
+      {tab === "compra_archivo" && (
+        <div className="mt-4 grid gap-4">
+          <div className="card">
+            <label className="label">Subir documento de compra (PDF, imagen o Excel)</label>
+            <input
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls"
+              disabled={uploading}
+              onChange={handleFileUpload}
+              className="input"
+            />
+            {uploading && <p className="mt-2 text-xs text-muted">Subiendo y leyendo con IA...</p>}
+          </div>
+
+          {!!drafts.length && (
+            <div className="card">
+              <p className="label">Borradores pendientes</p>
+              <ul className="grid gap-2">
+                {drafts.map((draft) => (
+                  <li key={draft.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
+                    <div>
+                      <p className="font-medium text-ink">{draft.file_name || "documento"}</p>
+                      <p className="text-xs text-muted">
+                        {draft.supplier_name_hint || "sin proveedor"} · {new Date(draft.created_at).toLocaleDateString("es-MX")}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" className="btn-ghost px-2 text-xs" onClick={() => openDraft(draft)}>
+                        Editar
+                      </button>
+                      <button type="button" className="btn-ghost px-2 text-xs" onClick={() => handleDeleteDraft(draft.id)}>
+                        Borrar
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {activeDraft && (
+            <div className="card grid gap-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="label mb-0">Archivo</p>
+                  <a href={activeDraft.file_url || "#"} target="_blank" rel="noreferrer" className="text-sm text-steel underline">
+                    {activeDraft.file_name}
+                  </a>
+                </div>
+                <button type="button" className="btn-ghost px-3 text-xs" onClick={() => handleDeleteDraft(activeDraft.id)}>
+                  Quitar archivo
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div className="col-span-2">
+                  <label className="label">Proveedor</label>
+                  <select required className="input" value={dSupplierId} onChange={(e) => setDSupplierId(e.target.value)}>
+                    <option value="">Selecciona un proveedor</option>
+                    {suppliers.map((party) => (
+                      <option key={party.id} value={party.id}>
+                        {party.party_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Fecha</label>
+                  <input type="date" className="input" value={dMovementDate} onChange={(e) => setDMovementDate(e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Folio proveedor</label>
+                  <input className="input" value={dExternalFolio} onChange={(e) => setDExternalFolio(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <p className="text-xs text-muted">Tabla preliminar leida del documento. Revisa y asigna el producto real de tu catalogo en cada renglon.</p>
+                <table className="mt-2 w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-xs uppercase text-muted">
+                      <th className="py-1">Leido del documento</th>
+                      <th>Producto (catalogo)</th>
+                      <th>Lote</th>
+                      <th>Cantidad</th>
+                      <th>Costo unit.</th>
+                      <th>IVA</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {draftItems.map((item, index) => (
+                      <tr key={index}>
+                        <td className="py-1 pr-2 text-xs text-muted">
+                          {item.producto_texto} {item.unidad_texto ? `(${item.unidad_texto})` : ""}
+                        </td>
+                        <td className="pr-2">
+                          <select
+                            className="input"
+                            value={item.product_id}
+                            onChange={(e) => updateDraftItem(index, { product_id: e.target.value })}
+                          >
+                            <option value="">Selecciona...</option>
+                            {stock.map((row) => (
+                              <option key={row.product_id} value={row.product_id}>
+                                {row.product_name} {row.sku ? `(${row.sku})` : ""}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="pr-2">
+                          <input className="input" value={item.lot_code} onChange={(e) => updateDraftItem(index, { lot_code: e.target.value })} />
+                        </td>
+                        <td className="pr-2">
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="input"
+                            value={item.quantity}
+                            onChange={(e) => updateDraftItem(index, { quantity: e.target.value })}
+                          />
+                        </td>
+                        <td className="pr-2">
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="input"
+                            value={item.unit_cost}
+                            onChange={(e) => updateDraftItem(index, { unit_cost: e.target.value })}
+                          />
+                        </td>
+                        <td className="pr-2">
+                          <select className="input" value={item.tax_rate} onChange={(e) => updateDraftItem(index, { tax_rate: e.target.value })}>
+                            {TAX_RATES.map((rate) => (
+                              <option key={rate.value} value={rate.value}>
+                                {rate.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
+                          <button type="button" className="btn-ghost px-2 text-xs" onClick={() => removeDraftItem(index)}>
+                            Quitar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button type="button" className="btn-ghost mt-2 px-3 py-1 text-xs" onClick={addDraftItem}>
+                  + Agregar renglon
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div>
+                  <label className="label">Pagado</label>
+                  <input type="number" step="0.01" className="input" value={dPaidAmount} onChange={(e) => setDPaidAmount(e.target.value)} />
+                </div>
+                <div className="col-span-2">
+                  <label className="label">Notas</label>
+                  <input className="input" value={dNotes} onChange={(e) => setDNotes(e.target.value)} />
+                </div>
+              </div>
+
+              <p className="text-xs text-muted">Almacen: {warehouseId || "-"}</p>
+              <div className="flex gap-2">
+                <button type="button" className="btn-ghost px-4 py-2" onClick={handleSaveDraft}>
+                  Guardar borrador
+                </button>
+                <button type="button" className="btn-primary px-4 py-2" onClick={handleConfirmDraft}>
+                  Ingresar compra
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

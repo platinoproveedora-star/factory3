@@ -1,0 +1,10 @@
+{
+  "type": "skill",
+  "name": "vertical_erp_compras/erp_compras_purchase_draft",
+  "vertical": "vertical_erp_compras",
+  "descripcion": "Borrador de compra por archivo: sube PDF/imagen/Excel a Storage, extrae renglones con IA (Claude Haiku), guarda un borrador editable en stock4all.purchase_drafts y permite confirmarlo como compra real via erp_compras_purchase_create. action=upload_extract|list|update|delete|confirm.",
+  "kind": "executable",
+  "entrypoint": "skill.py",
+  "version": "0.1.0",
+  "requires_env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ANTHROPIC_API_KEY"]
+}

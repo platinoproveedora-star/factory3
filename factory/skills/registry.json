@@ -4188,6 +4188,15 @@
     "entrypoint": "skill.py",
     "version": "0.1.0"
   },
+  "vertical_erp_compras/erp_compras_purchase_draft": {
+    "tipo": "interno",
+    "nombre": "vertical_erp_compras/erp_compras_purchase_draft",
+    "vertical": "vertical_erp_compras",
+    "descripcion": "Borrador de compra por archivo (PDF/imagen/Excel): sube a Storage, extrae renglones con IA, guarda editable y confirma como compra real via erp_compras_purchase_create.",
+    "path": "skills/internos/vertical_erp_compras/erp_compras_purchase_draft",
+    "entrypoint": "skill.py",
+    "version": "0.1.0"
+  },
   "vertical_erp_compras/erp_compras_purchase_list": {
     "tipo": "interno",
     "nombre": "vertical_erp_compras/erp_compras_purchase_list",

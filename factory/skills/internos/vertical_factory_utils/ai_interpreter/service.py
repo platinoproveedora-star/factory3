@@ -43,7 +43,8 @@ def run(context: dict) -> dict:
         return {"ok": False, "error": f"mode invalido: {mode}. Usar 'extract', 'classify' o 'chat'"}
 
     messages = _build_messages(instruction, text, content_b64, media_type)
-    raw = _call_haiku(messages, api_key)
+    max_tokens = int(context.get("max_tokens") or 1024)
+    raw = _call_haiku(messages, api_key, max_tokens)
     if not raw.get("ok"):
         return raw
 
@@ -111,8 +112,8 @@ def _build_messages(instruction: str, text: str, content_b64: str, media_type: s
     return [{"role": "user", "content": content}]
 
 
-def _call_haiku(messages: list, api_key: str) -> dict:
-    payload = {"model": "claude-haiku-4-5-20251001", "max_tokens": 1024, "messages": messages}
+def _call_haiku(messages: list, api_key: str, max_tokens: int = 1024) -> dict:
+    payload = {"model": "claude-haiku-4-5-20251001", "max_tokens": max_tokens, "messages": messages}
     req = urllib.request.Request(
         "https://api.anthropic.com/v1/messages",
         data=json.dumps(payload).encode(),
