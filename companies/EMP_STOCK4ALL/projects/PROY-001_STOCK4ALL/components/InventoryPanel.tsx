@@ -162,6 +162,7 @@ function ProductPicker({
   onChange,
   prefillName,
   prefillSku,
+  prefillUnit,
   onProductCreated
 }: {
   stock: StockRow[];
@@ -169,11 +170,13 @@ function ProductPicker({
   onChange: (productId: string) => void;
   prefillName: string;
   prefillSku: string;
+  prefillUnit?: string;
   onProductCreated: () => Promise<void>;
 }) {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState(prefillName);
   const [sku, setSku] = useState(prefillSku);
+  const [unit, setUnit] = useState(prefillUnit || "pieza");
   const [saving, setSaving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -185,7 +188,7 @@ function ProductPicker({
       const res = await fetch("/api/inventory/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_name: name, sku, unit: "pieza" })
+        body: JSON.stringify({ product_name: name, sku, unit: unit || "pieza" })
       });
       const json = await res.json();
       if (!json.ok) {
@@ -206,6 +209,7 @@ function ProductPicker({
         <input className="input" placeholder="Nombre del producto" value={name} onChange={(e) => setName(e.target.value)} />
         <div className="flex gap-1">
           <input className="input" placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} />
+          <input className="input w-20" placeholder="Unidad" value={unit} onChange={(e) => setUnit(e.target.value)} />
           <button type="button" disabled={saving} className="btn-primary px-2 text-xs" onClick={handleCreate}>
             Crear
           </button>
@@ -366,6 +370,12 @@ export default function InventoryPanel() {
   const [dExternalFolio, setDExternalFolio] = useState("");
   const [dPaidAmount, setDPaidAmount] = useState("0");
   const [dNotes, setDNotes] = useState("");
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [bulkCategory2, setBulkCategory2] = useState("");
+  const [bulkBrand, setBulkBrand] = useState("");
+  const [bulkUnit, setBulkUnit] = useState("pieza");
+  const [bulkMinStock, setBulkMinStock] = useState("0");
+  const [bulkCreating, setBulkCreating] = useState(false);
 
   async function loadDrafts() {
     try {
@@ -518,6 +528,57 @@ export default function InventoryPanel() {
     closeDraft();
     loadDrafts();
     loadStock();
+  }
+
+  const unmatchedDraftIndexes = draftItems.reduce<number[]>((acc, item, index) => {
+    if (!item.product_id && item.producto_texto.trim()) acc.push(index);
+    return acc;
+  }, []);
+
+  async function handleBulkCreate() {
+    if (!unmatchedDraftIndexes.length) return;
+    setError(null);
+    setNotice(null);
+    setBulkCreating(true);
+    try {
+      const items = unmatchedDraftIndexes.map((index) => ({
+        product_name: draftItems[index].producto_texto,
+        sku: draftItems[index].sku_texto || undefined
+      }));
+      const res = await fetch("/api/inventory/products/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items,
+          category: bulkCategory || undefined,
+          category_2: bulkCategory2 || undefined,
+          brand: bulkBrand || undefined,
+          unit: bulkUnit || "pieza",
+          min_stock: Number(bulkMinStock || 0)
+        })
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setError(json.error || "error creando productos");
+        return;
+      }
+      const results: { ok: boolean; product_id?: string; error?: string }[] = json.data.results;
+      setDraftItems((current) => {
+        const next = [...current];
+        unmatchedDraftIndexes.forEach((index, i) => {
+          const result = results[i];
+          if (result?.ok && result.product_id) {
+            next[index] = { ...next[index], product_id: result.product_id, unidad_texto: bulkUnit };
+          }
+        });
+        return next;
+      });
+      const failed = results.filter((r) => !r.ok).length;
+      setNotice(failed ? `${results.length - failed} productos creados, ${failed} fallaron` : `${results.length} productos creados`);
+      await loadStock();
+    } finally {
+      setBulkCreating(false);
+    }
   }
 
   const categoryOptions = useMemo(() => uniqueSorted(stock.map((r) => r.category)), [stock]);
@@ -1058,13 +1119,47 @@ export default function InventoryPanel() {
                 </div>
               </div>
 
+              {unmatchedDraftIndexes.length > 1 && (
+                <div className="rounded-md border border-border bg-slate-50 p-3">
+                  <p className="text-xs font-semibold text-ink">
+                    Alta masiva -- {unmatchedDraftIndexes.length} renglones sin producto asignado
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    Se aplica a todos los renglones sin producto. Si prefieres revisar uno por uno (recomendado si el
+                    documento es una imagen), usa "+ Nuevo producto..." en cada renglon en vez de este boton.
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-5">
+                    <CatalogSelect label="Categoria" options={categoryOptions} value={bulkCategory} onChange={setBulkCategory} />
+                    <CatalogSelect label="Categoria 2" options={category2Options} value={bulkCategory2} onChange={setBulkCategory2} />
+                    <CatalogSelect label="Marca" options={brandOptions} value={bulkBrand} onChange={setBulkBrand} />
+                    <div>
+                      <label className="label">Unidad</label>
+                      <input className="input" value={bulkUnit} onChange={(e) => setBulkUnit(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="label">Minimo</label>
+                      <input type="number" step="0.01" className="input" value={bulkMinStock} onChange={(e) => setBulkMinStock(e.target.value)} />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={bulkCreating}
+                    className="btn-primary mt-2 px-3 py-1 text-xs"
+                    onClick={handleBulkCreate}
+                  >
+                    {bulkCreating ? "Creando..." : `Crear todos los productos nuevos (${unmatchedDraftIndexes.length})`}
+                  </button>
+                </div>
+              )}
+
               <div className="overflow-x-auto">
                 <p className="text-xs text-muted">Tabla preliminar leida del documento. Revisa y asigna el producto real de tu catalogo en cada renglon.</p>
                 <table className="mt-2 w-full text-left text-sm">
                   <thead>
                     <tr className="text-xs uppercase text-muted">
-                      <th className="py-1">Leido del documento</th>
-                      <th>SKU / clave proveedor</th>
+                      <th className="py-1">Leido del documento (corregible)</th>
+                      <th>SKU / clave</th>
+                      <th>Unidad</th>
                       <th>Producto (catalogo)</th>
                       <th>Lote</th>
                       <th>Cantidad</th>
@@ -1076,10 +1171,27 @@ export default function InventoryPanel() {
                   <tbody>
                     {draftItems.map((item, index) => (
                       <tr key={index}>
-                        <td className="py-1 pr-2 text-xs text-muted">
-                          {item.producto_texto} {item.unidad_texto ? `(${item.unidad_texto})` : ""}
+                        <td className="py-1 pr-2">
+                          <input
+                            className="input"
+                            value={item.producto_texto}
+                            onChange={(e) => updateDraftItem(index, { producto_texto: e.target.value })}
+                          />
                         </td>
-                        <td className="pr-2 text-xs text-muted">{item.sku_texto || "-"}</td>
+                        <td className="pr-2">
+                          <input
+                            className="input"
+                            value={item.sku_texto}
+                            onChange={(e) => updateDraftItem(index, { sku_texto: e.target.value })}
+                          />
+                        </td>
+                        <td className="pr-2">
+                          <input
+                            className="input"
+                            value={item.unidad_texto}
+                            onChange={(e) => updateDraftItem(index, { unidad_texto: e.target.value })}
+                          />
+                        </td>
                         <td className="pr-2">
                           <ProductPicker
                             stock={stock}
@@ -1087,6 +1199,7 @@ export default function InventoryPanel() {
                             onChange={(productId) => updateDraftItem(index, { product_id: productId })}
                             prefillName={item.producto_texto}
                             prefillSku={item.sku_texto}
+                            prefillUnit={item.unidad_texto}
                             onProductCreated={loadStock}
                           />
                         </td>
