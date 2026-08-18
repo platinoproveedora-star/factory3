@@ -173,7 +173,7 @@ function ProductPicker({
   prefillUnit?: string;
   onProductCreated: () => Promise<void>;
 }) {
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(!value);
   const [name, setName] = useState(prefillName);
   const [sku, setSku] = useState(prefillSku);
   const [unit, setUnit] = useState(prefillUnit || "pieza");
@@ -256,6 +256,66 @@ function emptyPurchaseItem(): PurchaseItem {
   return { product_id: "", lot_code: "", quantity: "", unit_cost: "", tax_rate: "0.16", notes: "" };
 }
 
+function lineAmounts(quantity: string, unitCost: string, taxRate: string) {
+  const subtotal = Number(quantity || 0) * Number(unitCost || 0);
+  const tax = subtotal * Number(taxRate || 0);
+  return { subtotal, tax, total: subtotal + tax };
+}
+
+function sumAmounts(items: { quantity: string; unit_cost: string; tax_rate: string }[]) {
+  return items.reduce(
+    (acc, item) => {
+      const amounts = lineAmounts(item.quantity, item.unit_cost, item.tax_rate);
+      return { subtotal: acc.subtotal + amounts.subtotal, tax: acc.tax + amounts.tax, total: acc.total + amounts.total };
+    },
+    { subtotal: 0, tax: 0, total: 0 }
+  );
+}
+
+const DIACRITIC_MARKS_RE = new RegExp(`[${String.fromCharCode(0x300)}-${String.fromCharCode(0x36f)}]`, "g");
+
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(DIACRITIC_MARKS_RE, "")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Similitud simple por traslape de palabras (0 a 1). Suficiente para
+ * sugerir el mejor match sin depender de una libreria externa. */
+function textSimilarity(a: string, b: string): number {
+  const na = normalizeText(a);
+  const nb = normalizeText(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1;
+  const tokensA = new Set(na.split(" "));
+  const tokensB = new Set(nb.split(" "));
+  const common = [...tokensA].filter((t) => tokensB.has(t)).length;
+  const union = new Set([...tokensA, ...tokensB]).size;
+  return union ? common / union : 0;
+}
+
+/** Busca el mejor producto del catalogo para un renglon leido por IA:
+ * match exacto de SKU primero, si no hay, el nombre mas parecido por
+ * encima de un umbral. Si no hay nada confiable, regresa "" para que
+ * el renglon se abra directo en modo "producto nuevo". */
+function suggestProductId(productoTexto: string, skuTexto: string, stock: StockRow[]): string {
+  if (skuTexto.trim()) {
+    const skuMatch = stock.find((row) => row.sku && normalizeText(row.sku) === normalizeText(skuTexto));
+    if (skuMatch) return skuMatch.product_id;
+  }
+  if (!productoTexto.trim()) return "";
+  let best: { id: string; score: number } | null = null;
+  for (const row of stock) {
+    const score = textSimilarity(productoTexto, row.product_name);
+    if (!best || score > best.score) best = { id: row.product_id, score };
+  }
+  return best && best.score >= 0.5 ? best.id : "";
+}
+
 type DraftItem = PurchaseItem & { producto_texto: string; unidad_texto: string; sku_texto: string };
 type PurchaseDraft = {
   id: string;
@@ -267,20 +327,25 @@ type PurchaseDraft = {
   created_at: string;
 };
 
-function draftItemsFromExtracted(extracted: any): DraftItem[] {
+function draftItemsFromExtracted(extracted: any, stock: StockRow[]): DraftItem[] {
   const items = Array.isArray(extracted?.items) ? extracted.items : [];
   if (!items.length) return [{ ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "", sku_texto: "" }];
-  return items.map((item: any) => ({
-    product_id: item.product_id || "",
-    lot_code: item.lot_code || "",
-    quantity: item.quantity != null ? String(item.quantity) : item.cantidad != null ? String(item.cantidad) : "",
-    unit_cost: item.unit_cost != null ? String(item.unit_cost) : item.costo_unitario != null ? String(item.costo_unitario) : "",
-    tax_rate: item.tax_rate != null ? String(item.tax_rate) : "0.16",
-    notes: item.notes || "",
-    producto_texto: item.producto_texto || item.producto || "",
-    unidad_texto: item.unidad_texto || item.unidad || "",
-    sku_texto: item.sku_texto || item.sku || ""
-  }));
+  return items.map((item: any) => {
+    const producto_texto = item.producto_texto || item.producto || "";
+    const sku_texto = item.sku_texto || item.sku || "";
+    const product_id = item.product_id || suggestProductId(producto_texto, sku_texto, stock);
+    return {
+      product_id,
+      lot_code: item.lot_code || "",
+      quantity: item.quantity != null ? String(item.quantity) : item.cantidad != null ? String(item.cantidad) : "",
+      unit_cost: item.unit_cost != null ? String(item.unit_cost) : item.costo_unitario != null ? String(item.costo_unitario) : "",
+      tax_rate: item.tax_rate != null ? String(item.tax_rate) : "0.16",
+      notes: item.notes || "",
+      producto_texto,
+      unidad_texto: item.unidad_texto || item.unidad || "",
+      sku_texto
+    };
+  });
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -352,14 +417,7 @@ export default function InventoryPanel() {
     setPurchaseItems((items) => (items.length > 1 ? items.filter((_, i) => i !== index) : items));
   }
 
-  const purchaseTotal = useMemo(
-    () =>
-      purchaseItems.reduce((sum, item) => {
-        const subtotal = Number(item.quantity || 0) * Number(item.unit_cost || 0);
-        return sum + subtotal * (1 + Number(item.tax_rate || 0));
-      }, 0),
-    [purchaseItems]
-  );
+  const purchaseAmounts = useMemo(() => sumAmounts(purchaseItems), [purchaseItems]);
 
   const [drafts, setDrafts] = useState<PurchaseDraft[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -390,7 +448,7 @@ export default function InventoryPanel() {
   function openDraft(draft: PurchaseDraft) {
     setActiveDraft(draft);
     const extracted = draft.extracted_json || {};
-    setDraftItems(draftItemsFromExtracted(extracted));
+    setDraftItems(draftItemsFromExtracted(extracted, stock));
     setDSupplierId(extracted.supplier_id || "");
     setDMovementDate(extracted.fecha || new Date().toISOString().slice(0, 10));
     setDExternalFolio(extracted.folio_proveedor || "");
@@ -529,6 +587,8 @@ export default function InventoryPanel() {
     loadDrafts();
     loadStock();
   }
+
+  const draftAmounts = useMemo(() => sumAmounts(draftItems), [draftItems]);
 
   const unmatchedDraftIndexes = draftItems.reduce<number[]>((acc, item, index) => {
     if (!item.product_id && item.producto_texto.trim()) acc.push(index);
@@ -952,11 +1012,15 @@ export default function InventoryPanel() {
                   <th>Cantidad</th>
                   <th>Costo unit.</th>
                   <th>IVA</th>
+                  <th>Subtotal</th>
+                  <th>Total</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {purchaseItems.map((item, index) => (
+                {purchaseItems.map((item, index) => {
+                  const amounts = lineAmounts(item.quantity, item.unit_cost, item.tax_rate);
+                  return (
                   <tr key={index}>
                     <td className="py-1 pr-2">
                       <select
@@ -1007,13 +1071,16 @@ export default function InventoryPanel() {
                         ))}
                       </select>
                     </td>
+                    <td className="pr-2 text-xs text-muted">{money(amounts.subtotal)}</td>
+                    <td className="pr-2 text-xs font-medium text-ink">{money(amounts.total)}</td>
                     <td>
                       <button type="button" className="btn-ghost px-2 text-xs" onClick={() => removePurchaseItem(index)}>
                         Quitar
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
             <button type="button" className="btn-ghost mt-2 px-3 py-1 text-xs" onClick={addPurchaseItem}>
@@ -1030,9 +1097,20 @@ export default function InventoryPanel() {
               <label className="label">Notas</label>
               <input className="input" value={pNotes} onChange={(e) => setPNotes(e.target.value)} />
             </div>
-            <div className="flex flex-col justify-end">
-              <p className="text-xs text-muted">Total estimado</p>
-              <p className="text-lg font-semibold text-ink">{money(purchaseTotal)}</p>
+          </div>
+
+          <div className="card grid grid-cols-3 gap-3 bg-slate-50">
+            <div>
+              <p className="text-xs text-muted">Subtotal</p>
+              <p className="text-lg font-semibold text-ink">{money(purchaseAmounts.subtotal)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">IVA</p>
+              <p className="text-lg font-semibold text-ink">{money(purchaseAmounts.tax)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Total</p>
+              <p className="text-lg font-semibold text-ink">{money(purchaseAmounts.total)}</p>
             </div>
           </div>
 
@@ -1165,11 +1243,15 @@ export default function InventoryPanel() {
                       <th>Cantidad</th>
                       <th>Costo unit.</th>
                       <th>IVA</th>
+                      <th>Subtotal</th>
+                      <th>Total</th>
                       <th></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {draftItems.map((item, index) => (
+                    {draftItems.map((item, index) => {
+                      const amounts = lineAmounts(item.quantity, item.unit_cost, item.tax_rate);
+                      return (
                       <tr key={index}>
                         <td className="py-1 pr-2">
                           <input
@@ -1233,13 +1315,16 @@ export default function InventoryPanel() {
                             ))}
                           </select>
                         </td>
+                        <td className="pr-2 text-xs text-muted">{money(amounts.subtotal)}</td>
+                        <td className="pr-2 text-xs font-medium text-ink">{money(amounts.total)}</td>
                         <td>
                           <button type="button" className="btn-ghost px-2 text-xs" onClick={() => removeDraftItem(index)}>
                             Quitar
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
                 <button type="button" className="btn-ghost mt-2 px-3 py-1 text-xs" onClick={addDraftItem}>
@@ -1255,6 +1340,21 @@ export default function InventoryPanel() {
                 <div className="col-span-2">
                   <label className="label">Notas</label>
                   <input className="input" value={dNotes} onChange={(e) => setDNotes(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="card grid grid-cols-3 gap-3 bg-slate-50">
+                <div>
+                  <p className="text-xs text-muted">Subtotal</p>
+                  <p className="text-lg font-semibold text-ink">{money(draftAmounts.subtotal)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted">IVA</p>
+                  <p className="text-lg font-semibold text-ink">{money(draftAmounts.tax)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted">Total</p>
+                  <p className="text-lg font-semibold text-ink">{money(draftAmounts.total)}</p>
                 </div>
               </div>
 
