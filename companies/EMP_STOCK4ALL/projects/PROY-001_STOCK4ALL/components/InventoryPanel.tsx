@@ -302,21 +302,35 @@ function textSimilarity(a: string, b: string): number {
  * match exacto de SKU primero, si no hay, el nombre mas parecido por
  * encima de un umbral. Si no hay nada confiable, regresa "" para que
  * el renglon se abra directo en modo "producto nuevo". */
-function suggestProductId(productoTexto: string, skuTexto: string, stock: StockRow[]): string {
+type ProductMatch = { productId: string; matchType: "sku" | "name" | "none"; confidence: number };
+
+/** Prioridad absoluta al codigo/SKU exacto (confiable). El match por nombre
+ * se ofrece como sugerencia con su % de confianza, pero no se trata como
+ * un match seguro -- productos que solo se distinguen por medida (ej. tubo
+ * de 2" vs 4") comparten casi todas las palabras del nombre y un match por
+ * texto puede confundirlos. */
+function suggestProductMatch(productoTexto: string, skuTexto: string, stock: StockRow[]): ProductMatch {
   if (skuTexto.trim()) {
     const skuMatch = stock.find((row) => row.sku && normalizeText(row.sku) === normalizeText(skuTexto));
-    if (skuMatch) return skuMatch.product_id;
+    if (skuMatch) return { productId: skuMatch.product_id, matchType: "sku", confidence: 1 };
   }
-  if (!productoTexto.trim()) return "";
+  if (!productoTexto.trim()) return { productId: "", matchType: "none", confidence: 0 };
   let best: { id: string; score: number } | null = null;
   for (const row of stock) {
     const score = textSimilarity(productoTexto, row.product_name);
     if (!best || score > best.score) best = { id: row.product_id, score };
   }
-  return best && best.score >= 0.5 ? best.id : "";
+  if (best && best.score >= 0.5) return { productId: best.id, matchType: "name", confidence: best.score };
+  return { productId: "", matchType: "none", confidence: 0 };
 }
 
-type DraftItem = PurchaseItem & { producto_texto: string; unidad_texto: string; sku_texto: string };
+type DraftItem = PurchaseItem & {
+  producto_texto: string;
+  unidad_texto: string;
+  sku_texto: string;
+  match_type: "sku" | "name" | "none";
+  match_confidence: number;
+};
 type PurchaseDraft = {
   id: string;
   file_name: string | null;
@@ -329,13 +343,15 @@ type PurchaseDraft = {
 
 function draftItemsFromExtracted(extracted: any, stock: StockRow[]): DraftItem[] {
   const items = Array.isArray(extracted?.items) ? extracted.items : [];
-  if (!items.length) return [{ ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "", sku_texto: "" }];
+  if (!items.length) return [{ ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "", sku_texto: "", match_type: "none", match_confidence: 0 }];
   return items.map((item: any) => {
     const producto_texto = item.producto_texto || item.producto || "";
     const sku_texto = item.sku_texto || item.sku || "";
-    const product_id = item.product_id || suggestProductId(producto_texto, sku_texto, stock);
+    const match = item.product_id
+      ? { productId: item.product_id, matchType: (item.match_type || "sku") as "sku" | "name" | "none", confidence: item.match_confidence ?? 1 }
+      : suggestProductMatch(producto_texto, sku_texto, stock);
     return {
-      product_id,
+      product_id: match.productId,
       lot_code: item.lot_code || "",
       quantity: item.quantity != null ? String(item.quantity) : item.cantidad != null ? String(item.cantidad) : "",
       unit_cost: item.unit_cost != null ? String(item.unit_cost) : item.costo_unitario != null ? String(item.costo_unitario) : "",
@@ -343,7 +359,9 @@ function draftItemsFromExtracted(extracted: any, stock: StockRow[]): DraftItem[]
       notes: item.notes || "",
       producto_texto,
       unidad_texto: item.unidad_texto || item.unidad || "",
-      sku_texto
+      sku_texto,
+      match_type: match.matchType,
+      match_confidence: match.confidence
     };
   });
 }
@@ -510,7 +528,10 @@ export default function InventoryPanel() {
   }
 
   function addDraftItem() {
-    setDraftItems((items) => [...items, { ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "", sku_texto: "" }]);
+    setDraftItems((items) => [
+      ...items,
+      { ...emptyPurchaseItem(), producto_texto: "", unidad_texto: "", sku_texto: "", match_type: "none", match_confidence: 0 }
+    ]);
   }
 
   function removeDraftItem(index: number) {
@@ -1284,6 +1305,17 @@ export default function InventoryPanel() {
                             prefillUnit={item.unidad_texto}
                             onProductCreated={loadStock}
                           />
+                          <p className="mt-1 text-xs leading-tight text-muted">
+                            IA leyo: {item.producto_texto || "-"}
+                            {item.sku_texto ? ` (${item.sku_texto})` : ""}
+                          </p>
+                          {item.product_id && item.match_type !== "none" && (
+                            <p className={`text-xs leading-tight ${item.match_type === "sku" ? "text-emerald-600" : "text-amber-600"}`}>
+                              {item.match_type === "sku"
+                                ? "codigo exacto"
+                                : `${Math.round(item.match_confidence * 100)}% similitud por nombre -- verificar`}
+                            </p>
+                          )}
                         </td>
                         <td className="pr-2">
                           <input className="input" value={item.lot_code} onChange={(e) => updateDraftItem(index, { lot_code: e.target.value })} />
