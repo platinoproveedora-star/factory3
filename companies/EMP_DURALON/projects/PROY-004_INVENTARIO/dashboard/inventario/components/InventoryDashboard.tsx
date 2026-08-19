@@ -196,6 +196,11 @@ export default function InventoryDashboard() {
       [p.product_name, p.folio, p.sku, p.category].some((value) => String(value || '').toLowerCase().includes(term))
     );
   }, [data.products, search]);
+  // Productos inactivos (dados de baja logica) no deben aparecer en ninguna
+  // vista operativa -- solo siguen visibles en el Catalogo (filteredProducts)
+  // para poder reactivarlos si hace falta.
+  const activeProducts = useMemo(() => data.products.filter((p) => p.active !== false), [data.products]);
+  const activeFilteredProducts = useMemo(() => filteredProducts.filter((p) => p.active !== false), [filteredProducts]);
 
   return (
     <main className="min-h-screen bg-[#f4f6f8]">
@@ -288,7 +293,7 @@ export default function InventoryDashboard() {
           {notice && <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
           <Kpis data={data} loading={loading} />
 
-          {activeTab === 'inventario' && <InventoryTab products={filteredProducts} stock={data.stock} lotStock={data.lot_stock || []} />}
+          {activeTab === 'inventario' && <InventoryTab products={activeFilteredProducts} stock={data.stock} lotStock={data.lot_stock || []} />}
           {activeTab === 'producto' && (
             <ProductTab
               products={filteredProducts}
@@ -302,14 +307,14 @@ export default function InventoryDashboard() {
           )}
           {activeTab === 'proveedores' && <PartyTab type="supplier" parties={data.suppliers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
           {activeTab === 'clientes' && <PartyTab type="customer" parties={data.customers} saving={saving} setSaving={setSaving} refresh={refresh} setNotice={setNotice} />}
-          {activeTab === 'kardex' && <KardexTab products={data.products} lotStock={data.lot_stock || []} />}
+          {activeTab === 'kardex' && <KardexTab products={activeProducts} lotStock={data.lot_stock || []} />}
           {activeTab === 'ventas' && (
             <RemisionesTab setNotice={setNotice} />
           )}
           {activeTab === 'pedidos' && <PedidosTab />}
           {activeTab === 'compras' && (
             <PurchaseTab
-              products={data.products}
+              products={activeProducts}
               suppliers={data.suppliers}
               lotStock={data.lot_stock || []}
               saving={saving}
@@ -618,7 +623,7 @@ function ProductCatalogRow({
 
 function Kpis({ data, loading }: { data: DashboardData; loading: boolean }) {
   const cards = [
-    { label: 'Productos', value: data.products.length, sub: 'catalogo activo', icon: Boxes },
+    { label: 'Productos', value: data.products.filter((p) => p.active !== false).length, sub: 'catalogo activo', icon: Boxes },
     { label: 'Clientes', value: data.customers.length, sub: 'compradores', icon: Store },
     { label: 'Proveedores', value: data.suppliers.length, sub: 'abastecimiento', icon: Truck },
     { label: 'CXC ventas', value: money(data.receivables_total), sub: 'saldo pendiente', icon: CircleDollarSign },
