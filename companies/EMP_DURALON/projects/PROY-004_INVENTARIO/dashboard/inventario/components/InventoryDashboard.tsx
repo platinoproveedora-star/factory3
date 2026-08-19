@@ -714,6 +714,10 @@ function InventoryTab({ products, stock, lotStock }: { products: Product[]; stoc
   return (
     <div className="space-y-5">
       <section className="rounded border border-slate-200 bg-white">
+        <SectionTitle title="Inventario actual" subtitle={`${filteredStock.length} ${filterLabel}`} />
+        <InventoryStockTable rows={filteredStock} compact={!showKeyOnly} />
+      </section>
+      <section className="rounded border border-slate-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h3 className="text-sm font-semibold text-slate-950">Inventario por lote</h3>
@@ -741,10 +745,6 @@ function InventoryTab({ products, stock, lotStock }: { products: Product[]; stoc
           </div>
         </div>
         <InventoryLotTable rows={filteredLotStock} />
-      </section>
-      <section className="rounded border border-slate-200 bg-white">
-        <SectionTitle title="Inventario actual" subtitle={`${filteredStock.length} ${filterLabel}`} />
-        <InventoryStockTable rows={filteredStock} compact={!showKeyOnly} />
       </section>
     </div>
   );
@@ -897,21 +897,18 @@ function InventoryLotTable({ rows }: { rows: NonNullable<DashboardData['lot_stoc
 function InventoryStockTable({ rows, compact }: { rows: DashboardData['stock']; compact?: boolean }) {
   const [brandFilter, setBrandFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [productFilter, setProductFilter] = useState('');
-  const [keyFilter, setKeyFilter] = useState('');
+  const [keyProductFilter, setKeyProductFilter] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const brandOptions = uniqueOptions(rows.map((row) => row.brand));
   const categoryOptions = uniqueOptions(rows.map((row) => row.category));
-  const productOptions = uniqueOptions(rows.map((row) => row.product_name));
-  const keyOptions = uniqueOptions(rows.map((row) => row.product_key));
 
   let visibleRows = rows;
   if (brandFilter) visibleRows = visibleRows.filter((row) => (row.brand || '') === brandFilter);
   if (categoryFilter) visibleRows = visibleRows.filter((row) => (row.category || '') === categoryFilter);
-  if (productFilter) visibleRows = visibleRows.filter((row) => (row.product_name || '') === productFilter);
-  if (keyFilter) visibleRows = visibleRows.filter((row) => (row.product_key || '') === keyFilter);
+  if (keyProductFilter === 'clave') visibleRows = visibleRows.filter((row) => row.is_key_product);
+  if (keyProductFilter === 'no_clave') visibleRows = visibleRows.filter((row) => !row.is_key_product);
 
   type StockRow = (typeof rows)[number];
   const getValue = (row: StockRow, key: string): string | number => {
@@ -964,17 +961,11 @@ function InventoryStockTable({ rows, compact }: { rows: DashboardData['stock']; 
           </select>
         </label>
         <label className="flex items-center gap-1 text-slate-600">
-          Producto
-          <select className="rounded border border-slate-300 px-2 py-1" value={productFilter} onChange={(event) => setProductFilter(event.target.value)}>
+          Productos clave
+          <select className="rounded border border-slate-300 px-2 py-1" value={keyProductFilter} onChange={(event) => setKeyProductFilter(event.target.value)}>
             <option value="">Todos</option>
-            {productOptions.map((value) => <option key={value} value={value}>{value}</option>)}
-          </select>
-        </label>
-        <label className="flex items-center gap-1 text-slate-600">
-          Clave
-          <select className="rounded border border-slate-300 px-2 py-1" value={keyFilter} onChange={(event) => setKeyFilter(event.target.value)}>
-            <option value="">Todas</option>
-            {keyOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+            <option value="clave">Solo clave</option>
+            <option value="no_clave">Sin clave</option>
           </select>
         </label>
       </div>
