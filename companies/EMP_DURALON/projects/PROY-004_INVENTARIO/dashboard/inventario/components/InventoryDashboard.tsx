@@ -705,7 +705,6 @@ function InventoryTab({ products, stock, lotStock }: { products: Product[]; stoc
   const visibleIds = new Set(products.map((product) => product.id));
   const visibleStock = stock.filter((row) => visibleIds.has(row.product_id));
   const visibleLotStock = lotStock.filter((row) => visibleIds.has(row.product_id));
-  const filteredStock = showKeyOnly ? visibleStock.filter((row) => row.is_key_product) : visibleStock;
   const keyFilteredLotStock = showKeyOnly ? visibleLotStock.filter((row) => row.is_key_product) : visibleLotStock;
   const filteredLotStock = showEmptyLots
     ? keyFilteredLotStock
@@ -714,8 +713,8 @@ function InventoryTab({ products, stock, lotStock }: { products: Product[]; stoc
   return (
     <div className="space-y-5">
       <section className="rounded border border-slate-200 bg-white">
-        <SectionTitle title="Inventario actual" subtitle={`${filteredStock.length} ${filterLabel}`} />
-        <InventoryStockTable rows={filteredStock} compact={!showKeyOnly} />
+        <SectionTitle title="Inventario actual" subtitle={`${visibleStock.length} productos -- usa el filtro de la tabla`} />
+        <InventoryStockTable rows={visibleStock} />
       </section>
       <section className="rounded border border-slate-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
@@ -898,6 +897,7 @@ function InventoryStockTable({ rows, compact }: { rows: DashboardData['stock']; 
   const [brandFilter, setBrandFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [keyProductFilter, setKeyProductFilter] = useState('');
+  const [existenceFilter, setExistenceFilter] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
@@ -909,6 +909,8 @@ function InventoryStockTable({ rows, compact }: { rows: DashboardData['stock']; 
   if (categoryFilter) visibleRows = visibleRows.filter((row) => (row.category || '') === categoryFilter);
   if (keyProductFilter === 'clave') visibleRows = visibleRows.filter((row) => row.is_key_product);
   if (keyProductFilter === 'no_clave') visibleRows = visibleRows.filter((row) => !row.is_key_product);
+  if (existenceFilter === 'con') visibleRows = visibleRows.filter((row) => Number(row.quantity || 0) !== 0);
+  if (existenceFilter === 'sin') visibleRows = visibleRows.filter((row) => Number(row.quantity || 0) === 0);
 
   type StockRow = (typeof rows)[number];
   const getValue = (row: StockRow, key: string): string | number => {
@@ -966,6 +968,14 @@ function InventoryStockTable({ rows, compact }: { rows: DashboardData['stock']; 
             <option value="">Todos</option>
             <option value="clave">Solo clave</option>
             <option value="no_clave">Sin clave</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-1 text-slate-600">
+          Existencia
+          <select className="rounded border border-slate-300 px-2 py-1" value={existenceFilter} onChange={(event) => setExistenceFilter(event.target.value)}>
+            <option value="">Todos</option>
+            <option value="con">Con existencia</option>
+            <option value="sin">Sin existencia</option>
           </select>
         </label>
       </div>
