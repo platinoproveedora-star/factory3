@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  AlertTriangle,
   ArrowDownToLine,
   ArrowUpFromLine,
   Boxes,
@@ -16,8 +17,12 @@ import {
   Search,
   Store,
   Trash2,
+  TrendingDown,
+  TrendingUp,
   Truck,
   UserRoundPlus,
+  Users,
+  Warehouse,
   XCircle,
 } from 'lucide-react';
 import { loadDashboardData, type DashboardData } from '../lib/client-data';
@@ -652,26 +657,50 @@ function ProductCatalogRow({
   );
 }
 
+function isCanceledMovement(movement: KardexMovement): boolean {
+  const metadata = movement.metadata;
+  return !!(metadata && typeof metadata === 'object' && metadata.canceled);
+}
+
 function Kpis({ data, loading }: { data: DashboardData; loading: boolean }) {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+
+  const inventoryValue = data.stock.reduce((sum, row) => sum + Number(row.estimated_value || 0), 0);
+  const lowStockCount = data.stock.filter((row) => row.stock_status === 'bajo' || row.stock_status === 'negativo').length;
+  const monthSales = data.sales
+    .filter((m) => String(m.movement_date || '').startsWith(currentMonth))
+    .reduce((sum, m) => sum + Number(m.total_sale || 0), 0);
+  const monthPurchases = data.purchases
+    .filter((m) => !isCanceledMovement(m) && String(m.movement_date || '').startsWith(currentMonth))
+    .reduce((sum, m) => sum + Number(m.total_cost || 0), 0);
+  const customersWithBalance = new Set(
+    data.sales.filter((m) => Number(m.balance_amount || 0) > 0).map((m) => m.customer_id)
+  ).size;
+
   const cards = [
     { label: 'Productos', value: data.products.filter((p) => p.active !== false).length, sub: 'catalogo activo', icon: Boxes },
     { label: 'Clientes', value: data.customers.length, sub: 'compradores', icon: Store },
     { label: 'Proveedores', value: data.suppliers.length, sub: 'abastecimiento', icon: Truck },
     { label: 'CXC ventas', value: money(data.receivables_total), sub: 'saldo pendiente', icon: CircleDollarSign },
     { label: 'CXP compras', value: money(data.payables_total), sub: 'saldo pendiente', icon: CircleDollarSign },
+    { label: 'Valor inventario', value: money(inventoryValue), sub: 'costo estimado', icon: Warehouse },
+    { label: 'Stock bajo/negativo', value: lowStockCount, sub: 'productos a revisar', icon: AlertTriangle },
+    { label: 'Ventas del mes', value: money(monthSales), sub: currentMonth, icon: TrendingUp },
+    { label: 'Compras del mes', value: money(monthPurchases), sub: currentMonth, icon: TrendingDown },
+    { label: 'Clientes con adeudo', value: customersWithBalance, sub: 'saldo pendiente', icon: Users },
   ];
   return (
-    <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
       {cards.map((card) => {
         const Icon = card.icon;
         return (
-          <div key={card.label} className="rounded border border-slate-200 bg-white p-4">
+          <div key={card.label} className="rounded border border-slate-200 bg-white p-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase text-slate-500">{card.label}</p>
-              <Icon size={17} className="text-slate-400" />
+              <p className="text-[10px] font-semibold uppercase leading-tight text-slate-500">{card.label}</p>
+              <Icon size={13} className="shrink-0 text-slate-400" />
             </div>
-            <p className="mt-2 text-2xl font-semibold text-slate-950">{loading ? '...' : card.value}</p>
-            <p className="mt-1 text-xs text-slate-500">{card.sub}</p>
+            <p className="mt-1 text-base font-semibold text-slate-950">{loading ? '...' : card.value}</p>
+            <p className="mt-0.5 text-[10px] text-slate-500">{card.sub}</p>
           </div>
         );
       })}

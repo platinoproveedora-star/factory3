@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib.util
 from datetime import date, datetime
+from pathlib import Path
 
 from factory.engine import SupabaseClient
 
@@ -23,9 +25,9 @@ class ErpInventoryDashboardDataService:
         movements = data["data"]["movements"]
 
         if action in {"dashboard", "full"}:
-            return {"ok": True, "data": self._dashboard(products, parties, movements)}
+            return {"ok": True, "data": self._dashboard(products, parties, movements, context)}
         if action == "summary":
-            return {"ok": True, "data": self._summary(movements, products, parties)}
+            return {"ok": True, "data": self._summary(movements, products, parties, context)}
         if action == "receivables":
             return {"ok": True, "data": {"receivables": self._receivables(movements)}}
         if action == "sales_by_product_month":
@@ -71,11 +73,19 @@ class ErpInventoryDashboardDataService:
             return {"ok": False, "error": "schema/supabase_schema requerido"}
         return {"ok": True, "data": {**context, "schema": schema}}
 
-    def _dashboard(self, products, parties, movements) -> dict:
+    def _dashboard(self, products, parties, movements, context: dict) -> dict:
         active_parties = [p for p in parties if p.get("active") is not False]
         sales = [m for m in movements if m.get("source_type") == "remision" and not self._is_canceled(m)]
         purchases = [m for m in movements if m.get("source_type") == "compra"]
         adjustments = [m for m in movements if m.get("source_type") == "ajuste"]
+        # Nota: _receivables_billing() lee platform de billing (uc101_proy005),
+        # que hoy no esta sincronizado con las ventas reales del inventario
+        # (23 folios ahi vs. cientos de remisiones aqui) -- usarlo como fuente
+        # de CXC subestimaba el saldo real por mas de 200x. Se usa kardex
+        # (fuente completa y confiable) hasta que exista sync real de billing.
+        receivables = self._receivables(movements)
+        receivables_total = sum(float(row.get("balance_amount") or 0) for row in receivables)
+        payables_total = sum(float(row.get("balance_amount") or 0) for row in purchases if not self._is_canceled(row))
         return {
             "products": sorted(products, key=lambda row: str(row.get("product_name") or "")),
             "customers": sorted([p for p in active_parties if p.get("party_type") in {"customer", "both"}], key=lambda row: str(row.get("party_name") or "")),
@@ -84,20 +94,77 @@ class ErpInventoryDashboardDataService:
             "sales": sales,
             "adjustments": adjustments,
             "stock": self._stock(movements, products),
-            "receivables_total": sum(float(row.get("balance_amount") or 0) for row in sales),
-            "payables_total": sum(float(row.get("balance_amount") or 0) for row in purchases),
+            "receivables_total": receivables_total,
+            "receivables_by_customer": receivables,
+            "payables_total": payables_total,
         }
 
-    def _summary(self, movements, products, parties) -> dict:
+    def _summary(self, movements, products, parties, context: dict) -> dict:
         active_parties = [p for p in parties if p.get("active") is not False]
+        receivables = self._receivables(movements)
+        purchases = [m for m in movements if m.get("source_type") == "compra" and not self._is_canceled(m)]
         return {
             "products": len(products),
             "customers": sum(1 for p in active_parties if p.get("party_type") in {"customer", "both"}),
             "suppliers": sum(1 for p in active_parties if p.get("party_type") in {"supplier", "both"}),
             "movements": len(movements),
-            "receivables_total": sum(row["balance_amount"] for row in self._receivables(movements)),
+            "receivables_total": sum(float(row.get("balance_amount") or 0) for row in receivables),
+            "payables_total": sum(float(row.get("balance_amount") or 0) for row in purchases),
             "top_inventory": self._stock(movements, products)[:5],
         }
+
+    def _resolve_billing_schema(self, context: dict) -> str | None:
+        schema = str(context.get("billing_schema") or context.get("schema_billing") or "").strip()
+        if schema:
+            return schema
+        module_schemas = context.get("module_schemas") if isinstance(context.get("module_schemas"), dict) else {}
+        schema = str(module_schemas.get("billing") or "").strip()
+        if schema:
+            return schema
+        company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
+        if not company_id:
+            return None
+        service_path = Path(__file__).resolve().parents[2] / "vertical_erp" / "erp_project_context_resolve" / "service.py"
+        spec = importlib.util.spec_from_file_location("erp_project_context_resolve_service", service_path)
+        if spec is None or spec.loader is None:
+            return None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        result = module.ErpProjectContextResolveService().ejecutar({"company_id": company_id})
+        resolved = (result.get("data") or {}).get("billing_schema")
+        return str(resolved).strip() if resolved else None
+
+    def _receivables_billing(self, context: dict) -> list[dict] | None:
+        billing_schema = self._resolve_billing_schema(context)
+        if not billing_schema:
+            return None
+        company_id = str(context.get("company_id") or context.get("empresa_id") or "").strip()
+        if not company_id:
+            return None
+        db = SupabaseClient({**context, "schema": billing_schema})
+        result = db.rest_select(
+            "billing_collection_folios",
+            filters={"empresa_id": company_id},
+            select="customer_id,customer_name,balance_amount,status",
+            limit=10000,
+        )
+        if not result.get("ok"):
+            return None
+        by_customer: dict = {}
+        for row in result.get("data") or []:
+            if str(row.get("status") or "") in {"pagada", "cancelado"}:
+                continue
+            balance = float(row.get("balance_amount") or 0)
+            if balance <= 0:
+                continue
+            key = row.get("customer_id") or row.get("customer_name") or "sin_cliente"
+            entry = by_customer.setdefault(
+                key,
+                {"customer_id": row.get("customer_id"), "customer_name": row.get("customer_name") or key, "balance_amount": 0.0, "documents": 0},
+            )
+            entry["balance_amount"] += balance
+            entry["documents"] += 1
+        return sorted(by_customer.values(), key=lambda row: -row["balance_amount"])
 
     def _receivables(self, movements) -> list[dict]:
         by_customer = {}
