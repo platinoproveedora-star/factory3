@@ -504,13 +504,44 @@ function ProductCatalogTable({
   refresh: RefreshFn;
   setNotice: (value: string) => void;
 }) {
-  const sorted = [...products].sort((a, b) => Number(b.is_key_product) - Number(a.is_key_product) || String(a.product_name || '').localeCompare(String(b.product_name || ''))).slice(0, 20);
+  const [sortKey, setSortKey] = useState<string | null>('folio');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const getValue = (product: Product, key: string): string | number => {
+    switch (key) {
+      case 'product_key': return product.product_key || '';
+      case 'product_name': return product.product_name || '';
+      case 'folio': return product.folio || '';
+      case 'sku': return product.sku || '';
+      case 'category': return product.category || '';
+      case 'category_2': return product.category_2 || '';
+      case 'brand': return product.brand || '';
+      case 'unit': return product.unit || '';
+      case 'min_stock': return Number(product.min_stock || 0);
+      case 'is_key_product': return product.is_key_product ? 1 : 0;
+      case 'active': return product.active !== false ? 1 : 0;
+      default: return '';
+    }
+  };
+  const sorted = sortRows(products, sortKey, sortDir, getValue);
+
+  function handleSort(key: string) {
+    if (sortKey === key) setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
+  const th = (key: string, label: string, align?: 'left' | 'right') => (
+    <SortableTh label={label} active={sortKey === key} dir={sortDir} align={align} onClick={() => handleSort(key)} />
+  );
+
   return (
     <section className="rounded border border-slate-200 bg-white">
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-950">Catalogo de productos</h3>
-          <p className="mt-0.5 text-xs text-slate-500">Maximo 20 visibles, productos clave primero</p>
+          <p className="mt-0.5 text-xs text-slate-500">{`${sorted.length} productos -- click en un encabezado para ordenar`}</p>
         </div>
         <button type="button" className="inline-flex h-9 items-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
           <Search size={15} />
@@ -521,17 +552,17 @@ function ProductCatalogTable({
         <table className="min-w-[1360px] text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
-              <th className="px-3 py-3 text-left">Clave</th>
-              <th className="px-3 py-3 text-left">Nombre</th>
-              <th className="px-3 py-3 text-left">Folio</th>
-              <th className="px-3 py-3 text-left">SKU</th>
-              <th className="px-3 py-3 text-left">Categoria</th>
-              <th className="px-3 py-3 text-left">Categoria 2</th>
-              <th className="px-3 py-3 text-left">Marca</th>
-              <th className="px-3 py-3 text-left">Unidad</th>
-              <th className="px-3 py-3 text-right">Minimo</th>
-              <th className="px-3 py-3 text-left">Clave</th>
-              <th className="px-3 py-3 text-left">Activo</th>
+              {th('folio', 'Folio')}
+              {th('product_key', 'Clave')}
+              {th('product_name', 'Nombre')}
+              {th('sku', 'SKU')}
+              {th('category', 'Categoria')}
+              {th('category_2', 'Categoria 2')}
+              {th('brand', 'Marca')}
+              {th('unit', 'Unidad')}
+              {th('min_stock', 'Minimo', 'right')}
+              {th('is_key_product', 'Producto clave')}
+              {th('active', 'Activo')}
               <th className="px-3 py-3 text-right">Accion</th>
             </tr>
           </thead>
@@ -600,9 +631,9 @@ function ProductCatalogRow({
 
   return (
     <tr className="border-b border-slate-100">
+      <td className="px-3 py-3 text-slate-500">{product.folio}</td>
       <td className="px-3 py-2">{editing ? <input className={inputClass} value={draft.product_key} onChange={(event) => setDraft((current) => ({ ...current, product_key: event.target.value }))} /> : <span className="text-slate-600">{draft.product_key || '-'}</span>}</td>
       <td className="px-3 py-2">{editing ? <input className={inputClass} value={draft.product_name} onChange={(event) => setDraft((current) => ({ ...current, product_name: event.target.value }))} /> : <span className="font-medium text-slate-900">{draft.product_name}</span>}</td>
-      <td className="px-3 py-3 text-slate-500">{product.folio}</td>
       <td className="px-3 py-2">{editing ? <input className={inputClass} value={draft.sku} onChange={(event) => setDraft((current) => ({ ...current, sku: event.target.value }))} /> : <span className="text-slate-600">{draft.sku || '-'}</span>}</td>
       <td className="px-3 py-2">{editing ? <input className={inputClass} list="product-category-options" value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))} /> : <span className="text-slate-600">{draft.category || '-'}</span>}</td>
       <td className="px-3 py-2">{editing ? <input className={inputClass} list="product-category-2-options" value={draft.category_2} onChange={(event) => setDraft((current) => ({ ...current, category_2: event.target.value }))} /> : <span className="text-slate-600">{draft.category_2 || '-'}</span>}</td>
