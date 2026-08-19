@@ -897,20 +897,27 @@ function InventoryLotTable({ rows }: { rows: NonNullable<DashboardData['lot_stoc
 function InventoryStockTable({ rows, compact }: { rows: DashboardData['stock']; compact?: boolean }) {
   const [brandFilter, setBrandFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [productFilter, setProductFilter] = useState('');
+  const [keyFilter, setKeyFilter] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const brandOptions = uniqueOptions(rows.map((row) => row.brand));
   const categoryOptions = uniqueOptions(rows.map((row) => row.category));
+  const productOptions = uniqueOptions(rows.map((row) => row.product_name));
+  const keyOptions = uniqueOptions(rows.map((row) => row.product_key));
 
   let visibleRows = rows;
   if (brandFilter) visibleRows = visibleRows.filter((row) => (row.brand || '') === brandFilter);
   if (categoryFilter) visibleRows = visibleRows.filter((row) => (row.category || '') === categoryFilter);
+  if (productFilter) visibleRows = visibleRows.filter((row) => (row.product_name || '') === productFilter);
+  if (keyFilter) visibleRows = visibleRows.filter((row) => (row.product_key || '') === keyFilter);
 
   type StockRow = (typeof rows)[number];
   const getValue = (row: StockRow, key: string): string | number => {
     switch (key) {
       case 'product_name': return row.product_name || '';
+      case 'product_key': return row.product_key || '';
       case 'folio': return row.folio || '';
       case 'brand': return row.brand || '';
       case 'category': return row.category || '';
@@ -954,6 +961,20 @@ function InventoryStockTable({ rows, compact }: { rows: DashboardData['stock']; 
           <select className="rounded border border-slate-300 px-2 py-1" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
             <option value="">Todas</option>
             {categoryOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-1 text-slate-600">
+          Producto
+          <select className="rounded border border-slate-300 px-2 py-1" value={productFilter} onChange={(event) => setProductFilter(event.target.value)}>
+            <option value="">Todos</option>
+            {productOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-1 text-slate-600">
+          Clave
+          <select className="rounded border border-slate-300 px-2 py-1" value={keyFilter} onChange={(event) => setKeyFilter(event.target.value)}>
+            <option value="">Todas</option>
+            {keyOptions.map((value) => <option key={value} value={value}>{value}</option>)}
           </select>
         </label>
       </div>
